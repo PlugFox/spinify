@@ -10,7 +10,16 @@ import 'package:ws/ws.dart';
 /// {@template centrifuge}
 /// Centrifuge client.
 /// {@endtemplate}
-final class Centrifuge = CentrifugeBase with CentrifugeConnectionMixin;
+final class Centrifuge extends CentrifugeBase with CentrifugeConnectionMixin {
+  /// {@macro centrifuge}
+  Centrifuge([CentrifugeConfig? config]) : super(config);
+
+  /// Create client and connect.
+  ///
+  /// {@macro centrifuge}
+  factory Centrifuge.connect(String url, [CentrifugeConfig? config]) =>
+      Centrifuge(config)..connect(url);
+}
 
 /// {@nodoc}
 @internal
