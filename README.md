@@ -56,7 +56,7 @@ Connection related features
 
 - ✅ Connect to a server
 - ✅ Setting client options
-- ❌ Automatic reconnect with backoff algorithm
+- ✅ Automatic reconnect with backoff algorithm
 - ✅ Client state changes
 - ❌ Command-reply
 - ❌ Command timeouts
@@ -68,7 +68,7 @@ Connection related features
 - ❌ Batching API
 - ❌ Bidirectional WebSocket emulation
 
-### Client-side subscription related features
+### Client-side features
 
 - ❌ Subscribe to a channel
 - ❌ Setting subscription options

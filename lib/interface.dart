@@ -1,4 +1,4 @@
-library dev.plugfox.centrifuge.interface;
+library interface;
 
 export 'src/client/centrifuge_interface.dart';
 export 'src/model/config.dart';

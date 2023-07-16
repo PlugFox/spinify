@@ -1,4 +1,4 @@
-library dev.plugfox.centrifuge;
+library centrifuge;
 
 export 'src/client/centrifuge.dart' show Centrifuge;
 export 'src/model/config.dart';

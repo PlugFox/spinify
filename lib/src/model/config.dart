@@ -16,13 +16,13 @@ import 'package:meta/meta.dart';
 final class CentrifugeConfig {
   /// {@macro centrifuge_config}
   CentrifugeConfig({
-    this.data,
-    ({Duration min, Duration max})? reconnectDelay,
+    ({Duration min, Duration max})? connectionRetryInterval,
     ({String name, String version})? client,
-  })  : reconnectDelay = reconnectDelay ??
+    this.headers,
+  })  : connectionRetryInterval = connectionRetryInterval ??
             (
               min: const Duration(milliseconds: 500),
-              max: const Duration(seconds: 20),
+              max: const Duration(seconds: 30),
             ),
         client = client ??
             (
@@ -35,26 +35,29 @@ final class CentrifugeConfig {
   /// {@macro centrifuge_config}
   factory CentrifugeConfig.defaultConfig() = CentrifugeConfig;
 
+  // TODO(plugfox): Add support for the following options.
+  /// The data send for the first request
+  //final List<int>? data;
+
   /// The initial token used for authentication
   //CentrifugeToken token;
 
   /// Callback to get/refresh tokens
   //final CentrifugeTokenCallback? getToken;
 
-  /// The connection timeout
-  //final Duration timeout;
-
-  /// Native WebSocket config
-  /// sealed class WebSocketConfig => WebSocketConfig$VM | WebSocketConfig$JS
-
-  /// The data send for the first request
-  final List<int>? data;
-
-  /// Reconnect backoff algorithm minimum/maximum delay.
-  final ({Duration min, Duration max}) reconnectDelay;
+  /// The [connectionRetryInterval] argument is specifying the
+  /// [backoff full jitter strategy](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) for reconnecting.
+  /// Tweaks for reconnect backoff algorithm (min delay, max delay)
+  /// If not specified, the reconnecting will be disabled.
+  final ({Duration min, Duration max}) connectionRetryInterval;
 
   /// The user's client name and version.
   final ({String name, String version}) client;
+
+  /// Headers that are set when connecting the web socket on dart:io platforms.
+  ///
+  /// Note that headers are ignored on the web platform.
+  final Map<String, Object?>? headers;
 
   @override
   String toString() => 'CentrifugeConfig{}';

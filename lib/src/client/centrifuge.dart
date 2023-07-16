@@ -12,27 +12,37 @@ import 'package:ws/ws.dart';
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase with CentrifugeConnectionMixin {
   /// {@macro centrifuge}
-  Centrifuge([CentrifugeConfig? config]) : super(config);
+  Centrifuge([CentrifugeConfig? config])
+      : super(config ?? CentrifugeConfig.defaultConfig());
 
   /// Create client and connect.
   ///
   /// {@macro centrifuge}
   factory Centrifuge.connect(String url, [CentrifugeConfig? config]) =>
-      Centrifuge(config)..connect(url);
+      Centrifuge(config ?? CentrifugeConfig.defaultConfig())..connect(url);
 }
 
 /// {@nodoc}
 @internal
 abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
-  CentrifugeBase([CentrifugeConfig? config])
+  CentrifugeBase(CentrifugeConfig config)
       : _stateController = StreamController<CentrifugeState>.broadcast(),
         _webSocket = WebSocketClient(
-          reconnectTimeout: Duration.zero,
-          protocols: _$protocolsCentrifugeProtobuf,
+          WebSocketOptions.selector(
+            js: () => WebSocketOptions.js(
+              connectionRetryInterval: config.connectionRetryInterval,
+              protocols: _$protocolsCentrifugeProtobuf,
+            ),
+            vm: () => WebSocketOptions.vm(
+              connectionRetryInterval: config.connectionRetryInterval,
+              protocols: _$protocolsCentrifugeProtobuf,
+              headers: config.headers,
+            ),
+          ),
         ),
         _state = CentrifugeState$Disconnected(),
-        _config = config ?? CentrifugeConfig.defaultConfig() {
+        _config = config {
     _initCentrifuge();
   }
 
