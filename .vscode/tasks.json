@@ -1,0 +1,58 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dependencies",
+      "type": "shell",
+      "command": ["dart pub get"],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Centrifugo Server",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "run",
+        "-d",
+        "--rm",
+        "--ulimit nofile=65536:65536",
+        "-p 8000:8000",
+        "--name centrifugo",
+        "centrifugo/centrifugo:latest",
+        "centrifugo",
+        "--client_insecure",
+        "--admin",
+        "--admin_insecure",
+        "--log_level=debug"
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Stop Centrifugo Server",
+      "type": "shell",
+      "command": "docker",
+      "args": ["stop", "centrifugo"],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

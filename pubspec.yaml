@@ -1,0 +1,58 @@
+name: centrifuge_dart
+
+description: >
+  Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM
+  over WebSockets
+
+version: 0.0.1-pre.1
+
+homepage: https://centrifugal.dev
+
+repository: https://github.com/PlugFox/centrifuge-client
+
+issue_tracker: https://github.com/PlugFox/centrifuge-client/issues
+
+funding:
+  - https://www.buymeacoffee.com/plugfox
+  - https://www.patreon.com/plugfox
+  - https://boosty.to/plugfox
+
+topics:
+  - centrifugo
+  - centrifuge
+  - websocket
+  - cross-platform
+  - client
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
+
+#screenshots:
+#  - description: 'Example of using the ws library to connect to a Centrifugo server.'
+#    path: example.png
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  # Annotations
+  meta: ^1.9.1
+
+  # WebSockets
+  ws: ^0.1.2
+
+  # Protocol Buffers
+  protobuf: ^3.0.0
+
+  # Utilities
+  crypto: ^3.0.3
+  fixnum: ^1.1.0
+
+dev_dependencies:
+  lints: ^2.0.1
+  test: ^1.24.2
