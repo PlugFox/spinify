@@ -55,9 +55,9 @@ $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/model/protobuf/
 Connection related features
 
 - ✅ Connect to a server
-- ❌ Setting client options
+- ✅ Setting client options
 - ❌ Automatic reconnect with backoff algorithm
-- ❌ Client state changes
+- ✅ Client state changes
 - ❌ Command-reply
 - ❌ Command timeouts
 - ❌ Async pushes
