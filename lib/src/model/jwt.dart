@@ -389,6 +389,9 @@ final class _CentrifugoJWTImpl extends CentrifugoJWT {
     // Return JWT
     return '$encodedHeader.$encodedPayload.$encodedSignature';
   }
+
+  @override
+  String toString() => 'CentrifugoJWT{sub: $sub}';
 }
 
 /// A converter that converts Base64-encoded strings

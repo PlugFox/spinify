@@ -7,6 +7,7 @@ analyzer:
     # Codegen
     - "lib/**.g.dart"
     - "lib/src/model/protobuf/*"
+    - "lib/src/model/pubspec.yaml.g.dart"
     # Tests
     - "test/**.mocks.dart"
     - ".test_coverage.dart"
