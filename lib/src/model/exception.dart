@@ -41,3 +41,14 @@ final class CentrifugoConnectionException extends CentrifugoException {
           error,
         );
 }
+
+/// {@macro exception}
+final class CentrifugoDisconnectionException extends CentrifugoException {
+  /// {@macro exception}
+  const CentrifugoDisconnectionException([Object? error])
+      : super(
+          'centrifugo_disconnection_exception',
+          'Connection problem',
+          error,
+        );
+}

@@ -1,10 +1,12 @@
-name: centrifuge_dart
+name: centrifuge_dart_example_console
 
 description: >
   Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM
   over WebSockets
 
 version: 0.0.1-pre.1
+
+publish_to: 'none'
 
 homepage: https://centrifugal.dev
 
@@ -40,21 +42,5 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  # Annotations
-  meta: ^1.9.1
-
-  # WebSockets
-  ws: ^1.0.0-pre.3
-
-  # Protocol Buffers
-  protobuf: ^3.0.0
-
-  # Utilities
-  crypto: ^3.0.3
-  fixnum: ^1.1.0
-
-dev_dependencies:
-  build_runner: ^2.4.6
-  pubspec_generator: ^4.0.0
-  lints: ^2.0.1
-  test: ^1.24.2
+  centrifuge_dart:
+    path: ../../

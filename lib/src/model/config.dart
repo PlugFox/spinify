@@ -11,6 +11,11 @@ import 'package:meta/meta.dart';
 /// Centrifuge client common options.
 ///
 /// There are several common options available when creating Client instance.
+///
+/// - [connectionRetryInterval] - tweaks for reconnect backoff
+/// - [client] - the user's client name and version
+/// - [headers] - headers that are set when connecting the web socket
+/// - [timeout] - maximum time to wait for the connection to be established
 /// {@endtemplate}
 @immutable
 final class CentrifugeConfig {
@@ -18,6 +23,7 @@ final class CentrifugeConfig {
   CentrifugeConfig({
     ({Duration min, Duration max})? connectionRetryInterval,
     ({String name, String version})? client,
+    this.timeout = const Duration(seconds: 15),
     this.headers,
   })  : connectionRetryInterval = connectionRetryInterval ??
             (
@@ -58,6 +64,10 @@ final class CentrifugeConfig {
   ///
   /// Note that headers are ignored on the web platform.
   final Map<String, Object?>? headers;
+
+  /// Maximum time to wait for the connection to be established.
+  /// If not specified, the timeout will be 15 seconds.
+  final Duration timeout;
 
   @override
   String toString() => 'CentrifugeConfig{}';
