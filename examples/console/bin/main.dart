@@ -31,8 +31,7 @@ void main([List<String>? args]) => runZonedGuarded<void>(() async {
         },
       );
     }, (error, stackTrace) {
-      print('Error: $error');
-      print('Stacktrace: $stackTrace');
+      print('Critical error: $error');
       io.exit(1);
     });
 

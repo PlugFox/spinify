@@ -14,10 +14,10 @@ abstract interface class ICentrifuge {
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
 
-  // Send asynchronous message to a server. This method makes sense
-  // only when using Centrifuge library for Go on a server side. In Centrifugo
-  // asynchronous message handler does not exist.
-  //Future<void> send(List<int> data);
+  /// Send asynchronous message to a server. This method makes sense
+  /// only when using Centrifuge library for Go on a server side. In Centrifugo
+  /// asynchronous message handler does not exist.
+  /* Future<void> send(List<int> data); */
 
   /// Publish data to the channel.
   /* Future<PublishResult> publish(String channel, List<int> data); */
@@ -29,9 +29,6 @@ abstract interface class ICentrifuge {
   /// Permanent close connection to the server and
   /// free all allocated resources.
   Future<void> close();
-
-  /// Send asynchronous message to the server.
-  /* Future<void> send( data); */
 
   /// Send arbitrary RPC and wait for response.
   /* Future<void> rpc(String method, data); */

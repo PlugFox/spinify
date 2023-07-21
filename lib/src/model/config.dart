@@ -1,11 +1,23 @@
+import 'dart:async';
+
 import 'package:centrifuge_dart/src/model/pubspec.yaml.g.dart';
 import 'package:meta/meta.dart';
 
 /// Token used for authentication
-//typedef CentrifugeToken = String;
+typedef CentrifugeToken = String;
 
 /// Callback to get/refresh tokens
-//typedef CentrifugeTokenCallback = Future<CentrifugeToken> Function();
+/// This callback is used for initial connection
+/// and for refreshing expired tokens.
+///
+/// If method returns null then connection will be established without token.
+typedef CentrifugeTokenCallback = FutureOr<CentrifugeToken?> Function();
+
+/// Callback to get initial connection payload data.
+/// For example to send JWT or other auth data.
+///
+/// If method returns null then no payload will be sent at connect time.
+typedef CentrifugeConnectionPayloadCallback = FutureOr<List<int>?> Function();
 
 /// {@template centrifuge_config}
 /// Centrifuge client common options.
@@ -21,6 +33,8 @@ import 'package:meta/meta.dart';
 final class CentrifugeConfig {
   /// {@macro centrifuge_config}
   CentrifugeConfig({
+    this.getToken,
+    this.getPayload,
     ({Duration min, Duration max})? connectionRetryInterval,
     ({String name, String version})? client,
     this.timeout = const Duration(seconds: 15),
@@ -41,15 +55,19 @@ final class CentrifugeConfig {
   /// {@macro centrifuge_config}
   factory CentrifugeConfig.defaultConfig() = CentrifugeConfig;
 
-  // TODO(plugfox): Add support for the following options.
-  /// The data send for the first request
-  //final List<int>? data;
-
-  /// The initial token used for authentication
-  //CentrifugeToken token;
-
   /// Callback to get/refresh tokens
-  //final CentrifugeTokenCallback? getToken;
+  /// This callback is used for initial connection
+  /// and for refreshing expired tokens.
+  ///
+  /// If method returns null then connection will be established without token.
+  final CentrifugeTokenCallback? getToken;
+
+  /// The data send for the first request
+  /// Callback to get initial connection payload data.
+  /// For example to send JWT or other auth data.
+  ///
+  /// If method returns null then no payload will be sent at connect time.
+  final CentrifugeConnectionPayloadCallback? getPayload;
 
   /// The [connectionRetryInterval] argument is specifying the
   /// [backoff full jitter strategy](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) for reconnecting.
