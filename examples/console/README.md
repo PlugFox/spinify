@@ -18,11 +18,8 @@ Before running this example make sure you created `chat` namespace in Centrifugo
   "namespaces": [
     {
       "name": "chat",
-      "anonymous": false,
-      "publish": true,
       "join_leave": true,
       "presence": true,
-      "presence_stats": true,
       "allow_publish_for_subscriber": true,
       "allow_subscribe_for_client": true
     }
@@ -91,7 +88,7 @@ Bash:
 
 ```bash
 docker run -it --rm --volume ${PWD}/config.json:/centrifugo/config.json:ro \
-    --name centrifugo centrifugo/centrifugo:latest \
+    --name centrifugo-cli centrifugo/centrifugo:latest \
     centrifugo gensubtoken --user dart --channel chat:index
 ```
 
@@ -99,7 +96,7 @@ PowerShell:
 
 ```powershell
 docker run -it --rm --volume ${PWD}/config.json:/centrifugo/config.json:ro `
-    --name centrifugo centrifugo/centrifugo:latest `
+    --name centrifugo-cli centrifugo/centrifugo:latest `
     centrifugo gensubtoken --user dart --channel chat:index
 ```
 
@@ -110,7 +107,7 @@ You can also run the example with Docker. First, build the image:
 Bash:
 
 ```bash
-docker run -d -it --rm --ulimit nofile=65536:65536 --port 8000:8000 \
+docker run -d -it --rm --ulimit nofile=65536:65536 -p 8000:8000/tcp \
     --volume ${PWD}/config.json:/centrifugo/config.json:ro \
     --name centrifugo centrifugo/centrifugo:latest centrifugo \
     --client_insecure --admin --admin_insecure --log_level=debug
@@ -119,8 +116,16 @@ docker run -d -it --rm --ulimit nofile=65536:65536 --port 8000:8000 \
 PowerShell:
 
 ```powershell
-docker run -d -it --rm --ulimit nofile=65536:65536 --port 8000:8000 `
+docker run -d -it --rm --ulimit nofile=65536:65536 -p 8000:8000/tcp `
     --volume ${PWD}/config.json:/centrifugo/config.json:ro `
     --name centrifugo centrifugo/centrifugo:latest centrifugo `
     --client_insecure --admin --admin_insecure --log_level=debug
+```
+
+### Stop Centrifugo
+
+Bash & PowerShell:
+
+```bash
+docker stop centrifugo
 ```

@@ -44,3 +44,5 @@ environment:
 dependencies:
   centrifuge_dart:
     path: ../../
+
+  args: ^2.4.2
