@@ -44,7 +44,7 @@ dependencies:
   meta: ^1.9.1
 
   # WebSockets
-  ws: ^1.0.0-pre.3
+  ws: ^1.0.0-pre.5
 
   # Protocol Buffers
   protobuf: ^3.0.0
