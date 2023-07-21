@@ -76,3 +76,6 @@ log.pana.json
 .coverage/
 /test/**/*.json
 /test/.test_coverage.dart
+
+# Centifuge
+config.json

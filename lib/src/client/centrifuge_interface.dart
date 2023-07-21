@@ -8,9 +8,19 @@ abstract interface class ICentrifuge {
   /// Stream of client states.
   abstract final Stream<CentrifugeState> states;
 
+  /* abstract final Stream<Object> publications; */
+
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
+
+  // Send asynchronous message to a server. This method makes sense
+  // only when using Centrifuge library for Go on a server side. In Centrifugo
+  // asynchronous message handler does not exist.
+  //Future<void> send(List<int> data);
+
+  /// Publish data to the channel.
+  /* Future<PublishResult> publish(String channel, List<int> data); */
 
   /// Disconnect from the server.
   Future<void> disconnect();
