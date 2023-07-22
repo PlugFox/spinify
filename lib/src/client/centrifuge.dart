@@ -1,4 +1,3 @@
-// TODO(plugfox): extract transport from Centrifuge client.
 import 'dart:async';
 
 import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
@@ -7,13 +6,13 @@ import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/state.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
+import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
 
 /// {@template centrifuge}
 /// Centrifuge client.
 /// {@endtemplate}
-final class Centrifuge extends CentrifugeBase
-    with CentrifugePingMixin, CentrifugeConnectionMixin {
+final class Centrifuge extends CentrifugeBase with CentrifugeConnectionMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
       : super(config ?? CentrifugeConfig.defaultConfig());
@@ -30,10 +29,7 @@ final class Centrifuge extends CentrifugeBase
 abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   CentrifugeBase(CentrifugeConfig config)
-      : _transport = CentrifugeWebSocketProtobufTransport(
-          timeout: config.timeout,
-          headers: config.headers,
-        ),
+      : _transport = CentrifugeWebSocketProtobufTransport(config),
         _config = config {
     _initCentrifuge();
   }
@@ -71,16 +67,14 @@ abstract base class CentrifugeBase implements ICentrifuge {
 /// Mixin responsible for connection.
 /// {@nodoc}
 @internal
-base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugePingMixin {
+base mixin CentrifugeConnectionMixin on CentrifugeBase {
   @override
   Future<void> connect(String url) async {
+    logger.fine('Interactively connecting to $url');
     try {
-      await _transport.connect(
-        url: url,
-        client: _config.client,
-        getToken: _config.getToken,
-        getPayload: _config.getPayload,
-      );
+      await _transport.connect(url);
+    } on CentrifugeException {
+      rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
         CentrifugeConnectionException(error),
@@ -91,8 +85,11 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugePingMixin {
 
   @override
   Future<void> disconnect() async {
+    logger.fine('Interactively disconnecting');
     try {
-      await _transport.disconnect();
+      await _transport.disconnect(0, 'Disconnect called');
+    } on CentrifugeException {
+      rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
         CentrifugeDisconnectionException(error),
@@ -103,46 +100,8 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugePingMixin {
 
   @override
   Future<void> close() async {
+    logger.fine('Interactively closing');
     await super.close();
     await _transport.close();
-  }
-}
-
-/// Mixin responsible for sending ping to server.
-/// {@nodoc}
-base mixin CentrifugePingMixin on CentrifugeBase {
-  Timer? _pingTimer;
-
-  @nonVirtual
-  void _setUpPingTimer() {}
-
-  @nonVirtual
-  void _tearDownPingTimer() {
-    _pingTimer?.cancel();
-  }
-
-  /* @override
-  Future<void> send(List<int> data) async {
-    final request = pb.Message()..data = data;
-    final command = _createCommand(
-      request,
-      true,
-    );
-    await _webSocket.add(request);
-    /* try {
-      final request = protocol.Message()..data = data;
-      await _webSocket.add(data);
-    } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        CentrifugeSendException(error),
-        stackTrace,
-      );
-    } */
-  } */
-
-  @override
-  Future<void> close() async {
-    _tearDownPingTimer();
-    await super.close();
   }
 }

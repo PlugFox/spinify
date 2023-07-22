@@ -38,6 +38,7 @@ final class CentrifugeConfig {
     ({Duration min, Duration max})? connectionRetryInterval,
     ({String name, String version})? client,
     this.timeout = const Duration(seconds: 15),
+    this.serverPingDelay = const Duration(seconds: 8),
     this.headers,
   })  : connectionRetryInterval = connectionRetryInterval ??
             (
@@ -68,6 +69,20 @@ final class CentrifugeConfig {
   ///
   /// If method returns null then no payload will be sent at connect time.
   final CentrifugeConnectionPayloadCallback? getPayload;
+
+  /// The additional delay between expected server heartbeat pings.
+  ///
+  /// Centrifugo server periodically sends pings to clients and expects pong
+  /// from clients that works over bidirectional transports.
+  /// Sending ping and receiving pong allows to find broken connections faster.
+  /// Centrifugo sends pings on the Centrifugo client protocol level,
+  /// thus it's possible for clients to handle ping messages
+  /// on the client side to make sure connection is not broken.
+  ///
+  /// Centrifugo expects pong message
+  /// from bidirectional client SDK after sending ping to it.
+  /// By default, it waits no more than 8 seconds before closing a connection.
+  final Duration serverPingDelay;
 
   /// The [connectionRetryInterval] argument is specifying the
   /// [backoff full jitter strategy](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) for reconnecting.

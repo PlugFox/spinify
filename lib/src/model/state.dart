@@ -35,8 +35,11 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
 
   /// Disconnected state
   /// {@macro state}
-  factory CentrifugeState.disconnected({DateTime? timestamp}) =
-      CentrifugeState$Disconnected;
+  factory CentrifugeState.disconnected({
+    DateTime? timestamp,
+    int? closeCode,
+    String? closeReason,
+  }) = CentrifugeState$Disconnected;
 
   /// Connecting
   /// {@macro state}
@@ -58,7 +61,7 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
     String? node,
   }) = CentrifugeState$Connected;
 
-  /// Closed
+  /// Permanently closed
   /// {@macro state}
   factory CentrifugeState.closed({DateTime? timestamp}) =
       CentrifugeState$Closed;
@@ -72,6 +75,14 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
       )) {
         ('disconnected', int timestamp, _) => CentrifugeState.disconnected(
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
+            closeCode: switch (json['closeCode']) {
+              int closeCode => closeCode,
+              _ => null,
+            },
+            closeReason: switch (json['closeReason']) {
+              String closeReason => closeReason,
+              _ => null,
+            },
           ),
         ('connecting', int timestamp, String url) => CentrifugeState.connecting(
             url: url,
@@ -109,6 +120,9 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
 }
 
 /// Disconnected
+/// Client should handle disconnect advices from server.
+/// In websocket case disconnect advice is sent in CLOSE Websocket frame.
+/// Disconnect advice contains uint32 code and human-readable string reason.
 ///
 /// {@macro state}
 final class CentrifugeState$Disconnected extends CentrifugeState
@@ -116,14 +130,25 @@ final class CentrifugeState$Disconnected extends CentrifugeState
   /// Disconnected
   ///
   /// {@macro state}
-  CentrifugeState$Disconnected({DateTime? timestamp})
-      : super(timestamp ?? DateTime.now());
+  CentrifugeState$Disconnected({
+    DateTime? timestamp,
+    this.closeCode,
+    this.closeReason,
+  }) : super(timestamp ?? DateTime.now());
 
   @override
   String get type => 'disconnected';
 
   @override
   String? get url => null;
+
+  /// The close code set when the WebSocket connection is closed.
+  /// If there is no close code available this property will be null.
+  final int? closeCode;
+
+  /// The close reason set when the WebSocket connection is closed.
+  /// If there is no close reason available this property will be null.
+  final String? closeReason;
 
   @override
   bool get isDisconnected => true;
@@ -145,6 +170,13 @@ final class CentrifugeState$Disconnected extends CentrifugeState
     required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
   }) =>
       disconnected(this);
+
+  @override
+  Map<String, Object?> toJson() => {
+        ...super.toJson(),
+        if (closeCode != null) 'closeCode': closeCode,
+        if (closeReason != null) 'closeReason': closeReason,
+      };
 
   @override
   int get hashCode => 0;
@@ -311,12 +343,12 @@ final class CentrifugeState$Connected extends CentrifugeState
   String toString() => 'CentrifugeState.connected{$timestamp}';
 }
 
-/// Closed
+/// Permanently closed
 ///
 /// {@macro state}
 final class CentrifugeState$Closed extends CentrifugeState
     with _$CentrifugeState {
-  /// Closed
+  /// Permanently closed
   ///
   /// {@macro state}
   CentrifugeState$Closed({DateTime? timestamp})

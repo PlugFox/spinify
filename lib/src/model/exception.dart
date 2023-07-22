@@ -71,3 +71,14 @@ final class CentrifugeReplyException extends CentrifugeException {
   /// Is reply error final.
   final bool temporary;
 }
+
+/// {@macro exception}
+final class CentrifugePingException extends CentrifugeException {
+  /// {@macro exception}
+  const CentrifugePingException([Object? error])
+      : super(
+          'centrifuge_ping_exception',
+          'Ping error',
+          error,
+        );
+}
