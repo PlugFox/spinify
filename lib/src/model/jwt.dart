@@ -19,11 +19,11 @@ import 'package:meta/meta.dart';
 /// https://centrifugal.dev/docs/server/authentication#connection-jwt-claims
 /// {@endtemplate}
 @immutable
-sealed class CentrifugoJWT {
+sealed class CentrifugeJWT {
   /// {@macro jwt}
   ///
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
-  const factory CentrifugoJWT({
+  const factory CentrifugeJWT({
     required String sub,
     int? exp,
     int? iat,
@@ -36,17 +36,17 @@ sealed class CentrifugoJWT {
     Map<String, Object?>? subs,
     Map<String, Object?>? meta,
     int? expireAt,
-  }) = _CentrifugoJWTImpl;
+  }) = _CentrifugeJWTImpl;
 
   /// {@macro jwt}
   ///
   /// Parses JWT, if [secret] is provided
   /// then checks signature by HMAC-SHA256 algorithm.
-  factory CentrifugoJWT.decode(String jwt, [String? secret]) =
-      _CentrifugoJWTImpl.decode;
+  factory CentrifugeJWT.decode(String jwt, [String? secret]) =
+      _CentrifugeJWTImpl.decode;
 
   /// {@nodoc}
-  const CentrifugoJWT._();
+  const CentrifugeJWT._();
 
   /// This is a standard JWT claim which must contain
   /// an ID of the current application user (as string).
@@ -232,8 +232,8 @@ sealed class CentrifugoJWT {
   String encode(String secret);
 }
 
-final class _CentrifugoJWTImpl extends CentrifugoJWT {
-  const _CentrifugoJWTImpl({
+final class _CentrifugeJWTImpl extends CentrifugeJWT {
+  const _CentrifugeJWTImpl({
     required this.sub,
     this.exp,
     this.iat,
@@ -248,7 +248,7 @@ final class _CentrifugoJWTImpl extends CentrifugoJWT {
     this.expireAt,
   }) : super._();
 
-  factory _CentrifugoJWTImpl.decode(String jwt, [String? secret]) {
+  factory _CentrifugeJWTImpl.decode(String jwt, [String? secret]) {
     // Разделение токена на составляющие части
     var parts = jwt.split('.');
     if (parts.length != 3) {
@@ -285,7 +285,7 @@ final class _CentrifugoJWTImpl extends CentrifugoJWT {
           const FormatException('Can\'t decode token payload'), stackTrace);
     }
     try {
-      return _CentrifugoJWTImpl(
+      return _CentrifugeJWTImpl(
         sub: payload['sub'] as String,
         exp: payload['exp'] as int?,
         iat: payload['iat'] as int?,

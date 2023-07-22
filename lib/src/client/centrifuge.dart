@@ -4,19 +4,16 @@ import 'dart:async';
 import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
 import 'package:centrifuge_dart/src/model/config.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
-import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
 import 'package:centrifuge_dart/src/model/state.dart';
+import 'package:centrifuge_dart/src/transport/transport_interface.dart';
+import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
 import 'package:meta/meta.dart';
-import 'package:ws/ws.dart';
 
 /// {@template centrifuge}
 /// Centrifuge client.
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase
-    with
-        CentrifugePingMixin,
-        CentrifugeConnectionMixin,
-        CentrifugeHandlerMixin {
+    with CentrifugePingMixin, CentrifugeConnectionMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
       : super(config ?? CentrifugeConfig.defaultConfig());
@@ -25,7 +22,7 @@ final class Centrifuge extends CentrifugeBase
   ///
   /// {@macro centrifuge}
   factory Centrifuge.connect(String url, [CentrifugeConfig? config]) =>
-      Centrifuge(config ?? CentrifugeConfig.defaultConfig())..connect(url);
+      Centrifuge(config)..connect(url);
 }
 
 /// {@nodoc}
@@ -33,55 +30,26 @@ final class Centrifuge extends CentrifugeBase
 abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   CentrifugeBase(CentrifugeConfig config)
-      : _stateController = StreamController<CentrifugeState>.broadcast(),
-        _webSocket = WebSocketClient(
-          WebSocketOptions.selector(
-            js: () => WebSocketOptions.js(
-              connectionRetryInterval: config.connectionRetryInterval,
-              protocols: _$protocolsCentrifugeProtobuf,
-              timeout: config.timeout,
-              useBlobForBinary: false,
-            ),
-            vm: () => WebSocketOptions.vm(
-              connectionRetryInterval: config.connectionRetryInterval,
-              protocols: _$protocolsCentrifugeProtobuf,
-              timeout: config.timeout,
-              headers: config.headers,
-            ),
-          ),
+      : _transport = CentrifugeWebSocketProtobufTransport(
+          timeout: config.timeout,
+          headers: config.headers,
         ),
-        _state = CentrifugeState$Disconnected(),
         _config = config {
     _initCentrifuge();
   }
 
-  /// Protocols for websocket.
-  /// {@nodoc}
-  static const List<String> _$protocolsCentrifugeProtobuf = <String>[
-    'centrifuge-protobuf'
-  ];
-
-  /// State controller.
+  /// Internal transport responsible
+  /// for sending, receiving, encoding and decoding data from the server.
   /// {@nodoc}
   @nonVirtual
-  final StreamController<CentrifugeState> _stateController;
-
-  /// Websocket client.
-  /// {@nodoc}
-  @nonVirtual
-  final WebSocketClient _webSocket;
+  final ICentrifugeTransport _transport;
 
   @override
   @nonVirtual
-  CentrifugeState get state => _state;
-
-  /// Current state of client.
-  /// {@nodoc}
-  @nonVirtual
-  CentrifugeState _state;
+  CentrifugeState get state => _transport.state;
 
   @override
-  late Stream<CentrifugeState> states = _stateController.stream;
+  Stream<CentrifugeState> get states => _transport.states;
 
   /// Centrifuge config.
   /// {@nodoc}
@@ -104,67 +72,18 @@ abstract base class CentrifugeBase implements ICentrifuge {
 /// {@nodoc}
 @internal
 base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugePingMixin {
-  StreamSubscription<WebSocketClientState>? _webSocketStateSubscription;
-
-  /// {@nodoc}
-  @protected
-  @nonVirtual
-  void _setState(CentrifugeState state) {
-    if (_state.type == state.type) return;
-    _stateController.add(_state = state);
-  }
-
-  @override
-  void _initCentrifuge() {
-    // Listen to websocket state changes and update current client state.
-    _webSocketStateSubscription = _webSocket.stateChanges.listen(
-      (state) {
-        switch (state) {
-          case WebSocketClientState$Connecting state:
-            _setState(CentrifugeState$Connecting(url: state.url));
-          case WebSocketClientState$Open _:
-            _setState(CentrifugeState$Connected(url: state.url));
-            _setUpPingTimer();
-          case WebSocketClientState$Disconnecting _:
-          case WebSocketClientState$Closed _:
-            _tearDownPingTimer();
-            _setState(CentrifugeState$Disconnected());
-        }
-      },
-      cancelOnError: false,
-    );
-    super._initCentrifuge();
-  }
-
   @override
   Future<void> connect(String url) async {
-    _setState(CentrifugeState$Connecting(url: url));
     try {
-      await _webSocket.connect(url);
-    } on Object catch (error, stackTrace) {
-      _webSocket.disconnect().ignore();
-      Error.throwWithStackTrace(
-        CentrifugoConnectionException(error),
-        stackTrace,
+      await _transport.connect(
+        url: url,
+        client: _config.client,
+        getToken: _config.getToken,
+        getPayload: _config.getPayload,
       );
-    }
-    pb.ConnectRequest request;
-    try {
-      request = pb.ConnectRequest();
-      final token = await _config.getToken?.call();
-      assert(token == null || token.length > 5, 'Centrifuge JWT is too short');
-      if (token != null) request.token = token;
-      final payload = await _config.getPayload?.call();
-      if (payload != null) request.data = payload;
-      request
-        ..name = _config.client.name
-        ..version = _config.client.version;
-      // TODO(plugfox): add subscriptions.
-
-      // TODO(plugfox): Send request.
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
-        CentrifugoConnectionException(error),
+        CentrifugeConnectionException(error),
         stackTrace,
       );
     }
@@ -173,10 +92,10 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugePingMixin {
   @override
   Future<void> disconnect() async {
     try {
-      await _webSocket.disconnect();
+      await _transport.disconnect();
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
-        CentrifugoDisconnectionException(error),
+        CentrifugeDisconnectionException(error),
         stackTrace,
       );
     }
@@ -185,37 +104,7 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugePingMixin {
   @override
   Future<void> close() async {
     await super.close();
-    await _webSocket.close();
-    _webSocketStateSubscription?.cancel().ignore();
-  }
-}
-
-/// Mixin responsible for responses/push/results from server.
-/// {@nodoc}
-@internal
-base mixin CentrifugeHandlerMixin on CentrifugeBase {
-  StreamSubscription<Object>? _webSocketDataSubscription;
-  @override
-  void _initCentrifuge() {
-    // Listen to websocket data and handle it.
-    _webSocketDataSubscription =
-        _webSocket.stream.listen(_handleMessage, cancelOnError: false);
-    super._initCentrifuge();
-  }
-
-  @override
-  Future<void> close() async {
-    await super.close();
-    _webSocketDataSubscription?.cancel().ignore();
-  }
-
-  /// {@nodoc}
-  @protected
-  @nonVirtual
-  @pragma('vm:prefer-inline')
-  @pragma('dart2js:tryInline')
-  void _handleMessage(Object response) {
-    print('Received data: $response');
+    await _transport.close();
   }
 }
 
@@ -245,15 +134,15 @@ base mixin CentrifugePingMixin on CentrifugeBase {
       await _webSocket.add(data);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
-        CentrifugoSendException(error),
+        CentrifugeSendException(error),
         stackTrace,
       );
     } */
   } */
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _tearDownPingTimer();
-    return super.close();
+    await super.close();
   }
 }

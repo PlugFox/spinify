@@ -45,8 +45,18 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
 
   /// Connected
   /// {@macro state}
-  factory CentrifugeState.connected(
-      {required String url, DateTime? timestamp}) = CentrifugeState$Connected;
+  factory CentrifugeState.connected({
+    required String url,
+    DateTime? timestamp,
+    String? client,
+    String? version,
+    bool? expires,
+    DateTime? ttl,
+    Duration? pingInterval,
+    bool? sendPong,
+    String? session,
+    String? node,
+  }) = CentrifugeState$Connected;
 
   /// Closed
   /// {@macro state}
@@ -70,6 +80,26 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
         ('connected', int timestamp, String url) => CentrifugeState.connected(
             url: url,
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
+            client: json['client']?.toString(),
+            version: json['version']?.toString(),
+            expires: switch (json['expires']) {
+              bool expires => expires,
+              _ => null,
+            },
+            ttl: switch (json['ttl']) {
+              int ttl => DateTime.fromMicrosecondsSinceEpoch(ttl),
+              _ => null,
+            },
+            pingInterval: switch (json['pingInterval']) {
+              int pingInterval => Duration(seconds: pingInterval),
+              _ => null,
+            },
+            sendPong: switch (json['sendPong']) {
+              bool sendPong => sendPong,
+              _ => null,
+            },
+            session: json['session']?.toString(),
+            node: json['node']?.toString(),
           ),
         ('closed', int timestamp, _) => CentrifugeState.closed(
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
@@ -188,14 +218,51 @@ final class CentrifugeState$Connected extends CentrifugeState
   /// Connected
   ///
   /// {@macro state}
-  CentrifugeState$Connected({required this.url, DateTime? timestamp})
-      : super(timestamp ?? DateTime.now());
+  CentrifugeState$Connected({
+    required this.url,
+    DateTime? timestamp,
+    this.client,
+    this.version,
+    this.ttl,
+    this.expires,
+    this.pingInterval,
+    this.sendPong,
+    this.session,
+    this.node,
+  }) : super(timestamp ?? DateTime.now());
 
   @override
   String get type => 'connected';
 
   @override
   final String url;
+
+  /// Unique client connection ID server issued to this connection
+  final String? client;
+
+  /// Server version
+  final String? version;
+
+  /// Whether a server will expire connection at some point
+  final bool? expires;
+
+  /// Time when connection will be expired
+  final DateTime? ttl;
+
+  /// Client must periodically (once in 25 secs, configurable) send
+  /// ping messages to server. If pong has not beed received in 5 secs
+  /// (configurable) then client must disconnect from server
+  /// and try to reconnect with backoff strategy.
+  final Duration? pingInterval;
+
+  /// Whether to send asynchronous message when pong received.
+  final bool? sendPong;
+
+  /// Session ID.
+  final String? session;
+
+  /// Server node ID.
+  final String? node;
 
   @override
   bool get isDisconnected => false;
@@ -217,6 +284,19 @@ final class CentrifugeState$Connected extends CentrifugeState
     required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
   }) =>
       connected(this);
+
+  @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        ...super.toJson(),
+        if (client != null) 'client': client,
+        if (version != null) 'version': version,
+        if (expires != null) 'expires': expires,
+        if (ttl != null) 'ttl': ttl?.microsecondsSinceEpoch,
+        if (pingInterval != null) 'pingInterval': pingInterval?.inSeconds,
+        if (sendPong != null) 'sendPong': sendPong,
+        if (session != null) 'session': session,
+        if (node != null) 'node': node,
+      };
 
   @override
   int get hashCode => 2;

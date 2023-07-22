@@ -15,7 +15,7 @@ abstract interface class ICentrifuge {
   Future<void> connect(String url);
 
   /// Send asynchronous message to a server. This method makes sense
-  /// only when using Centrifuge library for Go on a server side. In Centrifugo
+  /// only when using Centrifuge library for Go on a server side. In Centrifuge
   /// asynchronous message handler does not exist.
   /* Future<void> send(List<int> data); */
 

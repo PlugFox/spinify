@@ -1,12 +1,12 @@
 import 'package:meta/meta.dart';
 
 /// {@template exception}
-/// Centrifugo exception.
+/// Centrifuge exception.
 /// {@endtemplate}
 @immutable
-sealed class CentrifugoException {
+sealed class CentrifugeException implements Exception {
   /// {@macro exception}
-  const CentrifugoException(
+  const CentrifugeException(
     this.code,
     this.message, [
     this.error,
@@ -28,27 +28,46 @@ sealed class CentrifugoException {
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'CentrifugoException{code: $code}';
+  String toString() => message;
 }
 
 /// {@macro exception}
-final class CentrifugoConnectionException extends CentrifugoException {
+final class CentrifugeConnectionException extends CentrifugeException {
   /// {@macro exception}
-  const CentrifugoConnectionException([Object? error])
+  const CentrifugeConnectionException([Object? error])
       : super(
-          'centrifugo_connection_exception',
+          'centrifuge_connection_exception',
           'Connection problem',
           error,
         );
 }
 
 /// {@macro exception}
-final class CentrifugoDisconnectionException extends CentrifugoException {
+final class CentrifugeDisconnectionException extends CentrifugeException {
   /// {@macro exception}
-  const CentrifugoDisconnectionException([Object? error])
+  const CentrifugeDisconnectionException([Object? error])
       : super(
-          'centrifugo_disconnection_exception',
+          'centrifuge_disconnection_exception',
           'Connection problem',
           error,
         );
+}
+
+/// {@macro exception}
+final class CentrifugeReplyException extends CentrifugeException {
+  /// {@macro exception}
+  const CentrifugeReplyException({
+    required this.replyCode,
+    required String replyMessage,
+    required this.temporary,
+  }) : super(
+          'centrifuge_reply_exception',
+          replyMessage,
+        );
+
+  /// Reply code.
+  final int replyCode;
+
+  /// Is reply error final.
+  final bool temporary;
 }
