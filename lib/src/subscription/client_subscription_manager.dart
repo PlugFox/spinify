@@ -9,6 +9,7 @@ import 'package:meta/meta.dart';
 
 /// Entry of channel subscriptions registry.
 /// {@nodoc}
+@internal
 typedef ClientSubscriptionRegistryEntry = ({
   CentrifugeClientSubscription subscription,
   ClientSubscriptionController controller
