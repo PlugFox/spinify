@@ -37,7 +37,7 @@ void main([List<String>? args]) {
       // e.g. `client.states.connected`
       client.states.listen((state) => print('State changed to: $state'));
 
-      // Handle all centrifuge errors.
+      // Handle all centrifuge exceptions.
       client.errors.listen(
         (error) => print(
           'Exception: ${error.exception}, '

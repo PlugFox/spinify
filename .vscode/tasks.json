@@ -107,7 +107,7 @@
         "centrifugo",
         "gentoken",
         "--user=dart",
-        "--ttl=604800000" // 604800
+        "--ttl=604800"
       ],
       "group": {
         "kind": "none",

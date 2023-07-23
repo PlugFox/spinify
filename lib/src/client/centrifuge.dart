@@ -9,6 +9,7 @@ import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
+import 'package:stack_trace/stack_trace.dart' as st;
 
 /// {@template centrifuge}
 /// Centrifuge client.
@@ -74,7 +75,12 @@ base mixin CentrifugeErrorsMixin on CentrifugeBase {
   @protected
   @nonVirtual
   void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
-      _errorsController.add((exception: exception, stackTrace: stackTrace));
+      _errorsController.add(
+        (
+          exception: exception,
+          stackTrace: st.Trace.from(stackTrace).terse,
+        ),
+      );
 
   late final StreamController<
           ({CentrifugeException exception, StackTrace stackTrace})>
