@@ -200,15 +200,15 @@ base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
 @internal
 base mixin CentrifugeClientSubscriptionMixin
     on CentrifugeBase, CentrifugeErrorsMixin {
-  static final ClientSubscriptionManager _clientSubscriptionManager =
-      ClientSubscriptionManager();
+  late final ClientSubscriptionManager _clientSubscriptionManager =
+      ClientSubscriptionManager(this);
 
   @override
   CentrifugeClientSubscription newSubscription(
     String channel, [
     CentrifugeSubscriptionConfig? config,
   ]) =>
-      _clientSubscriptionManager.newSubscription(channel, config, this);
+      _clientSubscriptionManager.newSubscription(channel, config);
 
   @override
   Map<String, CentrifugeClientSubscription> get subscriptions =>
@@ -241,12 +241,12 @@ base mixin CentrifugeClientSubscriptionMixin
   @override
   void _onDisconnect() {
     super._onDisconnect();
-    _clientSubscriptionManager.disconnectAllFor(this).ignore();
+    _clientSubscriptionManager.disconnectAll();
   }
 
   @override
   Future<void> close() async {
     await super.close();
-    _clientSubscriptionManager.removeAllFor(this).ignore();
+    _clientSubscriptionManager.removeAll();
   }
 }

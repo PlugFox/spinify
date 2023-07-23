@@ -19,10 +19,12 @@ typedef ClientSubscriptionRegistryEntry = ({
 @internal
 final class ClientSubscriptionManager {
   /// {@nodoc}
-  factory ClientSubscriptionManager() => _internalSingleton;
-  ClientSubscriptionManager._internal();
-  static final ClientSubscriptionManager _internalSingleton =
-      ClientSubscriptionManager._internal();
+  ClientSubscriptionManager(ICentrifuge client)
+      : _client = WeakReference<ICentrifuge>(client);
+
+  /// Centrifuge client weak reference.
+  /// {@nodoc}
+  final WeakReference<ICentrifuge> _client;
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : CentrifugeClientSubscription
@@ -38,7 +40,6 @@ final class ClientSubscriptionManager {
   CentrifugeClientSubscription newSubscription(
     String channel,
     CentrifugeSubscriptionConfig? config,
-    ICentrifuge client,
   ) {
     if (_channelSubscriptions.containsKey(channel)) {
       throw CentrifugeSubscriptionException(
@@ -49,7 +50,7 @@ final class ClientSubscriptionManager {
     }
     final controller = ClientSubscriptionController(
       config: config ?? const CentrifugeSubscriptionConfig.byDefault(),
-      client: WeakReference<ICentrifuge>(client),
+      client: _client,
     );
     final subscription = CentrifugeClientSubscriptionImpl(
       channel: channel,
@@ -105,40 +106,27 @@ final class ClientSubscriptionManager {
   /// Disconnect all subscriptions for the specific client
   /// from internal registry.
   /// {@nodoc}
-  Future<void> disconnectAllFor(ICentrifuge client) {
-    final toDisconnect = <CentrifugeClientSubscription>[];
-    for (final value in _channelSubscriptions.values) {
-      if (!identical(value.controller.client.target, client) &&
-          value.controller.client.target != null) continue;
-      toDisconnect.add(value.subscription);
-    }
-    for (final subscription in toDisconnect) {
+  void disconnectAll() {
+    for (final entry in _channelSubscriptions.values) {
       try {
         // TODO(plugfox): moveToSubscribing if subscribed now
       } on Object {
         /* ignore */
       }
     }
-    return Future<void>.value();
   }
 
   /// Remove all subscriptions for the specific client from internal registry.
   /// {@nodoc}
-  Future<void> removeAllFor(ICentrifuge client) async {
-    final toRemove = <CentrifugeClientSubscription>[];
-    for (final value in _channelSubscriptions.values) {
-      if (!identical(value.controller.client.target, client) &&
-          value.controller.client.target != null) continue;
-      toRemove.add(value.subscription);
-    }
-    for (final subscription in toRemove) {
+  void removeAll() {
+    for (final entry in _channelSubscriptions.values) {
       try {
         // TODO(plugfox): moveToSubscribing if subscribed now
-        _channelSubscriptions.remove(subscription.channel);
       } on Object {
         /* ignore */
       }
     }
+    _channelSubscriptions.clear();
   }
 
   /// Get subscription to the channel
