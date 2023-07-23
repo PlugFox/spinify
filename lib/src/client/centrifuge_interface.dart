@@ -1,27 +1,26 @@
 // ignore_for_file: one_member_abstracts
 
+import 'dart:async';
+
 import 'package:centrifuge_dart/centrifuge.dart';
 
 /// Centrifuge client interface.
 abstract interface class ICentrifuge
-    implements ICentrifugeStateOwner, ICentrifugeClientSubscriptionsManager {
+    implements
+        ICentrifugeStateOwner,
+        ICentrifugeAsyncMessageSender,
+        ICentrifugeClientSubscriptionsManager {
   /// Stream of errors.
   abstract final Stream<
       ({CentrifugeException exception, StackTrace stackTrace})> errors;
-
-  /* abstract final Stream<Object> publications; */
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
 
-  /// Send asynchronous message to a server. This method makes sense
-  /// only when using Centrifuge library for Go on a server side. In Centrifuge
-  /// asynchronous message handler does not exist.
-  /* Future<void> send(List<int> data); */
-
-  /// Publish data to the channel.
-  /* Future<PublishResult> publish(String channel, List<int> data); */
+  /// Ready resolves when client successfully connected.
+  /// Throws exceptions if called not in connecting or connected state.
+  FutureOr<void> ready();
 
   /// Disconnect from the server.
   Future<void> disconnect();
@@ -33,6 +32,21 @@ abstract interface class ICentrifuge
 
   /// Send arbitrary RPC and wait for response.
   /* Future<void> rpc(String method, data); */
+
+  /// Publish data to the channel.
+  /* Future<PublishResult> publish(String channel, List<int> data); */
+
+  /* abstract final Stream<Object> publications; */
+
+  /// Send History command.
+  /* Future<HistoryResult> history(String channel,
+      {int limit = 0, StreamPosition? since, bool reverse = false}); */
+
+  /// Send Presence command.
+  /* Future<PresenceResult> presence(String channel); */
+
+  /// Send PresenceStats command.
+  /* Future<PresenceStatsResult> presenceStats(String channel); */
 }
 
 /// Centrifuge client state owner interface.
@@ -42,6 +56,14 @@ abstract interface class ICentrifugeStateOwner {
 
   /// Stream of client states.
   abstract final CentrifugeStatesStream states;
+}
+
+/// Centrifuge send asynchronous message interface.
+abstract interface class ICentrifugeAsyncMessageSender {
+  /// Send asynchronous message to a server. This method makes sense
+  /// only when using Centrifuge library for Go on a server side. In Centrifuge
+  /// asynchronous message handler does not exist.
+  Future<void> send(List<int> data);
 }
 
 /// Centrifuge client subscriptions manager interface.

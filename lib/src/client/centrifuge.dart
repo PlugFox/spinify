@@ -21,6 +21,7 @@ final class Centrifuge extends CentrifugeBase
     with
         CentrifugeErrorsMixin,
         CentrifugeConnectionMixin,
+        CentrifugeSendMixin,
         CentrifugeClientSubscriptionMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
@@ -135,6 +136,24 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
   }
 
   @override
+  FutureOr<void> ready() async {
+    switch (state) {
+      case CentrifugeState$Disconnected _:
+        throw const CentrifugeDisconnectionException(
+          message: 'Client is not connected',
+        );
+      case CentrifugeState$Closed _:
+        throw const CentrifugeDisconnectionException(
+          message: 'Client is permanently closed',
+        );
+      case CentrifugeState$Connected _:
+        return;
+      case CentrifugeState$Connecting _:
+        await states.connected.first.timeout(_config.timeout);
+    }
+  }
+
+  @override
   Future<void> disconnect() async {
     logger.fine('Interactively disconnecting');
     try {
@@ -157,8 +176,28 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
   }
 }
 
+/// Mixin responsible for sending asynchronous messages.
+/// {@nodoc}
+@internal
+base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
+  @override
+  Future<void> send(List<int> data) async {
+    try {
+      await ready();
+      await _transport.sendAsyncMessage(data);
+    } on CentrifugeException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSendException(error: error);
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+}
+
 /// Mixin responsible for client-side subscriptions.
 /// {@nodoc}
+@internal
 base mixin CentrifugeClientSubscriptionMixin
     on CentrifugeBase, CentrifugeErrorsMixin {
   static final ClientSubscriptionManager _clientSubscriptionManager =

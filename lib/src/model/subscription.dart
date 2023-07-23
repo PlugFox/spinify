@@ -1,3 +1,4 @@
+import 'package:centrifuge_dart/src/subscription/client_subscription_controller.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
@@ -62,7 +63,7 @@ abstract interface class ICentrifugeSubscription {
 ///
 /// {@endtemplate}
 @immutable
-final class CentrifugeClientSubscription implements ICentrifugeSubscription {
+sealed class CentrifugeClientSubscription implements ICentrifugeSubscription {
   /// {@macro client_subscription}
   const CentrifugeClientSubscription({required this.channel});
 
@@ -114,4 +115,20 @@ final class CentrifugeServerSubscription implements ICentrifugeSubscription {
 
   @override
   String toString() => 'CentrifugeServerSubscription{channel: $channel}';
+}
+
+/// {@nodoc}
+@internal
+final class CentrifugeClientSubscriptionImpl
+    extends CentrifugeClientSubscription {
+  /// {@nodoc}
+  const CentrifugeClientSubscriptionImpl({
+    required super.channel,
+    required ClientSubscriptionController controller,
+  }) : _controller = controller;
+
+  /// Controller responsible for managing current subscription.
+  /// Sort of Active Record pattern for subscriptions.
+  /// {@nodoc}
+  final ClientSubscriptionController _controller;
 }

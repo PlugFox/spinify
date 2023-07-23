@@ -50,6 +50,7 @@ class CentrifugeSubscriptionConfig {
   /// Create a default config
   ///
   /// {@macro subscription_config}
+  @literal
   const factory CentrifugeSubscriptionConfig.byDefault() =
       CentrifugeSubscriptionConfig;
 

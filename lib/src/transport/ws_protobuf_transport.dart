@@ -236,6 +236,10 @@ base mixin CentrifugeWebSocketProtobufSenderMixin
     }
   }
 
+  @override
+  Future<void> sendAsyncMessage(List<int> data) =>
+      _sendAsyncMessage(pb.Message()..data = data);
+
   /// {@nodoc}
   @nonVirtual
   @protected

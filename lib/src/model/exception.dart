@@ -46,10 +46,10 @@ final class CentrifugeConnectionException extends CentrifugeException {
 /// {@macro exception}
 final class CentrifugeDisconnectionException extends CentrifugeException {
   /// {@macro exception}
-  const CentrifugeDisconnectionException([Object? error])
+  const CentrifugeDisconnectionException({String? message, Object? error})
       : super(
           'centrifuge_disconnection_exception',
-          'Connection problem',
+          message ?? 'Connection problem',
           error,
         );
 }
@@ -99,4 +99,17 @@ final class CentrifugeSubscriptionException extends CentrifugeException {
 
   /// Subscription
   final ICentrifugeSubscription subscription;
+}
+
+/// {@macro exception}
+final class CentrifugeSendException extends CentrifugeException {
+  /// {@macro exception}
+  const CentrifugeSendException({
+    String? message,
+    Object? error,
+  }) : super(
+          'centrifuge_send_exception',
+          message ?? 'Failed to send message',
+          error,
+        );
 }

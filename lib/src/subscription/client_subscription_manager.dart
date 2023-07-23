@@ -4,17 +4,17 @@ import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/subscription.dart';
 import 'package:centrifuge_dart/src/model/subscription_config.dart';
+import 'package:centrifuge_dart/src/subscription/client_subscription_controller.dart';
 import 'package:meta/meta.dart';
 
-/// Entry of subscriptions registry.
+/// Entry of channel subscriptions registry.
 /// {@nodoc}
-typedef ClientSubscriptionEntry = ({
+typedef ClientSubscriptionRegistryEntry = ({
   CentrifugeClientSubscription subscription,
-  CentrifugeSubscriptionConfig config,
-  WeakReference<ICentrifuge> client
+  ClientSubscriptionController controller
 });
 
-/// Responsible for managing subscriptions.
+/// Responsible for managing client-side subscriptions.
 /// {@nodoc}
 @internal
 final class ClientSubscriptionManager {
@@ -24,10 +24,11 @@ final class ClientSubscriptionManager {
   static final ClientSubscriptionManager _internalSingleton =
       ClientSubscriptionManager._internal();
 
-  /// Subscriptions registry.
-  /// Channel : Subscription entry.
+  /// Subscriptions registry (channel -> subscription).
+  /// Channel : CentrifugeClientSubscription
   /// {@nodoc}
-  final _subscriptions = <String, ClientSubscriptionEntry>{};
+  final Map<String, ClientSubscriptionRegistryEntry> _channelSubscriptions =
+      <String, ClientSubscriptionRegistryEntry>{};
 
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
@@ -39,19 +40,23 @@ final class ClientSubscriptionManager {
     CentrifugeSubscriptionConfig? config,
     ICentrifuge client,
   ) {
-    if (_subscriptions.containsKey(channel)) {
+    if (_channelSubscriptions.containsKey(channel)) {
       throw CentrifugeSubscriptionException(
-        subscription: _subscriptions[channel]!.subscription,
+        subscription: _channelSubscriptions[channel]!.subscription,
         message: 'Subscription to a channel "$channel" already exists '
             'in client\'s internal registry',
       );
     }
-    final subscription = CentrifugeClientSubscription(channel: channel);
-    _subscriptions[channel] = (
-      subscription: subscription,
+    final controller = ClientSubscriptionController(
       config: config ?? const CentrifugeSubscriptionConfig.byDefault(),
       client: WeakReference<ICentrifuge>(client),
     );
+    final subscription = CentrifugeClientSubscriptionImpl(
+      channel: channel,
+      controller: controller,
+    );
+    _channelSubscriptions[channel] =
+        (subscription: subscription, controller: controller);
     return subscription;
   }
 
@@ -62,7 +67,7 @@ final class ClientSubscriptionManager {
   /// {@nodoc}
   Map<String, CentrifugeClientSubscription> get subscriptions =>
       UnmodifiableMapView<String, CentrifugeClientSubscription>({
-        for (final entry in _subscriptions.entries)
+        for (final entry in _channelSubscriptions.entries)
           entry.key: entry.value.subscription,
       });
 
@@ -72,7 +77,7 @@ final class ClientSubscriptionManager {
   Future<void> removeSubscription(
     CentrifugeClientSubscription subscription,
   ) async {
-    final subFromRegistry = _subscriptions[subscription.channel]?.subscription;
+    final subFromRegistry = _channelSubscriptions[subscription.channel];
     try {
       // TODO(plugfox): implement
       //subscription.unsubscribe();
@@ -94,7 +99,7 @@ final class ClientSubscriptionManager {
         stackTrace,
       );
     }
-    _subscriptions.remove(subscription.channel);
+    _channelSubscriptions.remove(subscription.channel);
   }
 
   /// Disconnect all subscriptions for the specific client
@@ -102,9 +107,9 @@ final class ClientSubscriptionManager {
   /// {@nodoc}
   Future<void> disconnectAllFor(ICentrifuge client) {
     final toDisconnect = <CentrifugeClientSubscription>[];
-    for (final value in _subscriptions.values) {
-      if (!identical(value.client.target, client) &&
-          value.client.target != null) continue;
+    for (final value in _channelSubscriptions.values) {
+      if (!identical(value.controller.client.target, client) &&
+          value.controller.client.target != null) continue;
       toDisconnect.add(value.subscription);
     }
     for (final subscription in toDisconnect) {
@@ -121,15 +126,15 @@ final class ClientSubscriptionManager {
   /// {@nodoc}
   Future<void> removeAllFor(ICentrifuge client) async {
     final toRemove = <CentrifugeClientSubscription>[];
-    for (final value in _subscriptions.values) {
-      if (!identical(value.client.target, client) &&
-          value.client.target != null) continue;
+    for (final value in _channelSubscriptions.values) {
+      if (!identical(value.controller.client.target, client) &&
+          value.controller.client.target != null) continue;
       toRemove.add(value.subscription);
     }
     for (final subscription in toRemove) {
       try {
         // TODO(plugfox): moveToSubscribing if subscribed now
-        _subscriptions.remove(subscription.channel);
+        _channelSubscriptions.remove(subscription.channel);
       } on Object {
         /* ignore */
       }
@@ -143,5 +148,5 @@ final class ClientSubscriptionManager {
   /// to start receiving events
   /// {@nodoc}
   CentrifugeClientSubscription? operator [](String channel) =>
-      _subscriptions[channel]?.subscription;
+      _channelSubscriptions[channel]?.subscription;
 }
