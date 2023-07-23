@@ -6,22 +6,44 @@ import 'dart:io' as io show exit, Platform;
 import 'package:args/args.dart' show ArgParser;
 import 'package:centrifuge_dart/centrifuge.dart';
 
+const url = 'ws://localhost:8000/connection/websocket?format=protobuf';
+
 void main([List<String>? args]) {
   final options = _extractOptions(args ?? const <String>[]);
   runZonedGuarded<void>(
     () async {
+      // Create centrifuge client.
       final client = Centrifuge(
         CentrifugeConfig(
           client: (
             name: 'Centrifuge Console Example',
             version: '0.0.1',
           ),
+          getToken: () =>
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYXJ0IiwiZXhwIj'
+              'oyMjk0OTE1MTMyLCJpYXQiOjE2OTAxMTUxMzJ9.hIGDXKn-eMdsdj57wn6-4y5p'
+              'k0tZcKoJCu0qxuuWSoQ',
         ),
       );
-      await client
-          .connect('ws://localhost:8000/connection/websocket?format=protobuf');
 
-      await Future<void>.delayed(const Duration(seconds: 3));
+      // Connect to centrifuge server using provided URL.
+      await client.connect(url);
+
+      // Output current client state.
+      print('Current state after connect: ${client.state}');
+
+      // State changes.
+      // Or you can observe specific state changes.
+      // e.g. `client.states.connected`
+      client.states.listen((state) => print('State changed to: $state'));
+
+      // Handle all centrifuge errors.
+      client.errors.listen(
+        (error) => print(
+          'Exception: ${error.exception}, '
+          'Stack trace: ${error.stackTrace}',
+        ),
+      );
 
       // TODO(plugfox): Read from stdin and send to channel.
 

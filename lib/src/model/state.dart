@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:meta/meta.dart';
 
 /// {@template state}
@@ -29,6 +31,7 @@ import 'package:meta/meta.dart';
 /// Also, this can happen due to server advice from a server,
 /// or due to a terminal problem that happened on the client-side.
 /// {@endtemplate}
+@immutable
 sealed class CentrifugeState extends _$CentrifugeStateBase {
   /// {@macro state}
   const CentrifugeState(super.timestamp);
@@ -59,6 +62,7 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
     bool? sendPong,
     String? session,
     String? node,
+    List<int>? data,
   }) = CentrifugeState$Connected;
 
   /// Permanently closed
@@ -111,6 +115,10 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
             },
             session: json['session']?.toString(),
             node: json['node']?.toString(),
+            data: switch (json['data']) {
+              String data when data.isNotEmpty => base64Decode(data),
+              _ => null,
+            },
           ),
         ('closed', int timestamp, _) => CentrifugeState.closed(
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
@@ -261,6 +269,7 @@ final class CentrifugeState$Connected extends CentrifugeState
     this.sendPong,
     this.session,
     this.node,
+    this.data,
   }) : super(timestamp ?? DateTime.now());
 
   @override
@@ -296,6 +305,9 @@ final class CentrifugeState$Connected extends CentrifugeState
   /// Server node ID.
   final String? node;
 
+  /// Additional data returned from server on connect.
+  final List<int>? data;
+
   @override
   bool get isDisconnected => false;
 
@@ -328,6 +340,7 @@ final class CentrifugeState$Connected extends CentrifugeState
         if (sendPong != null) 'sendPong': sendPong,
         if (session != null) 'session': session,
         if (node != null) 'node': node,
+        if (data != null) 'data': base64Encode(data!),
       };
 
   @override

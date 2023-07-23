@@ -305,7 +305,15 @@ base mixin CentrifugeWebSocketConnectionMixin
         ..version = _config.client.version;
       // TODO(plugfox): add subscriptions.
       // TODO(plugfox): Send request.
-      final result = await _sendMessage(request, pb.ConnectResult());
+      final pb.ConnectResult result;
+      try {
+        result = await _sendMessage(request, pb.ConnectResult());
+      } on Object catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          CentrifugeConnectionException(error),
+          stackTrace,
+        );
+      }
       if (!_webSocket.state.readyState.isOpen) {
         throw StateError('Connection closed during connection process');
       }
@@ -321,6 +329,7 @@ base mixin CentrifugeWebSocketConnectionMixin
         pingInterval: result.hasPing() ? Duration(seconds: result.ping) : null,
         sendPong: result.hasPong() ? result.pong : null,
         session: result.hasSession() ? result.session : null,
+        data: result.hasData() ? result.data : null,
       ));
     } on Object {
       _setState(CentrifugeState$Disconnected());
@@ -371,9 +380,8 @@ base mixin CentrifugeWebSocketStateHandlerMixin
   void _initTransport() {
     // Init state controller.
     _stateController = StreamController<CentrifugeState>.broadcast(
-      onListen: () => _stateController.add(_state),
-      onCancel: () => _stateController.close(),
-    );
+        /* onListen: () => _stateController.add(_state), */
+        );
     super._initTransport();
   }
 

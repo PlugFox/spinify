@@ -1,4 +1,4 @@
-import 'package:centrifuge_dart/src/model/state.dart';
+import 'package:centrifuge_dart/centrifuge.dart';
 
 /// Centrifuge client interface.
 abstract interface class ICentrifuge {
@@ -6,7 +6,11 @@ abstract interface class ICentrifuge {
   CentrifugeState get state;
 
   /// Stream of client states.
-  abstract final Stream<CentrifugeState> states;
+  abstract final CentrifugeStatesStream states;
+
+  /// Stream of errors.
+  abstract final Stream<
+      ({CentrifugeException exception, StackTrace stackTrace})> errors;
 
   /* abstract final Stream<Object> publications; */
 

@@ -89,7 +89,7 @@ Bash:
 ```bash
 docker run -it --rm --volume ${PWD}/config.json:/centrifugo/config.json:ro \
     --name centrifugo-cli centrifugo/centrifugo:latest \
-    centrifugo gensubtoken --user dart --channel chat:index
+    centrifugo gentoken --user dart
 ```
 
 PowerShell:
@@ -97,7 +97,7 @@ PowerShell:
 ```powershell
 docker run -it --rm --volume ${PWD}/config.json:/centrifugo/config.json:ro `
     --name centrifugo-cli centrifugo/centrifugo:latest `
-    centrifugo gensubtoken --user dart --channel chat:index
+    centrifugo gentoken --user dart
 ```
 
 ### Run Centrifugo
