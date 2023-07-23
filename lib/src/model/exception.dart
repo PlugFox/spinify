@@ -1,3 +1,4 @@
+import 'package:centrifuge_dart/interface.dart';
 import 'package:meta/meta.dart';
 
 /// {@template exception}
@@ -81,4 +82,21 @@ final class CentrifugePingException extends CentrifugeException {
           'Ping error',
           error,
         );
+}
+
+/// {@macro exception}
+final class CentrifugeSubscriptionException extends CentrifugeException {
+  /// {@macro exception}
+  const CentrifugeSubscriptionException({
+    required this.subscription,
+    required String message,
+    Object? error,
+  }) : super(
+          'centrifuge_subscription_exception',
+          message,
+          error,
+        );
+
+  /// Subscription
+  final ICentrifugeSubscription subscription;
 }

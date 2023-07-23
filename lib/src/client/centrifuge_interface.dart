@@ -1,13 +1,10 @@
+// ignore_for_file: one_member_abstracts
+
 import 'package:centrifuge_dart/centrifuge.dart';
 
 /// Centrifuge client interface.
-abstract interface class ICentrifuge {
-  /// State of client.
-  CentrifugeState get state;
-
-  /// Stream of client states.
-  abstract final CentrifugeStatesStream states;
-
+abstract interface class ICentrifuge
+    implements ICentrifugeStateOwner, ICentrifugeClientSubscriptionsManager {
   /// Stream of errors.
   abstract final Stream<
       ({CentrifugeException exception, StackTrace stackTrace})> errors;
@@ -36,4 +33,43 @@ abstract interface class ICentrifuge {
 
   /// Send arbitrary RPC and wait for response.
   /* Future<void> rpc(String method, data); */
+}
+
+/// Centrifuge client state owner interface.
+abstract interface class ICentrifugeStateOwner {
+  /// State of client.
+  CentrifugeState get state;
+
+  /// Stream of client states.
+  abstract final CentrifugeStatesStream states;
+}
+
+/// Centrifuge client subscriptions manager interface.
+abstract interface class ICentrifugeClientSubscriptionsManager {
+  /// Create new client-side subscription.
+  /// `newSubscription(channel, config)` allocates a new Subscription
+  /// in the registry or throws an exception if the Subscription
+  /// is already there. We will discuss common Subscription options below.
+  CentrifugeClientSubscription newSubscription(
+    String channel, [
+    CentrifugeSubscriptionConfig? config,
+  ]);
+
+  /// Get subscription to the channel
+  /// from internal registry or null if not found.
+  ///
+  /// You need to call [CentrifugeClientSubscription.subscribe]
+  /// to start receiving events
+  /// in the channel.
+  CentrifugeClientSubscription? getSubscription(String channel);
+
+  /// Remove the [Subscription] from internal registry
+  /// and unsubscribe from [CentrifugeClientSubscription.channel].
+  Future<void> removeSubscription(CentrifugeClientSubscription subscription);
+
+  /// Get map wirth all registered client-side subscriptions.
+  /// Returns all registered subscriptions,
+  /// so you can iterate over all and do some action if required
+  /// (for example, you want to unsubscribe/remove all subscriptions).
+  Map<String, CentrifugeClientSubscription> get subscriptions;
 }

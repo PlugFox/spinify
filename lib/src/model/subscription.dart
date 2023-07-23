@@ -10,7 +10,7 @@ abstract interface class ICentrifugeSubscription {
 }
 
 /// {@template client_subscription}
-/// Centrifuge client-side subscription representation.
+/// # Centrifuge client-side subscription representation.
 ///
 /// Client allows subscribing on channels.
 /// This can be done by creating Subscription object.
@@ -23,20 +23,48 @@ abstract interface class ICentrifugeSubscription {
 /// Centrifugo connectors do not allow creating two subscriptions
 /// to the same channel – in this case, newSubscription can throw an exception.
 ///
-/// Subscription has 3 states:
+/// ## Subscription has 3 states:
 ///
 /// - `unsubscribed`
 /// - `subscribing`
 /// - `subscribed`
 ///
 /// When a new Subscription is created it has an `unsubscribed` state.
+///
+/// ## Subscription common options
+///
+/// There are several common options available when
+/// creating Subscription instance:
+///
+/// - option to set subscription token and callback to get subscription token
+///   upon expiration (see below more details)
+/// - option to set subscription data
+///   (attached to every subscribe/resubscribe request)
+/// - options to tweak resubscribe backoff algorithm
+/// - option to start Subscription since known
+///   Stream Position (i.e. attempt recovery on first subscribe)
+/// - option to ask server to make subscription positioned
+///   (if not forced by a server)
+/// - option to ask server to make subscription recoverable
+///   (if not forced by a server)
+/// - option to ask server to push Join/Leave messages
+///   (if not forced by a server)
+///
+/// ## Subscription methods
+///
+/// - subscribe() – start subscribing to a channel
+/// - unsubscribe() - unsubscribe from a channel
+/// - publish(data) - publish data to Subscription channel
+/// - history(options) - request Subscription channel history
+/// - presence() - request Subscription channel online presence information
+/// - presenceStats() - request Subscription channel online presence stats
+///   information (number of client connections and unique users in a channel).
+///
 /// {@endtemplate}
 @immutable
 final class CentrifugeClientSubscription implements ICentrifugeSubscription {
   /// {@macro client_subscription}
-  const CentrifugeClientSubscription({
-    required this.channel,
-  });
+  const CentrifugeClientSubscription({required this.channel});
 
   @override
   final String channel;

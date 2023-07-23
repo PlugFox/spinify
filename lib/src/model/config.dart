@@ -35,17 +35,15 @@ final class CentrifugeConfig {
   CentrifugeConfig({
     this.getToken,
     this.getPayload,
-    ({Duration min, Duration max})? connectionRetryInterval,
+    this.connectionRetryInterval = (
+      min: const Duration(milliseconds: 500),
+      max: const Duration(seconds: 20),
+    ),
     ({String name, String version})? client,
     this.timeout = const Duration(seconds: 15),
     this.serverPingDelay = const Duration(seconds: 8),
     this.headers,
-  })  : connectionRetryInterval = connectionRetryInterval ??
-            (
-              min: const Duration(milliseconds: 500),
-              max: const Duration(seconds: 30),
-            ),
-        client = client ??
+  }) : client = client ??
             (
               name: Pubspec.name,
               version: Pubspec.version.canonical,
@@ -54,7 +52,7 @@ final class CentrifugeConfig {
   /// Create a default config
   ///
   /// {@macro centrifuge_config}
-  factory CentrifugeConfig.defaultConfig() = CentrifugeConfig;
+  factory CentrifugeConfig.byDefault() = CentrifugeConfig;
 
   /// Callback to get/refresh tokens
   /// This callback is used for initial connection

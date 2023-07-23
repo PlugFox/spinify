@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:centrifuge_dart/src/model/config.dart';
+import 'package:centrifuge_dart/src/model/disconnect_code.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
 import 'package:centrifuge_dart/src/model/state.dart';
@@ -17,8 +18,11 @@ import 'package:ws/ws.dart';
 abstract base class CentrifugeWebSocketProtobufTransportBase
     implements ICentrifugeTransport {
   /// {@nodoc}
-  CentrifugeWebSocketProtobufTransportBase(CentrifugeConfig config)
-      : _config = config,
+  CentrifugeWebSocketProtobufTransportBase({
+    required CentrifugeConfig config,
+    required void Function() disconnectCallback,
+  })  : _config = config,
+        _disconnectCallback = disconnectCallback,
         _webSocket = WebSocketClient(
           WebSocketOptions.selector(
             js: () => WebSocketOptions.js(
@@ -48,6 +52,10 @@ abstract base class CentrifugeWebSocketProtobufTransportBase
   /// {@nodoc}
   final CentrifugeConfig _config;
 
+  /// Callback for disconnect.
+  /// {@nodoc}
+  final void Function() _disconnectCallback;
+
   /// Init transport, override this method to add custom logic.
   /// {@nodoc}
   @protected
@@ -66,13 +74,18 @@ abstract base class CentrifugeWebSocketProtobufTransportBase
   @override
   @mustCallSuper
   Future<void> disconnect(int code, String reason) async {
+    if (_webSocket.state.readyState.isDisconnecting ||
+        _webSocket.state.readyState.isClosed) {
+      // Already disconnected - do nothing.
+      return;
+    }
     await _webSocket.disconnect(code, reason);
   }
 
   @override
   @mustCallSuper
   Future<void> close() async {
-    await disconnect(0, 'Client closed');
+    await disconnect(DisconnectCodes.disconnectCalled.code, 'Client closed');
     await _webSocket.close();
   }
 }
@@ -332,7 +345,8 @@ base mixin CentrifugeWebSocketConnectionMixin
         data: result.hasData() ? result.data : null,
       ));
     } on Object {
-      _setState(CentrifugeState$Disconnected());
+      disconnect(DisconnectCodes.unauthorized.code, 'Connection failed')
+          .ignore();
       rethrow;
     }
   }
@@ -399,7 +413,8 @@ base mixin CentrifugeWebSocketStateHandlerMixin
   @nonVirtual
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
-  void _handleWebSocketStateChange(WebSocketClientState$Closed state) {
+  void _handleWebSocketClosedStates(WebSocketClientState$Closed state) {
+    _disconnectCallback();
     _setState(
       CentrifugeState$Disconnected(
         timestamp: DateTime.now(),
@@ -423,7 +438,7 @@ base mixin CentrifugeWebSocketStateHandlerMixin
     _setState(CentrifugeState$Connecting(url: url));
     // Subscribe to websocket state after initialization.
     _webSocketClosedStateSubscription ??= _webSocket.stateChanges.closed.listen(
-      _handleWebSocketStateChange,
+      _handleWebSocketClosedStates,
       cancelOnError: false,
     );
     return super.connect(url);
@@ -559,7 +574,10 @@ base mixin CentrifugeWebSocketProtobufPingPongMixin
     if (state case CentrifugeState$Connected(:Duration pingInterval)) {
       _pingTimer = Timer(
         pingInterval + _config.serverPingDelay,
-        () => disconnect(2, 'No ping from server'),
+        () => disconnect(
+          DisconnectCodes.badProtocol.code,
+          'No ping from server',
+        ),
       );
     }
   }

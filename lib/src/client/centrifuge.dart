@@ -5,6 +5,9 @@ import 'package:centrifuge_dart/src/model/config.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/state.dart';
 import 'package:centrifuge_dart/src/model/states_stream.dart';
+import 'package:centrifuge_dart/src/model/subscription.dart';
+import 'package:centrifuge_dart/src/model/subscription_config.dart';
+import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
@@ -15,10 +18,13 @@ import 'package:stack_trace/stack_trace.dart' as st;
 /// Centrifuge client.
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase
-    with CentrifugeErrorsMixin, CentrifugeConnectionMixin {
+    with
+        CentrifugeErrorsMixin,
+        CentrifugeConnectionMixin,
+        CentrifugeClientSubscriptionMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
-      : super(config ?? CentrifugeConfig.defaultConfig());
+      : super(config ?? CentrifugeConfig.byDefault());
 
   /// Create client and connect.
   ///
@@ -31,9 +37,11 @@ final class Centrifuge extends CentrifugeBase
 @internal
 abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
-  CentrifugeBase(CentrifugeConfig config)
-      : _transport = CentrifugeWebSocketProtobufTransport(config),
-        _config = config {
+  CentrifugeBase(CentrifugeConfig config) : _config = config {
+    _transport = CentrifugeWebSocketProtobufTransport(
+      config: config,
+      disconnectCallback: _onDisconnect,
+    );
     _initCentrifuge();
   }
 
@@ -41,7 +49,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   /// for sending, receiving, encoding and decoding data from the server.
   /// {@nodoc}
   @nonVirtual
-  final ICentrifugeTransport _transport;
+  late final ICentrifugeTransport _transport;
 
   @override
   @nonVirtual
@@ -62,6 +70,15 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @protected
   @mustCallSuper
   void _initCentrifuge() {}
+
+  /// Called when connection lost.
+  /// Right before [CentrifugeState$Disconnected] state.
+  /// {@nodoc}
+  @protected
+  @mustCallSuper
+  void _onDisconnect() {
+    logger.fine('Connection lost');
+  }
 
   @override
   @mustCallSuper
@@ -137,5 +154,60 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
     logger.fine('Interactively closing');
     await super.close();
     await _transport.close();
+  }
+}
+
+/// Mixin responsible for client-side subscriptions.
+/// {@nodoc}
+base mixin CentrifugeClientSubscriptionMixin
+    on CentrifugeBase, CentrifugeErrorsMixin {
+  static final ClientSubscriptionManager _clientSubscriptionManager =
+      ClientSubscriptionManager();
+
+  @override
+  CentrifugeClientSubscription newSubscription(
+    String channel, [
+    CentrifugeSubscriptionConfig? config,
+  ]) =>
+      _clientSubscriptionManager.newSubscription(channel, config, this);
+
+  @override
+  Map<String, CentrifugeClientSubscription> get subscriptions =>
+      _clientSubscriptionManager.subscriptions;
+
+  @override
+  CentrifugeClientSubscription? getSubscription(String channel) =>
+      _clientSubscriptionManager[channel];
+
+  @override
+  Future<void> removeSubscription(
+    CentrifugeClientSubscription subscription,
+  ) async {
+    try {
+      await _clientSubscriptionManager.removeSubscription(subscription);
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        subscription: subscription,
+        message: 'Error while unsubscribing',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+
+  @override
+  void _onDisconnect() {
+    super._onDisconnect();
+    _clientSubscriptionManager.disconnectAllFor(this).ignore();
+  }
+
+  @override
+  Future<void> close() async {
+    await super.close();
+    _clientSubscriptionManager.removeAllFor(this).ignore();
   }
 }
