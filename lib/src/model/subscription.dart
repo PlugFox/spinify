@@ -1,3 +1,4 @@
+import 'package:centrifuge_dart/interface.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_controller.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
@@ -70,6 +71,15 @@ sealed class CentrifugeClientSubscription implements ICentrifugeSubscription {
   @override
   final String channel;
 
+  /// Stream of publications.
+  abstract final Stream<CentrifugePublication> publications;
+
+  /// Start subscribing to a channel
+  Future<void> subscribe();
+
+  /// Unsubscribe from a channel
+  Future<void> unsubscribe();
+
   @override
   String toString() => 'CentrifugeClientSubscription{channel: $channel}';
 }
@@ -131,4 +141,13 @@ final class CentrifugeClientSubscriptionImpl
   /// Sort of Active Record pattern for subscriptions.
   /// {@nodoc}
   final ClientSubscriptionController _controller;
+
+  @override
+  Stream<CentrifugePublication> get publications => _controller.publications;
+
+  @override
+  Future<void> subscribe() => _controller.subscribe();
+
+  @override
+  Future<void> unsubscribe() => _controller.unsubscribe();
 }
