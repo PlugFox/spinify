@@ -5,19 +5,19 @@ import 'package:meta/meta.dart';
 
 /// {@nodoc}
 @internal
-final class WebSocketEventQueue {
+final class CentrifugeEventQueue {
   /// {@nodoc}
-  WebSocketEventQueue();
+  CentrifugeEventQueue();
 
-  final DoubleLinkedQueue<WebSocketTask<Object?>> _queue =
-      DoubleLinkedQueue<WebSocketTask<Object?>>();
+  final DoubleLinkedQueue<CentrifugeTask<Object?>> _queue =
+      DoubleLinkedQueue<CentrifugeTask<Object?>>();
   Future<void>? _processing;
   bool _isClosed = false;
 
   /// Push it at the end of the queue.
   /// {@nodoc}
   Future<T> push<T>(String id, FutureOr<T> Function() fn) {
-    final task = WebSocketTask<T>(id, fn);
+    final task = CentrifugeTask<T>(id, fn);
     _queue.add(task);
     _exec();
     return task.future;
@@ -62,9 +62,9 @@ final class WebSocketEventQueue {
 
 /// {@nodoc}
 @internal
-class WebSocketTask<T> {
+class CentrifugeTask<T> {
   /// {@nodoc}
-  WebSocketTask(this.id, FutureOr<T> Function() fn)
+  CentrifugeTask(this.id, FutureOr<T> Function() fn)
       : _fn = fn,
         _completer = Completer<T>();
 

@@ -13,11 +13,11 @@ import 'package:meta/meta.dart';
 final class ClientSubscriptionManager {
   /// {@nodoc}
   ClientSubscriptionManager(ICentrifugeTransport transport)
-      : _transport = WeakReference<ICentrifugeTransport>(transport);
+      : _transportWeakRef = WeakReference<ICentrifugeTransport>(transport);
 
   /// Centrifuge client weak reference.
   /// {@nodoc}
-  final WeakReference<ICentrifugeTransport> _transport;
+  final WeakReference<ICentrifugeTransport> _transportWeakRef;
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : CentrifugeClientSubscription
@@ -44,7 +44,7 @@ final class ClientSubscriptionManager {
     return _channelSubscriptions[channel] = CentrifugeClientSubscriptionImpl(
       channel: channel,
       config: config ?? const CentrifugeSubscriptionConfig.byDefault(),
-      transport: _transport,
+      transportWeakRef: _transportWeakRef,
     );
   }
 

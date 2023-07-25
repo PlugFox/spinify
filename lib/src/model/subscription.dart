@@ -82,6 +82,10 @@ abstract interface class CentrifugeClientSubscription
   /// Stream of publications.
   abstract final Stream<CentrifugePublication> publications;
 
+  /// Errors stream.
+  abstract final Stream<
+      ({CentrifugeException exception, StackTrace stackTrace})> errors;
+
   /// Await for subscription to be ready.
   FutureOr<void> ready();
 

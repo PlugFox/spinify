@@ -86,7 +86,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   Future<void> close() async {}
 }
 
-/// Mixin responsible for connection.
+/// Mixin responsible for errors stream.
 /// {@nodoc}
 @internal
 base mixin CentrifugeErrorsMixin on CentrifugeBase {
@@ -137,24 +137,31 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
 
   @override
   FutureOr<void> ready() async {
-    switch (state) {
-      case CentrifugeState$Disconnected _:
-        throw const CentrifugeDisconnectionException(
-          message: 'Client is not connected',
-        );
-      case CentrifugeState$Closed _:
-        throw const CentrifugeDisconnectionException(
-          message: 'Client is permanently closed',
-        );
-      case CentrifugeState$Connected _:
-        return;
-      case CentrifugeState$Connecting _:
-        await states.connected.first.timeout(_config.timeout).onError<Object>(
-              (error, stackTrace) => throw CentrifugeDisconnectionException(
-                message: 'Client is not connected',
-                error: error,
-              ),
-            );
+    try {
+      switch (state) {
+        case CentrifugeState$Disconnected _:
+          throw const CentrifugeDisconnectionException(
+            message: 'Client is not connected',
+          );
+        case CentrifugeState$Closed _:
+          throw const CentrifugeDisconnectionException(
+            message: 'Client is permanently closed',
+          );
+        case CentrifugeState$Connected _:
+          return;
+        case CentrifugeState$Connecting _:
+          await states.connected.first.timeout(_config.timeout);
+      }
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeDisconnectionException(
+        message: 'Client is not connected',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
     }
   }
 
