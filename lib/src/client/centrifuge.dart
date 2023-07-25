@@ -268,9 +268,12 @@ base mixin CentrifugeClientSubscriptionMixin
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
 /// {@nodoc}
+@internal
 base mixin CentrifugeQueueMixin on CentrifugeBase {
   /// {@nodoc}
   final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
+
+  // TODO(plugfox): add all methods
 
   @override
   Future<void> connect(String url) =>

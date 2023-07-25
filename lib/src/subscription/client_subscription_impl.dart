@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/model/subscription_states_stream.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
+import 'package:centrifuge_dart/src/util/event_queue.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
 import 'package:stack_trace/stack_trace.dart' as st;
@@ -14,7 +15,8 @@ final class CentrifugeClientSubscriptionImpl
     extends CentrifugeClientSubscriptionBase
     with
         CentrifugeClientSubscriptionErrorsMixin,
-        CentrifugeClientSubscriptionSubscribeMixin {
+        CentrifugeClientSubscriptionSubscribeMixin,
+        CentrifugeClientSubscriptionQueueMixin {
   /// {@nodoc}
   CentrifugeClientSubscriptionImpl({
     required super.channel,
@@ -22,11 +24,12 @@ final class CentrifugeClientSubscriptionImpl
     CentrifugeSubscriptionConfig? config,
   }) : super(config: config ?? const CentrifugeSubscriptionConfig.byDefault());
 
-  /* publish(data) - publish data to Subscription channel
-  history(options) - request Subscription channel history
-  presence() - request Subscription channel online presence information
-  presenceStats() - request Subscription channel online presence stats information (number of client connections and unique users in a channel).
- */
+  /*
+    publish(data) - publish data to Subscription channel
+    history(options) - request Subscription channel history
+    presence() - request Subscription channel online presence information
+    presenceStats() - request Subscription channel online presence stats information (number of client connections and unique users in a channel).
+  */
 }
 
 /// {@nodoc}
@@ -230,4 +233,21 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     await super.close();
     await _transport.close();
   }
+}
+
+/// Mixin responsible for queue.
+/// SHOULD BE LAST MIXIN.
+/// {@nodoc}
+@internal
+base mixin CentrifugeClientSubscriptionQueueMixin
+    on CentrifugeClientSubscriptionBase {
+  /// {@nodoc}
+  final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
+
+  // TODO(plugfox): add all methods
+
+  @override
+  Future<void> close() => _eventQueue
+      .push<void>('close', super.close)
+      .whenComplete(_eventQueue.close);
 }
