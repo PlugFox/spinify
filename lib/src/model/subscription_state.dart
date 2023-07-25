@@ -9,35 +9,40 @@ import 'package:meta/meta.dart';
 ///
 /// When a new Subscription is created it has an `unsubscribed` state.
 /// {@endtemplate}
+/// {@category Subscription}
+/// {@category Entity}
 @immutable
 sealed class CentrifugeSubscriptionState
     extends _$CentrifugeSubscriptionStateBase {
   /// {@macro subscription_state}
-  const CentrifugeSubscriptionState();
+  const CentrifugeSubscriptionState(super.timestamp);
 
-  /// Unsubscribed state
+  /// Unsubscribed
   /// {@macro subscription_state}
-  const factory CentrifugeSubscriptionState.unsubscribed() =
+  factory CentrifugeSubscriptionState.unsubscribed() =
       CentrifugeSubscriptionState$Unsubscribed;
 
   /// Subscribing
   /// {@macro subscription_state}
-  const factory CentrifugeSubscriptionState.subscribing() =
+  factory CentrifugeSubscriptionState.subscribing() =
       CentrifugeSubscriptionState$Subscribing;
 
   /// Subscribed
   /// {@macro subscription_state}
-  const factory CentrifugeSubscriptionState.subscribed() =
+  factory CentrifugeSubscriptionState.subscribed() =
       CentrifugeSubscriptionState$Subscribed;
 }
 
 /// Unsubscribed state
 ///
 /// {@nodoc}
+/// {@category Subscription}
+/// {@category Entity}
 final class CentrifugeSubscriptionState$Unsubscribed
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
-  const CentrifugeSubscriptionState$Unsubscribed();
+  CentrifugeSubscriptionState$Unsubscribed({DateTime? timestamp})
+      : super(timestamp ?? DateTime.now());
 
   @override
   R map<R>({
@@ -63,12 +68,15 @@ final class CentrifugeSubscriptionState$Unsubscribed
   String toString() => 'unsubscribed';
 }
 
-/// Subscribing
+/// Subscribing state
 /// {@nodoc}
+/// {@category Subscription}
+/// {@category Entity}
 final class CentrifugeSubscriptionState$Subscribing
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
-  const CentrifugeSubscriptionState$Subscribing();
+  CentrifugeSubscriptionState$Subscribing({DateTime? timestamp})
+      : super(timestamp ?? DateTime.now());
 
   @override
   R map<R>({
@@ -94,12 +102,15 @@ final class CentrifugeSubscriptionState$Subscribing
   String toString() => 'subscribing';
 }
 
-/// Subscribed
+/// Subscribed state
 /// {@nodoc}
+/// {@category Subscription}
+/// {@category Entity}
 final class CentrifugeSubscriptionState$Subscribed
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
-  const CentrifugeSubscriptionState$Subscribed();
+  CentrifugeSubscriptionState$Subscribed({DateTime? timestamp})
+      : super(timestamp ?? DateTime.now());
 
   @override
   R map<R>({
@@ -137,7 +148,10 @@ typedef CentrifugeSubscriptionStateMatch<R,
 @immutable
 abstract base class _$CentrifugeSubscriptionStateBase {
   /// {@nodoc}
-  const _$CentrifugeSubscriptionStateBase();
+  const _$CentrifugeSubscriptionStateBase(this.timestamp);
+
+  /// Timestamp of state change.
+  final DateTime timestamp;
 
   /// Pattern matching for [CentrifugeSubscriptionState].
   R map<R>({

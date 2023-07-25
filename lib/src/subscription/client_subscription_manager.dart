@@ -1,37 +1,29 @@
 import 'dart:collection';
 
-import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/subscription.dart';
 import 'package:centrifuge_dart/src/model/subscription_config.dart';
-import 'package:centrifuge_dart/src/subscription/client_subscription_controller.dart';
+import 'package:centrifuge_dart/src/subscription/client_subscription_impl.dart';
+import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:meta/meta.dart';
-
-/// Entry of channel subscriptions registry.
-/// {@nodoc}
-@internal
-typedef ClientSubscriptionRegistryEntry = ({
-  CentrifugeClientSubscription subscription,
-  ClientSubscriptionController controller
-});
 
 /// Responsible for managing client-side subscriptions.
 /// {@nodoc}
 @internal
 final class ClientSubscriptionManager {
   /// {@nodoc}
-  ClientSubscriptionManager(ICentrifuge client)
-      : _client = WeakReference<ICentrifuge>(client);
+  ClientSubscriptionManager(ICentrifugeTransport transport)
+      : _transport = WeakReference<ICentrifugeTransport>(transport);
 
   /// Centrifuge client weak reference.
   /// {@nodoc}
-  final WeakReference<ICentrifuge> _client;
+  final WeakReference<ICentrifugeTransport> _transport;
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : CentrifugeClientSubscription
   /// {@nodoc}
-  final Map<String, ClientSubscriptionRegistryEntry> _channelSubscriptions =
-      <String, ClientSubscriptionRegistryEntry>{};
+  final Map<String, CentrifugeClientSubscriptionImpl> _channelSubscriptions =
+      <String, CentrifugeClientSubscriptionImpl>{};
 
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
@@ -44,22 +36,16 @@ final class ClientSubscriptionManager {
   ) {
     if (_channelSubscriptions.containsKey(channel)) {
       throw CentrifugeSubscriptionException(
-        subscription: _channelSubscriptions[channel]!.subscription,
+        subscription: _channelSubscriptions[channel]!,
         message: 'Subscription to a channel "$channel" already exists '
             'in client\'s internal registry',
       );
     }
-    final controller = ClientSubscriptionController(
-      config: config ?? const CentrifugeSubscriptionConfig.byDefault(),
-      client: _client,
-    );
-    final subscription = CentrifugeClientSubscriptionImpl(
+    return _channelSubscriptions[channel] = CentrifugeClientSubscriptionImpl(
       channel: channel,
-      controller: controller,
+      config: config ?? const CentrifugeSubscriptionConfig.byDefault(),
+      transport: _transport,
     );
-    _channelSubscriptions[channel] =
-        (subscription: subscription, controller: controller);
-    return subscription;
   }
 
   /// Get map wirth all registered client-side subscriptions.
@@ -70,7 +56,7 @@ final class ClientSubscriptionManager {
   Map<String, CentrifugeClientSubscription> get subscriptions =>
       UnmodifiableMapView<String, CentrifugeClientSubscription>({
         for (final entry in _channelSubscriptions.entries)
-          entry.key: entry.value.subscription,
+          entry.key: entry.value,
       });
 
   /// Remove the [CentrifugeClientSubscription] from internal registry
@@ -137,5 +123,5 @@ final class ClientSubscriptionManager {
   /// to start receiving events
   /// {@nodoc}
   CentrifugeClientSubscription? operator [](String channel) =>
-      _channelSubscriptions[channel]?.subscription;
+      _channelSubscriptions[channel];
 }

@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
 /// {@template client_info}
 /// Client information.
 /// {@endtemplate}
+/// {@category Entity}
 @immutable
 final class CentrifugeClientInfo {
   /// {@macro client_info}

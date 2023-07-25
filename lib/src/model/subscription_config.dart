@@ -31,6 +31,8 @@ typedef CentrifugeSubscriptionTokenCallback
 /// - option to ask server to push Join/Leave messages
 ///   (if not forced by a server)
 /// {@endtemplate}
+/// {@category Subscription}
+/// {@category Entity}
 @immutable
 class CentrifugeSubscriptionConfig {
   /// {@macro subscription_config}
@@ -45,6 +47,7 @@ class CentrifugeSubscriptionConfig {
     this.positioned = false,
     this.recoverable = false,
     this.joinLeave = false,
+    this.timeout = const Duration(seconds: 15),
   });
 
   /// Create a default config
@@ -77,4 +80,8 @@ class CentrifugeSubscriptionConfig {
 
   /// Ask server to push Join/Leave messages (if not forced by a server)
   final bool joinLeave;
+
+  /// Maximum time to wait for the subscription to be established.
+  /// If not specified, the timeout will be 15 seconds.
+  final Duration timeout;
 }

@@ -12,6 +12,7 @@ import 'package:meta/meta.dart';
 /// Client implementation can use codes <3000 for client-side
 /// specific disconnect reasons.
 /// {@nodoc}
+/// {@category Entity}
 @internal
 enum DisconnectCodes {
   /// Disconnect called

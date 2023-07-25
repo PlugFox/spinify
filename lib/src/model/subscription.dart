@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:centrifuge_dart/interface.dart';
-import 'package:centrifuge_dart/src/subscription/client_subscription_controller.dart';
+import 'package:centrifuge_dart/src/model/subscription_states_stream.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
-import 'package:meta/meta.dart';
 
 /// {@template subscription}
 /// Centrifuge subscription interface.
 /// {@endtemplate}
+/// {@category Subscription}
+/// {@category Entity}
 abstract interface class ICentrifugeSubscription {
   /// Channel name.
   abstract final String channel;
@@ -63,16 +66,24 @@ abstract interface class ICentrifugeSubscription {
 ///   information (number of client connections and unique users in a channel).
 ///
 /// {@endtemplate}
-@immutable
-sealed class CentrifugeClientSubscription implements ICentrifugeSubscription {
-  /// {@macro client_subscription}
-  const CentrifugeClientSubscription({required this.channel});
-
+/// {@category Subscription}
+/// {@category Entity}
+abstract interface class CentrifugeClientSubscription
+    implements ICentrifugeSubscription {
   @override
-  final String channel;
+  abstract final String channel;
+
+  /// Current subscription state.
+  abstract final CentrifugeSubscriptionState state;
+
+  /// Stream of subscription states.
+  abstract final CentrifugeSubscriptionStateStream states;
 
   /// Stream of publications.
   abstract final Stream<CentrifugePublication> publications;
+
+  /// Await for subscription to be ready.
+  FutureOr<void> ready();
 
   /// Start subscribing to a channel
   Future<void> subscribe();
@@ -96,7 +107,8 @@ sealed class CentrifugeClientSubscription implements ICentrifugeSubscription {
 /// in internal registry, similar to client-side subscriptions
 /// but without possibility to control them.
 /// {@endtemplate}
-@immutable
+/// {@category Subscription}
+/// {@category Entity}
 final class CentrifugeServerSubscription implements ICentrifugeSubscription {
   /// {@macro server_subscription}
   const CentrifugeServerSubscription({
@@ -125,29 +137,4 @@ final class CentrifugeServerSubscription implements ICentrifugeSubscription {
 
   @override
   String toString() => 'CentrifugeServerSubscription{channel: $channel}';
-}
-
-/// {@nodoc}
-@internal
-final class CentrifugeClientSubscriptionImpl
-    extends CentrifugeClientSubscription {
-  /// {@nodoc}
-  const CentrifugeClientSubscriptionImpl({
-    required super.channel,
-    required ClientSubscriptionController controller,
-  }) : _controller = controller;
-
-  /// Controller responsible for managing current subscription.
-  /// Sort of Active Record pattern for subscriptions.
-  /// {@nodoc}
-  final ClientSubscriptionController _controller;
-
-  @override
-  Stream<CentrifugePublication> get publications => _controller.publications;
-
-  @override
-  Future<void> subscribe() => _controller.subscribe();
-
-  @override
-  Future<void> unsubscribe() => _controller.unsubscribe();
 }

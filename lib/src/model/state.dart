@@ -31,6 +31,8 @@ import 'package:meta/meta.dart';
 /// Also, this can happen due to server advice from a server,
 /// or due to a terminal problem that happened on the client-side.
 /// {@endtemplate}
+/// {@category Client}
+/// {@category Entity}
 @immutable
 sealed class CentrifugeState extends _$CentrifugeStateBase {
   /// {@macro state}
@@ -133,6 +135,8 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
 /// Disconnect advice contains uint32 code and human-readable string reason.
 ///
 /// {@macro state}
+/// {@category Client}
+/// {@category Entity}
 final class CentrifugeState$Disconnected extends CentrifugeState
     with _$CentrifugeState {
   /// Disconnected
@@ -202,6 +206,8 @@ final class CentrifugeState$Disconnected extends CentrifugeState
 /// Connecting
 ///
 /// {@macro state}
+/// {@category Client}
+/// {@category Entity}
 final class CentrifugeState$Connecting extends CentrifugeState
     with _$CentrifugeState {
   /// Connecting
@@ -253,6 +259,8 @@ final class CentrifugeState$Connecting extends CentrifugeState
 /// Connected
 ///
 /// {@macro state}
+/// {@category Client}
+/// {@category Entity}
 final class CentrifugeState$Connected extends CentrifugeState
     with _$CentrifugeState {
   /// Connected
@@ -359,6 +367,8 @@ final class CentrifugeState$Connected extends CentrifugeState
 /// Permanently closed
 ///
 /// {@macro state}
+/// {@category Client}
+/// {@category Entity}
 final class CentrifugeState$Closed extends CentrifugeState
     with _$CentrifugeState {
   /// Permanently closed

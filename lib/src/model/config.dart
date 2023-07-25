@@ -29,6 +29,8 @@ typedef CentrifugeConnectionPayloadCallback = FutureOr<List<int>?> Function();
 /// - [headers] - headers that are set when connecting the web socket
 /// - [timeout] - maximum time to wait for the connection to be established
 /// {@endtemplate}
+/// {@category Client}
+/// {@category Entity}
 @immutable
 final class CentrifugeConfig {
   /// {@macro centrifuge_config}

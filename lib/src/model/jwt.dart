@@ -18,6 +18,7 @@ import 'package:meta/meta.dart';
 ///
 /// https://centrifugal.dev/docs/server/authentication#connection-jwt-claims
 /// {@endtemplate}
+/// {@category Entity}
 @immutable
 sealed class CentrifugeJWT {
   /// {@macro jwt}

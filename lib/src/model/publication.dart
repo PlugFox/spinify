@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 /// {@template publication}
 /// Publication context
 /// {@endtemplate}
+/// {@category Entity}
 @immutable
 final class CentrifugePublication {
   /// {@macro publication}

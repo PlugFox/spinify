@@ -149,7 +149,12 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
       case CentrifugeState$Connected _:
         return;
       case CentrifugeState$Connecting _:
-        await states.connected.first.timeout(_config.timeout);
+        await states.connected.first.timeout(_config.timeout).onError<Object>(
+              (error, stackTrace) => throw CentrifugeDisconnectionException(
+                message: 'Client is not connected',
+                error: error,
+              ),
+            );
     }
   }
 
@@ -201,7 +206,7 @@ base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
 base mixin CentrifugeClientSubscriptionMixin
     on CentrifugeBase, CentrifugeErrorsMixin {
   late final ClientSubscriptionManager _clientSubscriptionManager =
-      ClientSubscriptionManager(this);
+      ClientSubscriptionManager(_transport);
 
   @override
   CentrifugeClientSubscription newSubscription(

@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 /// {@template exception}
 /// Centrifuge exception.
 /// {@endtemplate}
+/// {@category Exception}
 @immutable
 sealed class CentrifugeException implements Exception {
   /// {@macro exception}
@@ -33,6 +34,7 @@ sealed class CentrifugeException implements Exception {
 }
 
 /// {@macro exception}
+/// {@category Exception}
 final class CentrifugeConnectionException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugeConnectionException([Object? error])
@@ -44,6 +46,7 @@ final class CentrifugeConnectionException extends CentrifugeException {
 }
 
 /// {@macro exception}
+/// {@category Exception}
 final class CentrifugeDisconnectionException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugeDisconnectionException({String? message, Object? error})
@@ -55,6 +58,7 @@ final class CentrifugeDisconnectionException extends CentrifugeException {
 }
 
 /// {@macro exception}
+/// {@category Exception}
 final class CentrifugeReplyException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugeReplyException({
@@ -74,6 +78,7 @@ final class CentrifugeReplyException extends CentrifugeException {
 }
 
 /// {@macro exception}
+/// {@category Exception}
 final class CentrifugePingException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugePingException([Object? error])
@@ -85,6 +90,7 @@ final class CentrifugePingException extends CentrifugeException {
 }
 
 /// {@macro exception}
+/// {@category Exception}
 final class CentrifugeSubscriptionException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugeSubscriptionException({
@@ -102,6 +108,7 @@ final class CentrifugeSubscriptionException extends CentrifugeException {
 }
 
 /// {@macro exception}
+/// {@category Exception}
 final class CentrifugeSendException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugeSendException({
