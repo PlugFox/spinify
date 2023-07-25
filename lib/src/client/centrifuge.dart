@@ -10,6 +10,7 @@ import 'package:centrifuge_dart/src/model/subscription_config.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
+import 'package:centrifuge_dart/src/util/event_queue.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
 import 'package:stack_trace/stack_trace.dart' as st;
@@ -22,7 +23,8 @@ final class Centrifuge extends CentrifugeBase
         CentrifugeErrorsMixin,
         CentrifugeConnectionMixin,
         CentrifugeSendMixin,
-        CentrifugeClientSubscriptionMixin {
+        CentrifugeClientSubscriptionMixin,
+        CentrifugeQueueMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
       : super(config ?? CentrifugeConfig.byDefault());
@@ -261,4 +263,28 @@ base mixin CentrifugeClientSubscriptionMixin
     await super.close();
     _clientSubscriptionManager.removeAll();
   }
+}
+
+/// Mixin responsible for queue.
+/// SHOULD BE LAST MIXIN.
+/// {@nodoc}
+base mixin CentrifugeQueueMixin on CentrifugeBase {
+  /// {@nodoc}
+  final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
+
+  @override
+  Future<void> connect(String url) =>
+      _eventQueue.push<void>('connect', () => super.connect(url));
+
+  @override
+  FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready);
+
+  @override
+  Future<void> disconnect() =>
+      _eventQueue.push<void>('disconnect', super.disconnect);
+
+  @override
+  Future<void> close() => _eventQueue
+      .push<void>('close', super.close)
+      .whenComplete(_eventQueue.close);
 }
