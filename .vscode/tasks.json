@@ -26,7 +26,7 @@
           "--name=centrifugo",
           "centrifugo/centrifugo:latest",
           "centrifugo",
-          //"--client_insecure",
+          "--client_insecure",
           "--admin",
           "--admin_insecure",
           "--log_level=debug"
