@@ -68,6 +68,7 @@ abstract base class CentrifugeClientSubscriptionBase
   @protected
   @mustCallSuper
   void _initSubscription() {
+    _state; // ignore: unnecessary_statements
     // TODO(plugfox): subscribe on disconnections
   }
 
@@ -78,8 +79,8 @@ abstract base class CentrifugeClientSubscriptionBase
   /// {@nodoc}
   @override
   CentrifugeSubscriptionState get state => _state;
-  CentrifugeSubscriptionState _state =
-      CentrifugeSubscriptionState.unsubscribed();
+  late CentrifugeSubscriptionState _state =
+      CentrifugeSubscriptionState.unsubscribed(since: _config.since);
 
   /// Stream of subscription states.
   /// {@nodoc}

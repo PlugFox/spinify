@@ -20,18 +20,24 @@ sealed class CentrifugeSubscriptionState
 
   /// Unsubscribed
   /// {@macro subscription_state}
-  factory CentrifugeSubscriptionState.unsubscribed() =
-      CentrifugeSubscriptionState$Unsubscribed;
+  factory CentrifugeSubscriptionState.unsubscribed({
+    DateTime? timestamp,
+    ({fixnum.Int64 offset, String epoch})? since,
+  }) = CentrifugeSubscriptionState$Unsubscribed;
 
   /// Subscribing
   /// {@macro subscription_state}
-  factory CentrifugeSubscriptionState.subscribing() =
-      CentrifugeSubscriptionState$Subscribing;
+  factory CentrifugeSubscriptionState.subscribing({
+    DateTime? timestamp,
+    ({fixnum.Int64 offset, String epoch})? since,
+  }) = CentrifugeSubscriptionState$Subscribing;
 
   /// Subscribed
   /// {@macro subscription_state}
-  factory CentrifugeSubscriptionState.subscribed() =
-      CentrifugeSubscriptionState$Subscribed;
+  factory CentrifugeSubscriptionState.subscribed({
+    DateTime? timestamp,
+    ({fixnum.Int64 offset, String epoch})? since,
+  }) = CentrifugeSubscriptionState$Subscribed;
 }
 
 /// Unsubscribed state
@@ -62,7 +68,7 @@ final class CentrifugeSubscriptionState$Unsubscribed
       unsubscribed(this);
 
   @override
-  int get hashCode => 0;
+  int get hashCode => Object.hash(0, timestamp, since);
 
   @override
   bool operator ==(Object other) => identical(this, other);
@@ -98,7 +104,7 @@ final class CentrifugeSubscriptionState$Subscribing
       subscribing(this);
 
   @override
-  int get hashCode => 1;
+  int get hashCode => Object.hash(1, timestamp, since);
 
   @override
   bool operator ==(Object other) => identical(this, other);
@@ -134,7 +140,7 @@ final class CentrifugeSubscriptionState$Subscribed
       subscribed(this);
 
   @override
-  int get hashCode => 2;
+  int get hashCode => Object.hash(2, timestamp, since);
 
   @override
   bool operator ==(Object other) => identical(this, other);
