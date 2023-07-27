@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/src/model/state.dart';
+import 'package:centrifuge_dart/src/model/stream_position.dart';
+import 'package:centrifuge_dart/src/model/subcibed_on_channel.dart';
+import 'package:centrifuge_dart/src/model/subscription_config.dart';
 import 'package:meta/meta.dart';
 
 /// Class responsible for sending and receiving data from the server.
@@ -24,6 +27,13 @@ abstract interface class ICentrifugeTransport {
   /// only when using Centrifuge library for Go on a server side. In Centrifuge
   /// asynchronous message handler does not exist.
   Future<void> sendAsyncMessage(List<int> data);
+
+  /// Subscribe on channel with optional [since] position.
+  Future<SubcibedOnChannel> subscribe(
+    String channel,
+    CentrifugeSubscriptionConfig config,
+    CentrifugeStreamPosition? since,
+  );
 
   /// Disconnect from the server.
   /// e.g. code: 0, reason: 'disconnect called'

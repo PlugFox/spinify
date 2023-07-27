@@ -14,7 +14,6 @@ typedef CentrifugeToken = String;
 typedef CentrifugeTokenCallback = FutureOr<CentrifugeToken?> Function();
 
 /// Callback to get initial connection payload data.
-/// For example to send JWT or other auth data.
 ///
 /// If method returns null then no payload will be sent at connect time.
 typedef CentrifugeConnectionPayloadCallback = FutureOr<List<int>?> Function();
@@ -63,9 +62,8 @@ final class CentrifugeConfig {
   /// If method returns null then connection will be established without token.
   final CentrifugeTokenCallback? getToken;
 
-  /// The data send for the first request
-  /// Callback to get initial connection payload data.
-  /// For example to send JWT or other auth data.
+  /// Callback to get connection payload data.
+  /// The resulted data send with every connect request.
   ///
   /// If method returns null then no payload will be sent at connect time.
   final CentrifugeConnectionPayloadCallback? getPayload;

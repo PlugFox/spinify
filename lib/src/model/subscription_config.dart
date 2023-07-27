@@ -11,6 +11,11 @@ typedef CentrifugeSubscriptionToken = String;
 typedef CentrifugeSubscriptionTokenCallback
     = FutureOr<CentrifugeSubscriptionToken?> Function();
 
+/// Callback to set subscription payload data.
+///
+/// If method returns null then no payload will be sent at subscribe time.
+typedef CentrifugeSubscribePayloadCallback = FutureOr<List<int>?> Function();
+
 /// {@template subscription_config}
 /// Subscription common options
 ///
@@ -38,7 +43,7 @@ class CentrifugeSubscriptionConfig {
   /// {@macro subscription_config}
   const CentrifugeSubscriptionConfig({
     this.getToken,
-    this.data,
+    this.getPayload,
     this.resubscribeInterval = (
       min: const Duration(milliseconds: 500),
       max: const Duration(seconds: 20),
@@ -62,13 +67,13 @@ class CentrifugeSubscriptionConfig {
   final CentrifugeSubscriptionTokenCallback? getToken;
 
   /// Data to send with subscription request.
-  /// Subscription [data] is attached to every subscribe/resubscribe request.
-  final List<int>? data;
+  /// Subscription `data` is attached to every subscribe/resubscribe request.
+  final CentrifugeSubscribePayloadCallback? getPayload;
 
   /// Resubscribe backoff algorithm
   final ({Duration min, Duration max}) resubscribeInterval;
 
-  /// start Subscription [since] known Stream Position
+  /// Start Subscription [since] known Stream Position
   /// (i.e. attempt recovery on first subscribe)
   final ({fixnum.Int64 offset, String epoch})? since;
 

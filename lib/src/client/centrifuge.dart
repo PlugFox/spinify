@@ -243,7 +243,7 @@ base mixin CentrifugeClientSubscriptionMixin
       rethrow;
     } on Object catch (error, stackTrace) {
       final centrifugeException = CentrifugeSubscriptionException(
-        subscription: subscription,
+        channel: subscription.channel,
         message: 'Error while unsubscribing',
         error: error,
       );

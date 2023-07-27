@@ -182,7 +182,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     } on Object catch (error, stackTrace) {
       final centrifugeException = CentrifugeSubscriptionException(
         message: 'Error while subscribing',
-        subscription: this,
+        channel: channel,
         error: error,
       );
       _emitError(centrifugeException, stackTrace);
@@ -199,7 +199,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
         case CentrifugeSubscriptionState$Unsubscribed _:
           throw CentrifugeSubscriptionException(
             message: 'Subscription is not subscribed',
-            subscription: this,
+            channel: channel,
           );
         case CentrifugeSubscriptionState$Subscribed _:
           return;
@@ -212,7 +212,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     } on Object catch (error, stackTrace) {
       final centrifugeException = CentrifugeSubscriptionException(
         message: 'Subscription is not subscribed',
-        subscription: this,
+        channel: channel,
         error: error,
       );
       _emitError(centrifugeException, stackTrace);

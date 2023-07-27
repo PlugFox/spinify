@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:centrifuge_dart/src/model/config.dart';
+import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/model/disconnect_code.dart';
-import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
-import 'package:centrifuge_dart/src/model/state.dart';
+import 'package:centrifuge_dart/src/model/stream_position.dart';
+import 'package:centrifuge_dart/src/model/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/transport_protobuf_codec.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
@@ -545,8 +545,88 @@ base mixin CentrifugeWSPBHandlerMixin
 /// Mixin responsible for centrifuge subscriptions.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBSubscription on CentrifugeWSPBTransportBase {
-  Future<void> resubscribe() async {}
+base mixin CentrifugeWSPBSubscription
+    on CentrifugeWSPBTransportBase, CentrifugeWSPBSenderMixin {
+  @override
+  Future<SubcibedOnChannel> subscribe(
+    String channel,
+    CentrifugeSubscriptionConfig config,
+    CentrifugeStreamPosition? since,
+  ) async {
+    if (!state.isConnected) {
+      throw CentrifugeSubscriptionException(
+        channel: channel,
+        message: 'Centrifuge client is not connected',
+      );
+    }
+    final request = pb.SubscribeRequest()
+      ..channel = channel
+      ..positioned = config.positioned
+      ..recoverable = config.recoverable
+      ..joinLeave = config.joinLeave;
+    final token = await config.getToken?.call();
+    assert(
+      token == null || token.length > 5,
+      'Centrifuge Subscription JWT is too short',
+    );
+    if (token != null && token.isNotEmpty) request.token = token;
+    final data = await config.getPayload?.call();
+    if (data != null) request.data = data;
+    if (since != null) {
+      request
+        ..recover = true
+        ..offset = since.offset
+        ..epoch = since.epoch;
+    } else {
+      request.recover = false;
+    }
+    final pb.SubscribeResult result;
+    try {
+      result = await _sendMessage(request, pb.SubscribeResult())
+          .timeout(config.timeout);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        CentrifugeSubscriptionException(
+          channel: channel,
+          message: 'Error while making subscribe request',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+    final now = DateTime.now();
+    final publications = <CentrifugePublication>[
+      for (final pub in result.publications)
+        CentrifugePublication(
+          offset: pub.offset,
+          data: pub.data,
+          info: pub.hasInfo()
+              ? CentrifugeClientInfo(
+                  channelInfo: pub.info.chanInfo,
+                  client: pub.info.client,
+                  user: pub.info.user,
+                  connectionInfo: pub.info.connInfo,
+                )
+              : null,
+        ),
+    ];
+    final recoverable = result.hasRecoverable() && result.recoverable;
+    final expires = result.hasExpires() && result.expires && result.hasTtl();
+    return SubcibedOnChannel(
+      channel: channel,
+      expires: expires,
+      ttl: expires ? now.add(Duration(seconds: result.ttl)) : null,
+      recoverable: recoverable,
+      since: recoverable && result.hasOffset() && result.hasEpoch()
+          ? (offset: result.offset, epoch: result.epoch)
+          : null,
+      publications: publications,
+      recovered: result.hasRecovered() && result.recovered,
+      positioned: result.hasPositioned() && result.positioned,
+      wasRecovering: result.hasWasRecovering() && result.wasRecovering,
+      data: result.hasData() ? result.data : null,
+    );
+  }
 }
 
 /// To maintain connection alive and detect broken connections

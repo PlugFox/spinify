@@ -36,7 +36,7 @@ final class ClientSubscriptionManager {
   ) {
     if (_channelSubscriptions.containsKey(channel)) {
       throw CentrifugeSubscriptionException(
-        subscription: _channelSubscriptions[channel]!,
+        channel: channel,
         message: 'Subscription to a channel "$channel" already exists '
             'in client\'s internal registry',
       );
@@ -80,7 +80,7 @@ final class ClientSubscriptionManager {
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
         CentrifugeSubscriptionException(
-          subscription: subscription,
+          channel: subscription.channel,
           message: 'Error while unsubscribing',
           error: error,
         ),

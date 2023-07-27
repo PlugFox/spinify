@@ -1,3 +1,4 @@
+import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
 /// {@template subscription_state}
@@ -15,7 +16,7 @@ import 'package:meta/meta.dart';
 sealed class CentrifugeSubscriptionState
     extends _$CentrifugeSubscriptionStateBase {
   /// {@macro subscription_state}
-  const CentrifugeSubscriptionState(super.timestamp);
+  const CentrifugeSubscriptionState(super.timestamp, super.since);
 
   /// Unsubscribed
   /// {@macro subscription_state}
@@ -41,8 +42,10 @@ sealed class CentrifugeSubscriptionState
 final class CentrifugeSubscriptionState$Unsubscribed
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
-  CentrifugeSubscriptionState$Unsubscribed({DateTime? timestamp})
-      : super(timestamp ?? DateTime.now());
+  CentrifugeSubscriptionState$Unsubscribed({
+    DateTime? timestamp,
+    ({fixnum.Int64 offset, String epoch})? since,
+  }) : super(timestamp ?? DateTime.now(), since);
 
   @override
   R map<R>({
@@ -75,8 +78,10 @@ final class CentrifugeSubscriptionState$Unsubscribed
 final class CentrifugeSubscriptionState$Subscribing
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
-  CentrifugeSubscriptionState$Subscribing({DateTime? timestamp})
-      : super(timestamp ?? DateTime.now());
+  CentrifugeSubscriptionState$Subscribing({
+    DateTime? timestamp,
+    ({fixnum.Int64 offset, String epoch})? since,
+  }) : super(timestamp ?? DateTime.now(), since);
 
   @override
   R map<R>({
@@ -109,8 +114,10 @@ final class CentrifugeSubscriptionState$Subscribing
 final class CentrifugeSubscriptionState$Subscribed
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
-  CentrifugeSubscriptionState$Subscribed({DateTime? timestamp})
-      : super(timestamp ?? DateTime.now());
+  CentrifugeSubscriptionState$Subscribed({
+    DateTime? timestamp,
+    ({fixnum.Int64 offset, String epoch})? since,
+  }) : super(timestamp ?? DateTime.now(), since);
 
   @override
   R map<R>({
@@ -148,10 +155,13 @@ typedef CentrifugeSubscriptionStateMatch<R,
 @immutable
 abstract base class _$CentrifugeSubscriptionStateBase {
   /// {@nodoc}
-  const _$CentrifugeSubscriptionStateBase(this.timestamp);
+  const _$CentrifugeSubscriptionStateBase(this.timestamp, this.since);
 
   /// Timestamp of state change.
   final DateTime timestamp;
+
+  /// Stream Position
+  final ({fixnum.Int64 offset, String epoch})? since;
 
   /// Pattern matching for [CentrifugeSubscriptionState].
   R map<R>({
