@@ -15,10 +15,10 @@ import 'package:ws/ws.dart';
 
 /// {@nodoc}
 @internal
-abstract base class CentrifugeWebSocketProtobufTransportBase
+abstract base class CentrifugeWSPBTransportBase
     implements ICentrifugeTransport {
   /// {@nodoc}
-  CentrifugeWebSocketProtobufTransportBase({
+  CentrifugeWSPBTransportBase({
     required CentrifugeConfig config,
     required void Function() disconnectCallback,
   })  : _config = config,
@@ -69,7 +69,11 @@ abstract base class CentrifugeWebSocketProtobufTransportBase
 
   @override
   @mustCallSuper
-  Future<void> connect(String url) async {}
+  Future<void> connect({
+    required String url,
+    required String? token,
+    required List<int>? payload,
+  }) async {}
 
   @override
   @mustCallSuper
@@ -95,14 +99,15 @@ abstract base class CentrifugeWebSocketProtobufTransportBase
 /// {@nodoc}
 @internal
 // ignore: lines_longer_than_80_chars
-final class CentrifugeWebSocketProtobufTransport = CentrifugeWebSocketProtobufTransportBase
+final class CentrifugeWSPBTransport = CentrifugeWSPBTransportBase
     with
-        CentrifugeWebSocketProtobufReplyMixin,
-        CentrifugeWebSocketStateHandlerMixin,
-        CentrifugeWebSocketProtobufSenderMixin,
-        CentrifugeWebSocketConnectionMixin,
-        CentrifugeWebSocketProtobufPingPongMixin,
-        CentrifugeWebSocketProtobufHandlerMixin;
+        CentrifugeWSPBReplyMixin,
+        CentrifugeWSPBStateHandlerMixin,
+        CentrifugeWSPBSenderMixin,
+        CentrifugeWSPBConnectionMixin,
+        CentrifugeWSPBPingPongMixin,
+        CentrifugeWSPBSubscription,
+        CentrifugeWSPBHandlerMixin;
 
 /// Stored completer for responses.
 /// {@nodoc}
@@ -114,8 +119,7 @@ typedef _ReplyCompleter = ({
 /// Mixin responsible for holding reply completers.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWebSocketProtobufReplyMixin
-    on CentrifugeWebSocketProtobufTransportBase {
+base mixin CentrifugeWSPBReplyMixin on CentrifugeWSPBTransportBase {
   /// Completers for messages by id.
   /// Contains timer for timeout and completer for response.
   /// {@nodoc}
@@ -176,10 +180,8 @@ base mixin CentrifugeWebSocketProtobufReplyMixin
 /// Mixin responsible for sending data through websocket with protobuf.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWebSocketProtobufSenderMixin
-    on
-        CentrifugeWebSocketProtobufTransportBase,
-        CentrifugeWebSocketProtobufReplyMixin {
+base mixin CentrifugeWSPBSenderMixin
+    on CentrifugeWSPBTransportBase, CentrifugeWSPBReplyMixin {
   /// Encoder protobuf commands to bytes.
   /// {@nodoc}
   static const Converter<pb.Command, List<int>> _commandEncoder =
@@ -301,21 +303,27 @@ base mixin CentrifugeWebSocketProtobufSenderMixin
 /// Mixin responsible for connection.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWebSocketConnectionMixin
+base mixin CentrifugeWSPBConnectionMixin
     on
-        CentrifugeWebSocketProtobufTransportBase,
-        CentrifugeWebSocketProtobufSenderMixin,
-        CentrifugeWebSocketStateHandlerMixin {
+        CentrifugeWSPBTransportBase,
+        CentrifugeWSPBSenderMixin,
+        CentrifugeWSPBStateHandlerMixin {
   @override
-  Future<void> connect(String url) async {
+  Future<void> connect({
+    required String url,
+    required String? token,
+    required List<int>? payload,
+  }) async {
     try {
-      await super.connect(url);
+      await super.connect(
+        url: url,
+        token: token,
+        payload: payload,
+      );
       await _webSocket.connect(url);
       final request = pb.ConnectRequest();
-      final token = await _config.getToken?.call();
       assert(token == null || token.length > 5, 'Centrifuge JWT is too short');
       if (token != null) request.token = token;
-      final payload = await _config.getPayload?.call();
       if (payload != null) request.data = payload;
       request
         ..name = _config.client.name
@@ -359,10 +367,8 @@ base mixin CentrifugeWebSocketConnectionMixin
 /// Handler for websocket states.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWebSocketStateHandlerMixin
-    on
-        CentrifugeWebSocketProtobufTransportBase,
-        CentrifugeWebSocketProtobufReplyMixin {
+base mixin CentrifugeWSPBStateHandlerMixin
+    on CentrifugeWSPBTransportBase, CentrifugeWSPBReplyMixin {
   // Subscribe to websocket state after first connection.
   /// Subscription to websocket state.
   /// {@nodoc}
@@ -437,7 +443,11 @@ base mixin CentrifugeWebSocketStateHandlerMixin
   }
 
   @override
-  Future<void> connect(String url) {
+  Future<void> connect({
+    required String url,
+    required String? token,
+    required List<int>? payload,
+  }) {
     // Change state to connecting before connection.
     _setState(CentrifugeState$Connecting(url: url));
     // Subscribe to websocket state after initialization.
@@ -445,7 +455,11 @@ base mixin CentrifugeWebSocketStateHandlerMixin
       _handleWebSocketClosedStates,
       cancelOnError: false,
     );
-    return super.connect(url);
+    return super.connect(
+      url: url,
+      token: token,
+      payload: payload,
+    );
   }
 
   @override
@@ -459,11 +473,11 @@ base mixin CentrifugeWebSocketStateHandlerMixin
 /// Handler for websocket messages and decode protobuf.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWebSocketProtobufHandlerMixin
+base mixin CentrifugeWSPBHandlerMixin
     on
-        CentrifugeWebSocketProtobufTransportBase,
-        CentrifugeWebSocketProtobufSenderMixin,
-        CentrifugeWebSocketProtobufPingPongMixin {
+        CentrifugeWSPBTransportBase,
+        CentrifugeWSPBSenderMixin,
+        CentrifugeWSPBPingPongMixin {
   /// Encoder protobuf commands to bytes.
   /// {@nodoc}
   static const Converter<List<int>, Iterable<pb.Reply>> _replyDecoder =
@@ -474,13 +488,21 @@ base mixin CentrifugeWebSocketProtobufHandlerMixin
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
   @override
-  Future<void> connect(String url) {
+  Future<void> connect({
+    required String url,
+    required String? token,
+    required List<int>? payload,
+  }) {
     // Subscribe to websocket messages after first connection.
     _webSocketMessageSubscription ??= _webSocket.stream.bytes.listen(
       _handleWebSocketMessage,
       cancelOnError: false,
     );
-    return super.connect(url);
+    return super.connect(
+      url: url,
+      token: token,
+      payload: payload,
+    );
   }
 
   /// {@nodoc}
@@ -546,6 +568,13 @@ base mixin CentrifugeWebSocketProtobufHandlerMixin
   }
 }
 
+/// Mixin responsible for centrifuge subscriptions.
+/// {@nodoc}
+@internal
+base mixin CentrifugeWSPBSubscription on CentrifugeWSPBTransportBase {
+  Future<void> resubscribe() async {}
+}
+
 /// To maintain connection alive and detect broken connections
 /// server periodically sends empty commands to clients
 /// and expects empty replies from them.
@@ -554,16 +583,20 @@ base mixin CentrifugeWebSocketProtobufHandlerMixin
 /// time it can consider connection broken and try to reconnect.
 /// Usually a server sends pings every 25 seconds.
 /// {@nodoc}
-base mixin CentrifugeWebSocketProtobufPingPongMixin
-    on CentrifugeWebSocketProtobufTransportBase {
+@internal
+base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
   @protected
   @nonVirtual
   Timer? _pingTimer;
 
   @override
-  Future<void> connect(String url) async {
+  Future<void> connect({
+    required String url,
+    required String? token,
+    required List<int>? payload,
+  }) async {
     _tearDownPingTimer();
-    await super.connect(url);
+    await super.connect(url: url, token: token, payload: payload);
     _restartPingTimer();
   }
 

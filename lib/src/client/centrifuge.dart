@@ -41,7 +41,7 @@ final class Centrifuge extends CentrifugeBase
 abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   CentrifugeBase(CentrifugeConfig config) : _config = config {
-    _transport = CentrifugeWebSocketProtobufTransport(
+    _transport = CentrifugeWSPBTransport(
       config: config,
       disconnectCallback: _onDisconnect,
     );
@@ -126,7 +126,9 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
   Future<void> connect(String url) async {
     logger.fine('Interactively connecting to $url');
     try {
-      await _transport.connect(url);
+      final token = await _config.getToken?.call();
+      final payload = await _config.getPayload?.call();
+      await _transport.connect(url: url, token: token, payload: payload);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
