@@ -126,9 +126,7 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
   Future<void> connect(String url) async {
     logger.fine('Interactively connecting to $url');
     try {
-      final token = await _config.getToken?.call();
-      final payload = await _config.getPayload?.call();
-      await _transport.connect(url: url, token: token, payload: payload);
+      await _transport.connect(url);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
