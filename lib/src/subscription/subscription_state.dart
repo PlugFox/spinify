@@ -66,6 +66,15 @@ final class CentrifugeSubscriptionState$Unsubscribed
   final String reason;
 
   @override
+  bool get isUnsubscribed => true;
+
+  @override
+  bool get isSubscribing => false;
+
+  @override
+  bool get isSubscribed => false;
+
+  @override
   R map<R>({
     required CentrifugeSubscriptionStateMatch<R,
             CentrifugeSubscriptionState$Unsubscribed>
@@ -100,6 +109,15 @@ final class CentrifugeSubscriptionState$Subscribing
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
   }) : super(timestamp ?? DateTime.now(), since);
+
+  @override
+  bool get isUnsubscribed => false;
+
+  @override
+  bool get isSubscribing => true;
+
+  @override
+  bool get isSubscribed => false;
 
   @override
   R map<R>({
@@ -146,6 +164,15 @@ final class CentrifugeSubscriptionState$Subscribed
   final DateTime? ttl;
 
   @override
+  bool get isUnsubscribed => false;
+
+  @override
+  bool get isSubscribing => false;
+
+  @override
+  bool get isSubscribed => true;
+
+  @override
   R map<R>({
     required CentrifugeSubscriptionStateMatch<R,
             CentrifugeSubscriptionState$Unsubscribed>
@@ -188,6 +215,15 @@ abstract base class _$CentrifugeSubscriptionStateBase {
 
   /// Stream Position
   final ({fixnum.Int64 offset, String epoch})? since;
+
+  /// Whether channel is unsubscribed.
+  abstract final bool isUnsubscribed;
+
+  /// Whether channel is subscribing.
+  abstract final bool isSubscribing;
+
+  /// Whether channel is subscribed.
+  abstract final bool isSubscribed;
 
   /// Pattern matching for [CentrifugeSubscriptionState].
   R map<R>({

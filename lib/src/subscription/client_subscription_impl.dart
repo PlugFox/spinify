@@ -1,9 +1,6 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/subscription/subscription.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';
@@ -238,6 +235,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   /// {@nodoc}
   @override
   Future<void> unsubscribe() async {
+    if (state.isUnsubscribed) return;
     // TODO(plugfox): implement
   }
 
