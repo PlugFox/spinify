@@ -189,6 +189,8 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
         return await ready();
       }
       _setState(CentrifugeSubscriptionState$Subscribing(since: state.since));
+      _refreshTimer?.cancel();
+      _refreshTimer = null;
       final subscribed = await _transport.subscribe(
         channel,
         _config,
@@ -275,6 +277,8 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   @override
   Future<void> unsubscribe(
       [int code = 0, String reason = 'unsubscribe called']) async {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
     if (state.isUnsubscribed) return;
     _setState(CentrifugeSubscriptionState.unsubscribed(
       code: code,
@@ -318,7 +322,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
         _refreshTimer?.cancel();
         _refreshTimer = null;
         final token = await _config.getToken?.call();
-        if (token == null) return;
+        if (token == null || !state.isSubscribed) return;
         final result = await _transport.sendSubRefresh(channel, token);
         if (result.expires) _setRefreshTimer(result.ttl);
       });
