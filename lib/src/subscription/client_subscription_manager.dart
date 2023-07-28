@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/publication.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_impl.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
@@ -47,6 +48,14 @@ final class ClientSubscriptionManager {
       transportWeakRef: _transportWeakRef,
     );
   }
+
+  /// Notify subscription about new publication.
+  /// {@nodoc}
+  @internal
+  @nonVirtual
+  void handlePublication(CentrifugePublication publication) =>
+      _channelSubscriptions[publication.channel]
+          ?.handlePublication(publication);
 
   /// Get map wirth all registered client-side subscriptions.
   /// Returns all registered subscriptions,

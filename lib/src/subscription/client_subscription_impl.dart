@@ -115,9 +115,11 @@ abstract base class CentrifugeClientSubscriptionBase
   final StreamController<CentrifugePublication> _publicationController =
       StreamController<CentrifugePublication>.broadcast();
 
-  @protected
+  /// Notify about new publication.
+  /// {@nodoc}
+  @internal
   @nonVirtual
-  void _handlePublication(CentrifugePublication publication) {
+  void handlePublication(CentrifugePublication publication) {
     final offset = publication.offset;
     if (offset != null && offset > _offset) _offset = offset;
     _publicationController.add(publication);
@@ -200,7 +202,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
         ttl: subscribed.ttl,
       ));
       if (subscribed.publications.isNotEmpty)
-        subscribed.publications.forEach(_handlePublication);
+        subscribed.publications.forEach(handlePublication);
     } on CentrifugeException catch (error, stackTrace) {
       unsubscribe(0, 'error while subscribing').ignore();
       _emitError(error, stackTrace);

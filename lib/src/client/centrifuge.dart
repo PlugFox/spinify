@@ -141,11 +141,10 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
       StreamController<CentrifugeState>.broadcast();
 
   @override
-  Future<void> close() async {
-    await super.close();
-    _transport.states.removeListener(_onStateChange);
-    await _statesController.close();
-  }
+  Future<void> close() => super.close().whenComplete(() {
+        _transport.states.removeListener(_onStateChange);
+        _statesController.close().ignore();
+      });
 }
 
 /// Mixin responsible for errors stream.
@@ -363,7 +362,6 @@ base mixin CentrifugePublicationsMixin
   void _initCentrifuge() {
     super._initCentrifuge();
     _transport.publications.addListener(_onPublication);
-    // TODO(plugfox): notify subscriptions
   }
 
   @protected
@@ -398,8 +396,10 @@ base mixin CentrifugePublicationsMixin
   @nonVirtual
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
-  void _onPublication(CentrifugePublication publication) =>
-      _publicationsController.add(publication);
+  void _onPublication(CentrifugePublication publication) {
+    _clientSubscriptionManager.handlePublication(publication);
+    _publicationsController.add(publication);
+  }
 
   @override
   Future<void> close() => super.close().whenComplete(() {
@@ -416,11 +416,13 @@ base mixin CentrifugeQueueMixin on CentrifugeBase {
   /// {@nodoc}
   final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
 
-  // TODO(plugfox): add all methods
-
   @override
   Future<void> connect(String url) =>
       _eventQueue.push<void>('connect', () => super.connect(url));
+
+  @override
+  Future<void> publish(String channel, List<int> data) =>
+      _eventQueue.push<void>('publish', () => super.publish(channel, data));
 
   @override
   FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready);
