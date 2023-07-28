@@ -324,7 +324,10 @@ base mixin CentrifugeWSPBConnectionMixin
         result = await _sendMessage(request, pb.ConnectResult());
       } on Object catch (error, stackTrace) {
         Error.throwWithStackTrace(
-          CentrifugeConnectionException(error),
+          CentrifugeConnectionException(
+            message: 'Error while making connect request',
+            error: error,
+          ),
           stackTrace,
         );
       }
@@ -363,15 +366,23 @@ base mixin CentrifugeWSPBStateHandlerMixin
   /// {@nodoc}
   StreamSubscription<WebSocketClientState>? _webSocketClosedStateSubscription;
 
-  /// {@nodoc}
   @override
   @nonVirtual
-  late final CentrifugeValueNotifier<CentrifugeState> states =
-      CentrifugeValueNotifier(CentrifugeState$Disconnected(
+  CentrifugeState get state => _state;
+
+  @protected
+  @nonVirtual
+  CentrifugeState _state = CentrifugeState$Disconnected(
     timestamp: DateTime.now(),
     closeCode: null,
     closeReason: 'Not connected yet',
-  ));
+  );
+
+  /// {@nodoc}
+  @override
+  @nonVirtual
+  final CentrifugeChangeNotifier<CentrifugeState> states =
+      CentrifugeChangeNotifier();
 
   @override
   void _initTransport() {
@@ -382,7 +393,10 @@ base mixin CentrifugeWSPBStateHandlerMixin
   /// {@nodoc}
   @protected
   @nonVirtual
-  void _setState(CentrifugeState state) => states.notify(state);
+  void _setState(CentrifugeState state) {
+    if (state == _state) return;
+    states.notify(_state = state);
+  }
 
   @protected
   @nonVirtual
@@ -444,6 +458,10 @@ base mixin CentrifugeWSPBHandlerMixin
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
   @override
+  final CentrifugeChangeNotifier<CentrifugePublication> publications =
+      CentrifugeChangeNotifier<CentrifugePublication>();
+
+  @override
   Future<void> connect(String url) {
     // Subscribe to websocket messages after first connection.
     _webSocketMessageSubscription ??= _webSocket.stream.bytes.listen(
@@ -480,7 +498,7 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('dart2js:tryInline')
   void _onPing() {
     _restartPingTimer();
-    if (states.value case CentrifugeState$Connected(:bool? sendPong)) {
+    if (state case CentrifugeState$Connected(:bool? sendPong)) {
       if (sendPong != true) return;
       _sendAsyncMessage(pb.PingRequest()).ignore();
       logger.fine('Pong message sent');
@@ -493,7 +511,7 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('dart2js:tryInline')
   void _onPush(pb.Push push) {
     if (push.hasPub()) {
-      //_handlePub(push.channel, push.pub);
+      publications.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasJoin()) {
       //_handleJoin(push.channel, push.join);
     } else if (push.hasLeave()) {
@@ -527,7 +545,7 @@ base mixin CentrifugeWSPBSubscription
     CentrifugeSubscriptionConfig config,
     CentrifugeStreamPosition? since,
   ) async {
-    if (!states.value.isConnected) {
+    if (!state.isConnected) {
       throw CentrifugeSubscriptionException(
         channel: channel,
         message: 'Centrifuge client is not connected',
@@ -575,25 +593,14 @@ base mixin CentrifugeWSPBSubscription
       );
     }
     final now = DateTime.now();
-    final publications = UnmodifiableListView<CentrifugePublication>(
-      <CentrifugePublication>[
-        for (final pub in result.publications)
-          CentrifugePublication(
-            offset: pub.hasOffset() ? pub.offset : null,
-            data: pub.data,
-            info: pub.hasInfo()
-                ? CentrifugeClientInfo(
-                    client: pub.info.client,
-                    user: pub.info.user,
-                    channelInfo:
-                        pub.info.hasChanInfo() ? pub.info.chanInfo : null,
-                    connectionInfo:
-                        pub.info.hasConnInfo() ? pub.info.connInfo : null,
-                  )
-                : null,
-          ),
-      ],
-    );
+    final publicationDecoder = $publicationDecode(channel);
+    final publications = result.publications.isEmpty
+        ? _emptyPublicationsList
+        : UnmodifiableListView<CentrifugePublication>(
+            result.publications
+                .map<CentrifugePublication>(publicationDecoder)
+                .toList(growable: false),
+          );
     final recoverable = result.hasRecoverable() && result.recoverable;
     final expires = result.hasExpires() && result.expires && result.hasTtl();
     return SubcibedOnChannel(
@@ -644,27 +651,15 @@ base mixin CentrifugeWSPBSubscription
         ..epoch = since.epoch;
     }
     final result = await _sendMessage(request, pb.HistoryResult());
+    final publicationDecoder = $publicationDecode(channel);
     return CentrifugeHistory(
-      publications: UnmodifiableListView<CentrifugePublication>(
-        result.publications
-            .map<CentrifugePublication>(
-              (pub) => CentrifugePublication(
-                offset: pub.hasOffset() ? pub.offset : null,
-                data: pub.data,
-                info: pub.hasInfo()
-                    ? CentrifugeClientInfo(
-                        user: pub.info.user,
-                        client: pub.info.client,
-                        channelInfo:
-                            pub.info.hasChanInfo() ? pub.info.chanInfo : null,
-                        connectionInfo:
-                            pub.info.hasConnInfo() ? pub.info.connInfo : null,
-                      )
-                    : null,
-              ),
-            )
-            .toList(growable: false),
-      ),
+      publications: result.publications.isEmpty
+          ? _emptyPublicationsList
+          : UnmodifiableListView<CentrifugePublication>(
+              result.publications
+                  .map<CentrifugePublication>(publicationDecoder)
+                  .toList(growable: false),
+            ),
       since: (epoch: result.epoch, offset: result.offset),
     );
   }
@@ -730,7 +725,7 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
   @nonVirtual
   void _restartPingTimer() {
     _tearDownPingTimer();
-    if (states.value case CentrifugeState$Connected(:Duration pingInterval)) {
+    if (state case CentrifugeState$Connected(:Duration pingInterval)) {
       _pingTimer = Timer(
         pingInterval + _config.serverPingDelay,
         () => disconnect(
@@ -752,3 +747,31 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
     return super.close();
   }
 }
+
+/// {@nodoc}
+final List<CentrifugePublication> _emptyPublicationsList =
+    List<CentrifugePublication>.empty(growable: false);
+
+/// {@nodoc}
+@internal
+CentrifugePublication Function(pb.Publication publication) $publicationDecode(
+  String channel,
+) =>
+    (publication) => CentrifugePublication(
+          channel: channel,
+          offset: publication.hasOffset() ? publication.offset : null,
+          data: publication.data,
+          tags: publication.tags,
+          info: publication.hasInfo()
+              ? CentrifugeClientInfo(
+                  client: publication.info.client,
+                  user: publication.info.user,
+                  channelInfo: publication.info.hasChanInfo()
+                      ? publication.info.chanInfo
+                      : null,
+                  connectionInfo: publication.info.hasConnInfo()
+                      ? publication.info.connInfo
+                      : null,
+                )
+              : null,
+        );

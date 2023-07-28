@@ -1,12 +1,11 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/client/state.dart';
+import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
 import 'package:centrifuge_dart/src/util/notifier.dart';
 import 'package:meta/meta.dart';
 
@@ -14,9 +13,17 @@ import 'package:meta/meta.dart';
 /// {@nodoc}
 @internal
 abstract interface class ICentrifugeTransport {
+  /// Current state
+  /// {@nodoc}
+  CentrifugeState get state;
+
   /// State observable.
   /// {@nodoc}
-  abstract final CentrifugeValueListenable<CentrifugeState> states;
+  abstract final CentrifugeListenable<CentrifugeState> states;
+
+  /// Publications.
+  /// {@nodoc}
+  abstract final CentrifugeListenable<CentrifugePublication> publications;
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.

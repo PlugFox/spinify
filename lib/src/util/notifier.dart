@@ -7,11 +7,7 @@ typedef ValueChanged<T> = void Function(T value);
 /// Notify about value changes.
 /// {@nodoc}
 @internal
-abstract interface class CentrifugeValueListenable<T> {
-  /// Current value.
-  /// {@nodoc}
-  T get value;
-
+abstract interface class CentrifugeListenable<T> {
   /// Add listener.
   /// {@nodoc}
   void addListener(ValueChanged<T> listener);
@@ -24,22 +20,15 @@ abstract interface class CentrifugeValueListenable<T> {
 /// Notify about value changes.
 /// {@nodoc}
 @internal
-final class CentrifugeValueNotifier<T> implements CentrifugeValueListenable<T> {
+final class CentrifugeChangeNotifier<T> implements CentrifugeListenable<T> {
   /// Notify about value changes.
   /// {@nodoc}
-  CentrifugeValueNotifier(this._value);
-
-  @override
-  T get value => _value;
-  T _value;
+  CentrifugeChangeNotifier();
 
   /// Notify about value changes.
   /// {@nodoc}
-  bool notify(T value) {
-    if (_value == value) return false;
-    _value = value;
+  void notify(T value) {
     for (var i = 0; i < _listeners.length; i++) _listeners[i](value);
-    return true;
   }
 
   /// Listeners.

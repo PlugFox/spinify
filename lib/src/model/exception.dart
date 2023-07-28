@@ -36,19 +36,7 @@ sealed class CentrifugeException implements Exception {
 /// {@category Exception}
 final class CentrifugeConnectionException extends CentrifugeException {
   /// {@macro exception}
-  const CentrifugeConnectionException([Object? error])
-      : super(
-          'centrifuge_connection_exception',
-          'Connection problem',
-          error,
-        );
-}
-
-/// {@macro exception}
-/// {@category Exception}
-final class CentrifugeDisconnectionException extends CentrifugeException {
-  /// {@macro exception}
-  const CentrifugeDisconnectionException({String? message, Object? error})
+  const CentrifugeConnectionException({String? message, Object? error})
       : super(
           'centrifuge_disconnection_exception',
           message ?? 'Connection problem',

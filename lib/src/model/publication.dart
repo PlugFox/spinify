@@ -10,11 +10,15 @@ import 'package:meta/meta.dart';
 final class CentrifugePublication {
   /// {@macro publication}
   const CentrifugePublication({
+    required this.channel,
     required this.data,
     this.offset,
     this.info,
     this.tags,
   });
+
+  /// Publication channel
+  final String channel;
 
   /// Publication payload
   final List<int> data;

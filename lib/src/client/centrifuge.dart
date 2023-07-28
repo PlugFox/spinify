@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
 import 'package:centrifuge_dart/src/client/config.dart';
+import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/client/states_stream.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/publication.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
@@ -25,6 +27,7 @@ final class Centrifuge extends CentrifugeBase
         CentrifugeConnectionMixin,
         CentrifugeSendMixin,
         CentrifugeClientSubscriptionMixin,
+        CentrifugePublicationsMixin,
         CentrifugeQueueMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
@@ -93,13 +96,13 @@ abstract base class CentrifugeBase implements ICentrifuge {
 /// {@nodoc}
 @internal
 base mixin CentrifugeStateMixin on CentrifugeBase {
-  @protected
-  @nonVirtual
-  late CentrifugeState _state = _transport.states.value;
-
   @override
   @nonVirtual
   CentrifugeState get state => _state;
+
+  @nonVirtual
+  @protected
+  late CentrifugeState _state;
 
   @override
   @nonVirtual
@@ -108,6 +111,7 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
 
   @override
   void _initCentrifuge() {
+    _state = _transport.state;
     _transport.states.addListener(_onStateChange);
     super._initCentrifuge();
   }
@@ -187,7 +191,10 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeConnectionException(error);
+      final centrifugeException = CentrifugeConnectionException(
+        message: 'Error while connecting to $url',
+        error: error,
+      );
       _emitError(centrifugeException, stackTrace);
       Error.throwWithStackTrace(centrifugeException, stackTrace);
     }
@@ -198,11 +205,11 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
     try {
       switch (state) {
         case CentrifugeState$Disconnected _:
-          throw const CentrifugeDisconnectionException(
+          throw const CentrifugeConnectionException(
             message: 'Client is not connected',
           );
         case CentrifugeState$Closed _:
-          throw const CentrifugeDisconnectionException(
+          throw const CentrifugeConnectionException(
             message: 'Client is permanently closed',
           );
         case CentrifugeState$Connected _:
@@ -210,11 +217,24 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
         case CentrifugeState$Connecting _:
           await states.connected.first.timeout(_config.timeout);
       }
+    } on TimeoutException catch (error, stackTrace) {
+      _transport
+          .disconnect(
+            DisconnectCode.timeout.code,
+            DisconnectCode.timeout.reason,
+          )
+          .ignore();
+      final centrifugeException = CentrifugeConnectionException(
+        message: 'Timeout exception while waiting for connection',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeDisconnectionException(
+      final centrifugeException = CentrifugeConnectionException(
         message: 'Client is not connected',
         error: error,
       );
@@ -232,7 +252,10 @@ base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeConnectionException(error);
+      final centrifugeException = CentrifugeConnectionException(
+        message: 'Error while disconnecting',
+        error: error,
+      );
       _emitError(centrifugeException, stackTrace);
       Error.throwWithStackTrace(centrifugeException, stackTrace);
     }
@@ -255,7 +278,8 @@ base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
     try {
       await ready();
       await _transport.sendAsyncMessage(data);
-    } on CentrifugeException {
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
       final centrifugeException = CentrifugeSendException(error: error);
@@ -325,6 +349,63 @@ base mixin CentrifugeClientSubscriptionMixin
     await super.close();
     _clientSubscriptionManager.removeAll();
   }
+}
+
+/// Mixin responsible for client-side subscriptions.
+/// {@nodoc}
+@internal
+base mixin CentrifugePublicationsMixin
+    on
+        CentrifugeBase,
+        CentrifugeErrorsMixin,
+        CentrifugeClientSubscriptionMixin {
+  @override
+  void _initCentrifuge() {
+    super._initCentrifuge();
+    _transport.publications.addListener(_onPublication);
+    // TODO(plugfox): notify subscriptions
+  }
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugePublication> _publicationsController =
+      StreamController<CentrifugePublication>.broadcast();
+
+  @override
+  @nonVirtual
+  late final Stream<CentrifugePublication> publications =
+      _publicationsController.stream;
+
+  @override
+  Future<void> publish(String channel, List<int> data) async {
+    try {
+      await ready();
+      await _transport.publish(channel, data);
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSendException(
+        message: 'Error while publishing to channel $channel',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+
+  @protected
+  @nonVirtual
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  void _onPublication(CentrifugePublication publication) =>
+      _publicationsController.add(publication);
+
+  @override
+  Future<void> close() => super.close().whenComplete(() {
+        _transport.publications.removeListener(_onPublication);
+        _publicationsController.close().ignore();
+      });
 }
 
 /// Mixin responsible for queue.

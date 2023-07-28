@@ -9,6 +9,8 @@ abstract interface class ICentrifuge
     implements
         ICentrifugeStateOwner,
         ICentrifugeAsyncMessageSender,
+        ICentrifugePublicationSender,
+        ICentrifugePublicationReceiver,
         ICentrifugeClientSubscriptionsManager {
   /// Stream of errors.
   abstract final Stream<
@@ -56,6 +58,18 @@ abstract interface class ICentrifugeStateOwner {
 
   /// Stream of client states.
   abstract final CentrifugeStatesStream states;
+}
+
+/// Centrifuge send publication interface.
+abstract interface class ICentrifugePublicationSender {
+  /// Publish data to specific subscription channel
+  Future<void> publish(String channel, List<int> data);
+}
+
+/// Centrifuge receive publication interface.
+abstract interface class ICentrifugePublicationReceiver {
+  /// Stream of publications.
+  abstract final Stream<CentrifugePublication> publications;
 }
 
 /// Centrifuge send asynchronous message interface.

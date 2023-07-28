@@ -10,6 +10,7 @@ import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
+import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 import 'package:stack_trace/stack_trace.dart' as st;
 
@@ -31,13 +32,6 @@ final class CentrifugeClientSubscriptionImpl
     required super.transportWeakRef,
     CentrifugeSubscriptionConfig? config,
   }) : super(config: config ?? const CentrifugeSubscriptionConfig.byDefault());
-
-  /*
-    publish(data) - publish data to Subscription channel
-    history(options) - request Subscription channel history
-    presence() - request Subscription channel online presence information
-    presenceStats() - request Subscription channel online presence stats information (number of client connections and unique users in a channel).
-  */
 }
 
 /// {@nodoc}
@@ -56,6 +50,9 @@ abstract base class CentrifugeClientSubscriptionBase
 
   @override
   final String channel;
+
+  /// Offset of last received publication.
+  late fixnum.Int64 _offset;
 
   /// Weak reference to transport.
   /// {@nodoc}
@@ -76,8 +73,9 @@ abstract base class CentrifugeClientSubscriptionBase
   @protected
   @mustCallSuper
   void _initSubscription() {
-    _state; // ignore: unnecessary_statements
-    // TODO(plugfox): subscribe on disconnections
+    _state = CentrifugeSubscriptionState.unsubscribed(
+        since: _config.since, code: 0, reason: 'initial state');
+    _offset = _config.since?.offset ?? fixnum.Int64.ZERO;
   }
 
   /// Subscription has 3 states:
@@ -87,9 +85,7 @@ abstract base class CentrifugeClientSubscriptionBase
   /// {@nodoc}
   @override
   CentrifugeSubscriptionState get state => _state;
-  late CentrifugeSubscriptionState _state =
-      CentrifugeSubscriptionState.unsubscribed(
-          since: _config.since, code: 0, reason: 'initial state');
+  late CentrifugeSubscriptionState _state;
 
   /// Stream of subscription states.
   /// {@nodoc}
@@ -119,13 +115,12 @@ abstract base class CentrifugeClientSubscriptionBase
   final StreamController<CentrifugePublication> _publicationController =
       StreamController<CentrifugePublication>.broadcast();
 
-  /// Called when connection lost.
-  /// Right before [CentrifugeState$Disconnected] state.
-  /// {@nodoc}
   @protected
-  @mustCallSuper
-  void _onDisconnect() {
-    logger.fine('Connection lost');
+  @nonVirtual
+  void _handlePublication(CentrifugePublication publication) {
+    final offset = publication.offset;
+    if (offset != null && offset > _offset) _offset = offset;
+    _publicationController.add(publication);
   }
 
   /// {@nodoc}
@@ -180,21 +175,32 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   Future<void> subscribe() async {
     logger.fine('Subscribing to $channel');
     try {
-      if (state is CentrifugeSubscriptionState$Subscribed) return;
-      if (state is CentrifugeSubscriptionState$Subscribing) {
+      if (state.isSubscribed) {
+        return;
+      } else if (state.isSubscribing) {
         return await ready();
       }
       _setState(CentrifugeSubscriptionState$Subscribing(since: state.since));
       final subscribed = await _transport.subscribe(
         channel,
         _config,
-        state.since,
+        switch (state.since) {
+          null => null,
+          ({String epoch, fixnum.Int64 offset}) s => (
+              epoch: s.epoch,
+              offset: _offset,
+            ),
+        },
       );
+      final offset = subscribed.since?.offset;
+      if (offset != null && offset > _offset) _offset = offset;
       _setState(CentrifugeSubscriptionState$Subscribed(
         since: subscribed.since,
         recoverable: subscribed.recoverable,
         ttl: subscribed.ttl,
       ));
+      if (subscribed.publications.isNotEmpty)
+        subscribed.publications.forEach(_handlePublication);
     } on CentrifugeException catch (error, stackTrace) {
       unsubscribe(0, 'error while subscribing').ignore();
       _emitError(error, stackTrace);
@@ -227,6 +233,20 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
         case CentrifugeSubscriptionState$Subscribing _:
           await states.subscribed.first.timeout(_config.timeout);
       }
+    } on TimeoutException catch (error, stackTrace) {
+      _transport
+          .disconnect(
+            DisconnectCode.timeout.code,
+            DisconnectCode.timeout.reason,
+          )
+          .ignore();
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Timeout exception while waiting for subscribing to $channel',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
@@ -288,13 +308,12 @@ base mixin CentrifugeClientSubscriptionPublishingMixin
         CentrifugeClientSubscriptionErrorsMixin {
   @override
   Future<void> publish(List<int> data) async {
-    await ready();
     try {
+      await ready();
       await _transport.publish(channel, data);
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSubscriptionException(
-        message: 'Error while publishing',
-        channel: channel,
+      final centrifugeException = CentrifugeSendException(
+        message: 'Error while publishing to channel $channel',
         error: error,
       );
       _emitError(centrifugeException, stackTrace);
@@ -385,7 +404,56 @@ base mixin CentrifugeClientSubscriptionQueueMixin
   /// {@nodoc}
   final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
 
-  // TODO(plugfox): add all methods
+  @override
+  FutureOr<void> ready() => _eventQueue.push<void>(
+        'ready',
+        super.ready,
+      );
+
+  @override
+  Future<void> subscribe() => _eventQueue.push<void>(
+        'subscribe',
+        super.subscribe,
+      );
+
+  @override
+  Future<void> unsubscribe([
+    int code = 0,
+    String reason = 'unsubscribe called',
+  ]) =>
+      _eventQueue.push<void>(
+        'unsubscribe',
+        () => super.unsubscribe(code, reason),
+      );
+
+  @override
+  Future<void> publish(List<int> data) => _eventQueue.push<void>(
+        'publish',
+        () => super.publish(data),
+      );
+
+  @override
+  Future<CentrifugeHistory> history({
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  }) =>
+      _eventQueue.push<CentrifugeHistory>(
+        'history',
+        () => super.history(
+          limit: limit,
+          since: since,
+          reverse: reverse,
+        ),
+      );
+
+  @override
+  Future<CentrifugePresence> presence() =>
+      _eventQueue.push<CentrifugePresence>('presence', super.presence);
+
+  @override
+  Future<CentrifugePresenceStats> presenceStats() => _eventQueue
+      .push<CentrifugePresenceStats>('presenceStats', super.presenceStats);
 
   @override
   Future<void> close() => _eventQueue
