@@ -335,13 +335,14 @@ base mixin CentrifugeWSPBConnectionMixin
         throw StateError('Connection closed during connection process');
       }
       final now = DateTime.now();
+      final expires = result.hasExpires() && result.expires && result.hasTtl();
       _setState(CentrifugeState$Connected(
         url: url,
         timestamp: now,
         client: result.hasClient() ? result.client : null,
         version: result.hasVersion() ? result.version : null,
-        expires: result.hasExpires() ? result.expires : null,
-        ttl: result.hasTtl() ? now.add(Duration(seconds: result.ttl)) : null,
+        expires: expires,
+        ttl: expires ? now.add(Duration(seconds: result.ttl)) : null,
         node: result.hasNode() ? result.node : null,
         pingInterval: result.hasPing() ? Duration(seconds: result.ping) : null,
         sendPong: result.hasPong() ? result.pong : null,
@@ -646,6 +647,11 @@ base mixin CentrifugeWSPBSubscription
     String channel,
     CentrifugeSubscriptionConfig config,
   ) async {
+    if (_webSocket.state.readyState.isDisconnecting ||
+        _webSocket.state.readyState.isClosed) {
+      // Disconnected - do nothing.
+      return;
+    }
     final request = pb.UnsubscribeRequest()..channel = channel;
     await _sendMessage(request, pb.UnsubscribeResult()).timeout(config.timeout);
   }
@@ -717,6 +723,26 @@ base mixin CentrifugeWSPBSubscription
           clients: r.hasNumClients() ? r.numClients : 0,
           users: r.hasNumUsers() ? r.numUsers : 0,
         ),
+      );
+
+  @override
+  Future<({bool expires, DateTime? ttl})> sendSubRefresh(
+    String channel,
+    String token,
+  ) =>
+      _sendMessage(
+              pb.SubRefreshRequest()
+                ..channel = channel
+                ..token = token,
+              pb.SubRefreshResult())
+          .then<({bool expires, DateTime? ttl})>(
+        (r) {
+          final expires = r.hasExpires() && r.expires && r.hasTtl();
+          return (
+            expires: expires,
+            ttl: expires ? DateTime.now().add(Duration(seconds: r.ttl)) : null
+          );
+        },
       );
 }
 

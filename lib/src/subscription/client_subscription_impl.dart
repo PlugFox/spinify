@@ -173,6 +173,10 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     on
         CentrifugeClientSubscriptionBase,
         CentrifugeClientSubscriptionErrorsMixin {
+  /// Refresh timer.
+  /// {@nodoc}
+  Timer? _refreshTimer;
+
   /// Start subscribing to a channel
   /// {@nodoc}
   @override
@@ -205,6 +209,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       ));
       if (subscribed.publications.isNotEmpty)
         subscribed.publications.forEach(handlePublication);
+      if (subscribed.expires) _setRefreshTimer(subscribed.ttl);
     } on CentrifugeException catch (error, stackTrace) {
       unsubscribe(0, 'error while subscribing').ignore();
       _emitError(error, stackTrace);
@@ -294,6 +299,29 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       Error.throwWithStackTrace(centrifugeException, stackTrace);
     }
   }
+
+  /// Refresh subscription when ttl is expired.
+  /// {@nodoc}
+  void _setRefreshTimer(DateTime? ttl) {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    if (ttl == null) return;
+    final now = DateTime.now();
+    final duration = ttl.subtract(_config.timeout * 4).difference(now);
+    if (duration.isNegative) return;
+    _refreshTimer = Timer(duration, _refreshToken);
+  }
+
+  /// Refresh token for subscription.
+  /// {@nodoc}
+  void _refreshToken() => Future<void>(() async {
+        _refreshTimer?.cancel();
+        _refreshTimer = null;
+        final token = await _config.getToken?.call();
+        if (token == null) return;
+        final result = await _transport.sendSubRefresh(channel, token);
+        if (result.expires) _setRefreshTimer(result.ttl);
+      });
 
   @override
   Future<void> close() async {
