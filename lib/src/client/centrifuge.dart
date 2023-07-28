@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
-import 'package:centrifuge_dart/src/model/config.dart';
+import 'package:centrifuge_dart/src/client/config.dart';
+import 'package:centrifuge_dart/src/client/state.dart';
+import 'package:centrifuge_dart/src/client/states_stream.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
-import 'package:centrifuge_dart/src/model/state.dart';
-import 'package:centrifuge_dart/src/model/states_stream.dart';
-import 'package:centrifuge_dart/src/model/subscription.dart';
-import 'package:centrifuge_dart/src/model/subscription_config.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
+import 'package:centrifuge_dart/src/subscription/subscription.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';

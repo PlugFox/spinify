@@ -1,7 +1,9 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/interface.dart';
-import 'package:centrifuge_dart/src/model/subscription_states_stream.dart';
+import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/publication.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
 
 /// {@template subscription}

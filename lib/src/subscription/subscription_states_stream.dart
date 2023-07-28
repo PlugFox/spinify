@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/subscription_state.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
 
 /// Stream of Centrifuge's [CentrifugeSubscriptionState] changes.
 /// {@category Subscription}

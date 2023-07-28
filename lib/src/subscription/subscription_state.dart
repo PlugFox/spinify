@@ -21,6 +21,8 @@ sealed class CentrifugeSubscriptionState
   /// Unsubscribed
   /// {@macro subscription_state}
   factory CentrifugeSubscriptionState.unsubscribed({
+    required int code,
+    required String reason,
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
   }) = CentrifugeSubscriptionState$Unsubscribed;
@@ -37,6 +39,8 @@ sealed class CentrifugeSubscriptionState
   factory CentrifugeSubscriptionState.subscribed({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
+    bool recoverable,
+    DateTime? ttl,
   }) = CentrifugeSubscriptionState$Subscribed;
 }
 
@@ -49,9 +53,17 @@ final class CentrifugeSubscriptionState$Unsubscribed
     extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
   /// {@nodoc}
   CentrifugeSubscriptionState$Unsubscribed({
+    required this.code,
+    required this.reason,
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
   }) : super(timestamp ?? DateTime.now(), since);
+
+  /// Unsubscribe code.
+  final int code;
+
+  /// Unsubscribe reason.
+  final String reason;
 
   @override
   R map<R>({
@@ -123,7 +135,15 @@ final class CentrifugeSubscriptionState$Subscribed
   CentrifugeSubscriptionState$Subscribed({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
+    this.recoverable = false,
+    this.ttl,
   }) : super(timestamp ?? DateTime.now(), since);
+
+  /// Whether channel is recoverable.
+  final bool recoverable;
+
+  /// Time to live in seconds.
+  final DateTime? ttl;
 
   @override
   R map<R>({
@@ -140,7 +160,7 @@ final class CentrifugeSubscriptionState$Subscribed
       subscribed(this);
 
   @override
-  int get hashCode => Object.hash(2, timestamp, since);
+  int get hashCode => Object.hash(2, timestamp, since, recoverable, ttl);
 
   @override
   bool operator ==(Object other) => identical(this, other);

@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/model/subscription_states_stream.dart';
+import 'package:centrifuge_dart/src/subscription/subscription.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
@@ -80,7 +83,8 @@ abstract base class CentrifugeClientSubscriptionBase
   @override
   CentrifugeSubscriptionState get state => _state;
   late CentrifugeSubscriptionState _state =
-      CentrifugeSubscriptionState.unsubscribed(since: _config.since);
+      CentrifugeSubscriptionState.unsubscribed(
+          since: _config.since, code: 0, reason: 'initial state');
 
   /// Stream of subscription states.
   /// {@nodoc}
@@ -175,8 +179,17 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       if (state is CentrifugeSubscriptionState$Subscribing) {
         return await ready();
       }
-      _setState(CentrifugeSubscriptionState$Subscribing());
-      // TODO(plugfox): implement
+      _setState(CentrifugeSubscriptionState$Subscribing(since: state.since));
+      final subscribed = await _transport.subscribe(
+        channel,
+        _config,
+        state.since,
+      );
+      _setState(CentrifugeSubscriptionState$Subscribed(
+        since: subscribed.since,
+        recoverable: subscribed.recoverable,
+        ttl: subscribed.ttl,
+      ));
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;

@@ -5,7 +5,7 @@ import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/model/disconnect_code.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
 import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/model/subcibed_on_channel.dart';
+import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/transport_protobuf_codec.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;

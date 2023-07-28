@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/state.dart';
+import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/model/subcibed_on_channel.dart';
-import 'package:centrifuge_dart/src/model/subscription_config.dart';
+import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
 import 'package:meta/meta.dart';
 
 /// Class responsible for sending and receiving data from the server.

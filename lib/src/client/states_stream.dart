@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/state.dart';
+import 'package:centrifuge_dart/src/client/state.dart';
 
 /// Stream of Centrifuge's [CentrifugeState] changes.
 /// {@category Client}

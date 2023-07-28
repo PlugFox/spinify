@@ -1,9 +1,9 @@
 import 'dart:collection';
 
 import 'package:centrifuge_dart/src/model/exception.dart';
-import 'package:centrifuge_dart/src/model/subscription.dart';
-import 'package:centrifuge_dart/src/model/subscription_config.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_impl.dart';
+import 'package:centrifuge_dart/src/subscription/subscription.dart';
+import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:meta/meta.dart';
 
