@@ -603,6 +603,15 @@ base mixin CentrifugeWSPBSubscription
       data: result.hasData() ? result.data : null,
     );
   }
+
+  @override
+  Future<void> unsubscribe(
+    String channel,
+    CentrifugeSubscriptionConfig config,
+  ) async {
+    final request = pb.UnsubscribeRequest()..channel = channel;
+    await _sendMessage(request, pb.UnsubscribeResult()).timeout(config.timeout);
+  }
 }
 
 /// To maintain connection alive and detect broken connections

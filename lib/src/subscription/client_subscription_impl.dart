@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
+import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';
@@ -244,7 +245,23 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       reason: reason,
       since: state.since,
     ));
-    // TODO(plugfox): implement
+    try {
+      await _transport.unsubscribe(channel, _config);
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Error while unsubscribing',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      _transport
+          .disconnect(
+            DisconnectCode.unsubscribeError.code,
+            DisconnectCode.unsubscribeError.reason,
+          )
+          .ignore();
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
   }
 
   @override

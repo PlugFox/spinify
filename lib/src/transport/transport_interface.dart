@@ -23,13 +23,22 @@ abstract interface class ICentrifugeTransport {
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifuge
   /// asynchronous message handler does not exist.
+  /// {@nodoc}
   Future<void> sendAsyncMessage(List<int> data);
 
   /// Subscribe on channel with optional [since] position.
+  /// {@nodoc}
   Future<SubcibedOnChannel> subscribe(
     String channel,
     CentrifugeSubscriptionConfig config,
     CentrifugeStreamPosition? since,
+  );
+
+  /// Unsubscribe from channel.
+  /// {@nodoc}
+  Future<void> unsubscribe(
+    String channel,
+    CentrifugeSubscriptionConfig config,
   );
 
   /// Disconnect from the server.

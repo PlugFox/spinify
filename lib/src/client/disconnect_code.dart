@@ -27,7 +27,10 @@ enum DisconnectCode {
   messageSizeLimit(3, 'message size limit exceeded'),
 
   /// Timeout
-  timeout(4, 'timeout exceeded');
+  timeout(4, 'timeout exceeded'),
+
+  /// Unsubscribe error
+  unsubscribeError(5, 'unsubscribe error');
 
   /// {@nodoc}
   const DisconnectCode(this.code, this.reason);
