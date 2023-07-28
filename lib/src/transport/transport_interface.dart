@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
+import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -24,6 +25,12 @@ abstract interface class ICentrifugeTransport {
   /// Publications.
   /// {@nodoc}
   abstract final CentrifugeListenable<CentrifugePublication> publications;
+
+  /// Channel presence.
+  /// Join / Leave events.
+  /// {@nodoc}
+  abstract final CentrifugeListenable<CentrifugeChannelPresenceEvent>
+      presenceEvents;
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.

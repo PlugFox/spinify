@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
+import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -318,7 +319,6 @@ base mixin CentrifugeWSPBConnectionMixin
         ..name = _config.client.name
         ..version = _config.client.version;
       // TODO(plugfox): add subscriptions.
-      // TODO(plugfox): Send request.
       final pb.ConnectResult result;
       try {
         result = await _sendMessage(request, pb.ConnectResult());
@@ -437,6 +437,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
     _webSocketClosedStateSubscription?.cancel().ignore();
     _setState(CentrifugeState$Closed());
     await super.close();
+    states.close();
   }
 }
 
@@ -460,6 +461,11 @@ base mixin CentrifugeWSPBHandlerMixin
   @override
   final CentrifugeChangeNotifier<CentrifugePublication> publications =
       CentrifugeChangeNotifier<CentrifugePublication>();
+
+  @override
+  final CentrifugeChangeNotifier<CentrifugeChannelPresenceEvent>
+      presenceEvents =
+      CentrifugeChangeNotifier<CentrifugeChannelPresenceEvent>();
 
   @override
   Future<void> connect(String url) {
@@ -513,16 +519,30 @@ base mixin CentrifugeWSPBHandlerMixin
     if (push.hasPub()) {
       publications.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasJoin()) {
-      //_handleJoin(push.channel, push.join);
+      presenceEvents.notify(
+        CentrifugeJoinEvent(
+          channel: push.channel,
+          info: $decodeClientInfo(push.join.info),
+        ),
+      );
     } else if (push.hasLeave()) {
-      //_handleLeave(push.channel, push.leave);
+      presenceEvents.notify(
+        CentrifugeLeaveEvent(
+          channel: push.channel,
+          info: $decodeClientInfo(push.join.info),
+        ),
+      );
     } else if (push.hasSubscribe()) {
+      // TODO(plugfox): implement.
       //_handleSubscribe(push.channel, push.subscribe);
     } else if (push.hasUnsubscribe()) {
+      // TODO(plugfox): implement.
       //_handleUnsubscribe(push.channel, push.unsubscribe);
     } else if (push.hasMessage()) {
+      // TODO(plugfox): implement.
       //_handleMessage(push.message);
     } else if (push.hasDisconnect()) {
+      // TODO(plugfox): implement.
       //_handleDisconnect(push.disconnect);
     }
   }
@@ -530,6 +550,8 @@ base mixin CentrifugeWSPBHandlerMixin
   @override
   Future<void> close() async {
     await super.close();
+    publications.close();
+    presenceEvents.close();
     _webSocketMessageSubscription?.cancel().ignore();
   }
 }
@@ -669,6 +691,7 @@ base mixin CentrifugeWSPBSubscription
       _sendMessage(pb.PresenceRequest()..channel = channel, pb.PresenceResult())
           .then<CentrifugePresence>(
         (r) => CentrifugePresence(
+          channel: channel,
           clients: UnmodifiableMapView<String, CentrifugeClientInfo>(
             <String, CentrifugeClientInfo>{
               for (final e in r.presence.entries)
@@ -690,6 +713,7 @@ base mixin CentrifugeWSPBSubscription
               pb.PresenceStatsResult())
           .then<CentrifugePresenceStats>(
         (r) => CentrifugePresenceStats(
+          channel: channel,
           clients: r.hasNumClients() ? r.numClients : 0,
           users: r.hasNumUsers() ? r.numUsers : 0,
         ),
@@ -763,15 +787,16 @@ CentrifugePublication Function(pb.Publication publication) $publicationDecode(
           data: publication.data,
           tags: publication.tags,
           info: publication.hasInfo()
-              ? CentrifugeClientInfo(
-                  client: publication.info.client,
-                  user: publication.info.user,
-                  channelInfo: publication.info.hasChanInfo()
-                      ? publication.info.chanInfo
-                      : null,
-                  connectionInfo: publication.info.hasConnInfo()
-                      ? publication.info.connInfo
-                      : null,
-                )
+              ? $decodeClientInfo(publication.info)
               : null,
         );
+
+/// {@nodoc}
+@internal
+CentrifugeClientInfo $decodeClientInfo(pb.ClientInfo info) =>
+    CentrifugeClientInfo(
+      client: info.client,
+      user: info.user,
+      channelInfo: info.hasChanInfo() ? info.chanInfo : null,
+      connectionInfo: info.hasConnInfo() ? info.connInfo : null,
+    );

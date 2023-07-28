@@ -40,4 +40,7 @@ final class CentrifugeChangeNotifier<T> implements CentrifugeListenable<T> {
 
   @override
   void removeListener(ValueChanged<T> listener) => _listeners.remove(listener);
+
+  /// Close notifier.
+  void close() => _listeners.clear();
 }

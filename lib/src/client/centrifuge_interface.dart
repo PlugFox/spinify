@@ -3,6 +3,9 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
+import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
+import 'package:centrifuge_dart/src/model/presence.dart';
+import 'package:centrifuge_dart/src/model/presence_stats.dart';
 
 /// Centrifuge client interface.
 abstract interface class ICentrifuge
@@ -11,7 +14,8 @@ abstract interface class ICentrifuge
         ICentrifugeAsyncMessageSender,
         ICentrifugePublicationSender,
         ICentrifugePublicationReceiver,
-        ICentrifugeClientSubscriptionsManager {
+        ICentrifugeClientSubscriptionsManager,
+        ICentrifugePresenceOwner {
   /// Stream of errors.
   abstract final Stream<
       ({CentrifugeException exception, StackTrace stackTrace})> errors;
@@ -38,17 +42,9 @@ abstract interface class ICentrifuge
   /// Publish data to the channel.
   /* Future<PublishResult> publish(String channel, List<int> data); */
 
-  /* abstract final Stream<Object> publications; */
-
   /// Send History command.
   /* Future<HistoryResult> history(String channel,
       {int limit = 0, StreamPosition? since, bool reverse = false}); */
-
-  /// Send Presence command.
-  /* Future<PresenceResult> presence(String channel); */
-
-  /// Send PresenceStats command.
-  /* Future<PresenceStatsResult> presenceStats(String channel); */
 }
 
 /// Centrifuge client state owner interface.
@@ -108,4 +104,16 @@ abstract interface class ICentrifugeClientSubscriptionsManager {
   /// so you can iterate over all and do some action if required
   /// (for example, you want to unsubscribe/remove all subscriptions).
   Map<String, CentrifugeClientSubscription> get subscriptions;
+}
+
+/// Centrifuge presence owner interface.
+abstract interface class ICentrifugePresenceOwner {
+  /// Stream of presence (join & leave) events.
+  abstract final CentrifugeChannelPresenceStream presenceEvents;
+
+  /// Fetch presence information inside a channel.
+  Future<CentrifugePresence> presence(String channel);
+
+  /// Fetch presence stats information inside a channel.
+  Future<CentrifugePresenceStats> presenceStats(String channel);
 }

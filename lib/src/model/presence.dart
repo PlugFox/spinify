@@ -9,8 +9,12 @@ import 'package:meta/meta.dart';
 final class CentrifugePresence {
   /// {@macro presence}
   const CentrifugePresence({
+    required this.channel,
     required this.clients,
   });
+
+  /// Channel
+  final String channel;
 
   /// Publications
   final Map<String, CentrifugeClientInfo> clients;

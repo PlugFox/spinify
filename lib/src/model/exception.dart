@@ -107,3 +107,17 @@ final class CentrifugeSendException extends CentrifugeException {
           error,
         );
 }
+
+/// {@macro exception}
+/// {@category Exception}
+final class CentrifugeFetchException extends CentrifugeException {
+  /// {@macro exception}
+  const CentrifugeFetchException({
+    String? message,
+    Object? error,
+  }) : super(
+          'centrifuge_fetch_exception',
+          message ?? 'Failed to fetch data',
+          error,
+        );
+}

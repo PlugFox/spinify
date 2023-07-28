@@ -8,9 +8,13 @@ import 'package:meta/meta.dart';
 final class CentrifugePresenceStats {
   /// {@macro presence_stats}
   const CentrifugePresenceStats({
+    required this.channel,
     required this.clients,
     required this.users,
   });
+
+  /// Channel
+  final String channel;
 
   /// Clients count
   final int clients;

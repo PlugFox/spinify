@@ -5,7 +5,11 @@ import 'package:centrifuge_dart/src/client/config.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/client/states_stream.dart';
+import 'package:centrifuge_dart/src/model/channel_presence.dart';
+import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/presence.dart';
+import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/publication.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
@@ -28,6 +32,7 @@ final class Centrifuge extends CentrifugeBase
         CentrifugeSendMixin,
         CentrifugeClientSubscriptionMixin,
         CentrifugePublicationsMixin,
+        CentrifugePresenceMixin,
         CentrifugeQueueMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
@@ -408,6 +413,82 @@ base mixin CentrifugePublicationsMixin
       });
 }
 
+/// Mixin responsible for presence.
+/// {@nodoc}
+base mixin CentrifugePresenceMixin
+    on
+        CentrifugeBase,
+        CentrifugeErrorsMixin,
+        CentrifugeClientSubscriptionMixin {
+  @override
+  void _initCentrifuge() {
+    super._initCentrifuge();
+    _transport.presenceEvents.addListener(_onPresenceEvent);
+  }
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeChannelPresenceEvent>
+      _presenceEventsController =
+      StreamController<CentrifugeChannelPresenceEvent>.broadcast();
+
+  @override
+  @nonVirtual
+  late final CentrifugeChannelPresenceStream presenceEvents =
+      CentrifugeChannelPresenceStream(_presenceEventsController.stream);
+
+  @override
+  Future<CentrifugePresence> presence(String channel) async {
+    try {
+      await ready();
+      return await _transport.presence(channel);
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeFetchException(
+        message: 'Error while fetching presence for channel $channel',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+
+  @override
+  Future<CentrifugePresenceStats> presenceStats(String channel) async {
+    try {
+      await ready();
+      return await _transport.presenceStats(channel);
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeFetchException(
+        message: 'Error while fetching presence for channel $channel',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+
+  @protected
+  @nonVirtual
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  void _onPresenceEvent(CentrifugeChannelPresenceEvent event) {
+    _clientSubscriptionManager.handlePresenceEvent(event);
+    _presenceEventsController.add(event);
+  }
+
+  @override
+  Future<void> close() => super.close().whenComplete(() {
+        _transport.presenceEvents.removeListener(_onPresenceEvent);
+        _presenceEventsController.close().ignore();
+      });
+}
+
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
 /// {@nodoc}
@@ -426,6 +507,20 @@ base mixin CentrifugeQueueMixin on CentrifugeBase {
 
   @override
   FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready);
+
+  @override
+  Future<CentrifugePresence> presence(String channel) =>
+      _eventQueue.push<CentrifugePresence>(
+        'presence',
+        () => super.presence(channel),
+      );
+
+  @override
+  Future<CentrifugePresenceStats> presenceStats(String channel) =>
+      _eventQueue.push<CentrifugePresenceStats>(
+        'presenceStats',
+        () => super.presenceStats(channel),
+      );
 
   @override
   Future<void> disconnect() =>

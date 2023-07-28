@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
@@ -88,7 +89,8 @@ abstract interface class CentrifugeClientSubscription
   /// Stream of publications.
   abstract final Stream<CentrifugePublication> publications;
 
-  /* join / leave */
+  /// Stream of presence (join & leave) events.
+  abstract final CentrifugeChannelPresenceStream presenceEvents;
 
   /// Errors stream.
   abstract final Stream<

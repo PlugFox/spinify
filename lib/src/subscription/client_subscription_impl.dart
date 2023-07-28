@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
+import 'package:centrifuge_dart/src/model/channel_presence.dart';
+import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -364,6 +366,24 @@ base mixin CentrifugeClientSubscriptionPresenceMixin
     on
         CentrifugeClientSubscriptionBase,
         CentrifugeClientSubscriptionErrorsMixin {
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeChannelPresenceEvent>
+      _presenceEventsController =
+      StreamController<CentrifugeChannelPresenceEvent>.broadcast();
+
+  @override
+  @nonVirtual
+  late final CentrifugeChannelPresenceStream presenceEvents =
+      CentrifugeChannelPresenceStream(_presenceEventsController.stream);
+
+  /// Notify about new presence event.
+  /// {@nodoc}
+  @internal
+  @nonVirtual
+  void handlePresenceEvent(CentrifugeChannelPresenceEvent event) =>
+      _presenceEventsController.add(event);
+
   @override
   Future<CentrifugePresence> presence() async {
     await ready();
