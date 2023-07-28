@@ -326,6 +326,8 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   @override
   Future<void> close() async {
     logger.fine('Closing subscription to $channel');
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
     await super.close();
     await _transport.close();
   }
