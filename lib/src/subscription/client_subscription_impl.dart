@@ -188,9 +188,11 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
         ttl: subscribed.ttl,
       ));
     } on CentrifugeException catch (error, stackTrace) {
+      unsubscribe(0, 'error while subscribing').ignore();
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
+      unsubscribe(0, 'error while subscribing').ignore();
       final centrifugeException = CentrifugeSubscriptionException(
         message: 'Error while subscribing',
         channel: channel,

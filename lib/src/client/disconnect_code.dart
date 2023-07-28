@@ -24,7 +24,10 @@ enum DisconnectCode {
   badProtocol(2, 'bad protocol'),
 
   /// Client message write error
-  messageSizeLimit(3, 'message size limit exceeded');
+  messageSizeLimit(3, 'message size limit exceeded'),
+
+  /// Timeout
+  timeout(4, 'timeout exceeded');
 
   /// {@nodoc}
   const DisconnectCode(this.code, this.reason);

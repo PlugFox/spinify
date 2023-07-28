@@ -114,6 +114,8 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
 
   @protected
   @nonVirtual
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
   void _onStateChange(CentrifugeState newState) {
     logger.info('State changed: ${_state.type} -> ${state.type}');
     switch (newState) {

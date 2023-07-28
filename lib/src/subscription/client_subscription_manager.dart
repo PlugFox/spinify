@@ -94,36 +94,30 @@ final class ClientSubscriptionManager {
   /// {@nodoc}
   void subscribeAll() {
     for (final entry in _channelSubscriptions.values) {
-      try {
-        // TODO(plugfox): moveToSubscribing if subscribed now
-      } on Object {
-        /* ignore */
-      }
+      entry.subscribe().ignore();
     }
   }
 
   /// Disconnect all subscriptions for the specific client
   /// from internal registry.
   /// {@nodoc}
-  void unsubscribeAll() {
+  void unsubscribeAll([
+    int code = 0,
+    String reason = 'connection closed',
+  ]) {
     for (final entry in _channelSubscriptions.values) {
-      try {
-        // TODO(plugfox): moveToSubscribing if subscribed now
-      } on Object {
-        /* ignore */
-      }
+      entry.unsubscribe(code, reason).ignore();
     }
   }
 
   /// Remove all subscriptions for the specific client from internal registry.
   /// {@nodoc}
-  void removeAll() {
+  void removeAll([
+    int code = 0,
+    String reason = 'client closed',
+  ]) {
     for (final entry in _channelSubscriptions.values) {
-      try {
-        // TODO(plugfox): moveToSubscribing if subscribed now
-      } on Object {
-        /* ignore */
-      }
+      entry.unsubscribe(code, reason).ignore();
     }
     _channelSubscriptions.clear();
   }

@@ -378,9 +378,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
   /// {@nodoc}
   @protected
   @nonVirtual
-  void _setState(CentrifugeState state) {
-    states.notify(state);
-  }
+  void _setState(CentrifugeState state) => states.notify(state);
 
   @protected
   @nonVirtual
@@ -556,6 +554,12 @@ base mixin CentrifugeWSPBSubscription
     try {
       result = await _sendMessage(request, pb.SubscribeResult())
           .timeout(config.timeout);
+    } on TimeoutException {
+      disconnect(
+        DisconnectCode.timeout.code,
+        'Timeout while subscribing to channel $channel',
+      ).ignore();
+      rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
         CentrifugeSubscriptionException(
