@@ -4,19 +4,16 @@ import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
+import 'package:centrifuge_dart/src/util/notifier.dart';
 import 'package:meta/meta.dart';
 
 /// Class responsible for sending and receiving data from the server.
 /// {@nodoc}
 @internal
 abstract interface class ICentrifugeTransport {
-  /// State of client.
+  /// State observable.
   /// {@nodoc}
-  CentrifugeState get state;
-
-  /// Stream of client states.
-  /// {@nodoc}
-  abstract final Stream<CentrifugeState> states;
+  abstract final CentrifugeValueListenable<CentrifugeState> states;
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.

@@ -20,6 +20,7 @@ import 'package:stack_trace/stack_trace.dart' as st;
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase
     with
+        CentrifugeStateMixin,
         CentrifugeErrorsMixin,
         CentrifugeConnectionMixin,
         CentrifugeSendMixin,
@@ -43,7 +44,6 @@ abstract base class CentrifugeBase implements ICentrifuge {
   CentrifugeBase(CentrifugeConfig config) : _config = config {
     _transport = CentrifugeWSPBTransport(
       config: config,
-      disconnectCallback: _onDisconnect,
     );
     _initCentrifuge();
   }
@@ -53,14 +53,6 @@ abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   @nonVirtual
   late final ICentrifugeTransport _transport;
-
-  @override
-  @nonVirtual
-  CentrifugeState get state => _transport.state;
-
-  @override
-  late final CentrifugeStatesStream states =
-      CentrifugeStatesStream(_transport.states);
 
   /// Centrifuge config.
   /// {@nodoc}
@@ -86,6 +78,50 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @override
   @mustCallSuper
   Future<void> close() async {}
+}
+
+/// Mixin responsible for centrifuge states
+/// {@nodoc}
+@internal
+base mixin CentrifugeStateMixin on CentrifugeBase {
+  @protected
+  @nonVirtual
+  late CentrifugeState _state = _transport.states.value;
+
+  @override
+  @nonVirtual
+  CentrifugeState get state => _state;
+
+  @override
+  @nonVirtual
+  late final CentrifugeStatesStream states =
+      CentrifugeStatesStream(_statesController.stream);
+
+  @override
+  void _initCentrifuge() {
+    _transport.states.addListener(_onStateChange);
+    super._initCentrifuge();
+  }
+
+  @protected
+  @nonVirtual
+  void _onStateChange(CentrifugeState newState) {
+    logger.info('State changed: ${_state.type} -> ${state.type}');
+    _statesController.add(_state = newState);
+    if (newState is CentrifugeState$Disconnected) _onDisconnect();
+  }
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeState> _statesController =
+      StreamController<CentrifugeState>.broadcast();
+
+  @override
+  Future<void> close() async {
+    await super.close();
+    _transport.states.removeListener(_onStateChange);
+    await _statesController.close();
+  }
 }
 
 /// Mixin responsible for errors stream.

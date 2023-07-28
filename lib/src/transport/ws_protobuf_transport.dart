@@ -9,6 +9,7 @@ import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/transport_protobuf_codec.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
+import 'package:centrifuge_dart/src/util/notifier.dart';
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 import 'package:ws/ws.dart';
@@ -20,9 +21,7 @@ abstract base class CentrifugeWSPBTransportBase
   /// {@nodoc}
   CentrifugeWSPBTransportBase({
     required CentrifugeConfig config,
-    required void Function() disconnectCallback,
   })  : _config = config,
-        _disconnectCallback = disconnectCallback,
         _webSocket = WebSocketClient(
           WebSocketOptions.selector(
             js: () => WebSocketOptions.js(
@@ -51,10 +50,6 @@ abstract base class CentrifugeWSPBTransportBase
   /// Centrifuge config.
   /// {@nodoc}
   final CentrifugeConfig _config;
-
-  /// Callback for disconnect.
-  /// {@nodoc}
-  final void Function() _disconnectCallback;
 
   /// Init transport, override this method to add custom logic.
   /// {@nodoc}
@@ -364,38 +359,18 @@ base mixin CentrifugeWSPBStateHandlerMixin
   /// {@nodoc}
   StreamSubscription<WebSocketClientState>? _webSocketClosedStateSubscription;
 
-  /// Current state of client.
   /// {@nodoc}
   @override
   @nonVirtual
-  CentrifugeState get state => _state;
-
-  /// {@nodoc}
-  @override
-  @nonVirtual
-  Stream<CentrifugeState> get states => _stateController.stream;
-
-  /// {@nodoc}
-  @protected
-  @nonVirtual
-  CentrifugeState _state = CentrifugeState$Disconnected(
+  late final CentrifugeValueNotifier<CentrifugeState> states =
+      CentrifugeValueNotifier(CentrifugeState$Disconnected(
     timestamp: DateTime.now(),
     closeCode: null,
     closeReason: 'Not connected yet',
-  );
-
-  /// State controller.
-  /// {@nodoc}
-  @protected
-  @nonVirtual
-  late final StreamController<CentrifugeState> _stateController;
+  ));
 
   @override
   void _initTransport() {
-    // Init state controller.
-    _stateController = StreamController<CentrifugeState>.broadcast(
-        /* onListen: () => _stateController.add(_state), */
-        );
     super._initTransport();
   }
 
@@ -404,9 +379,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
   @protected
   @nonVirtual
   void _setState(CentrifugeState state) {
-    if (_state.type == state.type) return;
-    logger.info('State changed: ${_state.type} -> ${state.type}');
-    _stateController.add(_state = state);
+    states.notify(state);
   }
 
   @protected
@@ -414,7 +387,6 @@ base mixin CentrifugeWSPBStateHandlerMixin
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _handleWebSocketClosedStates(WebSocketClientState$Closed state) {
-    _disconnectCallback();
     _setState(
       CentrifugeState$Disconnected(
         timestamp: DateTime.now(),
@@ -506,7 +478,7 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('dart2js:tryInline')
   void _onPing() {
     _restartPingTimer();
-    if (state case CentrifugeState$Connected(:bool? sendPong)) {
+    if (states.value case CentrifugeState$Connected(:bool? sendPong)) {
       if (sendPong != true) return;
       _sendAsyncMessage(pb.PingRequest()).ignore();
       logger.fine('Pong message sent');
@@ -553,7 +525,7 @@ base mixin CentrifugeWSPBSubscription
     CentrifugeSubscriptionConfig config,
     CentrifugeStreamPosition? since,
   ) async {
-    if (!state.isConnected) {
+    if (!states.value.isConnected) {
       throw CentrifugeSubscriptionException(
         channel: channel,
         message: 'Centrifuge client is not connected',
@@ -658,7 +630,7 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
   @nonVirtual
   void _restartPingTimer() {
     _tearDownPingTimer();
-    if (state case CentrifugeState$Connected(:Duration pingInterval)) {
+    if (states.value case CentrifugeState$Connected(:Duration pingInterval)) {
       _pingTimer = Timer(
         pingInterval + _config.serverPingDelay,
         () => disconnect(
