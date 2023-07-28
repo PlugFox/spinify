@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
+import 'package:centrifuge_dart/src/model/history.dart';
+import 'package:centrifuge_dart/src/model/presence.dart';
+import 'package:centrifuge_dart/src/model/presence_stats.dart';
+import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';
@@ -17,6 +21,9 @@ final class CentrifugeClientSubscriptionImpl
     with
         CentrifugeClientSubscriptionErrorsMixin,
         CentrifugeClientSubscriptionSubscribeMixin,
+        CentrifugeClientSubscriptionPublishingMixin,
+        CentrifugeClientSubscriptionHistoryMixin,
+        CentrifugeClientSubscriptionPresenceMixin,
         CentrifugeClientSubscriptionQueueMixin {
   /// {@nodoc}
   CentrifugeClientSubscriptionImpl({
@@ -160,7 +167,7 @@ base mixin CentrifugeClientSubscriptionErrorsMixin
   }
 }
 
-/// Mixin responsible for connection.
+/// Mixin responsible for subscribing.
 /// {@nodoc}
 @internal
 base mixin CentrifugeClientSubscriptionSubscribeMixin
@@ -269,6 +276,103 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     logger.fine('Closing subscription to $channel');
     await super.close();
     await _transport.close();
+  }
+}
+
+/// Mixin responsible for publishing.
+/// {@nodoc}
+@internal
+base mixin CentrifugeClientSubscriptionPublishingMixin
+    on
+        CentrifugeClientSubscriptionBase,
+        CentrifugeClientSubscriptionErrorsMixin {
+  @override
+  Future<void> publish(List<int> data) async {
+    await ready();
+    try {
+      await _transport.publish(channel, data);
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Error while publishing',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+}
+
+/// Mixin responsible for history.
+/// {@nodoc}
+@internal
+base mixin CentrifugeClientSubscriptionHistoryMixin
+    on
+        CentrifugeClientSubscriptionBase,
+        CentrifugeClientSubscriptionErrorsMixin {
+  @override
+  Future<CentrifugeHistory> history({
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  }) async {
+    await ready();
+    try {
+      return await _transport.history(
+        channel,
+        limit: limit,
+        since: since,
+        reverse: reverse,
+      );
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Error while fetching history',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+}
+
+/// Mixin responsible for presence.
+/// {@nodoc}
+@internal
+base mixin CentrifugeClientSubscriptionPresenceMixin
+    on
+        CentrifugeClientSubscriptionBase,
+        CentrifugeClientSubscriptionErrorsMixin {
+  @override
+  Future<CentrifugePresence> presence() async {
+    await ready();
+    try {
+      return await _transport.presence(channel);
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Error while fetching history',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+
+  @override
+  Future<CentrifugePresenceStats> presenceStats() async {
+    await ready();
+    try {
+      return await _transport.presenceStats(channel);
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Error while fetching history',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
   }
 }
 

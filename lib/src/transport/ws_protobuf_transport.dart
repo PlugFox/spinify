@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
+import 'package:centrifuge_dart/src/model/history.dart';
+import 'package:centrifuge_dart/src/model/presence.dart';
+import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
@@ -571,21 +575,25 @@ base mixin CentrifugeWSPBSubscription
       );
     }
     final now = DateTime.now();
-    final publications = <CentrifugePublication>[
-      for (final pub in result.publications)
-        CentrifugePublication(
-          offset: pub.offset,
-          data: pub.data,
-          info: pub.hasInfo()
-              ? CentrifugeClientInfo(
-                  channelInfo: pub.info.chanInfo,
-                  client: pub.info.client,
-                  user: pub.info.user,
-                  connectionInfo: pub.info.connInfo,
-                )
-              : null,
-        ),
-    ];
+    final publications = UnmodifiableListView<CentrifugePublication>(
+      <CentrifugePublication>[
+        for (final pub in result.publications)
+          CentrifugePublication(
+            offset: pub.hasOffset() ? pub.offset : null,
+            data: pub.data,
+            info: pub.hasInfo()
+                ? CentrifugeClientInfo(
+                    client: pub.info.client,
+                    user: pub.info.user,
+                    channelInfo:
+                        pub.info.hasChanInfo() ? pub.info.chanInfo : null,
+                    connectionInfo:
+                        pub.info.hasConnInfo() ? pub.info.connInfo : null,
+                  )
+                : null,
+          ),
+      ],
+    );
     final recoverable = result.hasRecoverable() && result.recoverable;
     final expires = result.hasExpires() && result.expires && result.hasTtl();
     return SubcibedOnChannel(
@@ -612,6 +620,85 @@ base mixin CentrifugeWSPBSubscription
     final request = pb.UnsubscribeRequest()..channel = channel;
     await _sendMessage(request, pb.UnsubscribeResult()).timeout(config.timeout);
   }
+
+  @override
+  Future<void> publish(String channel, List<int> data) => _sendMessage(
+      pb.PublishRequest()
+        ..channel = channel
+        ..data = data,
+      pb.PublishResult());
+
+  @override
+  Future<CentrifugeHistory> history(
+    String channel, {
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  }) async {
+    final request = pb.HistoryRequest()..channel = channel;
+    if (limit != null) request.limit = limit;
+    if (reverse != null) request.reverse = reverse;
+    if (since != null) {
+      request.since = pb.StreamPosition()
+        ..offset = since.offset
+        ..epoch = since.epoch;
+    }
+    final result = await _sendMessage(request, pb.HistoryResult());
+    return CentrifugeHistory(
+      publications: UnmodifiableListView<CentrifugePublication>(
+        result.publications
+            .map<CentrifugePublication>(
+              (pub) => CentrifugePublication(
+                offset: pub.hasOffset() ? pub.offset : null,
+                data: pub.data,
+                info: pub.hasInfo()
+                    ? CentrifugeClientInfo(
+                        user: pub.info.user,
+                        client: pub.info.client,
+                        channelInfo:
+                            pub.info.hasChanInfo() ? pub.info.chanInfo : null,
+                        connectionInfo:
+                            pub.info.hasConnInfo() ? pub.info.connInfo : null,
+                      )
+                    : null,
+              ),
+            )
+            .toList(growable: false),
+      ),
+      since: (epoch: result.epoch, offset: result.offset),
+    );
+  }
+
+  @override
+  Future<CentrifugePresence> presence(String channel) =>
+      _sendMessage(pb.PresenceRequest()..channel = channel, pb.PresenceResult())
+          .then<CentrifugePresence>(
+        (r) => CentrifugePresence(
+          clients: UnmodifiableMapView<String, CentrifugeClientInfo>(
+            <String, CentrifugeClientInfo>{
+              for (final e in r.presence.entries)
+                e.key: CentrifugeClientInfo(
+                  user: e.value.user,
+                  client: e.value.client,
+                  channelInfo: e.value.hasChanInfo() ? e.value.chanInfo : null,
+                  connectionInfo:
+                      e.value.hasConnInfo() ? e.value.connInfo : null,
+                )
+            },
+          ),
+        ),
+      );
+
+  @override
+  Future<CentrifugePresenceStats> presenceStats(String channel) => _sendMessage(
+              pb.PresenceStatsRequest()..channel = channel,
+              pb.PresenceStatsResult())
+          .then<CentrifugePresenceStats>(
+        (r) => CentrifugePresenceStats(
+          clients: r.hasNumClients() ? r.numClients : 0,
+          users: r.hasNumUsers() ? r.numUsers : 0,
+        ),
+      );
 }
 
 /// To maintain connection alive and detect broken connections

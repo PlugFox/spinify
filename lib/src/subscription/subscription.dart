@@ -1,7 +1,11 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/history.dart';
+import 'package:centrifuge_dart/src/model/presence.dart';
+import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/publication.dart';
+import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
@@ -84,11 +88,15 @@ abstract interface class CentrifugeClientSubscription
   /// Stream of publications.
   abstract final Stream<CentrifugePublication> publications;
 
+  /* join / leave */
+
   /// Errors stream.
   abstract final Stream<
       ({CentrifugeException exception, StackTrace stackTrace})> errors;
 
   /// Await for subscription to be ready.
+  /// Ready resolves when subscription successfully subscribed.
+  /// Throws exceptions if called not in subscribing or subscribed state.
   FutureOr<void> ready();
 
   /// Start subscribing to a channel
@@ -99,6 +107,23 @@ abstract interface class CentrifugeClientSubscription
     int code = 0,
     String reason = 'unsubscribe called',
   ]);
+
+  /// Publish data to current Subscription channel
+  Future<void> publish(List<int> data);
+
+  /// Fetch publication history inside a channel.
+  /// Only for channels where history is enabled.
+  Future<CentrifugeHistory> history({
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  });
+
+  /// Fetch presence information inside a channel.
+  Future<CentrifugePresence> presence();
+
+  /// Fetch presence stats information inside a channel.
+  Future<CentrifugePresenceStats> presenceStats();
 
   @override
   String toString() => 'CentrifugeClientSubscription{channel: $channel}';

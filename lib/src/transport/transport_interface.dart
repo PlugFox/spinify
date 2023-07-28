@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/src/client/state.dart';
+import 'package:centrifuge_dart/src/model/history.dart';
+import 'package:centrifuge_dart/src/model/presence.dart';
+import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
@@ -40,6 +43,28 @@ abstract interface class ICentrifugeTransport {
     String channel,
     CentrifugeSubscriptionConfig config,
   );
+
+  /// Publish data to channel.
+  /// {@nodoc}
+  Future<void> publish(String channel, List<int> data);
+
+  /// Fetch publication history inside a channel.
+  /// Only for channels where history is enabled.
+  /// {@nodoc}
+  Future<CentrifugeHistory> history(
+    String channel, {
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  });
+
+  /// Fetch presence information inside a channel.
+  /// {@nodoc}
+  Future<CentrifugePresence> presence(String channel);
+
+  /// Fetch presence stats information inside a channel.
+  /// {@nodoc}
+  Future<CentrifugePresenceStats> presenceStats(String channel);
 
   /// Disconnect from the server.
   /// e.g. code: 0, reason: 'disconnect called'
