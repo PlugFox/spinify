@@ -66,12 +66,21 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @mustCallSuper
   void _initCentrifuge() {}
 
+  /// Called when connection established.
+  /// Right before [CentrifugeState$Connected] state.
+  /// {@nodoc}
+  @protected
+  @mustCallSuper
+  void _onConnected(CentrifugeState$Connected state) {
+    logger.fine('Connection established');
+  }
+
   /// Called when connection lost.
   /// Right before [CentrifugeState$Disconnected] state.
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _onDisconnect() {
+  void _onDisconnected(CentrifugeState$Disconnected state) {
     logger.fine('Connection lost');
   }
 
@@ -107,8 +116,17 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
   @nonVirtual
   void _onStateChange(CentrifugeState newState) {
     logger.info('State changed: ${_state.type} -> ${state.type}');
+    switch (newState) {
+      case CentrifugeState$Disconnected state:
+        _onDisconnected(state);
+      case CentrifugeState$Connecting _:
+        break;
+      case CentrifugeState$Connected state:
+        _onConnected(state);
+      case CentrifugeState$Closed _:
+        break;
+    }
     _statesController.add(_state = newState);
-    if (newState is CentrifugeState$Disconnected) _onDisconnect();
   }
 
   @protected
@@ -289,9 +307,15 @@ base mixin CentrifugeClientSubscriptionMixin
   }
 
   @override
-  void _onDisconnect() {
-    super._onDisconnect();
-    _clientSubscriptionManager.disconnectAll();
+  void _onConnected(CentrifugeState$Connected state) {
+    super._onConnected(state);
+    _clientSubscriptionManager.subscribeAll();
+  }
+
+  @override
+  void _onDisconnected(CentrifugeState$Disconnected state) {
+    super._onDisconnected(state);
+    _clientSubscriptionManager.unsubscribeAll();
   }
 
   @override

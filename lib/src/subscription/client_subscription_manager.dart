@@ -90,10 +90,22 @@ final class ClientSubscriptionManager {
     _channelSubscriptions.remove(subscription.channel);
   }
 
+  /// Establish all subscriptions for the specific client.
+  /// {@nodoc}
+  void subscribeAll() {
+    for (final entry in _channelSubscriptions.values) {
+      try {
+        // TODO(plugfox): moveToSubscribing if subscribed now
+      } on Object {
+        /* ignore */
+      }
+    }
+  }
+
   /// Disconnect all subscriptions for the specific client
   /// from internal registry.
   /// {@nodoc}
-  void disconnectAll() {
+  void unsubscribeAll() {
     for (final entry in _channelSubscriptions.values) {
       try {
         // TODO(plugfox): moveToSubscribing if subscribed now
