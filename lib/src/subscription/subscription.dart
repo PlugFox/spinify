@@ -95,7 +95,10 @@ abstract interface class CentrifugeClientSubscription
   Future<void> subscribe();
 
   /// Unsubscribe from a channel
-  Future<void> unsubscribe();
+  Future<void> unsubscribe([
+    int code = 0,
+    String reason = 'unsubscribe called',
+  ]);
 
   @override
   String toString() => 'CentrifugeClientSubscription{channel: $channel}';

@@ -12,9 +12,8 @@ import 'package:meta/meta.dart';
 /// Client implementation can use codes <3000 for client-side
 /// specific disconnect reasons.
 /// {@nodoc}
-/// {@category Entity}
 @internal
-enum DisconnectCodes {
+enum DisconnectCode {
   /// Disconnect called
   disconnectCalled(0, 'disconnect called'),
 
@@ -27,7 +26,8 @@ enum DisconnectCodes {
   /// Client message write error
   messageSizeLimit(3, 'message size limit exceeded');
 
-  const DisconnectCodes(this.code, this.reason);
+  /// {@nodoc}
+  const DisconnectCode(this.code, this.reason);
 
   /// Disconnect code.
   final int code;

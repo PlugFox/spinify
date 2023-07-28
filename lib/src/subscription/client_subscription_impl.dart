@@ -234,8 +234,14 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   /// Unsubscribe from a channel
   /// {@nodoc}
   @override
-  Future<void> unsubscribe() async {
+  Future<void> unsubscribe(
+      [int code = 0, String reason = 'unsubscribe called']) async {
     if (state.isUnsubscribed) return;
+    _setState(CentrifugeSubscriptionState.unsubscribed(
+      code: code,
+      reason: reason,
+      since: state.since,
+    ));
     // TODO(plugfox): implement
   }
 

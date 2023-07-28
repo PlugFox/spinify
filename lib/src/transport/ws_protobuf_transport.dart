@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/model/disconnect_code.dart';
+import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
@@ -80,7 +80,7 @@ abstract base class CentrifugeWSPBTransportBase
   @override
   @mustCallSuper
   Future<void> close() async {
-    await disconnect(DisconnectCodes.disconnectCalled.code, 'Client closed');
+    await disconnect(DisconnectCode.disconnectCalled.code, 'Client closed');
     await _webSocket.close();
   }
 }
@@ -342,7 +342,7 @@ base mixin CentrifugeWSPBConnectionMixin
         data: result.hasData() ? result.data : null,
       ));
     } on Object {
-      disconnect(DisconnectCodes.unauthorized.code, 'Connection failed')
+      disconnect(DisconnectCode.unauthorized.code, 'Connection failed')
           .ignore();
       rethrow;
     }
@@ -634,7 +634,7 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
       _pingTimer = Timer(
         pingInterval + _config.serverPingDelay,
         () => disconnect(
-          DisconnectCodes.badProtocol.code,
+          DisconnectCode.badProtocol.code,
           'No ping from server',
         ),
       );
