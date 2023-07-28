@@ -9,6 +9,7 @@ import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
+import 'package:centrifuge_dart/src/model/refresh.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
@@ -354,6 +355,42 @@ base mixin CentrifugeWSPBConnectionMixin
           .ignore();
       rethrow;
     }
+  }
+
+  @override
+  Future<CentrifugeRefreshResult> sendRefresh(String token) {
+    if (!_state.isConnected) throw StateError('Not connected');
+    return _sendMessage(pb.RefreshRequest()..token = token, pb.RefreshResult())
+        .then<CentrifugeRefreshResult>(
+      (result) {
+        final state = _state;
+        if (state is CentrifugeState$Connected) {
+          final now = DateTime.now();
+          final expires =
+              result.hasExpires() && result.expires && result.hasTtl();
+          final ttl = expires ? now.add(Duration(seconds: result.ttl)) : null;
+          _setState(CentrifugeState$Connected(
+            url: state.url,
+            timestamp: now,
+            client: result.hasClient() ? result.client : null,
+            version: result.hasVersion() ? result.version : null,
+            expires: expires,
+            ttl: ttl,
+            node: state.node,
+            pingInterval: state.pingInterval,
+            sendPong: state.sendPong,
+            session: state.session,
+            data: state.data,
+          ));
+          return CentrifugeRefreshResult(
+            expires: expires,
+            ttl: ttl,
+          );
+        } else {
+          throw StateError('Not connected');
+        }
+      },
+    );
   }
 }
 
@@ -726,7 +763,7 @@ base mixin CentrifugeWSPBSubscription
       );
 
   @override
-  Future<({bool expires, DateTime? ttl})> sendSubRefresh(
+  Future<CentrifugeSubRefreshResult> sendSubRefresh(
     String channel,
     String token,
   ) =>
@@ -735,12 +772,12 @@ base mixin CentrifugeWSPBSubscription
                 ..channel = channel
                 ..token = token,
               pb.SubRefreshResult())
-          .then<({bool expires, DateTime? ttl})>(
+          .then<CentrifugeSubRefreshResult>(
         (r) {
           final expires = r.hasExpires() && r.expires && r.hasTtl();
-          return (
+          return CentrifugeSubRefreshResult(
             expires: expires,
-            ttl: expires ? DateTime.now().add(Duration(seconds: r.ttl)) : null
+            ttl: expires ? DateTime.now().add(Duration(seconds: r.ttl)) : null,
           );
         },
       );

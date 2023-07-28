@@ -38,7 +38,7 @@ final class CentrifugeConnectionException extends CentrifugeException {
   /// {@macro exception}
   const CentrifugeConnectionException({String? message, Object? error})
       : super(
-          'centrifuge_disconnection_exception',
+          'centrifuge_connection_exception',
           message ?? 'Connection problem',
           error,
         );
@@ -118,6 +118,20 @@ final class CentrifugeFetchException extends CentrifugeException {
   }) : super(
           'centrifuge_fetch_exception',
           message ?? 'Failed to fetch data',
+          error,
+        );
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class CentrifugeRefreshException extends CentrifugeException {
+  /// {@macro exception}
+  const CentrifugeRefreshException({
+    String? message,
+    Object? error,
+  }) : super(
+          'centrifuge_refresh_exception',
+          message ?? 'Error while refreshing connection token',
           error,
         );
 }

@@ -188,9 +188,9 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       } else if (state.isSubscribing) {
         return await ready();
       }
-      _setState(CentrifugeSubscriptionState$Subscribing(since: state.since));
       _refreshTimer?.cancel();
       _refreshTimer = null;
+      _setState(CentrifugeSubscriptionState$Subscribing(since: state.since));
       final subscribed = await _transport.subscribe(
         channel,
         _config,
@@ -319,13 +319,28 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   /// Refresh token for subscription.
   /// {@nodoc}
   void _refreshToken() => Future<void>(() async {
-        _refreshTimer?.cancel();
-        _refreshTimer = null;
-        final token = await _config.getToken?.call();
-        if (token == null || !state.isSubscribed) return;
-        final result = await _transport.sendSubRefresh(channel, token);
-        if (result.expires) _setRefreshTimer(result.ttl);
-      });
+        try {
+          _refreshTimer?.cancel();
+          _refreshTimer = null;
+          final token = await _config.getToken?.call();
+          if (token == null || !state.isSubscribed) return;
+          final result = await _transport.sendSubRefresh(channel, token);
+          if (result.expires) _setRefreshTimer(result.ttl);
+        } on Object catch (error, stackTrace) {
+          logger.warning(
+            error,
+            stackTrace,
+            'Error while refreshing subscription token',
+          );
+          _emitError(
+            CentrifugeRefreshException(
+              message: 'Error while refreshing subscription token',
+              error: error,
+            ),
+            stackTrace,
+          );
+        }
+      }).ignore();
 
   @override
   Future<void> close() async {

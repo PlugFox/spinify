@@ -100,7 +100,11 @@ abstract base class CentrifugeBase implements ICentrifuge {
 /// Mixin responsible for centrifuge states
 /// {@nodoc}
 @internal
-base mixin CentrifugeStateMixin on CentrifugeBase {
+base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
+  /// Refresh timer.
+  /// {@nodoc}
+  Timer? _refreshTimer;
+
   @override
   @nonVirtual
   CentrifugeState get state => _state;
@@ -127,6 +131,8 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
   @pragma('dart2js:tryInline')
   void _onStateChange(CentrifugeState newState) {
     logger.info('State changed: ${_state.type} -> ${state.type}');
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
     switch (newState) {
       case CentrifugeState$Disconnected state:
         _onDisconnected(state);
@@ -134,6 +140,7 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
         break;
       case CentrifugeState$Connected state:
         _onConnected(state);
+        if (state.expires == true) _setRefreshTimer(state.ttl);
       case CentrifugeState$Closed _:
         break;
     }
@@ -144,6 +151,43 @@ base mixin CentrifugeStateMixin on CentrifugeBase {
   @nonVirtual
   final StreamController<CentrifugeState> _statesController =
       StreamController<CentrifugeState>.broadcast();
+
+  /// Refresh connection token when ttl is expired.
+  /// {@nodoc}
+  void _setRefreshTimer(DateTime? ttl) {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    if (ttl == null) return;
+    final now = DateTime.now();
+    final duration = ttl.subtract(_config.timeout * 4).difference(now);
+    if (duration.isNegative) return;
+    _refreshTimer = Timer(duration, _refreshToken);
+  }
+
+  /// Refresh token for subscription.
+  /// {@nodoc}
+  void _refreshToken() => Future<void>(() async {
+        try {
+          _refreshTimer?.cancel();
+          _refreshTimer = null;
+          final token = await _config.getToken?.call();
+          if (token == null || !state.isConnected) return;
+          await _transport.sendRefresh(token);
+        } on Object catch (error, stackTrace) {
+          logger.warning(
+            error,
+            stackTrace,
+            'Error while refreshing connection token',
+          );
+          _emitError(
+            CentrifugeRefreshException(
+              message: 'Error while refreshing connection token',
+              error: error,
+            ),
+            stackTrace,
+          );
+        }
+      }).ignore();
 
   @override
   Future<void> close() => super.close().whenComplete(() {
@@ -185,11 +229,14 @@ base mixin CentrifugeErrorsMixin on CentrifugeBase {
 /// Mixin responsible for connection.
 /// {@nodoc}
 @internal
-base mixin CentrifugeConnectionMixin on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin CentrifugeConnectionMixin
+    on CentrifugeBase, CentrifugeErrorsMixin, CentrifugeStateMixin {
   @override
   Future<void> connect(String url) async {
     logger.fine('Interactively connecting to $url');
     try {
+      _refreshTimer?.cancel();
+      _refreshTimer = null;
       await _transport.connect(url);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);

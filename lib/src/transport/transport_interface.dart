@@ -5,6 +5,7 @@ import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
+import 'package:centrifuge_dart/src/model/refresh.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/util/notifier.dart';
@@ -85,9 +86,11 @@ abstract interface class ICentrifugeTransport {
   /// {@nodoc}
   Future<void> disconnect(int code, String reason);
 
+  Future<CentrifugeRefreshResult> sendRefresh(String token);
+
   /// Send subscription channel refresh token command to server.
   /// {@nodoc}
-  Future<({bool expires, DateTime? ttl})> sendSubRefresh(
+  Future<CentrifugeSubRefreshResult> sendSubRefresh(
     String channel,
     String token,
   );
