@@ -86,6 +86,8 @@ abstract interface class ICentrifugeTransport {
   /// {@nodoc}
   Future<void> disconnect(int code, String reason);
 
+  /// Send refresh token command to server.
+  /// {@nodoc}
   Future<CentrifugeRefreshResult> sendRefresh(String token);
 
   /// Send subscription channel refresh token command to server.

@@ -26,8 +26,8 @@ import 'package:stack_trace/stack_trace.dart' as st;
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase
     with
-        CentrifugeStateMixin,
         CentrifugeErrorsMixin,
+        CentrifugeStateMixin,
         CentrifugeConnectionMixin,
         CentrifugeSendMixin,
         CentrifugeClientSubscriptionMixin,
