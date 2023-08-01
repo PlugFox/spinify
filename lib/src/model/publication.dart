@@ -1,3 +1,4 @@
+import 'package:centrifuge_dart/src/model/channel_event.dart';
 import 'package:centrifuge_dart/src/model/client_info.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
@@ -7,18 +8,15 @@ import 'package:meta/meta.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-final class CentrifugePublication {
+final class CentrifugePublication extends CentrifugeChannelEvent {
   /// {@macro publication}
   const CentrifugePublication({
-    required this.channel,
+    required super.channel,
     required this.data,
     this.offset,
     this.info,
     this.tags,
   });
-
-  /// Publication channel
-  final String channel;
 
   /// Publication payload
   final List<int> data;

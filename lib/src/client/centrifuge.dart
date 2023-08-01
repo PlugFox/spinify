@@ -7,6 +7,7 @@ import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/client/states_stream.dart';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
+import 'package:centrifuge_dart/src/model/event.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -72,7 +73,9 @@ abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _initCentrifuge() {}
+  void _initCentrifuge() {
+    _transport.events.addListener(_onEvent);
+  }
 
   /// Called when connection established.
   /// Right before [CentrifugeState$Connected] state.
@@ -92,9 +95,34 @@ abstract base class CentrifugeBase implements ICentrifuge {
     logger.fine('Connection lost');
   }
 
+  /// Router for all events.
+  /// {@nodoc}
+  @protected
+  @mustCallSuper
+  void _onEvent(CentrifugeEvent event) {
+    switch (event) {
+      case CentrifugePublication publication:
+        _onPublication(publication);
+      case CentrifugeChannelPresenceEvent event:
+        _onPresenceEvent(event);
+    }
+  }
+
+  /// Called when publication received.
+  /// {@nodoc}
+  @protected
+  void _onPublication(CentrifugePublication publication);
+
+  /// Called when presence event received.
+  /// {@nodoc}
+  @protected
+  void _onPresenceEvent(CentrifugeChannelPresenceEvent event);
+
   @override
   @mustCallSuper
-  Future<void> close() async {}
+  Future<void> close() async {
+    _transport.events.removeListener(_onEvent);
+  }
 }
 
 /// Mixin responsible for centrifuge states
@@ -413,7 +441,6 @@ base mixin CentrifugePublicationsMixin
   @override
   void _initCentrifuge() {
     super._initCentrifuge();
-    _transport.publications.addListener(_onPublication);
   }
 
   @protected
@@ -444,7 +471,7 @@ base mixin CentrifugePublicationsMixin
     }
   }
 
-  @protected
+  @override
   @nonVirtual
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
@@ -455,7 +482,6 @@ base mixin CentrifugePublicationsMixin
 
   @override
   Future<void> close() => super.close().whenComplete(() {
-        _transport.publications.removeListener(_onPublication);
         _publicationsController.close().ignore();
       });
 }
@@ -470,7 +496,6 @@ base mixin CentrifugePresenceMixin
   @override
   void _initCentrifuge() {
     super._initCentrifuge();
-    _transport.presenceEvents.addListener(_onPresenceEvent);
   }
 
   @protected
@@ -520,7 +545,7 @@ base mixin CentrifugePresenceMixin
     }
   }
 
-  @protected
+  @override
   @nonVirtual
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
@@ -531,7 +556,6 @@ base mixin CentrifugePresenceMixin
 
   @override
   Future<void> close() => super.close().whenComplete(() {
-        _transport.presenceEvents.removeListener(_onPresenceEvent);
         _presenceEventsController.close().ignore();
       });
 }

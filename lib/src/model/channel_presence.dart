@@ -1,3 +1,4 @@
+import 'package:centrifuge_dart/src/model/channel_event.dart';
 import 'package:centrifuge_dart/src/model/client_info.dart';
 import 'package:meta/meta.dart';
 
@@ -9,15 +10,12 @@ import 'package:meta/meta.dart';
 /// {@subCategory Channel}
 /// {@subCategory Presence}
 @immutable
-sealed class CentrifugeChannelPresenceEvent {
+sealed class CentrifugeChannelPresenceEvent extends CentrifugeChannelEvent {
   /// {@macro channel_presence_event}
   const CentrifugeChannelPresenceEvent({
-    required this.channel,
+    required super.channel,
     required this.info,
   });
-
-  /// Channel
-  final String channel;
 
   /// Client info
   final CentrifugeClientInfo info;

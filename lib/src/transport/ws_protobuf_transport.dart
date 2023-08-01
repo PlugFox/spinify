@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
+import 'package:centrifuge_dart/src/model/event.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -57,6 +58,10 @@ abstract base class CentrifugeWSPBTransportBase
   /// {@nodoc}
   final CentrifugeConfig _config;
 
+  @override
+  final CentrifugeChangeNotifier<CentrifugeEvent> events =
+      CentrifugeChangeNotifier<CentrifugeEvent>();
+
   /// Init transport, override this method to add custom logic.
   /// {@nodoc}
   @protected
@@ -88,6 +93,7 @@ abstract base class CentrifugeWSPBTransportBase
   Future<void> close() async {
     await disconnect(DisconnectCode.disconnectCalled.code, 'Client closed');
     await _webSocket.close();
+    events.close();
   }
 }
 
@@ -497,15 +503,6 @@ base mixin CentrifugeWSPBHandlerMixin
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
   @override
-  final CentrifugeChangeNotifier<CentrifugePublication> publications =
-      CentrifugeChangeNotifier<CentrifugePublication>();
-
-  @override
-  final CentrifugeChangeNotifier<CentrifugeChannelPresenceEvent>
-      presenceEvents =
-      CentrifugeChangeNotifier<CentrifugeChannelPresenceEvent>();
-
-  @override
   Future<void> connect(String url) {
     // Subscribe to websocket messages after first connection.
     _webSocketMessageSubscription ??= _webSocket.stream.bytes.listen(
@@ -555,16 +552,16 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('dart2js:tryInline')
   void _onPush(pb.Push push) {
     if (push.hasPub()) {
-      publications.notify($publicationDecode(push.channel)(push.pub));
+      events.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasJoin()) {
-      presenceEvents.notify(
+      events.notify(
         CentrifugeJoinEvent(
           channel: push.channel,
           info: $decodeClientInfo(push.join.info),
         ),
       );
     } else if (push.hasLeave()) {
-      presenceEvents.notify(
+      events.notify(
         CentrifugeLeaveEvent(
           channel: push.channel,
           info: $decodeClientInfo(push.join.info),
@@ -588,8 +585,6 @@ base mixin CentrifugeWSPBHandlerMixin
   @override
   Future<void> close() async {
     await super.close();
-    publications.close();
-    presenceEvents.close();
     _webSocketMessageSubscription?.cancel().ignore();
   }
 }
