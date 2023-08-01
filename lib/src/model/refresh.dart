@@ -1,4 +1,27 @@
+import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:meta/meta.dart';
+
+/// {@template refresh}
+/// Refresh push from Centrifugo server.
+/// {@endtemplate}
+final class CentrifugeRefresh extends CentrifugeChannelPush {
+  /// {@macro refresh}
+  const CentrifugeRefresh({
+    required super.timestamp,
+    required super.channel,
+    required this.expires,
+    this.ttl,
+  });
+
+  @override
+  String get type => 'refresh';
+
+  /// Whether a server will expire connection at some point
+  final bool expires;
+
+  /// Time when connection will be expired
+  final DateTime? ttl;
+}
 
 /// {@nodoc}
 @internal

@@ -5,13 +5,18 @@ import 'dart:convert';
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
+import 'package:centrifuge_dart/src/model/connect.dart';
+import 'package:centrifuge_dart/src/model/disconnect.dart';
 import 'package:centrifuge_dart/src/model/event.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
+import 'package:centrifuge_dart/src/model/message.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
 import 'package:centrifuge_dart/src/model/refresh.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
+import 'package:centrifuge_dart/src/model/subscribe.dart';
+import 'package:centrifuge_dart/src/model/unsubscribe.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/transport_protobuf_codec.dart';
@@ -555,11 +560,13 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _onPush(pb.Push push) {
+    final now = DateTime.now();
     if (push.hasPub()) {
       events.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasJoin()) {
       events.notify(
         CentrifugeJoin(
+          timestamp: now,
           channel: push.channel,
           info: $decodeClientInfo(push.join.info),
         ),
@@ -567,22 +574,87 @@ base mixin CentrifugeWSPBHandlerMixin
     } else if (push.hasLeave()) {
       events.notify(
         CentrifugeLeave(
+          timestamp: now,
           channel: push.channel,
           info: $decodeClientInfo(push.join.info),
         ),
       );
     } else if (push.hasSubscribe()) {
-      // TODO(plugfox): implement.
-      //_handleSubscribe(push.channel, push.subscribe);
+      final positioned =
+          push.subscribe.hasPositioned() && push.subscribe.positioned;
+      final recoverable =
+          push.subscribe.hasRecoverable() && push.subscribe.recoverable;
+      events.notify(
+        CentrifugeSubscribe(
+          timestamp: now,
+          channel: push.channel,
+          positioned: positioned,
+          recoverable: recoverable,
+          data: push.subscribe.hasData() ? push.subscribe.data : <int>[],
+          streamPosition: (positioned || recoverable) &&
+                  push.subscribe.hasOffset() &&
+                  push.subscribe.hasEpoch()
+              ? (offset: push.subscribe.offset, epoch: push.subscribe.epoch)
+              : null,
+        ),
+      );
     } else if (push.hasUnsubscribe()) {
-      // TODO(plugfox): implement.
-      //_handleUnsubscribe(push.channel, push.unsubscribe);
+      events.notify(
+        CentrifugeUnsubscribe(
+          timestamp: now,
+          channel: push.channel,
+          code: push.unsubscribe.hasCode() ? push.unsubscribe.code : 0,
+          reason: push.unsubscribe.hasReason() ? push.unsubscribe.reason : 'OK',
+        ),
+      );
     } else if (push.hasMessage()) {
-      // TODO(plugfox): implement.
-      //_handleMessage(push.message);
+      events.notify(
+        CentrifugeMessage(
+          timestamp: now,
+          channel: push.channel,
+          data: push.message.hasData() ? push.message.data : <int>[],
+        ),
+      );
     } else if (push.hasDisconnect()) {
-      // TODO(plugfox): implement.
-      //_handleDisconnect(push.disconnect);
+      events.notify(
+        CentrifugeDisconnect(
+          timestamp: now,
+          channel: push.channel,
+          code: push.disconnect.hasCode() ? push.disconnect.code : 0,
+          reason: push.disconnect.hasReason() ? push.disconnect.reason : 'OK',
+          reconnect:
+              push.disconnect.hasReconnect() && push.disconnect.reconnect,
+        ),
+      );
+    } else if (push.hasConnect()) {
+      final connect = push.connect;
+      final expires =
+          connect.hasExpires() && connect.expires && connect.hasTtl();
+      events.notify(
+        CentrifugeConnect(
+          timestamp: now,
+          channel: push.channel,
+          data: push.message.hasData() ? push.message.data : <int>[],
+          client: connect.hasClient() ? connect.client : '',
+          version: connect.hasVersion() ? connect.version : '',
+          ttl: expires ? now.add(Duration(seconds: connect.ttl)) : null,
+          expires: expires,
+          node: connect.hasNode() ? connect.node : null,
+          pingInterval:
+              connect.hasPing() ? Duration(seconds: connect.ping) : null,
+          sendPong: connect.hasPong() ? connect.pong : null,
+          session: connect.hasSession() ? connect.session : null,
+        ),
+      );
+    } else if (push.hasRefresh()) {
+      events.notify(CentrifugeRefresh(
+        timestamp: now,
+        channel: push.channel,
+        expires: push.refresh.hasExpires() && push.refresh.expires,
+        ttl: push.refresh.hasTtl()
+            ? now.add(Duration(seconds: push.refresh.ttl))
+            : null,
+      ));
     }
   }
 
@@ -842,16 +914,18 @@ final List<CentrifugePublication> _emptyPublicationsList =
 @internal
 CentrifugePublication Function(pb.Publication publication) $publicationDecode(
   String channel,
-) =>
-    (publication) => CentrifugePublication(
-          channel: channel,
-          offset: publication.hasOffset() ? publication.offset : null,
-          data: publication.data,
-          tags: publication.tags,
-          info: publication.hasInfo()
-              ? $decodeClientInfo(publication.info)
-              : null,
-        );
+) {
+  final timestamp = DateTime.now();
+  return (publication) => CentrifugePublication(
+        timestamp: timestamp,
+        channel: channel,
+        offset: publication.hasOffset() ? publication.offset : null,
+        data: publication.data,
+        tags: publication.tags,
+        info:
+            publication.hasInfo() ? $decodeClientInfo(publication.info) : null,
+      );
+}
 
 /// {@nodoc}
 @internal

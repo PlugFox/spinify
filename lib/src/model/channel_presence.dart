@@ -13,6 +13,7 @@ import 'package:meta/meta.dart';
 sealed class CentrifugeChannelPresence extends CentrifugeChannelPush {
   /// {@macro channel_presence}
   const CentrifugeChannelPresence({
+    required super.timestamp,
     required super.channel,
     required this.info,
   });
@@ -31,6 +32,7 @@ sealed class CentrifugeChannelPresence extends CentrifugeChannelPush {
 final class CentrifugeJoin extends CentrifugeChannelPresence {
   /// {@macro channel_presence}
   const CentrifugeJoin({
+    required super.timestamp,
     required super.channel,
     required super.info,
   });
@@ -49,6 +51,7 @@ final class CentrifugeJoin extends CentrifugeChannelPresence {
 final class CentrifugeLeave extends CentrifugeChannelPresence {
   /// {@macro channel_presence}
   const CentrifugeLeave({
+    required super.timestamp,
     required super.channel,
     required super.info,
   });

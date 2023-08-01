@@ -6,8 +6,13 @@ import 'package:meta/meta.dart';
 @immutable
 abstract base class CentrifugeEvent {
   /// {@template centrifuge_event}
-  const CentrifugeEvent();
+  const CentrifugeEvent({
+    required this.timestamp,
+  });
 
   /// Event type.
   abstract final String type;
+
+  /// Timestamp of event
+  final DateTime timestamp;
 }

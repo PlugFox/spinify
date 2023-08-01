@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 final class CentrifugePublication extends CentrifugeChannelPush {
   /// {@macro publication}
   const CentrifugePublication({
+    required super.timestamp,
     required super.channel,
     required this.data,
     this.offset,
