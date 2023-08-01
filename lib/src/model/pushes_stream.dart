@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:centrifuge_dart/src/model/event.dart';
+import 'package:centrifuge_dart/src/model/message.dart';
 import 'package:centrifuge_dart/src/model/publication.dart';
 
 /// Stream of received pushes from Centrifugo server for a channel.
@@ -14,6 +15,7 @@ final class CentrifugePushesStream extends StreamView<CentrifugeChannelPush> {
   CentrifugePushesStream({
     required Stream<CentrifugeChannelPush> pushes,
     required this.publications,
+    required this.messages,
     required this.presenceEvents,
     required this.joinEvents,
     required this.leaveEvents,
@@ -21,6 +23,9 @@ final class CentrifugePushesStream extends StreamView<CentrifugeChannelPush> {
 
   /// Publications stream.
   final Stream<CentrifugePublication> publications;
+
+  /// Messages stream.
+  final Stream<CentrifugeMessage> messages;
 
   /// Stream of presence (join & leave) events.
   final Stream<CentrifugeChannelPresence> presenceEvents;

@@ -7,12 +7,18 @@ import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/client/states_stream.dart';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/channel_push.dart';
+import 'package:centrifuge_dart/src/model/connect.dart';
+import 'package:centrifuge_dart/src/model/disconnect.dart';
 import 'package:centrifuge_dart/src/model/event.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/message.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/publication.dart';
 import 'package:centrifuge_dart/src/model/pushes_stream.dart';
+import 'package:centrifuge_dart/src/model/refresh.dart';
+import 'package:centrifuge_dart/src/model/subscribe.dart';
+import 'package:centrifuge_dart/src/model/unsubscribe.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
@@ -121,6 +127,11 @@ base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
 
   @protected
   @nonVirtual
+  final StreamController<CentrifugeMessage> _messagesController =
+      StreamController<CentrifugeMessage>.broadcast();
+
+  @protected
+  @nonVirtual
   final StreamController<CentrifugeJoin> _joinController =
       StreamController<CentrifugeJoin>.broadcast();
 
@@ -139,6 +150,7 @@ base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
   late final CentrifugePushesStream stream = CentrifugePushesStream(
     pushes: _pushController.stream,
     publications: _publicationsController.stream,
+    messages: _messagesController.stream,
     presenceEvents: _presenceController.stream,
     joinEvents: _joinController.stream,
     leaveEvents: _leaveController.stream,
@@ -164,12 +176,24 @@ base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
     switch (event) {
       case CentrifugePublication publication:
         _publicationsController.add(publication);
+      case CentrifugeMessage message:
+        _messagesController.add(message);
       case CentrifugeJoin join:
         _presenceController.add(join);
         _joinController.add(join);
       case CentrifugeLeave leave:
         _presenceController.add(leave);
         _leaveController.add(leave);
+      case CentrifugeSubscribe _:
+        break;
+      case CentrifugeUnsubscribe _:
+        break;
+      case CentrifugeConnect _:
+        break;
+      case CentrifugeDisconnect _:
+        break;
+      case CentrifugeRefresh _:
+        break;
     }
   }
 
@@ -180,6 +204,7 @@ base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
     for (final controller in <StreamSink<CentrifugeEvent>>[
       _pushController,
       _publicationsController,
+      _messagesController,
       _joinController,
       _leaveController,
       _presenceController,

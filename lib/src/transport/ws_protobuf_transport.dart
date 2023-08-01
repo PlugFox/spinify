@@ -563,6 +563,14 @@ base mixin CentrifugeWSPBHandlerMixin
     final now = DateTime.now();
     if (push.hasPub()) {
       events.notify($publicationDecode(push.channel)(push.pub));
+    } else if (push.hasMessage()) {
+      events.notify(
+        CentrifugeMessage(
+          timestamp: now,
+          channel: push.channel,
+          data: push.message.hasData() ? push.message.data : <int>[],
+        ),
+      );
     } else if (push.hasJoin()) {
       events.notify(
         CentrifugeJoin(
@@ -607,25 +615,6 @@ base mixin CentrifugeWSPBHandlerMixin
           reason: push.unsubscribe.hasReason() ? push.unsubscribe.reason : 'OK',
         ),
       );
-    } else if (push.hasMessage()) {
-      events.notify(
-        CentrifugeMessage(
-          timestamp: now,
-          channel: push.channel,
-          data: push.message.hasData() ? push.message.data : <int>[],
-        ),
-      );
-    } else if (push.hasDisconnect()) {
-      events.notify(
-        CentrifugeDisconnect(
-          timestamp: now,
-          channel: push.channel,
-          code: push.disconnect.hasCode() ? push.disconnect.code : 0,
-          reason: push.disconnect.hasReason() ? push.disconnect.reason : 'OK',
-          reconnect:
-              push.disconnect.hasReconnect() && push.disconnect.reconnect,
-        ),
-      );
     } else if (push.hasConnect()) {
       final connect = push.connect;
       final expires =
@@ -644,6 +633,17 @@ base mixin CentrifugeWSPBHandlerMixin
               connect.hasPing() ? Duration(seconds: connect.ping) : null,
           sendPong: connect.hasPong() ? connect.pong : null,
           session: connect.hasSession() ? connect.session : null,
+        ),
+      );
+    } else if (push.hasDisconnect()) {
+      events.notify(
+        CentrifugeDisconnect(
+          timestamp: now,
+          channel: push.channel,
+          code: push.disconnect.hasCode() ? push.disconnect.code : 0,
+          reason: push.disconnect.hasReason() ? push.disconnect.reason : 'OK',
+          reconnect:
+              push.disconnect.hasReconnect() && push.disconnect.reconnect,
         ),
       );
     } else if (push.hasRefresh()) {
