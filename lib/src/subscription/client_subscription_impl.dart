@@ -319,6 +319,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
   /// Refresh token for subscription.
   /// {@nodoc}
   void _refreshToken() => Future<void>(() async {
+        logger.fine('Refreshing subscription token for $channel');
         try {
           _refreshTimer?.cancel();
           _refreshTimer = null;
