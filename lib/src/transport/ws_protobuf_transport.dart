@@ -561,13 +561,14 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('dart2js:tryInline')
   void _onPush(pb.Push push) {
     final now = DateTime.now();
+    final channel = push.hasChannel() ? push.channel : '';
     if (push.hasPub()) {
       events.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasMessage()) {
       events.notify(
         CentrifugeMessage(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           data: push.message.hasData() ? push.message.data : <int>[],
         ),
       );
@@ -575,7 +576,7 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify(
         CentrifugeJoin(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           info: $decodeClientInfo(push.join.info),
         ),
       );
@@ -583,7 +584,7 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify(
         CentrifugeLeave(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           info: $decodeClientInfo(push.join.info),
         ),
       );
@@ -595,7 +596,7 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify(
         CentrifugeSubscribe(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           positioned: positioned,
           recoverable: recoverable,
           data: push.subscribe.hasData() ? push.subscribe.data : <int>[],
@@ -610,7 +611,7 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify(
         CentrifugeUnsubscribe(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           code: push.unsubscribe.hasCode() ? push.unsubscribe.code : 0,
           reason: push.unsubscribe.hasReason() ? push.unsubscribe.reason : 'OK',
         ),
@@ -622,7 +623,7 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify(
         CentrifugeConnect(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           data: push.message.hasData() ? push.message.data : <int>[],
           client: connect.hasClient() ? connect.client : '',
           version: connect.hasVersion() ? connect.version : '',
@@ -639,9 +640,11 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify(
         CentrifugeDisconnect(
           timestamp: now,
-          channel: push.channel,
+          channel: channel,
           code: push.disconnect.hasCode() ? push.disconnect.code : 0,
-          reason: push.disconnect.hasReason() ? push.disconnect.reason : 'OK',
+          reason: push.disconnect.hasReason()
+              ? push.disconnect.reason
+              : 'disconnect from server',
           reconnect:
               push.disconnect.hasReconnect() && push.disconnect.reconnect,
         ),
@@ -649,7 +652,7 @@ base mixin CentrifugeWSPBHandlerMixin
     } else if (push.hasRefresh()) {
       events.notify(CentrifugeRefresh(
         timestamp: now,
-        channel: push.channel,
+        channel: channel,
         expires: push.refresh.hasExpires() && push.refresh.expires,
         ttl: push.refresh.hasTtl()
             ? now.add(Duration(seconds: push.refresh.ttl))

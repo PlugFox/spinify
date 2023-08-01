@@ -29,7 +29,10 @@ abstract interface class ICentrifuge
   FutureOr<void> ready();
 
   /// Disconnect from the server.
-  Future<void> disconnect();
+  Future<void> disconnect([
+    int code = 0,
+    String reason = 'Disconnect called',
+  ]);
 
   /// Client if not needed anymore.
   /// Permanent close connection to the server and

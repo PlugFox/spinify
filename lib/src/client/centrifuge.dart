@@ -34,9 +34,9 @@ import 'package:stack_trace/stack_trace.dart' as st;
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase
     with
-        CentrifugeEventReceiverMixin,
         CentrifugeErrorsMixin,
         CentrifugeStateMixin,
+        CentrifugeEventReceiverMixin,
         CentrifugeConnectionMixin,
         CentrifugeSendMixin,
         CentrifugeClientSubscriptionMixin,
@@ -114,7 +114,8 @@ abstract base class CentrifugeBase implements ICentrifuge {
 /// Mixin responsible for event receiving and distribution by controllers
 /// and streams to subscribers.
 /// {@nodoc}
-base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
+base mixin CentrifugeEventReceiverMixin
+    on CentrifugeBase, CentrifugeStateMixin {
   @protected
   @nonVirtual
   final StreamController<CentrifugeChannelPush> _pushController =
@@ -175,24 +176,45 @@ base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
     _pushController.add(event);
     switch (event) {
       case CentrifugePublication publication:
+        logger.fine(
+            'Publication event received for channel ${publication.channel}');
         _publicationsController.add(publication);
       case CentrifugeMessage message:
+        logger.fine('Message event received for channel ${message.channel}');
         _messagesController.add(message);
       case CentrifugeJoin join:
+        logger.fine('Join event received for channel ${join.channel} '
+            'and user ${join.info.user}');
         _presenceController.add(join);
         _joinController.add(join);
       case CentrifugeLeave leave:
+        logger.fine('Leave event received for channel ${leave.channel} '
+            'and user ${leave.info.user}');
         _presenceController.add(leave);
         _leaveController.add(leave);
       case CentrifugeSubscribe _:
-        break;
+        break; // For server side subscriptions.
       case CentrifugeUnsubscribe _:
-        break;
+        break; // For server side subscriptions.
       case CentrifugeConnect _:
         break;
-      case CentrifugeDisconnect _:
+      case CentrifugeDisconnect event:
+        final code = event.code;
+        final reconnect =
+            code < 3500 || code >= 5000 || (code >= 4000 && code < 4500);
+        if (reconnect) {
+          logger.fine('Disconnect transport by server push '
+              'and reconnect after backoff delay');
+          _transport.disconnect(code, event.reason).ignore();
+        } else {
+          logger
+              .fine('Disconnect interactive by server push, without reconnect');
+          disconnect().ignore();
+        }
         break;
       case CentrifugeRefresh _:
+        logger.fine('Refresh connection token by server push');
+        _refreshToken();
         break;
     }
   }
@@ -412,10 +434,13 @@ base mixin CentrifugeConnectionMixin
   }
 
   @override
-  Future<void> disconnect() async {
+  Future<void> disconnect([
+    int code = 0,
+    String reason = 'Disconnect called',
+  ]) async {
     logger.fine('Interactively disconnecting');
     try {
-      await _transport.disconnect(0, 'Disconnect called');
+      await _transport.disconnect(code, reason);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
@@ -621,8 +646,12 @@ base mixin CentrifugeQueueMixin on CentrifugeBase {
       );
 
   @override
-  Future<void> disconnect() =>
-      _eventQueue.push<void>('disconnect', super.disconnect);
+  Future<void> disconnect([
+    int code = 0,
+    String reason = 'Disconnect called',
+  ]) =>
+      _eventQueue.push<void>(
+          'disconnect', () => super.disconnect(code, reason));
 
   @override
   Future<void> close() => _eventQueue

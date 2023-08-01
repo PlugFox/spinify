@@ -202,9 +202,9 @@ base mixin CentrifugeClientSubscriptionEventReceiverMixin
         _presenceController.add(leave);
         _leaveController.add(leave);
       case CentrifugeSubscribe _:
-        break;
+        break; // For server side subscriptions.
       case CentrifugeUnsubscribe _:
-        break;
+        break; // For server side subscriptions.
       case CentrifugeConnect _:
         break;
       case CentrifugeDisconnect _:
