@@ -1,8 +1,6 @@
 import 'dart:collection';
 
-import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
-import 'package:centrifuge_dart/src/model/publication.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_impl.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
@@ -49,21 +47,6 @@ final class ClientSubscriptionManager {
       transportWeakRef: _transportWeakRef,
     );
   }
-
-  /// Notify subscription about new publication.
-  /// {@nodoc}
-  @internal
-  @nonVirtual
-  void handlePublication(CentrifugePublication publication) =>
-      _channelSubscriptions[publication.channel]
-          ?.handlePublication(publication);
-
-  /// Notify subscription about new presence event.
-  /// {@nodoc}
-  @internal
-  @nonVirtual
-  void handlePresenceEvent(CentrifugeChannelPresenceEvent event) =>
-      _channelSubscriptions[event.channel]?.handlePresenceEvent(event);
 
   /// Get map wirth all registered client-side subscriptions.
   /// Returns all registered subscriptions,

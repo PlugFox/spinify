@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
+import 'package:centrifuge_dart/src/model/event_stream.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 
@@ -13,7 +13,7 @@ abstract interface class ICentrifuge
         ICentrifugeStateOwner,
         ICentrifugeAsyncMessageSender,
         ICentrifugePublicationSender,
-        ICentrifugePublicationReceiver,
+        ICentrifugeEventReceiver,
         ICentrifugeClientSubscriptionsManager,
         ICentrifugePresenceOwner {
   /// Stream of errors.
@@ -62,18 +62,18 @@ abstract interface class ICentrifugePublicationSender {
   Future<void> publish(String channel, List<int> data);
 }
 
-/// Centrifuge receive publication interface.
-abstract interface class ICentrifugePublicationReceiver {
-  /// Stream of publications.
-  abstract final Stream<CentrifugePublication> publications;
-}
-
 /// Centrifuge send asynchronous message interface.
 abstract interface class ICentrifugeAsyncMessageSender {
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifuge
   /// asynchronous message handler does not exist.
   Future<void> send(List<int> data);
+}
+
+/// Centrifuge event receiver interface.
+abstract interface class ICentrifugeEventReceiver {
+  /// Stream of centrifuge events.
+  abstract final CentrifugeEventStream events;
 }
 
 /// Centrifuge client subscriptions manager interface.
@@ -108,9 +108,6 @@ abstract interface class ICentrifugeClientSubscriptionsManager {
 
 /// Centrifuge presence owner interface.
 abstract interface class ICentrifugePresenceOwner {
-  /// Stream of presence (join & leave) events.
-  abstract final CentrifugeChannelPresenceStream presenceEvents;
-
   /// Fetch presence information inside a channel.
   Future<CentrifugePresence> presence(String channel);
 

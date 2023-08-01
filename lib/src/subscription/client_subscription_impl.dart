@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
-import 'package:centrifuge_dart/src/model/channel_presence.dart';
-import 'package:centrifuge_dart/src/model/channel_presence_stream.dart';
+import 'package:centrifuge_dart/src/model/channel_event.dart';
+import 'package:centrifuge_dart/src/model/event.dart';
+import 'package:centrifuge_dart/src/model/event_stream.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -70,6 +71,16 @@ abstract base class CentrifugeClientSubscriptionBase
   /// {@nodoc}
   final CentrifugeSubscriptionConfig _config;
 
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeEvent> _eventsController =
+      StreamController<CentrifugeEvent>.broadcast();
+
+  @override
+  @nonVirtual
+  late final CentrifugeEventStream events =
+      CentrifugeEventStream(_eventsController.stream);
+
   /// Init subscription.
   /// {@nodoc}
   @protected
@@ -78,6 +89,16 @@ abstract base class CentrifugeClientSubscriptionBase
     _state = CentrifugeSubscriptionState.unsubscribed(
         since: _config.since, code: 0, reason: 'initial state');
     _offset = _config.since?.offset ?? fixnum.Int64.ZERO;
+    _transport.events.addListener(_onEvent);
+  }
+
+  /// Router for all events.
+  /// {@nodoc}
+  @protected
+  @mustCallSuper
+  void _onEvent(CentrifugeEvent event) {
+    if (event is! CentrifugeChannelEvent || event.channel != channel) return;
+    _eventsController.add(event);
   }
 
   /// Subscription has 3 states:
@@ -107,16 +128,6 @@ abstract base class CentrifugeClientSubscriptionBase
     _stateController.add(_state = state);
   }
 
-  /// Stream of publications.
-  /// {@nodoc}
-  @override
-  Stream<CentrifugePublication> get publications =>
-      _publicationController.stream;
-
-  /// {@nodoc}
-  final StreamController<CentrifugePublication> _publicationController =
-      StreamController<CentrifugePublication>.broadcast();
-
   /// Notify about new publication.
   /// {@nodoc}
   @internal
@@ -124,14 +135,13 @@ abstract base class CentrifugeClientSubscriptionBase
   void handlePublication(CentrifugePublication publication) {
     final offset = publication.offset;
     if (offset != null && offset > _offset) _offset = offset;
-    _publicationController.add(publication);
   }
 
   /// {@nodoc}
   @internal
   @mustCallSuper
   Future<void> close() async {
-    _publicationController.close().ignore();
+    await _eventsController.close();
   }
 }
 
@@ -416,24 +426,6 @@ base mixin CentrifugeClientSubscriptionPresenceMixin
     on
         CentrifugeClientSubscriptionBase,
         CentrifugeClientSubscriptionErrorsMixin {
-  @protected
-  @nonVirtual
-  final StreamController<CentrifugeChannelPresenceEvent>
-      _presenceEventsController =
-      StreamController<CentrifugeChannelPresenceEvent>.broadcast();
-
-  @override
-  @nonVirtual
-  late final CentrifugeChannelPresenceStream presenceEvents =
-      CentrifugeChannelPresenceStream(_presenceEventsController.stream);
-
-  /// Notify about new presence event.
-  /// {@nodoc}
-  @internal
-  @nonVirtual
-  void handlePresenceEvent(CentrifugeChannelPresenceEvent event) =>
-      _presenceEventsController.add(event);
-
   @override
   Future<CentrifugePresence> presence() async {
     await ready();
