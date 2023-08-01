@@ -520,7 +520,7 @@ base mixin CentrifugeWSPBHandlerMixin
   void _handleWebSocketMessage(List<int> response) {
     final replies = _replyDecoder.convert(response);
     for (final reply in replies) {
-      if (reply.id > 0) {
+      if (reply.hasId() && reply.id > 0) {
         logger.fine('Reply for command #${reply.id} received');
         _completeReply(reply);
       } else if (reply.hasPush()) {
@@ -546,6 +546,10 @@ base mixin CentrifugeWSPBHandlerMixin
     }
   }
 
+  /// Push can be sent to a client as part of Reply in case of bidirectional
+  /// transport or without additional wrapping in case of unidirectional
+  /// transports. ProtocolVersion2 uses channel and one of the possible concrete
+  /// push messages.
   @protected
   @nonVirtual
   @pragma('vm:prefer-inline')
@@ -555,14 +559,14 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasJoin()) {
       events.notify(
-        CentrifugeJoinEvent(
+        CentrifugeJoin(
           channel: push.channel,
           info: $decodeClientInfo(push.join.info),
         ),
       );
     } else if (push.hasLeave()) {
       events.notify(
-        CentrifugeLeaveEvent(
+        CentrifugeLeave(
           channel: push.channel,
           info: $decodeClientInfo(push.join.info),
         ),

@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/event_stream.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
+import 'package:centrifuge_dart/src/model/pushes_stream.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
@@ -85,9 +85,8 @@ abstract interface class CentrifugeClientSubscription
   /// Stream of subscription states.
   abstract final CentrifugeSubscriptionStateStream states;
 
-  /// Stream of events (publications, join/leave messages and etc) at
-  /// this subscription.
-  abstract final CentrifugeEventStream events;
+  /// Stream of received pushes from Centrifugo server for a channel.
+  abstract final CentrifugePushesStream stream;
 
   /// Errors stream.
   abstract final Stream<

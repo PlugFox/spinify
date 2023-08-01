@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_impl.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
@@ -121,6 +122,12 @@ final class ClientSubscriptionManager {
     }
     _channelSubscriptions.clear();
   }
+
+  /// Handle push event from server for the specific channel.
+  /// {@nodoc}
+  @internal
+  void onPush(CentrifugeChannelPush push) =>
+      _channelSubscriptions[push.channel]?.onPush(push);
 
   /// Get subscription to the channel
   /// from internal registry or null if not found.

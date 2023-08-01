@@ -1,8 +1,8 @@
-import 'package:centrifuge_dart/src/model/channel_event.dart';
+import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:centrifuge_dart/src/model/client_info.dart';
 import 'package:meta/meta.dart';
 
-/// {@template channel_presence_event}
+/// {@template channel_presence}
 /// Channel presence.
 /// Join / Leave events.
 /// {@endtemplate}
@@ -10,9 +10,9 @@ import 'package:meta/meta.dart';
 /// {@subCategory Channel}
 /// {@subCategory Presence}
 @immutable
-sealed class CentrifugeChannelPresenceEvent extends CentrifugeChannelEvent {
-  /// {@macro channel_presence_event}
-  const CentrifugeChannelPresenceEvent({
+sealed class CentrifugeChannelPresence extends CentrifugeChannelPush {
+  /// {@macro channel_presence}
+  const CentrifugeChannelPresence({
     required super.channel,
     required this.info,
   });
@@ -27,13 +27,16 @@ sealed class CentrifugeChannelPresenceEvent extends CentrifugeChannelEvent {
   abstract final bool isLeave;
 }
 
-/// {@macro channel_presence_event}
-final class CentrifugeJoinEvent extends CentrifugeChannelPresenceEvent {
-  /// {@macro channel_presence_event}
-  const CentrifugeJoinEvent({
+/// {@macro channel_presence}
+final class CentrifugeJoin extends CentrifugeChannelPresence {
+  /// {@macro channel_presence}
+  const CentrifugeJoin({
     required super.channel,
     required super.info,
   });
+
+  @override
+  String get type => 'join';
 
   @override
   bool get isJoin => true;
@@ -42,13 +45,16 @@ final class CentrifugeJoinEvent extends CentrifugeChannelPresenceEvent {
   bool get isLeave => false;
 }
 
-/// {@macro channel_presence_event}
-final class CentrifugeLeaveEvent extends CentrifugeChannelPresenceEvent {
-  /// {@macro channel_presence_event}
-  const CentrifugeLeaveEvent({
+/// {@macro channel_presence}
+final class CentrifugeLeave extends CentrifugeChannelPresence {
+  /// {@macro channel_presence}
+  const CentrifugeLeave({
     required super.channel,
     required super.info,
   });
+
+  @override
+  String get type => 'leave';
 
   @override
   bool get isJoin => false;

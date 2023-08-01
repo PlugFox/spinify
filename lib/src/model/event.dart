@@ -7,4 +7,7 @@ import 'package:meta/meta.dart';
 abstract base class CentrifugeEvent {
   /// {@template centrifuge_event}
   const CentrifugeEvent();
+
+  /// Event type.
+  abstract final String type;
 }

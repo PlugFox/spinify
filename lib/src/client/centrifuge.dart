@@ -5,11 +5,14 @@ import 'package:centrifuge_dart/src/client/config.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
 import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/client/states_stream.dart';
+import 'package:centrifuge_dart/src/model/channel_presence.dart';
+import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:centrifuge_dart/src/model/event.dart';
-import 'package:centrifuge_dart/src/model/event_stream.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
+import 'package:centrifuge_dart/src/model/publication.dart';
+import 'package:centrifuge_dart/src/model/pushes_stream.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
@@ -25,6 +28,7 @@ import 'package:stack_trace/stack_trace.dart' as st;
 /// {@endtemplate}
 final class Centrifuge extends CentrifugeBase
     with
+        CentrifugeEventReceiverMixin,
         CentrifugeErrorsMixin,
         CentrifugeStateMixin,
         CentrifugeConnectionMixin,
@@ -66,24 +70,17 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @nonVirtual
   final CentrifugeConfig _config;
 
-  @protected
-  @nonVirtual
-  final StreamController<CentrifugeEvent> _eventsController =
-      StreamController<CentrifugeEvent>.broadcast();
-
-  @override
-  @nonVirtual
-  late final CentrifugeEventStream events =
-      CentrifugeEventStream(_eventsController.stream);
+  /// Manager responsible for client-side subscriptions.
+  /// {@nodoc}
+  late final ClientSubscriptionManager _clientSubscriptionManager =
+      ClientSubscriptionManager(_transport);
 
   /// Init centrifuge client, override this method to add custom logic.
   /// This method is called in constructor.
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _initCentrifuge() {
-    _transport.events.addListener(_onEvent);
-  }
+  void _initCentrifuge() {}
 
   /// Called when connection established.
   /// Right before [CentrifugeState$Connected] state.
@@ -103,25 +100,92 @@ abstract base class CentrifugeBase implements ICentrifuge {
     logger.fine('Connection lost');
   }
 
+  @override
+  @mustCallSuper
+  Future<void> close() async {}
+}
+
+/// Mixin responsible for event receiving and distribution by controllers
+/// and streams to subscribers.
+/// {@nodoc}
+base mixin CentrifugeEventReceiverMixin on CentrifugeBase {
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeChannelPush> _pushController =
+      StreamController<CentrifugeChannelPush>.broadcast();
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugePublication> _publicationsController =
+      StreamController<CentrifugePublication>.broadcast();
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeJoin> _joinController =
+      StreamController<CentrifugeJoin>.broadcast();
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeLeave> _leaveController =
+      StreamController<CentrifugeLeave>.broadcast();
+
+  @protected
+  @nonVirtual
+  final StreamController<CentrifugeChannelPresence> _presenceController =
+      StreamController<CentrifugeChannelPresence>.broadcast();
+
+  @override
+  @nonVirtual
+  late final CentrifugePushesStream stream = CentrifugePushesStream(
+    pushes: _pushController.stream,
+    publications: _publicationsController.stream,
+    presenceEvents: _presenceController.stream,
+    joinEvents: _joinController.stream,
+    leaveEvents: _leaveController.stream,
+  );
+
+  @override
+  void _initCentrifuge() {
+    _transport.events.addListener(_onEvent);
+    super._initCentrifuge();
+  }
+
   /// Router for all events.
   /// {@nodoc}
   @protected
-  @mustCallSuper
+  @nonVirtual
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
   void _onEvent(CentrifugeEvent event) {
-    /* switch (event) {
+    if (event is! CentrifugeChannelPush) return;
+    // This is a push to a channel.
+    _clientSubscriptionManager.onPush(event);
+    _pushController.add(event);
+    switch (event) {
       case CentrifugePublication publication:
-        _onPublication(publication);
-      case CentrifugeChannelPresenceEvent event:
-        _onPresenceEvent(event);
-    } */
-    _eventsController.add(event);
+        _publicationsController.add(publication);
+      case CentrifugeJoin join:
+        _presenceController.add(join);
+        _joinController.add(join);
+      case CentrifugeLeave leave:
+        _presenceController.add(leave);
+        _leaveController.add(leave);
+    }
   }
 
   @override
-  @mustCallSuper
   Future<void> close() async {
+    await super.close();
     _transport.events.removeListener(_onEvent);
-    _eventsController.close().ignore();
+    for (final controller in <StreamSink<CentrifugeEvent>>[
+      _pushController,
+      _publicationsController,
+      _joinController,
+      _leaveController,
+      _presenceController,
+    ]) {
+      controller.close().ignore();
+    }
   }
 }
 
@@ -373,9 +437,6 @@ base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
 @internal
 base mixin CentrifugeClientSubscriptionMixin
     on CentrifugeBase, CentrifugeErrorsMixin {
-  late final ClientSubscriptionManager _clientSubscriptionManager =
-      ClientSubscriptionManager(_transport);
-
   @override
   CentrifugeClientSubscription newSubscription(
     String channel, [

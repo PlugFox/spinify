@@ -3,9 +3,9 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/model/event_stream.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
+import 'package:centrifuge_dart/src/model/pushes_stream.dart';
 
 /// Centrifuge client interface.
 abstract interface class ICentrifuge
@@ -72,8 +72,8 @@ abstract interface class ICentrifugeAsyncMessageSender {
 
 /// Centrifuge event receiver interface.
 abstract interface class ICentrifugeEventReceiver {
-  /// Stream of centrifuge events.
-  abstract final CentrifugeEventStream events;
+  /// Stream of received pushes from Centrifugo server for a channel.
+  abstract final CentrifugePushesStream stream;
 }
 
 /// Centrifuge client subscriptions manager interface.

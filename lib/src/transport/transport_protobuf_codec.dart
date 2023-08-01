@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
+import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
@@ -50,9 +51,17 @@ final class TransportProtobufDecoder
   Iterable<pb.Reply> convert(List<int> input) sync* {
     final reader = pb.CodedBufferReader(input);
     while (!reader.isAtEnd()) {
-      final reply = pb.Reply();
-      reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
-      yield reply;
+      try {
+        final reply = pb.Reply();
+        reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
+        yield reply;
+      } on Object catch (error, stackTrace) {
+        logger.warning(
+          error,
+          stackTrace,
+          'Failed to decode reply: $error',
+        );
+      }
     }
   }
 }
