@@ -8,7 +8,8 @@ import 'package:centrifuge_dart/src/model/publication.dart';
 
 /// Stream of received pushes from Centrifugo server for a channel.
 /// {@category Entity}
-/// {@subCategory Event}
+/// {@subCategory Pushes}
+/// {@subCategory Events}
 /// {@subCategory Channel}
 final class CentrifugePushesStream extends StreamView<CentrifugeChannelPush> {
   /// Stream of received events.
