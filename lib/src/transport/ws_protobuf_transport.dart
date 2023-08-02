@@ -361,6 +361,30 @@ base mixin CentrifugeWSPBConnectionMixin
       }
       final now = DateTime.now();
       final expires = result.hasExpires() && result.expires && result.hasTtl();
+
+      // TODO(plugfox): implement server-side subscriptions.
+      /* result.subs.forEach((key, value) {
+        _serverSubs[key] = ServerSubscription(
+            key, value.recoverable, value.offset, value.epoch);
+        final event = ServerSubscribedEvent.fromSubscribeResult(key, value);
+        _subscribedController.add(event);
+        value.publications.forEach((element) {
+          final event = ServerPublicationEvent.from(key, element);
+          _publicationController.add(event);
+          if (_serverSubs[key]!.recoverable && element.offset > 0) {
+            _serverSubs[key]!.offset = element.offset;
+          }
+        });
+      });
+
+      _serverSubs.forEach((key, value) {
+        if (!result.subs.containsKey(key)) {
+          final event = ServerUnsubscribedEvent.from(key);
+          _unsubscribedController.add(event);
+        }
+      });
+      _serverSubs.removeWhere((key, value) => !result.subs.containsKey(key)); */
+
       _setState(CentrifugeState$Connected(
         url: url,
         timestamp: now,
