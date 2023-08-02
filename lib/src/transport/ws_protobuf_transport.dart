@@ -80,7 +80,8 @@ abstract base class CentrifugeWSPBTransportBase
 
   @override
   @mustCallSuper
-  Future<void> connect(String url) async {}
+  Future<void> connect(
+      String url, List<CentrifugeServerSubscription> subs) async {}
 
   @override
   @mustCallSuper
@@ -317,9 +318,10 @@ base mixin CentrifugeWSPBConnectionMixin
         CentrifugeWSPBSenderMixin,
         CentrifugeWSPBStateHandlerMixin {
   @override
-  Future<void> connect(String url) async {
+  Future<void> connect(
+      String url, List<CentrifugeServerSubscription> subs) async {
     try {
-      await super.connect(url);
+      await super.connect(url, subs);
       await _webSocket.connect(url);
       final request = pb.ConnectRequest();
       final token = await _config.getToken?.call();
@@ -330,7 +332,18 @@ base mixin CentrifugeWSPBConnectionMixin
       request
         ..name = _config.client.name
         ..version = _config.client.version;
-      // TODO(plugfox): add subscriptions.
+      // Add server-side subscriptions to connect request.
+      for (final sub in subs) {
+        final subRequest = pb.SubscribeRequest()
+          ..recover = sub.state.recoverable;
+        final since = sub.state.since;
+        if (since != null) {
+          subRequest
+            ..offset = since.offset
+            ..epoch = since.epoch;
+        }
+        request.subs.putIfAbsent(sub.channel, () => subRequest);
+      }
       final pb.ConnectResult result;
       try {
         result = await _sendMessage(request, pb.ConnectResult());
@@ -470,7 +483,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
   }
 
   @override
-  Future<void> connect(String url) {
+  Future<void> connect(String url, List<CentrifugeServerSubscription> subs) {
     // Change state to connecting before connection.
     _setState(CentrifugeState$Connecting(url: url));
     // Subscribe to websocket state after initialization.
@@ -478,7 +491,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
       _handleWebSocketClosedStates,
       cancelOnError: false,
     );
-    return super.connect(url);
+    return super.connect(url, subs);
   }
 
   @override
@@ -508,13 +521,13 @@ base mixin CentrifugeWSPBHandlerMixin
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
   @override
-  Future<void> connect(String url) {
+  Future<void> connect(String url, List<CentrifugeServerSubscription> subs) {
     // Subscribe to websocket messages after first connection.
     _webSocketMessageSubscription ??= _webSocket.stream.bytes.listen(
       _handleWebSocketMessage,
       cancelOnError: false,
     );
-    return super.connect(url);
+    return super.connect(url, subs);
   }
 
   /// {@nodoc}
@@ -872,9 +885,10 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
   Timer? _pingTimer;
 
   @override
-  Future<void> connect(String url) async {
+  Future<void> connect(
+      String url, List<CentrifugeServerSubscription> subs) async {
     _tearDownPingTimer();
-    await super.connect(url);
+    await super.connect(url, subs);
     _restartPingTimer();
   }
 

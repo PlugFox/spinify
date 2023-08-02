@@ -112,7 +112,7 @@ final class ClientSubscriptionManager {
 
   /// Remove all subscriptions for the specific client from internal registry.
   /// {@nodoc}
-  void removeAll([
+  void close([
     int code = 0,
     String reason = 'client closed',
   ]) {

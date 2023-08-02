@@ -16,7 +16,10 @@ import 'package:meta/meta.dart';
 sealed class CentrifugeSubscriptionState
     extends _$CentrifugeSubscriptionStateBase {
   /// {@macro subscription_state}
-  const CentrifugeSubscriptionState(super.timestamp, super.since);
+  const CentrifugeSubscriptionState(
+      {required super.timestamp,
+      required super.since,
+      required super.recoverable});
 
   /// Unsubscribed
   /// {@macro subscription_state}
@@ -25,6 +28,7 @@ sealed class CentrifugeSubscriptionState
     required String reason,
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
+    bool recoverable,
   }) = CentrifugeSubscriptionState$Unsubscribed;
 
   /// Subscribing
@@ -32,6 +36,7 @@ sealed class CentrifugeSubscriptionState
   factory CentrifugeSubscriptionState.subscribing({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
+    bool recoverable,
   }) = CentrifugeSubscriptionState$Subscribing;
 
   /// Subscribed
@@ -57,7 +62,11 @@ final class CentrifugeSubscriptionState$Unsubscribed
     required this.reason,
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
-  }) : super(timestamp ?? DateTime.now(), since);
+    bool recoverable = false,
+  }) : super(
+            timestamp: timestamp ?? DateTime.now(),
+            since: since,
+            recoverable: recoverable);
 
   /// Unsubscribe code.
   final int code;
@@ -108,7 +117,11 @@ final class CentrifugeSubscriptionState$Subscribing
   CentrifugeSubscriptionState$Subscribing({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
-  }) : super(timestamp ?? DateTime.now(), since);
+    bool recoverable = false,
+  }) : super(
+            timestamp: timestamp ?? DateTime.now(),
+            since: since,
+            recoverable: recoverable);
 
   @override
   bool get isUnsubscribed => false;
@@ -153,12 +166,12 @@ final class CentrifugeSubscriptionState$Subscribed
   CentrifugeSubscriptionState$Subscribed({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
-    this.recoverable = false,
+    bool recoverable = false,
     this.ttl,
-  }) : super(timestamp ?? DateTime.now(), since);
-
-  /// Whether channel is recoverable.
-  final bool recoverable;
+  }) : super(
+            timestamp: timestamp ?? DateTime.now(),
+            since: since,
+            recoverable: recoverable);
 
   /// Time to live in seconds.
   final DateTime? ttl;
@@ -208,13 +221,20 @@ typedef CentrifugeSubscriptionStateMatch<R,
 @immutable
 abstract base class _$CentrifugeSubscriptionStateBase {
   /// {@nodoc}
-  const _$CentrifugeSubscriptionStateBase(this.timestamp, this.since);
+  const _$CentrifugeSubscriptionStateBase({
+    required this.timestamp,
+    required this.since,
+    required this.recoverable,
+  });
 
   /// Timestamp of state change.
   final DateTime timestamp;
 
   /// Stream Position
   final ({fixnum.Int64 offset, String epoch})? since;
+
+  /// Whether channel is recoverable.
+  final bool recoverable;
 
   /// Whether channel is unsubscribed.
   abstract final bool isUnsubscribed;

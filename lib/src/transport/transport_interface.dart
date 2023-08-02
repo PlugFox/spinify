@@ -29,8 +29,9 @@ abstract interface class ICentrifugeTransport {
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.
+  /// [subs] is a list of server-side subscriptions to subscribe on connect.
   /// {@nodoc}
-  Future<void> connect(String url);
+  Future<void> connect(String url, List<CentrifugeServerSubscription> subs);
 
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifuge

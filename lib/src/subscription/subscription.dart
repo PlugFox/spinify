@@ -21,6 +21,9 @@ abstract interface class ICentrifugeSubscription {
   /// Current subscription state.
   abstract final CentrifugeSubscriptionState state;
 
+  /// Offset of last successfully received message.
+  abstract final CentrifugeStreamPosition? since;
+
   /// Stream of subscription states.
   abstract final CentrifugeSubscriptionStateStream states;
 

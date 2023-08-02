@@ -61,6 +61,12 @@ abstract base class CentrifugeServerSubscriptionBase
   @override
   final String channel;
 
+  @override
+  CentrifugeStreamPosition? get since => switch (state.since?.epoch) {
+        String epoch => (epoch: epoch, offset: _offset),
+        _ => null,
+      };
+
   /// Offset of last received publication.
   fixnum.Int64 _offset = fixnum.Int64.ZERO;
 
@@ -198,15 +204,18 @@ base mixin CentrifugeServerSubscriptionEventReceiverMixin
         _presenceController.add(leave);
         _leaveController.add(leave);
       case CentrifugeSubscribe sub:
+        final offset = sub.streamPosition?.offset;
+        if (offset != null && offset > _offset) _offset = offset;
         _setState(CentrifugeSubscriptionState.subscribed(
-          since: sub.streamPosition,
+          since: sub.streamPosition ?? since ?? state.since,
           recoverable: sub.recoverable,
         ));
       case CentrifugeUnsubscribe unsub:
         _setState(CentrifugeSubscriptionState.unsubscribed(
           code: unsub.code,
           reason: unsub.reason,
-          since: state.since,
+          recoverable: state.recoverable,
+          since: since ?? state.since,
         ));
       case CentrifugeConnect _:
         break;

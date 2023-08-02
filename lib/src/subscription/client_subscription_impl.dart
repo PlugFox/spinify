@@ -65,6 +65,12 @@ abstract base class CentrifugeClientSubscriptionBase
   /// Offset of last received publication.
   late fixnum.Int64 _offset;
 
+  @override
+  CentrifugeStreamPosition? get since => switch (state.since?.epoch) {
+        String epoch => (epoch: epoch, offset: _offset),
+        _ => null,
+      };
+
   /// Weak reference to transport.
   /// {@nodoc}
   @nonVirtual
@@ -287,7 +293,10 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       }
       _refreshTimer?.cancel();
       _refreshTimer = null;
-      _setState(CentrifugeSubscriptionState$Subscribing(since: state.since));
+      _setState(CentrifugeSubscriptionState$Subscribing(
+        since: since ?? state.since,
+        recoverable: state.recoverable,
+      ));
       final subscribed = await _transport.subscribe(
         channel,
         _config,
@@ -302,7 +311,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       final offset = subscribed.since?.offset;
       if (offset != null && offset > _offset) _offset = offset;
       _setState(CentrifugeSubscriptionState$Subscribed(
-        since: subscribed.since,
+        since: subscribed.since ?? since ?? state.since,
         recoverable: subscribed.recoverable,
         ttl: subscribed.ttl,
       ));
@@ -380,7 +389,8 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     _setState(CentrifugeSubscriptionState.unsubscribed(
       code: code,
       reason: reason,
-      since: state.since,
+      since: since ?? state.since,
+      recoverable: state.recoverable,
     ));
     try {
       await _transport.unsubscribe(channel, _config);

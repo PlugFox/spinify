@@ -199,10 +199,10 @@ base mixin CentrifugeEventReceiverMixin
             'and user ${leave.info.user}');
         _presenceController.add(leave);
         _leaveController.add(leave);
-      case CentrifugeSubscribe _:
-        break; // For server side subscriptions.
-      case CentrifugeUnsubscribe _:
-        break; // For server side subscriptions.
+      case CentrifugeSubscribe subscribe:
+        _serverSubscriptionManager.subscribe(subscribe);
+      case CentrifugeUnsubscribe unsubscribe:
+        _serverSubscriptionManager.unsubscribe(unsubscribe);
       case CentrifugeConnect _:
         break;
       case CentrifugeDisconnect event:
@@ -383,7 +383,9 @@ base mixin CentrifugeConnectionMixin
     try {
       _refreshTimer?.cancel();
       _refreshTimer = null;
-      await _transport.connect(url);
+      final subs = _serverSubscriptionManager.subscriptions.values
+          .toList(growable: false);
+      await _transport.connect(url, subs);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
@@ -544,7 +546,7 @@ base mixin CentrifugeClientSubscriptionMixin
   @override
   Future<void> close() async {
     await super.close();
-    _clientSubscriptionManager.removeAll();
+    _clientSubscriptionManager.close();
   }
 }
 
@@ -553,9 +555,21 @@ base mixin CentrifugeClientSubscriptionMixin
 @internal
 base mixin CentrifugeServerSubscriptionMixin on CentrifugeBase {
   @override
+  void _onConnected(CentrifugeState$Connected state) {
+    super._onConnected(state);
+    _serverSubscriptionManager.setSubscribedAll();
+  }
+
+  @override
+  void _onDisconnected(CentrifugeState$Disconnected state) {
+    super._onDisconnected(state);
+    _serverSubscriptionManager.setSubscribingAll();
+  }
+
+  @override
   Future<void> close() async {
     await super.close();
-    _serverSubscriptionManager.setUnsubscribed();
+    _serverSubscriptionManager.close();
   }
 }
 

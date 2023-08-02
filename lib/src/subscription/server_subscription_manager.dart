@@ -1,6 +1,8 @@
 import 'dart:collection';
 
 import 'package:centrifuge_dart/src/model/channel_push.dart';
+import 'package:centrifuge_dart/src/model/subscribe.dart';
+import 'package:centrifuge_dart/src/model/unsubscribe.dart';
 import 'package:centrifuge_dart/src/subscription/server_subscription_impl.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
@@ -35,11 +37,17 @@ final class ServerSubscriptionManager {
           entry.key: entry.value,
       });
 
+  /// Called on [CentrifugeSubscribe] push from server.
+  void subscribe(CentrifugeSubscribe subscribe) {}
+
+  /// Called on [CentrifugeUnsubscribe] push from server.
+  void unsubscribe(CentrifugeUnsubscribe subscribe) {}
+
   /// Called when subscribed to a server-side channel upon Client moving to
   /// connected state or during connection lifetime if server sends Subscribe
   /// push message.
   /// {@nodoc}
-  void setSubscribed() {
+  void setSubscribedAll() {
     for (final entry in _channelSubscriptions.values) {}
   }
 
@@ -47,19 +55,19 @@ final class ServerSubscriptionManager {
   /// explicitly disconnected. Client continue keeping server-side subscription
   /// registry with stream position information where applicable.
   /// {@nodoc}
-  void setSubscribing() {
+  void setSubscribingAll() {
     for (final entry in _channelSubscriptions.values) {}
   }
 
   /// Called when server sent unsubscribe push or server-side subscription
   /// previously existed in SDK registry disappeared upon Client reconnect.
   /// {@nodoc}
-  void setUnsubscribed() {
+  void setUnsubscribedAll() {
     for (final entry in _channelSubscriptions.values) {}
   }
 
   void close() {
-    setUnsubscribed();
+    setUnsubscribedAll();
     _channelSubscriptions.clear();
   }
 
