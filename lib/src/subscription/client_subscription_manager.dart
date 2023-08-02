@@ -68,13 +68,10 @@ final class ClientSubscriptionManager {
   ) async {
     final subFromRegistry = _channelSubscriptions[subscription.channel];
     try {
-      // TODO(plugfox): implement
-      //subscription.unsubscribe();
-      //subscription.close();
+      await subFromRegistry?.unsubscribe();
       if (!identical(subFromRegistry, subscription)) {
-        // If not the same subscription instance - close it too.
-        //await subFromRegistry?.unsubscribe();
-        //subFromRegistry.close();
+        // If not the same subscription instance - unsubscribe it too.
+        await subscription.unsubscribe();
       }
     } on CentrifugeException {
       rethrow;
@@ -87,8 +84,10 @@ final class ClientSubscriptionManager {
         ),
         stackTrace,
       );
+    } finally {
+      subFromRegistry?.close().ignore();
+      _channelSubscriptions.remove(subscription.channel);
     }
-    _channelSubscriptions.remove(subscription.channel);
   }
 
   /// Establish all subscriptions for the specific client.
@@ -118,7 +117,7 @@ final class ClientSubscriptionManager {
     String reason = 'client closed',
   ]) {
     for (final entry in _channelSubscriptions.values) {
-      entry.unsubscribe(code, reason).ignore();
+      entry.unsubscribe(code, reason).whenComplete(entry.close).ignore();
     }
     _channelSubscriptions.clear();
   }

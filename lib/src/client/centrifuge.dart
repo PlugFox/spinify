@@ -20,6 +20,7 @@ import 'package:centrifuge_dart/src/model/refresh.dart';
 import 'package:centrifuge_dart/src/model/subscribe.dart';
 import 'package:centrifuge_dart/src/model/unsubscribe.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
+import 'package:centrifuge_dart/src/subscription/server_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subscription.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
@@ -40,6 +41,7 @@ final class Centrifuge extends CentrifugeBase
         CentrifugeConnectionMixin,
         CentrifugeSendMixin,
         CentrifugeClientSubscriptionMixin,
+        CentrifugeServerSubscriptionMixin,
         CentrifugePublicationsMixin,
         CentrifugePresenceMixin,
         CentrifugeQueueMixin {
@@ -80,6 +82,11 @@ abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   late final ClientSubscriptionManager _clientSubscriptionManager =
       ClientSubscriptionManager(_transport);
+
+  /// Manager responsible for client-side subscriptions.
+  /// {@nodoc}
+  late final ServerSubscriptionManager _serverSubscriptionManager =
+      ServerSubscriptionManager(_transport);
 
   /// Init centrifuge client, override this method to add custom logic.
   /// This method is called in constructor.
@@ -541,7 +548,18 @@ base mixin CentrifugeClientSubscriptionMixin
   }
 }
 
-/// Mixin responsible for client-side subscriptions.
+/// Mixin responsible for server-side subscriptions.
+/// {@nodoc}
+@internal
+base mixin CentrifugeServerSubscriptionMixin on CentrifugeBase {
+  @override
+  Future<void> close() async {
+    await super.close();
+    _serverSubscriptionManager.setUnsubscribed();
+  }
+}
+
+/// Mixin responsible for publications.
 /// {@nodoc}
 @internal
 base mixin CentrifugePublicationsMixin

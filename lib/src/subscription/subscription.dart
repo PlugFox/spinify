@@ -8,7 +8,6 @@ import 'package:centrifuge_dart/src/model/pushes_stream.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
 import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
-import 'package:fixnum/fixnum.dart' as fixnum;
 
 /// {@template subscription}
 /// Centrifuge subscription interface.
@@ -18,6 +17,41 @@ import 'package:fixnum/fixnum.dart' as fixnum;
 abstract interface class ICentrifugeSubscription {
   /// Channel name.
   abstract final String channel;
+
+  /// Current subscription state.
+  abstract final CentrifugeSubscriptionState state;
+
+  /// Stream of subscription states.
+  abstract final CentrifugeSubscriptionStateStream states;
+
+  /// Stream of received pushes from Centrifugo server for a channel.
+  abstract final CentrifugePushesStream stream;
+
+  /// Errors stream.
+  abstract final Stream<
+      ({CentrifugeException exception, StackTrace stackTrace})> errors;
+
+  /// Await for subscription to be ready.
+  /// Ready resolves when subscription successfully subscribed.
+  /// Throws exceptions if called not in subscribing or subscribed state.
+  FutureOr<void> ready();
+
+  /// Publish data to current Subscription channel
+  Future<void> publish(List<int> data);
+
+  /// Fetch publication history inside a channel.
+  /// Only for channels where history is enabled.
+  Future<CentrifugeHistory> history({
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  });
+
+  /// Fetch presence information inside a channel.
+  Future<CentrifugePresence> presence();
+
+  /// Fetch presence stats information inside a channel.
+  Future<CentrifugePresenceStats> presenceStats();
 }
 
 /// {@template client_subscription}
@@ -74,29 +108,9 @@ abstract interface class ICentrifugeSubscription {
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@category Entity}
+/// {@subCategory Client-side}
 abstract interface class CentrifugeClientSubscription
     implements ICentrifugeSubscription {
-  @override
-  abstract final String channel;
-
-  /// Current subscription state.
-  abstract final CentrifugeSubscriptionState state;
-
-  /// Stream of subscription states.
-  abstract final CentrifugeSubscriptionStateStream states;
-
-  /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final CentrifugePushesStream stream;
-
-  /// Errors stream.
-  abstract final Stream<
-      ({CentrifugeException exception, StackTrace stackTrace})> errors;
-
-  /// Await for subscription to be ready.
-  /// Ready resolves when subscription successfully subscribed.
-  /// Throws exceptions if called not in subscribing or subscribed state.
-  FutureOr<void> ready();
-
   /// Start subscribing to a channel
   Future<void> subscribe();
 
@@ -105,23 +119,6 @@ abstract interface class CentrifugeClientSubscription
     int code = 0,
     String reason = 'unsubscribe called',
   ]);
-
-  /// Publish data to current Subscription channel
-  Future<void> publish(List<int> data);
-
-  /// Fetch publication history inside a channel.
-  /// Only for channels where history is enabled.
-  Future<CentrifugeHistory> history({
-    int? limit,
-    CentrifugeStreamPosition? since,
-    bool? reverse,
-  });
-
-  /// Fetch presence information inside a channel.
-  Future<CentrifugePresence> presence();
-
-  /// Fetch presence stats information inside a channel.
-  Future<CentrifugePresenceStats> presenceStats();
 
   @override
   String toString() => 'CentrifugeClientSubscription{channel: $channel}';
@@ -141,32 +138,9 @@ abstract interface class CentrifugeClientSubscription
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@category Entity}
-final class CentrifugeServerSubscription implements ICentrifugeSubscription {
-  /// {@macro server_subscription}
-  const CentrifugeServerSubscription({
-    required this.channel,
-    required this.recoverable,
-    required this.offset,
-    required this.epoch,
-  });
-
-  @override
-  final String channel;
-
-  /// Recoverable flag.
-  final bool recoverable;
-
-  /// Offset.
-  final fixnum.Int64 offset;
-
-  /// Epoch.
-  final String epoch;
-
-  /* publish(channel, data)
-  history(channel, options)
-  presence(channel)
-  presenceStats(channel) */
-
+/// {@subCategory Server-side}
+abstract interface class CentrifugeServerSubscription
+    implements ICentrifugeSubscription {
   @override
   String toString() => 'CentrifugeServerSubscription{channel: $channel}';
 }
