@@ -15,4 +15,7 @@ abstract base class CentrifugeEvent {
 
   /// Timestamp of event
   final DateTime timestamp;
+
+  /// Whether this event is a push event.
+  bool get isPush;
 }

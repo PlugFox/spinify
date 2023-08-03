@@ -1,4 +1,5 @@
 import 'package:centrifuge_dart/src/model/event.dart';
+import 'package:meta/meta.dart';
 
 /// {@template centrifuge_channel_push}
 /// Base class for all channel push events.
@@ -12,4 +13,8 @@ abstract base class CentrifugeChannelPush extends CentrifugeEvent {
 
   /// Channel
   final String channel;
+
+  @override
+  @nonVirtual
+  bool get isPush => true;
 }

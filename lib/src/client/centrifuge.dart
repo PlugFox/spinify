@@ -97,6 +97,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @protected
   @mustCallSuper
   void _initCentrifuge() {
+    logger.fine('Centrifuge client initialized');
     Centrifuge.observer?.onCreate(this);
   }
 
@@ -124,6 +125,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @mustCallSuper
   Future<void> close() async {
     await _transport.close();
+    logger.fine('Centrifuge client closed');
     Centrifuge.observer?.onClose(this);
   }
 }
@@ -187,6 +189,7 @@ base mixin CentrifugeEventReceiverMixin
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _onEvent(CentrifugeEvent event) {
+    Centrifuge.observer?.onEvent(this, event);
     if (event is! CentrifugeChannelPush) return;
     // This is a push to a channel.
     _clientSubscriptionManager.onPush(event);

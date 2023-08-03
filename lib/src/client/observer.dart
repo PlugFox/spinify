@@ -1,5 +1,6 @@
 import 'package:centrifuge_dart/centrifuge.dart';
 import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
+import 'package:centrifuge_dart/src/model/event.dart';
 
 /// An interface for observing the behavior of Centrifuge instances.
 abstract class CentrifugeObserver {
@@ -9,6 +10,9 @@ abstract class CentrifugeObserver {
   /// Called whenever a [ICentrifuge] client changes its state
   /// to [CentrifugeState$Connecting].
   void onConnected(ICentrifuge client, CentrifugeState$Connected state) {}
+
+  /// Called whenever a [ICentrifuge] client receives a [CentrifugeEvent].
+  void onEvent(ICentrifuge client, CentrifugeEvent event) {}
 
   /// Called whenever a [ICentrifuge] client changes its state
   /// to [CentrifugeState$Disconnected].
