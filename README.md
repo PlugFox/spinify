@@ -43,6 +43,7 @@ Connection related features
 ### Client-side features
 
 - ✅ Subscribe to a channel
+- ✅ Protobuf transport
 - ✅ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
 - ✅ Subscription state changes
@@ -56,6 +57,8 @@ Connection related features
 - ✅ Set observer for hooking events & errors
 - ❌ Metrics
 - ❌ Optimistic subscriptions
+- ❌ Run in separate isolate
+- ❌ JSON transport
 
 ## Example
 
