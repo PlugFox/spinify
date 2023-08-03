@@ -55,7 +55,7 @@ Connection related features
 - ✅ Publish data into a channel
 - ✅ Enqueue methods
 - ✅ Set observer for hooking events & errors
-- ❌ Metrics
+- ✅ Metrics
 - ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
 - ❌ JSON transport
