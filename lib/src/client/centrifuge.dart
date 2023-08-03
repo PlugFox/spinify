@@ -33,6 +33,7 @@ import 'package:meta/meta.dart';
 /// {@template centrifuge}
 /// Centrifuge client.
 /// {@endtemplate}
+/// {@category Client}
 final class Centrifuge extends CentrifugeBase
     with
         CentrifugeErrorsMixin,

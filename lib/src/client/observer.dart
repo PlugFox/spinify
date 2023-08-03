@@ -3,6 +3,8 @@ import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
 import 'package:centrifuge_dart/src/model/event.dart';
 
 /// An interface for observing the behavior of Centrifuge instances.
+/// {@category Client}
+/// {@subCategory Observer}
 abstract class CentrifugeObserver {
   /// Called whenever a [ICentrifuge] is instantiated.
   void onCreate(ICentrifuge client) {}
