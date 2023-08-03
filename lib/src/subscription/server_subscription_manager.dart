@@ -43,12 +43,34 @@ final class ServerSubscriptionManager {
   /// Called on [CentrifugeUnsubscribe] push from server.
   void unsubscribe(CentrifugeUnsubscribe subscribe) {}
 
+  /// Called when client finished connection handshake with server.
+  /// Add non existing subscriptions to registry and mark all connected.
+  /// Remove subscriptions which are not in [subs] argument.
+  void upsert(List<CentrifugeSubscribe> subs) {
+    final currentChannels = _channelSubscriptions.keys.toSet();
+    // Remove subscriptions which are not in subs argument.
+    for (final channel in currentChannels) {
+      if (subs.any((e) => e.channel == channel)) continue;
+      _channelSubscriptions.remove(channel)?.close();
+    }
+    // Add non existing subscriptions to registry and mark all connected.
+    for (final sub in subs) {
+      (_channelSubscriptions[sub.channel] ??= CentrifugeServerSubscriptionImpl(
+        channel: sub.channel,
+        transportWeakRef: _transportWeakRef,
+      ))
+          .onPush(sub);
+    }
+  }
+
   /// Called when subscribed to a server-side channel upon Client moving to
   /// connected state or during connection lifetime if server sends Subscribe
   /// push message.
   /// {@nodoc}
   void setSubscribedAll() {
-    for (final entry in _channelSubscriptions.values) {}
+    for (final entry in _channelSubscriptions.values) {
+      if (entry.state.isSubscribed) continue;
+    }
   }
 
   /// Called when existing connection lost (Client reconnects) or Client
@@ -56,18 +78,29 @@ final class ServerSubscriptionManager {
   /// registry with stream position information where applicable.
   /// {@nodoc}
   void setSubscribingAll() {
-    for (final entry in _channelSubscriptions.values) {}
+    for (final entry in _channelSubscriptions.values) {
+      if (entry.state.isSubscribing) continue;
+    }
   }
 
   /// Called when server sent unsubscribe push or server-side subscription
   /// previously existed in SDK registry disappeared upon Client reconnect.
   /// {@nodoc}
   void setUnsubscribedAll() {
-    for (final entry in _channelSubscriptions.values) {}
+    for (final entry in _channelSubscriptions.values) {
+      if (entry.state.isUnsubscribed) continue;
+    }
   }
 
-  void close() {
-    setUnsubscribedAll();
+  /// Close all subscriptions.
+  /// {@nodoc}
+  void close([
+    int code = 0,
+    String reason = 'client closed',
+  ]) {
+    for (final entry in _channelSubscriptions.values) {
+      entry.close(code, reason).ignore();
+    }
     _channelSubscriptions.clear();
   }
 

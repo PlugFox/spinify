@@ -17,6 +17,7 @@ import 'package:centrifuge_dart/src/model/refresh.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/model/subscribe.dart';
 import 'package:centrifuge_dart/src/model/unsubscribe.dart';
+import 'package:centrifuge_dart/src/subscription/server_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:centrifuge_dart/src/transport/transport_protobuf_codec.dart';
@@ -81,7 +82,9 @@ abstract base class CentrifugeWSPBTransportBase
   @override
   @mustCallSuper
   Future<void> connect(
-      String url, List<CentrifugeServerSubscription> subs) async {}
+    String url,
+    ServerSubscriptionManager serverSubscriptionManager,
+  ) async {}
 
   @override
   @mustCallSuper
@@ -319,9 +322,11 @@ base mixin CentrifugeWSPBConnectionMixin
         CentrifugeWSPBStateHandlerMixin {
   @override
   Future<void> connect(
-      String url, List<CentrifugeServerSubscription> subs) async {
+    String url,
+    ServerSubscriptionManager serverSubscriptionManager,
+  ) async {
     try {
-      await super.connect(url, subs);
+      await super.connect(url, serverSubscriptionManager);
       await _webSocket.connect(url);
       final request = pb.ConnectRequest();
       final token = await _config.getToken?.call();
@@ -333,16 +338,19 @@ base mixin CentrifugeWSPBConnectionMixin
         ..name = _config.client.name
         ..version = _config.client.version;
       // Add server-side subscriptions to connect request.
-      for (final sub in subs) {
-        final subRequest = pb.SubscribeRequest()
-          ..recover = sub.state.recoverable;
-        final since = sub.state.since;
-        if (since != null) {
-          subRequest
+      {
+        final subs = serverSubscriptionManager.subscriptions.values;
+        for (final CentrifugeServerSubscription(
+              channel: String channel,
+              state: CentrifugeSubscriptionState(:recoverable, :since),
+            ) in subs) {
+          if (since == null) continue;
+          final subRequest = pb.SubscribeRequest()
+            ..recover = recoverable
             ..offset = since.offset
             ..epoch = since.epoch;
+          request.subs.putIfAbsent(channel, () => subRequest);
         }
-        request.subs.putIfAbsent(sub.channel, () => subRequest);
       }
       final pb.ConnectResult result;
       try {
@@ -362,28 +370,27 @@ base mixin CentrifugeWSPBConnectionMixin
       final now = DateTime.now();
       final expires = result.hasExpires() && result.expires && result.hasTtl();
 
-      // TODO(plugfox): implement server-side subscriptions.
-      /* result.subs.forEach((key, value) {
-        _serverSubs[key] = ServerSubscription(
-            key, value.recoverable, value.offset, value.epoch);
-        final event = ServerSubscribedEvent.fromSubscribeResult(key, value);
-        _subscribedController.add(event);
-        value.publications.forEach((element) {
-          final event = ServerPublicationEvent.from(key, element);
-          _publicationController.add(event);
-          if (_serverSubs[key]!.recoverable && element.offset > 0) {
-            _serverSubs[key]!.offset = element.offset;
-          }
-        });
-      });
-
-      _serverSubs.forEach((key, value) {
-        if (!result.subs.containsKey(key)) {
-          final event = ServerUnsubscribedEvent.from(key);
-          _unsubscribedController.add(event);
-        }
-      });
-      _serverSubs.removeWhere((key, value) => !result.subs.containsKey(key)); */
+      // Update server-side subscriptions.
+      {
+        final subs = result.subs.entries.map<CentrifugeSubscribe>((e) {
+          final channel = e.key;
+          final sub = e.value;
+          final positioned = sub.hasPositioned() && sub.positioned;
+          final recoverable = sub.hasRecoverable() && sub.recoverable;
+          return CentrifugeSubscribe(
+            timestamp: now,
+            channel: channel,
+            positioned: positioned,
+            recoverable: recoverable,
+            data: sub.hasData() ? sub.data : <int>[],
+            streamPosition:
+                (positioned || recoverable) && sub.hasOffset() && sub.hasEpoch()
+                    ? (offset: sub.offset, epoch: sub.epoch)
+                    : null,
+          );
+        }).toList(growable: false);
+        serverSubscriptionManager.upsert(subs);
+      }
 
       _setState(CentrifugeState$Connected(
         url: url,
@@ -507,7 +514,10 @@ base mixin CentrifugeWSPBStateHandlerMixin
   }
 
   @override
-  Future<void> connect(String url, List<CentrifugeServerSubscription> subs) {
+  Future<void> connect(
+    String url,
+    ServerSubscriptionManager serverSubscriptionManager,
+  ) {
     // Change state to connecting before connection.
     _setState(CentrifugeState$Connecting(url: url));
     // Subscribe to websocket state after initialization.
@@ -515,7 +525,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
       _handleWebSocketClosedStates,
       cancelOnError: false,
     );
-    return super.connect(url, subs);
+    return super.connect(url, serverSubscriptionManager);
   }
 
   @override
@@ -545,13 +555,16 @@ base mixin CentrifugeWSPBHandlerMixin
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
   @override
-  Future<void> connect(String url, List<CentrifugeServerSubscription> subs) {
+  Future<void> connect(
+    String url,
+    ServerSubscriptionManager serverSubscriptionManager,
+  ) {
     // Subscribe to websocket messages after first connection.
     _webSocketMessageSubscription ??= _webSocket.stream.bytes.listen(
       _handleWebSocketMessage,
       cancelOnError: false,
     );
-    return super.connect(url, subs);
+    return super.connect(url, serverSubscriptionManager);
   }
 
   /// {@nodoc}
@@ -910,9 +923,11 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
 
   @override
   Future<void> connect(
-      String url, List<CentrifugeServerSubscription> subs) async {
+    String url,
+    ServerSubscriptionManager serverSubscriptionManager,
+  ) async {
     _tearDownPingTimer();
-    await super.connect(url, subs);
+    await super.connect(url, serverSubscriptionManager);
     _restartPingTimer();
   }
 

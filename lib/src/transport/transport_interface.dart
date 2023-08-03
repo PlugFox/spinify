@@ -7,6 +7,7 @@ import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/refresh.dart';
 import 'package:centrifuge_dart/src/model/stream_position.dart';
+import 'package:centrifuge_dart/src/subscription/server_subscription_manager.dart';
 import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
 import 'package:centrifuge_dart/src/util/notifier.dart';
 import 'package:meta/meta.dart';
@@ -31,7 +32,10 @@ abstract interface class ICentrifugeTransport {
   /// [url] is a URL of endpoint.
   /// [subs] is a list of server-side subscriptions to subscribe on connect.
   /// {@nodoc}
-  Future<void> connect(String url, List<CentrifugeServerSubscription> subs);
+  Future<void> connect(
+    String url,
+    ServerSubscriptionManager serverSubscriptionManager,
+  );
 
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifuge

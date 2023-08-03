@@ -383,9 +383,7 @@ base mixin CentrifugeConnectionMixin
     try {
       _refreshTimer?.cancel();
       _refreshTimer = null;
-      final subs = _serverSubscriptionManager.subscriptions.values
-          .toList(growable: false);
-      await _transport.connect(url, subs);
+      await _transport.connect(url, _serverSubscriptionManager);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;

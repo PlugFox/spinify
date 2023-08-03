@@ -68,7 +68,7 @@ abstract base class CentrifugeClientSubscriptionBase
   @override
   CentrifugeStreamPosition? get since => switch (state.since?.epoch) {
         String epoch => (epoch: epoch, offset: _offset),
-        _ => null,
+        _ => state.since,
       };
 
   /// Weak reference to transport.
@@ -133,7 +133,14 @@ abstract base class CentrifugeClientSubscriptionBase
   /// {@nodoc}
   @internal
   @mustCallSuper
-  Future<void> close() async {
+  Future<void> close([int code = 0, String reason = 'closed']) async {
+    if (!_state.isUnsubscribed)
+      _setState(CentrifugeSubscriptionState.unsubscribed(
+        code: code,
+        reason: reason,
+        recoverable: false,
+        since: since,
+      ));
     _stateController.close().ignore();
   }
 }
@@ -223,8 +230,8 @@ base mixin CentrifugeClientSubscriptionEventReceiverMixin
   }
 
   @override
-  Future<void> close() async {
-    await super.close();
+  Future<void> close([int code = 0, String reason = 'closed']) async {
+    await super.close(code, reason);
     for (final controller in <StreamSink<CentrifugeEvent>>[
       _pushController,
       _publicationsController,
@@ -263,8 +270,8 @@ base mixin CentrifugeClientSubscriptionErrorsMixin
       errors = _errorsController.stream;
 
   @override
-  Future<void> close() async {
-    await super.close();
+  Future<void> close([int code = 0, String reason = 'closed']) async {
+    await super.close(code, reason);
     _errorsController.close().ignore();
   }
 }
@@ -294,7 +301,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       _refreshTimer?.cancel();
       _refreshTimer = null;
       _setState(CentrifugeSubscriptionState$Subscribing(
-        since: since ?? state.since,
+        since: since,
         recoverable: state.recoverable,
       ));
       final subscribed = await _transport.subscribe(
@@ -311,7 +318,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       final offset = subscribed.since?.offset;
       if (offset != null && offset > _offset) _offset = offset;
       _setState(CentrifugeSubscriptionState$Subscribed(
-        since: subscribed.since ?? since ?? state.since,
+        since: subscribed.since ?? since,
         recoverable: subscribed.recoverable,
         ttl: subscribed.ttl,
       ));
@@ -389,9 +396,10 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
     _setState(CentrifugeSubscriptionState.unsubscribed(
       code: code,
       reason: reason,
-      since: since ?? state.since,
+      since: since,
       recoverable: state.recoverable,
     ));
+    if (_transport.state.isClosed) return;
     try {
       await _transport.unsubscribe(channel, _config);
     } on Object catch (error, stackTrace) {
@@ -451,12 +459,21 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       }).ignore();
 
   @override
-  Future<void> close() async {
+  Future<void> close([int code = 0, String reason = 'closed']) async {
     logger.fine('Closing subscription to $channel');
     _refreshTimer?.cancel();
     _refreshTimer = null;
-    await super.close();
-    await _transport.close();
+    try {
+      if (!state.isUnsubscribed) await unsubscribe(code, reason);
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeSubscriptionException(
+        message: 'Error while unsubscribing from channel $channel',
+        channel: channel,
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+    }
+    await super.close(code, reason);
   }
 }
 
@@ -617,7 +634,7 @@ base mixin CentrifugeClientSubscriptionQueueMixin
       .push<CentrifugePresenceStats>('presenceStats', super.presenceStats);
 
   @override
-  Future<void> close() => _eventQueue
-      .push<void>('close', super.close)
+  Future<void> close([int code = 0, String reason = 'closed']) => _eventQueue
+      .push<void>('close', () => super.close(code, reason))
       .whenComplete(_eventQueue.close);
 }
