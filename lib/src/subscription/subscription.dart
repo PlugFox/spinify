@@ -36,7 +36,7 @@ import 'package:spinify/src/subscription/subscription_states_stream.dart';
 /// - For server-side subscriptions see [SpinifyServerSubscription].
 /// {@endtemplate}
 /// {@category Subscription}
-abstract interface class SpinifySubscription {
+sealed class SpinifySubscription {
   /// Channel name.
   abstract final String channel;
 
@@ -129,8 +129,7 @@ abstract interface class SpinifySubscription {
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@subCategory Client-side}
-abstract interface class SpinifyClientSubscription
-    implements SpinifySubscription {
+abstract class SpinifyClientSubscription extends SpinifySubscription {
   /// Start subscribing to a channel
   Future<void> subscribe();
 
@@ -155,5 +154,4 @@ abstract interface class SpinifyClientSubscription
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@subCategory Server-side}
-abstract interface class SpinifyServerSubscription
-    implements SpinifySubscription {}
+abstract class SpinifyServerSubscription extends SpinifySubscription {}

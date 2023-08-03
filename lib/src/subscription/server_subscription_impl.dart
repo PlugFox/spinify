@@ -48,7 +48,7 @@ final class SpinifyServerSubscriptionImpl extends SpinifyServerSubscriptionBase
 /// {@nodoc}
 @internal
 abstract base class SpinifyServerSubscriptionBase
-    implements SpinifyServerSubscription {
+    extends SpinifyServerSubscription {
   /// {@nodoc}
   SpinifyServerSubscriptionBase({
     required this.channel,

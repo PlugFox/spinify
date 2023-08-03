@@ -113,6 +113,15 @@ abstract base class SpinifyBase implements ISpinify {
   late final ServerSubscriptionManager _serverSubscriptionManager =
       ServerSubscriptionManager(_transport);
 
+  @override
+  ({
+    Map<String, SpinifyClientSubscription> client,
+    Map<String, SpinifyServerSubscription> server,
+  }) get subscriptions => (
+        client: _clientSubscriptionManager.subscriptions,
+        server: _serverSubscriptionManager.subscriptions
+      );
+
   /// Init spinify client, override this method to add custom logic.
   /// This method is called in constructor.
   /// {@nodoc}
@@ -528,10 +537,6 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   }
 
   @override
-  Map<String, SpinifyClientSubscription> get subscriptions =>
-      _clientSubscriptionManager.subscriptions;
-
-  @override
   SpinifyClientSubscription? getSubscription(String channel) =>
       _clientSubscriptionManager[channel];
 
@@ -742,6 +747,10 @@ base mixin SpinifyMetricsMixin on SpinifyBase {
       timestamp: timestamp,
       lastUrl: wsMetrics.lastUrl,
       reconnects: (successful: _connectsSuccessful, total: _connectsTotal),
+      subscriptions: (
+        client: _clientSubscriptionManager.count,
+        server: _serverSubscriptionManager.count,
+      ),
       state: state,
       receivedCount: wsMetrics.receivedCount,
       receivedSize: wsMetrics.receivedSize,

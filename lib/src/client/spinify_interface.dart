@@ -20,7 +20,7 @@ abstract interface class ISpinify
         ISpinifyAsyncMessageSender,
         ISpinifyPublicationSender,
         ISpinifyEventReceiver,
-        ISpinifyClientSubscriptionsManager,
+        ISpinifySubscriptionsManager,
         ISpinifyPresenceOwner,
         ISpinifyHistoryOwner,
         ISpinifyRemoteProcedureCall,
@@ -75,7 +75,7 @@ abstract interface class ISpinifyEventReceiver {
 }
 
 /// Spinify client subscriptions manager interface.
-abstract interface class ISpinifyClientSubscriptionsManager {
+abstract interface class ISpinifySubscriptionsManager {
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
   /// in the registry or throws an exception if the Subscription
@@ -93,15 +93,23 @@ abstract interface class ISpinifyClientSubscriptionsManager {
   /// in the channel.
   SpinifyClientSubscription? getSubscription(String channel);
 
-  /// Remove the [Subscription] from internal registry
+  /// Remove the [SpinifySubscription] from internal registry
   /// and unsubscribe from [SpinifyClientSubscription.channel].
   Future<void> removeSubscription(SpinifyClientSubscription subscription);
 
-  /// Get map wirth all registered client-side subscriptions.
+  /// Get map wirth all registered client-side & server-side subscriptions.
   /// Returns all registered subscriptions,
-  /// so you can iterate over all and do some action if required
-  /// (for example, you want to unsubscribe/remove all subscriptions).
-  Map<String, SpinifyClientSubscription> get subscriptions;
+  /// so you can iterate over all and do some action if required.
+  ///
+  /// For example:
+  /// ```dart
+  /// final subscription = spinify.subscriptions.client['chat']!;
+  /// await subscription.unsubscribe();
+  /// ```
+  ({
+    Map<String, SpinifyClientSubscription> client,
+    Map<String, SpinifyServerSubscription> server,
+  }) get subscriptions;
 }
 
 /// Spinify presence owner interface.

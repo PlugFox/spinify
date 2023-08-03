@@ -51,7 +51,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase
 /// {@nodoc}
 @internal
 abstract base class SpinifyClientSubscriptionBase
-    implements SpinifyClientSubscription {
+    extends SpinifyClientSubscription {
   /// {@nodoc}
   SpinifyClientSubscriptionBase({
     required this.channel,
