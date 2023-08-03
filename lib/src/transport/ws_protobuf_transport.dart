@@ -33,6 +33,7 @@ import 'package:spinify/src/transport/transport_interface.dart';
 import 'package:spinify/src/transport/transport_protobuf_codec.dart';
 import 'package:spinify/src/util/logger.dart' as logger;
 import 'package:spinify/src/util/notifier.dart';
+import 'package:spinify/src/util/speed_meter.dart';
 import 'package:ws/ws.dart';
 
 /// {@nodoc}
@@ -209,6 +210,10 @@ base mixin SpinifyWSPBSenderMixin
   static const Converter<pb.Command, List<int>> _commandEncoder =
       TransportProtobufEncoder();
 
+  /// Speed meter of the connection.
+  final SpinifySpeedMeter _speedMeter = SpinifySpeedMeter(15);
+  ({int min, int avg, int max}) get speed => _speedMeter.speed;
+
   /// Counter for messages.
   /// {@nodoc}
   int _messageId = 1;
@@ -224,8 +229,15 @@ base mixin SpinifyWSPBSenderMixin
     final command = _createCommand(request, false);
     // Send command and wait for response.
     final future = _awaitReply(command.id);
-    await _sendCommand(command);
-    final reply = await future;
+    final stopwatch = Stopwatch()..start();
+    pb.Reply reply;
+    try {
+      await _sendCommand(command);
+      reply = await future;
+      _speedMeter.add(stopwatch.elapsedMilliseconds);
+    } finally {
+      stopwatch.stop();
+    }
     if (reply.hasError()) {
       throw SpinifyReplyException(
         replyCode: reply.error.code,

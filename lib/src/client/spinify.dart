@@ -723,8 +723,10 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
 /// Responsible for metrics.
 /// {@nodoc}
 @internal
-base mixin SpinifyMetricsMixin on SpinifyBase {
-  int _connectsTotal = 0, _connectsSuccessful = 0;
+base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
+  int _connectsTotal = 0, _connectsSuccessful = 0, _disconnects = 0;
+  DateTime? _lastDisconnectTime, _lastConnectTime;
+  ({int? code, String? reason})? _lastDisconnect;
 
   @override
   Future<void> connect(String url) async {
@@ -734,8 +736,17 @@ base mixin SpinifyMetricsMixin on SpinifyBase {
 
   @override
   void _onConnected(SpinifyState$Connected state) {
+    _lastConnectTime = DateTime.now().toUtc();
     super._onConnected(state);
     _connectsSuccessful++;
+  }
+
+  @override
+  void _onDisconnected(SpinifyState$Disconnected state) {
+    _lastDisconnectTime = DateTime.now().toUtc();
+    super._onDisconnected(state);
+    _lastDisconnect = (code: state.closeCode, reason: state.closeReason);
+    _disconnects = 0;
   }
 
   /// Get metrics of Spinify client.
@@ -751,11 +762,17 @@ base mixin SpinifyMetricsMixin on SpinifyBase {
         client: _clientSubscriptionManager.count,
         server: _serverSubscriptionManager.count,
       ),
+      speed: _transport.speed,
       state: state,
       receivedCount: wsMetrics.receivedCount,
       receivedSize: wsMetrics.receivedSize,
       transferredCount: wsMetrics.transferredCount,
       transferredSize: wsMetrics.transferredSize,
+      lastConnectTime: _lastConnectTime,
+      lastDisconnectTime: _lastDisconnectTime,
+      disconnects: _disconnects,
+      lastDisconnect: _lastDisconnect,
+      isRefreshActive: _refreshTimer?.isActive ?? false,
     );
   }
 }

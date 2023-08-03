@@ -28,9 +28,15 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
     required this.receivedSize,
     required this.reconnects,
     required this.subscriptions,
+    required this.speed,
     required this.transferredCount,
     required this.receivedCount,
     required this.lastUrl,
+    required this.lastConnectTime,
+    required this.lastDisconnectTime,
+    required this.disconnects,
+    required this.lastDisconnect,
+    required this.isRefreshActive,
   });
 
   /// Timestamp of the metrics.
@@ -54,6 +60,12 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
     SpinifySubscriptionCount server
   }) subscriptions;
 
+  /// The speed of the request/response in milliseconds.
+  /// - min - minimum speed
+  /// - avg - average speed
+  /// - max - maximum speed
+  final ({int min, int avg, int max}) speed;
+
   /// The total number of messages sent.
   final BigInt transferredCount;
 
@@ -63,12 +75,27 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// The last URL used to connect.
   final String? lastUrl;
 
+  /// The time of the last connect.
+  final DateTime? lastConnectTime;
+
+  /// The time of the last disconnect.
+  final DateTime? lastDisconnectTime;
+
+  /// The total number of times the connection has been disconnected.
+  final int disconnects;
+
+  /// The last disconnect reason.
+  final ({int? code, String? reason})? lastDisconnect;
+
+  /// Is refresh active.
+  final bool isRefreshActive;
+
   @override
   int compareTo(SpinifyMetrics other) => timestamp.compareTo(other.timestamp);
 
   /// Convert metrics to JSON.
   Map<String, Object?> toJson() => <String, Object?>{
-        'timestamp': timestamp,
+        'timestamp': timestamp.toIso8601String(),
         'state': state.toJson(),
         'reconnects': <String, int>{
           'successful': reconnects.successful,
@@ -88,11 +115,27 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
             'subscribed': subscriptions.server.subscribed,
           },
         },
+        'speed': <String, int>{
+          'min': speed.min,
+          'avg': speed.avg,
+          'max': speed.max,
+        },
         'transferredSize': transferredSize,
         'receivedSize': receivedSize,
         'transferredCount': transferredCount,
         'receivedCount': receivedCount,
         'lastUrl': lastUrl,
+        'lastConnectTime': lastConnectTime?.toIso8601String(),
+        'lastDisconnectTime': lastDisconnectTime?.toIso8601String(),
+        'disconnects': disconnects,
+        'lastDisconnect': switch (lastDisconnect) {
+          (:int? code, :String? reason) => <String, Object?>{
+              'code': code,
+              'reason': reason,
+            },
+          _ => null,
+        },
+        'isRefreshActive': isRefreshActive,
       };
 
   @override

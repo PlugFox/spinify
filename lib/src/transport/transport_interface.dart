@@ -34,6 +34,10 @@ abstract interface class ISpinifyTransport {
   /// {@nodoc}
   WebSocketMetrics get metrics;
 
+  /// Message response timeout in milliseconds.
+  /// {@nodoc}
+  ({int min, int avg, int max}) get speed;
+
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   /// [subs] is a list of server-side subscriptions to subscribe on connect.
