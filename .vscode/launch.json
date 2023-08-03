@@ -1,4 +1,21 @@
 {
   "version": "0.2.0",
-  "configurations": []
+  "configurations": [
+    {
+      "name": "Console (example)",
+      "request": "launch",
+      "type": "dart",
+      "program": "examples/console/bin/main.dart",
+      "env": {
+        "ENVIRONMENT": "local"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "toolArgs": [],
+      "args": [
+        // "--token=X.Y.Z",
+        "--verbose"
+      ]
+    }
+  ]
 }

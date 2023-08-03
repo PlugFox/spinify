@@ -20,6 +20,7 @@ coverage*
 
 # Codegen
 *.g.dart
+!pubspec.yaml.g.dart
 
 # Logs
 l/
@@ -75,3 +76,6 @@ log.pana.json
 .coverage/
 /test/**/*.json
 /test/.test_coverage.dart
+
+# Centifuge
+config.json

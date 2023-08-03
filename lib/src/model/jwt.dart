@@ -18,12 +18,13 @@ import 'package:meta/meta.dart';
 ///
 /// https://centrifugal.dev/docs/server/authentication#connection-jwt-claims
 /// {@endtemplate}
+/// {@category Entity}
 @immutable
-sealed class CentrifugoJWT {
+sealed class SpinifyJWT {
   /// {@macro jwt}
   ///
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
-  const factory CentrifugoJWT({
+  const factory SpinifyJWT({
     required String sub,
     int? exp,
     int? iat,
@@ -36,17 +37,17 @@ sealed class CentrifugoJWT {
     Map<String, Object?>? subs,
     Map<String, Object?>? meta,
     int? expireAt,
-  }) = _CentrifugoJWTImpl;
+  }) = _SpinifyJWTImpl;
 
   /// {@macro jwt}
   ///
   /// Parses JWT, if [secret] is provided
   /// then checks signature by HMAC-SHA256 algorithm.
-  factory CentrifugoJWT.decode(String jwt, [String? secret]) =
-      _CentrifugoJWTImpl.decode;
+  factory SpinifyJWT.decode(String jwt, [String? secret]) =
+      _SpinifyJWTImpl.decode;
 
   /// {@nodoc}
-  const CentrifugoJWT._();
+  const SpinifyJWT._();
 
   /// This is a standard JWT claim which must contain
   /// an ID of the current application user (as string).
@@ -232,8 +233,8 @@ sealed class CentrifugoJWT {
   String encode(String secret);
 }
 
-final class _CentrifugoJWTImpl extends CentrifugoJWT {
-  const _CentrifugoJWTImpl({
+final class _SpinifyJWTImpl extends SpinifyJWT {
+  const _SpinifyJWTImpl({
     required this.sub,
     this.exp,
     this.iat,
@@ -248,7 +249,7 @@ final class _CentrifugoJWTImpl extends CentrifugoJWT {
     this.expireAt,
   }) : super._();
 
-  factory _CentrifugoJWTImpl.decode(String jwt, [String? secret]) {
+  factory _SpinifyJWTImpl.decode(String jwt, [String? secret]) {
     // Разделение токена на составляющие части
     var parts = jwt.split('.');
     if (parts.length != 3) {
@@ -285,7 +286,7 @@ final class _CentrifugoJWTImpl extends CentrifugoJWT {
           const FormatException('Can\'t decode token payload'), stackTrace);
     }
     try {
-      return _CentrifugoJWTImpl(
+      return _SpinifyJWTImpl(
         sub: payload['sub'] as String,
         exp: payload['exp'] as int?,
         iat: payload['iat'] as int?,
@@ -389,6 +390,9 @@ final class _CentrifugoJWTImpl extends CentrifugoJWT {
     // Return JWT
     return '$encodedHeader.$encodedPayload.$encodedSignature';
   }
+
+  @override
+  String toString() => 'SpinifyJWT{sub: $sub}';
 }
 
 /// A converter that converts Base64-encoded strings

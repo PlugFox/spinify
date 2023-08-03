@@ -1,4 +1,4 @@
-.PHONY: format get test publish deploy centrifugo-up centrifugo-down coverage analyze check pana
+.PHONY: format get test publish deploy centrifugo-up centrifugo-down coverage analyze check pana generate
 
 format:
 	@echo "Formatting the code"
@@ -41,3 +41,9 @@ check: analyze
 	@pana --json --no-warning --line-length 80 > log.pana.json
 
 pana: check
+
+generate: get
+	@dart pub global activate protoc_plugin
+	@protoc --proto_path=lib/src/model/protobuf --dart_out=lib/src/model/protobuf lib/src/model/protobuf/client.proto
+	@dart run build_runner build --delete-conflicting-outputs
+	@dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/model/protobuf/

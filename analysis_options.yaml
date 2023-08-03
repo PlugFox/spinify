@@ -6,7 +6,8 @@ analyzer:
     - "build/**"
     # Codegen
     - "lib/**.g.dart"
-    - "lib/src/proto/**"
+    - "lib/src/model/protobuf/*"
+    - "lib/src/model/pubspec.yaml.g.dart"
     # Tests
     - "test/**.mocks.dart"
     - ".test_coverage.dart"
@@ -57,6 +58,7 @@ linter:
     prefer_relative_imports: false
     prefer_final_locals: false
     avoid_escaping_inner_quotes: false
+    curly_braces_in_flow_control_structures: false
 
     # Enabled
     use_named_constants: true
@@ -65,7 +67,6 @@ linter:
     exhaustive_cases: true
     sort_unnamed_constructors_first: true
     type_literal_in_constant_pattern: true
-    prefer_equal_for_default_values: true
     always_put_required_named_parameters_first: true
     avoid_annotating_with_dynamic: true
     avoid_bool_literals_in_conditional_expressions: true
@@ -149,7 +150,6 @@ linter:
     avoid_shadowing_type_parameters: true
     avoid_types_as_parameter_names: true
     camel_case_extensions: true
-    curly_braces_in_flow_control_structures: true
     empty_catches: true
     empty_constructor_bodies: true
     library_names: true
