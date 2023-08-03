@@ -48,6 +48,7 @@ final class Centrifuge extends CentrifugeBase
         CentrifugePublicationsMixin,
         CentrifugePresenceMixin,
         CentrifugeHistoryMixin,
+        CentrifugeRPCMixin,
         CentrifugeQueueMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
@@ -675,18 +676,22 @@ base mixin CentrifugeHistoryMixin on CentrifugeBase, CentrifugeErrorsMixin {
       Error.throwWithStackTrace(centrifugeException, stackTrace);
     }
   }
+}
 
+/// Mixin responsible for history.
+/// {@nodoc}
+base mixin CentrifugeRPCMixin on CentrifugeBase, CentrifugeErrorsMixin {
   @override
-  Future<CentrifugePresenceStats> presenceStats(String channel) async {
+  Future<List<int>> rpc(String method, List<int> data) async {
     try {
       await ready();
-      return await _transport.presenceStats(channel);
+      return await _transport.rpc(method, data);
     } on CentrifugeException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
       final centrifugeException = CentrifugeFetchException(
-        message: 'Error while fetching presence for channel $channel',
+        message: 'Error while remote procedure call for method $method',
         error: error,
       );
       _emitError(centrifugeException, stackTrace);
@@ -726,6 +731,30 @@ base mixin CentrifugeQueueMixin on CentrifugeBase {
       _eventQueue.push<CentrifugePresenceStats>(
         'presenceStats',
         () => super.presenceStats(channel),
+      );
+
+  @override
+  Future<CentrifugeHistory> history(
+    String channel, {
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  }) =>
+      _eventQueue.push<CentrifugeHistory>(
+        'history',
+        () => super.history(
+          channel,
+          limit: limit,
+          since: since,
+          reverse: reverse,
+        ),
+      );
+
+  @override
+  Future<List<int>> rpc(String method, List<int> data) =>
+      _eventQueue.push<List<int>>(
+        'rpc',
+        () => super.rpc(method, data),
       );
 
   @override

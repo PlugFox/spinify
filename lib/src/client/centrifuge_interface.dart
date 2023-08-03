@@ -18,7 +18,8 @@ abstract interface class ICentrifuge
         ICentrifugeEventReceiver,
         ICentrifugeClientSubscriptionsManager,
         ICentrifugePresenceOwner,
-        ICentrifugeHistoryOwner {
+        ICentrifugeHistoryOwner,
+        ICentrifugeRemoteProcedureCall {
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
@@ -37,9 +38,6 @@ abstract interface class ICentrifuge
   /// Permanent close connection to the server and
   /// free all allocated resources.
   Future<void> close();
-
-  /// Send arbitrary RPC and wait for response.
-  /* Future<void> rpc(String method, data); */
 }
 
 /// Centrifuge client state owner interface.
@@ -120,4 +118,10 @@ abstract interface class ICentrifugeHistoryOwner {
     CentrifugeStreamPosition? since,
     bool? reverse,
   });
+}
+
+/// Centrifuge remote procedure call interface.
+abstract interface class ICentrifugeRemoteProcedureCall {
+  /// Send arbitrary RPC and wait for response.
+  Future<List<int>> rpc(String method, List<int> data);
 }

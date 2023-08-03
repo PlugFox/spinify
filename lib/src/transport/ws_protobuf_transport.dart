@@ -382,7 +382,7 @@ base mixin CentrifugeWSPBConnectionMixin
             channel: channel,
             positioned: positioned,
             recoverable: recoverable,
-            data: sub.hasData() ? sub.data : <int>[],
+            data: sub.hasData() ? sub.data : const <int>[],
             streamPosition:
                 (positioned || recoverable) && sub.hasOffset() && sub.hasEpoch()
                     ? (offset: sub.offset, epoch: sub.epoch)
@@ -619,7 +619,7 @@ base mixin CentrifugeWSPBHandlerMixin
         CentrifugeMessage(
           timestamp: now,
           channel: channel,
-          data: push.message.hasData() ? push.message.data : <int>[],
+          data: push.message.hasData() ? push.message.data : const <int>[],
         ),
       );
     } else if (push.hasJoin()) {
@@ -649,7 +649,7 @@ base mixin CentrifugeWSPBHandlerMixin
           channel: channel,
           positioned: positioned,
           recoverable: recoverable,
-          data: push.subscribe.hasData() ? push.subscribe.data : <int>[],
+          data: push.subscribe.hasData() ? push.subscribe.data : const <int>[],
           streamPosition: (positioned || recoverable) &&
                   push.subscribe.hasOffset() &&
                   push.subscribe.hasEpoch()
@@ -674,7 +674,7 @@ base mixin CentrifugeWSPBHandlerMixin
         CentrifugeConnect(
           timestamp: now,
           channel: channel,
-          data: push.message.hasData() ? push.message.data : <int>[],
+          data: push.message.hasData() ? push.message.data : const <int>[],
           client: connect.hasClient() ? connect.client : '',
           version: connect.hasVersion() ? connect.version : '',
           ttl: expires ? now.add(Duration(seconds: connect.ttl)) : null,
@@ -905,6 +905,14 @@ base mixin CentrifugeWSPBSubscription
           );
         },
       );
+
+  @override
+  Future<List<int>> rpc(String method, List<int> data) => _sendMessage(
+          pb.RPCRequest()
+            ..method = method
+            ..data = data,
+          pb.RPCResult())
+      .then<List<int>>((r) => r.hasData() ? r.data : const <int>[]);
 }
 
 /// To maintain connection alive and detect broken connections

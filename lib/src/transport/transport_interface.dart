@@ -96,6 +96,9 @@ abstract interface class ICentrifugeTransport {
     String token,
   );
 
+  /// Send arbitrary RPC and wait for response.
+  Future<List<int>> rpc(String method, List<int> data);
+
   /// Permanent close connection to the server and
   /// free all allocated resources.
   /// {@nodoc}
