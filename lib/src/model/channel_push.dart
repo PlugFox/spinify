@@ -1,12 +1,12 @@
 import 'package:meta/meta.dart';
 import 'package:spinify/src/model/event.dart';
 
-/// {@template centrifuge_channel_push}
+/// {@template spinify_channel_push}
 /// Base class for all channel push events.
 /// {@endtemplate}
-abstract base class CentrifugeChannelPush extends CentrifugeEvent {
-  /// {@template centrifuge_channel_push}
-  const CentrifugeChannelPush({
+abstract base class SpinifyChannelPush extends SpinifyEvent {
+  /// {@template spinify_channel_push}
+  const SpinifyChannelPush({
     required super.timestamp,
     required this.channel,
   });

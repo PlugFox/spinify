@@ -1,13 +1,13 @@
 import 'package:meta/meta.dart';
 
 /// {@template exception}
-/// Centrifuge exception.
+/// Spinify exception.
 /// {@endtemplate}
 /// {@category Exception}
 @immutable
-sealed class CentrifugeException implements Exception {
+sealed class SpinifyException implements Exception {
   /// {@macro exception}
-  const CentrifugeException(
+  const SpinifyException(
     this.code,
     this.message, [
     this.error,
@@ -34,11 +34,11 @@ sealed class CentrifugeException implements Exception {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugeConnectionException extends CentrifugeException {
+final class SpinifyConnectionException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugeConnectionException({String? message, Object? error})
+  const SpinifyConnectionException({String? message, Object? error})
       : super(
-          'centrifuge_connection_exception',
+          'spinify_connection_exception',
           message ?? 'Connection problem',
           error,
         );
@@ -46,14 +46,14 @@ final class CentrifugeConnectionException extends CentrifugeException {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugeReplyException extends CentrifugeException {
+final class SpinifyReplyException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugeReplyException({
+  const SpinifyReplyException({
     required this.replyCode,
     required String replyMessage,
     required this.temporary,
   }) : super(
-          'centrifuge_reply_exception',
+          'spinify_reply_exception',
           replyMessage,
         );
 
@@ -66,11 +66,11 @@ final class CentrifugeReplyException extends CentrifugeException {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugePingException extends CentrifugeException {
+final class SpinifyPingException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugePingException([Object? error])
+  const SpinifyPingException([Object? error])
       : super(
-          'centrifuge_ping_exception',
+          'spinify_ping_exception',
           'Ping error',
           error,
         );
@@ -78,14 +78,14 @@ final class CentrifugePingException extends CentrifugeException {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugeSubscriptionException extends CentrifugeException {
+final class SpinifySubscriptionException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugeSubscriptionException({
+  const SpinifySubscriptionException({
     required this.channel,
     required String message,
     Object? error,
   }) : super(
-          'centrifuge_subscription_exception',
+          'spinify_subscription_exception',
           message,
           error,
         );
@@ -96,13 +96,13 @@ final class CentrifugeSubscriptionException extends CentrifugeException {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugeSendException extends CentrifugeException {
+final class SpinifySendException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugeSendException({
+  const SpinifySendException({
     String? message,
     Object? error,
   }) : super(
-          'centrifuge_send_exception',
+          'spinify_send_exception',
           message ?? 'Failed to send message',
           error,
         );
@@ -110,13 +110,13 @@ final class CentrifugeSendException extends CentrifugeException {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugeFetchException extends CentrifugeException {
+final class SpinifyFetchException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugeFetchException({
+  const SpinifyFetchException({
     String? message,
     Object? error,
   }) : super(
-          'centrifuge_fetch_exception',
+          'spinify_fetch_exception',
           message ?? 'Failed to fetch data',
           error,
         );
@@ -124,13 +124,13 @@ final class CentrifugeFetchException extends CentrifugeException {
 
 /// {@macro exception}
 /// {@category Exception}
-final class CentrifugeRefreshException extends CentrifugeException {
+final class SpinifyRefreshException extends SpinifyException {
   /// {@macro exception}
-  const CentrifugeRefreshException({
+  const SpinifyRefreshException({
     String? message,
     Object? error,
   }) : super(
-          'centrifuge_refresh_exception',
+          'spinify_refresh_exception',
           message ?? 'Error while refreshing connection token',
           error,
         );

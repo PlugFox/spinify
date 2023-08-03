@@ -4,17 +4,17 @@ import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
 /// Token used for subscription.
-typedef CentrifugeSubscriptionToken = String;
+typedef SpinifySubscriptionToken = String;
 
 /// Callback to get token for subscription.
 /// If method returns null then subscription will be established without token.
-typedef CentrifugeSubscriptionTokenCallback
-    = FutureOr<CentrifugeSubscriptionToken?> Function();
+typedef SpinifySubscriptionTokenCallback = FutureOr<SpinifySubscriptionToken?>
+    Function();
 
 /// Callback to set subscription payload data.
 ///
 /// If method returns null then no payload will be sent at subscribe time.
-typedef CentrifugeSubscribePayloadCallback = FutureOr<List<int>?> Function();
+typedef SpinifySubscribePayloadCallback = FutureOr<List<int>?> Function();
 
 /// {@template subscription_config}
 /// Subscription common options
@@ -39,9 +39,9 @@ typedef CentrifugeSubscribePayloadCallback = FutureOr<List<int>?> Function();
 /// {@category Subscription}
 /// {@category Entity}
 @immutable
-class CentrifugeSubscriptionConfig {
+class SpinifySubscriptionConfig {
   /// {@macro subscription_config}
-  const CentrifugeSubscriptionConfig({
+  const SpinifySubscriptionConfig({
     this.getToken,
     this.getPayload,
     this.resubscribeInterval = (
@@ -59,16 +59,16 @@ class CentrifugeSubscriptionConfig {
   ///
   /// {@macro subscription_config}
   @literal
-  const factory CentrifugeSubscriptionConfig.byDefault() =
-      CentrifugeSubscriptionConfig;
+  const factory SpinifySubscriptionConfig.byDefault() =
+      SpinifySubscriptionConfig;
 
   /// Callback to get token for subscription
   /// and get updated token upon expiration.
-  final CentrifugeSubscriptionTokenCallback? getToken;
+  final SpinifySubscriptionTokenCallback? getToken;
 
   /// Data to send with subscription request.
   /// Subscription `data` is attached to every subscribe/resubscribe request.
-  final CentrifugeSubscribePayloadCallback? getPayload;
+  final SpinifySubscribePayloadCallback? getPayload;
 
   /// Resubscribe backoff algorithm
   final ({Duration min, Duration max}) resubscribeInterval;

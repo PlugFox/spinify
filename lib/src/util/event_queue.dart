@@ -5,19 +5,19 @@ import 'package:meta/meta.dart';
 
 /// {@nodoc}
 @internal
-final class CentrifugeEventQueue {
+final class SpinifyEventQueue {
   /// {@nodoc}
-  CentrifugeEventQueue();
+  SpinifyEventQueue();
 
-  final DoubleLinkedQueue<CentrifugeTask<Object?>> _queue =
-      DoubleLinkedQueue<CentrifugeTask<Object?>>();
+  final DoubleLinkedQueue<SpinifyTask<Object?>> _queue =
+      DoubleLinkedQueue<SpinifyTask<Object?>>();
   Future<void>? _processing;
   bool _isClosed = false;
 
   /// Push it at the end of the queue.
   /// {@nodoc}
   Future<T> push<T>(String id, FutureOr<T> Function() fn) {
-    final task = CentrifugeTask<T>(id, fn);
+    final task = SpinifyTask<T>(id, fn);
     _queue.add(task);
     _exec();
     return task.future;
@@ -62,9 +62,9 @@ final class CentrifugeEventQueue {
 
 /// {@nodoc}
 @internal
-class CentrifugeTask<T> {
+class SpinifyTask<T> {
   /// {@nodoc}
-  CentrifugeTask(this.id, FutureOr<T> Function() fn)
+  SpinifyTask(this.id, FutureOr<T> Function() fn)
       : _fn = fn,
         _completer = Completer<T>();
 

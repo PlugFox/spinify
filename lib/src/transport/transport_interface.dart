@@ -19,15 +19,15 @@ import 'package:spinify/src/util/notifier.dart';
 abstract interface class ISpinifyTransport {
   /// Current state
   /// {@nodoc}
-  CentrifugeState get state;
+  SpinifyState get state;
 
   /// State observable.
   /// {@nodoc}
-  abstract final CentrifugeListenable<CentrifugeState> states;
+  abstract final SpinifyListenable<SpinifyState> states;
 
-  /// Centrifuge events.
+  /// Spinify events.
   /// {@nodoc}
-  abstract final CentrifugeListenable<CentrifugeEvent> events;
+  abstract final SpinifyListenable<SpinifyEvent> events;
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.
@@ -48,15 +48,15 @@ abstract interface class ISpinifyTransport {
   /// {@nodoc}
   Future<SubcibedOnChannel> subscribe(
     String channel,
-    CentrifugeSubscriptionConfig config,
-    CentrifugeStreamPosition? since,
+    SpinifySubscriptionConfig config,
+    SpinifyStreamPosition? since,
   );
 
   /// Unsubscribe from channel.
   /// {@nodoc}
   Future<void> unsubscribe(
     String channel,
-    CentrifugeSubscriptionConfig config,
+    SpinifySubscriptionConfig config,
   );
 
   /// Publish data to channel.
@@ -66,20 +66,20 @@ abstract interface class ISpinifyTransport {
   /// Fetch publication history inside a channel.
   /// Only for channels where history is enabled.
   /// {@nodoc}
-  Future<CentrifugeHistory> history(
+  Future<SpinifyHistory> history(
     String channel, {
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   });
 
   /// Fetch presence information inside a channel.
   /// {@nodoc}
-  Future<CentrifugePresence> presence(String channel);
+  Future<SpinifyPresence> presence(String channel);
 
   /// Fetch presence stats information inside a channel.
   /// {@nodoc}
-  Future<CentrifugePresenceStats> presenceStats(String channel);
+  Future<SpinifyPresenceStats> presenceStats(String channel);
 
   /// Disconnect from the server.
   /// e.g. code: 0, reason: 'disconnect called'
@@ -88,11 +88,11 @@ abstract interface class ISpinifyTransport {
 
   /// Send refresh token command to server.
   /// {@nodoc}
-  Future<CentrifugeRefreshResult> sendRefresh(String token);
+  Future<SpinifyRefreshResult> sendRefresh(String token);
 
   /// Send subscription channel refresh token command to server.
   /// {@nodoc}
-  Future<CentrifugeSubRefreshResult> sendSubRefresh(
+  Future<SpinifySubRefreshResult> sendSubRefresh(
     String channel,
     String token,
   );

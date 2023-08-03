@@ -6,9 +6,9 @@ import 'package:spinify/src/model/client_info.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-final class CentrifugePresence {
+final class SpinifyPresence {
   /// {@macro presence}
-  const CentrifugePresence({
+  const SpinifyPresence({
     required this.channel,
     required this.clients,
   });
@@ -17,5 +17,5 @@ final class CentrifugePresence {
   final String channel;
 
   /// Publications
-  final Map<String, CentrifugeClientInfo> clients;
+  final Map<String, SpinifyClientInfo> clients;
 }

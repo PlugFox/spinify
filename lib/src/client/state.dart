@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:meta/meta.dart';
 
 /// {@template state}
-/// Centrifuge client connection states
+/// Spinify client connection states
 ///
 /// Client connection has 4 states:
 ///
@@ -34,26 +34,26 @@ import 'package:meta/meta.dart';
 /// {@category Client}
 /// {@category Entity}
 @immutable
-sealed class CentrifugeState extends _$CentrifugeStateBase {
+sealed class SpinifyState extends _$SpinifyStateBase {
   /// {@macro state}
-  const CentrifugeState(super.timestamp);
+  const SpinifyState(super.timestamp);
 
   /// Disconnected state
   /// {@macro state}
-  factory CentrifugeState.disconnected({
+  factory SpinifyState.disconnected({
     DateTime? timestamp,
     int? closeCode,
     String? closeReason,
-  }) = CentrifugeState$Disconnected;
+  }) = SpinifyState$Disconnected;
 
   /// Connecting
   /// {@macro state}
-  factory CentrifugeState.connecting(
-      {required String url, DateTime? timestamp}) = CentrifugeState$Connecting;
+  factory SpinifyState.connecting({required String url, DateTime? timestamp}) =
+      SpinifyState$Connecting;
 
   /// Connected
   /// {@macro state}
-  factory CentrifugeState.connected({
+  factory SpinifyState.connected({
     required String url,
     DateTime? timestamp,
     String? client,
@@ -65,21 +65,20 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
     String? session,
     String? node,
     List<int>? data,
-  }) = CentrifugeState$Connected;
+  }) = SpinifyState$Connected;
 
   /// Permanently closed
   /// {@macro state}
-  factory CentrifugeState.closed({DateTime? timestamp}) =
-      CentrifugeState$Closed;
+  factory SpinifyState.closed({DateTime? timestamp}) = SpinifyState$Closed;
 
   /// Restore state from JSON
   /// {@macro state}
-  factory CentrifugeState.fromJson(Map<String, Object?> json) => switch ((
+  factory SpinifyState.fromJson(Map<String, Object?> json) => switch ((
         json['type']?.toString().trim().toLowerCase(),
         json['timestamp'] ?? DateTime.now().microsecondsSinceEpoch,
         json['url'],
       )) {
-        ('disconnected', int timestamp, _) => CentrifugeState.disconnected(
+        ('disconnected', int timestamp, _) => SpinifyState.disconnected(
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
             closeCode: switch (json['closeCode']) {
               int closeCode => closeCode,
@@ -90,11 +89,11 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
               _ => null,
             },
           ),
-        ('connecting', int timestamp, String url) => CentrifugeState.connecting(
+        ('connecting', int timestamp, String url) => SpinifyState.connecting(
             url: url,
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
           ),
-        ('connected', int timestamp, String url) => CentrifugeState.connected(
+        ('connected', int timestamp, String url) => SpinifyState.connected(
             url: url,
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
             client: json['client']?.toString(),
@@ -122,7 +121,7 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
               _ => null,
             },
           ),
-        ('closed', int timestamp, _) => CentrifugeState.closed(
+        ('closed', int timestamp, _) => SpinifyState.closed(
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
           ),
         _ => throw FormatException('Unknown state: $json'),
@@ -137,12 +136,11 @@ sealed class CentrifugeState extends _$CentrifugeStateBase {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class CentrifugeState$Disconnected extends CentrifugeState
-    with _$CentrifugeState {
+final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
   /// Disconnected
   ///
   /// {@macro state}
-  CentrifugeState$Disconnected({
+  SpinifyState$Disconnected({
     DateTime? timestamp,
     this.closeCode,
     this.closeReason,
@@ -176,10 +174,10 @@ final class CentrifugeState$Disconnected extends CentrifugeState
 
   @override
   R map<R>({
-    required CentrifugeStateMatch<R, CentrifugeState$Disconnected> disconnected,
-    required CentrifugeStateMatch<R, CentrifugeState$Connecting> connecting,
-    required CentrifugeStateMatch<R, CentrifugeState$Connected> connected,
-    required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
+    required SpinifyStateMatch<R, SpinifyState$Disconnected> disconnected,
+    required SpinifyStateMatch<R, SpinifyState$Connecting> connecting,
+    required SpinifyStateMatch<R, SpinifyState$Connected> connected,
+    required SpinifyStateMatch<R, SpinifyState$Closed> closed,
   }) =>
       disconnected(this);
 
@@ -196,11 +194,11 @@ final class CentrifugeState$Disconnected extends CentrifugeState
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CentrifugeState$Disconnected &&
+      (other is SpinifyState$Disconnected &&
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'CentrifugeState.disconnected{$timestamp}';
+  String toString() => 'SpinifyState.disconnected{$timestamp}';
 }
 
 /// Connecting
@@ -208,12 +206,11 @@ final class CentrifugeState$Disconnected extends CentrifugeState
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class CentrifugeState$Connecting extends CentrifugeState
-    with _$CentrifugeState {
+final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
   /// Connecting
   ///
   /// {@macro state}
-  CentrifugeState$Connecting({required this.url, DateTime? timestamp})
+  SpinifyState$Connecting({required this.url, DateTime? timestamp})
       : super(timestamp ?? DateTime.now());
 
   @override
@@ -236,10 +233,10 @@ final class CentrifugeState$Connecting extends CentrifugeState
 
   @override
   R map<R>({
-    required CentrifugeStateMatch<R, CentrifugeState$Disconnected> disconnected,
-    required CentrifugeStateMatch<R, CentrifugeState$Connecting> connecting,
-    required CentrifugeStateMatch<R, CentrifugeState$Connected> connected,
-    required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
+    required SpinifyStateMatch<R, SpinifyState$Disconnected> disconnected,
+    required SpinifyStateMatch<R, SpinifyState$Connecting> connecting,
+    required SpinifyStateMatch<R, SpinifyState$Connected> connected,
+    required SpinifyStateMatch<R, SpinifyState$Closed> closed,
   }) =>
       connecting(this);
 
@@ -249,11 +246,11 @@ final class CentrifugeState$Connecting extends CentrifugeState
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CentrifugeState$Connecting &&
+      (other is SpinifyState$Connecting &&
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'CentrifugeState.connecting{$timestamp}';
+  String toString() => 'SpinifyState.connecting{$timestamp}';
 }
 
 /// Connected
@@ -261,12 +258,11 @@ final class CentrifugeState$Connecting extends CentrifugeState
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class CentrifugeState$Connected extends CentrifugeState
-    with _$CentrifugeState {
+final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
   /// Connected
   ///
   /// {@macro state}
-  CentrifugeState$Connected({
+  SpinifyState$Connected({
     required this.url,
     DateTime? timestamp,
     this.client,
@@ -330,10 +326,10 @@ final class CentrifugeState$Connected extends CentrifugeState
 
   @override
   R map<R>({
-    required CentrifugeStateMatch<R, CentrifugeState$Disconnected> disconnected,
-    required CentrifugeStateMatch<R, CentrifugeState$Connecting> connecting,
-    required CentrifugeStateMatch<R, CentrifugeState$Connected> connected,
-    required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
+    required SpinifyStateMatch<R, SpinifyState$Disconnected> disconnected,
+    required SpinifyStateMatch<R, SpinifyState$Connecting> connecting,
+    required SpinifyStateMatch<R, SpinifyState$Connected> connected,
+    required SpinifyStateMatch<R, SpinifyState$Closed> closed,
   }) =>
       connected(this);
 
@@ -357,11 +353,11 @@ final class CentrifugeState$Connected extends CentrifugeState
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CentrifugeState$Connected &&
+      (other is SpinifyState$Connected &&
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'CentrifugeState.connected{$timestamp}';
+  String toString() => 'SpinifyState.connected{$timestamp}';
 }
 
 /// Permanently closed
@@ -369,12 +365,11 @@ final class CentrifugeState$Connected extends CentrifugeState
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class CentrifugeState$Closed extends CentrifugeState
-    with _$CentrifugeState {
+final class SpinifyState$Closed extends SpinifyState with _$SpinifyState {
   /// Permanently closed
   ///
   /// {@macro state}
-  CentrifugeState$Closed({DateTime? timestamp})
+  SpinifyState$Closed({DateTime? timestamp})
       : super(timestamp ?? DateTime.now());
 
   @override
@@ -397,10 +392,10 @@ final class CentrifugeState$Closed extends CentrifugeState
 
   @override
   R map<R>({
-    required CentrifugeStateMatch<R, CentrifugeState$Disconnected> disconnected,
-    required CentrifugeStateMatch<R, CentrifugeState$Connecting> connecting,
-    required CentrifugeStateMatch<R, CentrifugeState$Connected> connected,
-    required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
+    required SpinifyStateMatch<R, SpinifyState$Disconnected> disconnected,
+    required SpinifyStateMatch<R, SpinifyState$Connecting> connecting,
+    required SpinifyStateMatch<R, SpinifyState$Connected> connected,
+    required SpinifyStateMatch<R, SpinifyState$Closed> closed,
   }) =>
       closed(this);
 
@@ -410,25 +405,24 @@ final class CentrifugeState$Closed extends CentrifugeState
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is CentrifugeState$Closed &&
+      (other is SpinifyState$Closed &&
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'CentrifugeState.closed{$timestamp}';
+  String toString() => 'SpinifyState.closed{$timestamp}';
 }
 
 /// {@nodoc}
-base mixin _$CentrifugeState on CentrifugeState {}
+base mixin _$SpinifyState on SpinifyState {}
 
-/// Pattern matching for [CentrifugeState].
-typedef CentrifugeStateMatch<R, S extends CentrifugeState> = R Function(
-    S state);
+/// Pattern matching for [SpinifyState].
+typedef SpinifyStateMatch<R, S extends SpinifyState> = R Function(S state);
 
 /// {@nodoc}
 @immutable
-abstract base class _$CentrifugeStateBase {
+abstract base class _$SpinifyStateBase {
   /// {@nodoc}
-  const _$CentrifugeStateBase(this.timestamp);
+  const _$SpinifyStateBase(this.timestamp);
 
   /// Represents the current state type.
   abstract final String type;
@@ -451,21 +445,21 @@ abstract base class _$CentrifugeStateBase {
   /// Timestamp of state change.
   final DateTime timestamp;
 
-  /// Pattern matching for [CentrifugeState].
+  /// Pattern matching for [SpinifyState].
   R map<R>({
-    required CentrifugeStateMatch<R, CentrifugeState$Disconnected> disconnected,
-    required CentrifugeStateMatch<R, CentrifugeState$Connecting> connecting,
-    required CentrifugeStateMatch<R, CentrifugeState$Connected> connected,
-    required CentrifugeStateMatch<R, CentrifugeState$Closed> closed,
+    required SpinifyStateMatch<R, SpinifyState$Disconnected> disconnected,
+    required SpinifyStateMatch<R, SpinifyState$Connecting> connecting,
+    required SpinifyStateMatch<R, SpinifyState$Connected> connected,
+    required SpinifyStateMatch<R, SpinifyState$Closed> closed,
   });
 
-  /// Pattern matching for [CentrifugeState].
+  /// Pattern matching for [SpinifyState].
   R maybeMap<R>({
     required R Function() orElse,
-    CentrifugeStateMatch<R, CentrifugeState$Disconnected>? disconnected,
-    CentrifugeStateMatch<R, CentrifugeState$Connecting>? connecting,
-    CentrifugeStateMatch<R, CentrifugeState$Connected>? connected,
-    CentrifugeStateMatch<R, CentrifugeState$Closed>? closed,
+    SpinifyStateMatch<R, SpinifyState$Disconnected>? disconnected,
+    SpinifyStateMatch<R, SpinifyState$Connecting>? connecting,
+    SpinifyStateMatch<R, SpinifyState$Connected>? connected,
+    SpinifyStateMatch<R, SpinifyState$Closed>? closed,
   }) =>
       map<R>(
         disconnected: disconnected ?? (_) => orElse(),
@@ -474,12 +468,12 @@ abstract base class _$CentrifugeStateBase {
         closed: closed ?? (_) => orElse(),
       );
 
-  /// Pattern matching for [CentrifugeState].
+  /// Pattern matching for [SpinifyState].
   R? mapOrNull<R>({
-    CentrifugeStateMatch<R, CentrifugeState$Disconnected>? disconnected,
-    CentrifugeStateMatch<R, CentrifugeState$Connecting>? connecting,
-    CentrifugeStateMatch<R, CentrifugeState$Connected>? connected,
-    CentrifugeStateMatch<R, CentrifugeState$Closed>? closed,
+    SpinifyStateMatch<R, SpinifyState$Disconnected>? disconnected,
+    SpinifyStateMatch<R, SpinifyState$Connecting>? connecting,
+    SpinifyStateMatch<R, SpinifyState$Connected>? connected,
+    SpinifyStateMatch<R, SpinifyState$Closed>? closed,
   }) =>
       map<R?>(
         disconnected: disconnected ?? (_) => null,

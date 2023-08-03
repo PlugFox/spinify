@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
-import 'package:spinify/src/client/centrifuge.dart';
+import 'package:spinify/src/client/spinify.dart';
 import 'package:spinify/src/model/channel_presence.dart';
 import 'package:spinify/src/model/channel_push.dart';
 import 'package:spinify/src/model/connect.dart';
@@ -29,18 +29,17 @@ import 'package:spinify/src/util/logger.dart' as logger;
 /// Server-side subscription implementation.
 /// {@nodoc}
 @internal
-final class CentrifugeServerSubscriptionImpl
-    extends CentrifugeServerSubscriptionBase
+final class SpinifyServerSubscriptionImpl extends SpinifyServerSubscriptionBase
     with
-        CentrifugeServerSubscriptionEventReceiverMixin,
-        CentrifugeServerSubscriptionErrorsMixin,
-        CentrifugeServerSubscriptionReadyMixin,
-        CentrifugeServerSubscriptionPublishingMixin,
-        CentrifugeServerSubscriptionHistoryMixin,
-        CentrifugeServerSubscriptionPresenceMixin,
-        CentrifugeServerSubscriptionQueueMixin {
+        SpinifyServerSubscriptionEventReceiverMixin,
+        SpinifyServerSubscriptionErrorsMixin,
+        SpinifyServerSubscriptionReadyMixin,
+        SpinifyServerSubscriptionPublishingMixin,
+        SpinifyServerSubscriptionHistoryMixin,
+        SpinifyServerSubscriptionPresenceMixin,
+        SpinifyServerSubscriptionQueueMixin {
   /// {@nodoc}
-  CentrifugeServerSubscriptionImpl({
+  SpinifyServerSubscriptionImpl({
     required super.channel,
     required super.transportWeakRef,
   });
@@ -48,10 +47,10 @@ final class CentrifugeServerSubscriptionImpl
 
 /// {@nodoc}
 @internal
-abstract base class CentrifugeServerSubscriptionBase
-    implements CentrifugeServerSubscription {
+abstract base class SpinifyServerSubscriptionBase
+    implements SpinifyServerSubscription {
   /// {@nodoc}
-  CentrifugeServerSubscriptionBase({
+  SpinifyServerSubscriptionBase({
     required this.channel,
     required WeakReference<ISpinifyTransport> transportWeakRef,
   }) {
@@ -63,7 +62,7 @@ abstract base class CentrifugeServerSubscriptionBase
   final String channel;
 
   @override
-  CentrifugeStreamPosition? get since => switch (state.since?.epoch) {
+  SpinifyStreamPosition? get since => switch (state.since?.epoch) {
         String epoch => (epoch: epoch, offset: _offset),
         _ => state.since,
       };
@@ -86,8 +85,8 @@ abstract base class CentrifugeServerSubscriptionBase
   @protected
   @mustCallSuper
   void _initSubscription() {
-    _state = CentrifugeSubscriptionState.unsubscribed(
-        code: 0, reason: 'initial state');
+    _state =
+        SpinifySubscriptionState.unsubscribed(code: 0, reason: 'initial state');
   }
 
   /// Subscription has 3 states:
@@ -96,23 +95,23 @@ abstract base class CentrifugeServerSubscriptionBase
   /// - `subscribed`
   /// {@nodoc}
   @override
-  CentrifugeSubscriptionState get state => _state;
-  late CentrifugeSubscriptionState _state;
+  SpinifySubscriptionState get state => _state;
+  late SpinifySubscriptionState _state;
 
   /// Stream of subscription states.
   /// {@nodoc}
   @override
-  late final CentrifugeSubscriptionStateStream states =
-      CentrifugeSubscriptionStateStream(_stateController.stream);
+  late final SpinifySubscriptionStateStream states =
+      SpinifySubscriptionStateStream(_stateController.stream);
 
   /// States controller.
   /// {@nodoc}
-  final StreamController<CentrifugeSubscriptionState> _stateController =
-      StreamController<CentrifugeSubscriptionState>.broadcast();
+  final StreamController<SpinifySubscriptionState> _stateController =
+      StreamController<SpinifySubscriptionState>.broadcast();
 
   /// Set new state.
   /// {@nodoc}
-  void _setState(CentrifugeSubscriptionState state) {
+  void _setState(SpinifySubscriptionState state) {
     if (_state == state) return;
     final previousState = _state;
     _stateController.add(_state = state);
@@ -122,7 +121,7 @@ abstract base class CentrifugeServerSubscriptionBase
   /// Notify about new publication.
   /// {@nodoc}
   @nonVirtual
-  void _handlePublication(CentrifugePublication publication) {
+  void _handlePublication(SpinifyPublication publication) {
     final offset = publication.offset;
     if (offset != null && offset > _offset) _offset = offset;
   }
@@ -132,7 +131,7 @@ abstract base class CentrifugeServerSubscriptionBase
   @mustCallSuper
   Future<void> close([int code = 0, String reason = 'closed']) async {
     if (!_state.isUnsubscribed)
-      _setState(CentrifugeSubscriptionState.unsubscribed(
+      _setState(SpinifySubscriptionState.unsubscribed(
         code: 0,
         reason: 'closed',
         recoverable: false,
@@ -145,41 +144,41 @@ abstract base class CentrifugeServerSubscriptionBase
 /// Mixin responsible for event receiving and distribution by controllers
 /// and streams to subscribers.
 /// {@nodoc}
-base mixin CentrifugeServerSubscriptionEventReceiverMixin
-    on CentrifugeServerSubscriptionBase {
+base mixin SpinifyServerSubscriptionEventReceiverMixin
+    on SpinifyServerSubscriptionBase {
   @protected
   @nonVirtual
-  final StreamController<CentrifugeChannelPush> _pushController =
-      StreamController<CentrifugeChannelPush>.broadcast();
+  final StreamController<SpinifyChannelPush> _pushController =
+      StreamController<SpinifyChannelPush>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugePublication> _publicationsController =
-      StreamController<CentrifugePublication>.broadcast();
+  final StreamController<SpinifyPublication> _publicationsController =
+      StreamController<SpinifyPublication>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeMessage> _messagesController =
-      StreamController<CentrifugeMessage>.broadcast();
+  final StreamController<SpinifyMessage> _messagesController =
+      StreamController<SpinifyMessage>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeJoin> _joinController =
-      StreamController<CentrifugeJoin>.broadcast();
+  final StreamController<SpinifyJoin> _joinController =
+      StreamController<SpinifyJoin>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeLeave> _leaveController =
-      StreamController<CentrifugeLeave>.broadcast();
+  final StreamController<SpinifyLeave> _leaveController =
+      StreamController<SpinifyLeave>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeChannelPresence> _presenceController =
-      StreamController<CentrifugeChannelPresence>.broadcast();
+  final StreamController<SpinifyChannelPresence> _presenceController =
+      StreamController<SpinifyChannelPresence>.broadcast();
 
   @override
   @nonVirtual
-  late final CentrifugePushesStream stream = CentrifugePushesStream(
+  late final SpinifyPushesStream stream = SpinifyPushesStream(
     pushes: _pushController.stream,
     publications: _publicationsController.stream,
     messages: _messagesController.stream,
@@ -194,44 +193,44 @@ base mixin CentrifugeServerSubscriptionEventReceiverMixin
   }
 
   /// Handle push event from server for the specific channel.
-  /// Called from `CentrifugeClientSubscriptionsManager.onPush`
+  /// Called from `SpinifyClientSubscriptionsManager.onPush`
   /// {@nodoc}
   @internal
   @nonVirtual
-  void onPush(CentrifugeChannelPush push) {
+  void onPush(SpinifyChannelPush push) {
     // This is a push to a channel.
     _pushController.add(push);
     switch (push) {
-      case CentrifugePublication publication:
+      case SpinifyPublication publication:
         _handlePublication(publication);
         _publicationsController.add(publication);
-      case CentrifugeMessage message:
+      case SpinifyMessage message:
         _messagesController.add(message);
-      case CentrifugeJoin join:
+      case SpinifyJoin join:
         _presenceController.add(join);
         _joinController.add(join);
-      case CentrifugeLeave leave:
+      case SpinifyLeave leave:
         _presenceController.add(leave);
         _leaveController.add(leave);
-      case CentrifugeSubscribe sub:
+      case SpinifySubscribe sub:
         final offset = sub.streamPosition?.offset;
         if (offset != null && offset > _offset) _offset = offset;
-        _setState(CentrifugeSubscriptionState.subscribed(
+        _setState(SpinifySubscriptionState.subscribed(
           since: sub.streamPosition ?? since,
           recoverable: sub.recoverable,
         ));
-      case CentrifugeUnsubscribe unsub:
-        _setState(CentrifugeSubscriptionState.unsubscribed(
+      case SpinifyUnsubscribe unsub:
+        _setState(SpinifySubscriptionState.unsubscribed(
           code: unsub.code,
           reason: unsub.reason,
           recoverable: state.recoverable,
           since: since,
         ));
-      case CentrifugeConnect _:
+      case SpinifyConnect _:
         break;
-      case CentrifugeDisconnect _:
+      case SpinifyDisconnect _:
         break;
-      case CentrifugeRefresh _:
+      case SpinifyRefresh _:
         break;
     }
   }
@@ -239,7 +238,7 @@ base mixin CentrifugeServerSubscriptionEventReceiverMixin
   @override
   Future<void> close([int code = 0, String reason = 'closed']) async {
     await super.close(code, reason);
-    for (final controller in <StreamSink<CentrifugeEvent>>[
+    for (final controller in <StreamSink<SpinifyEvent>>[
       _pushController,
       _publicationsController,
       _messagesController,
@@ -255,48 +254,46 @@ base mixin CentrifugeServerSubscriptionEventReceiverMixin
 /// Mixin responsible for errors stream.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionErrorsMixin
-    on CentrifugeServerSubscriptionBase {
+base mixin SpinifyServerSubscriptionErrorsMixin
+    on SpinifyServerSubscriptionBase {
   @protected
   @nonVirtual
-  void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
+  void _emitError(SpinifyException exception, StackTrace stackTrace) =>
       Spinify.observer?.onError(exception, stackTrace);
 }
 
 /// Mixin responsible for ready method.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionReadyMixin
-    on
-        CentrifugeServerSubscriptionBase,
-        CentrifugeServerSubscriptionErrorsMixin {
+base mixin SpinifyServerSubscriptionReadyMixin
+    on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
   /// Await for subscription to be ready.
   /// {@nodoc}
   @override
   FutureOr<void> ready() async {
     try {
       switch (state) {
-        case CentrifugeSubscriptionState$Unsubscribed _:
-          throw CentrifugeSubscriptionException(
+        case SpinifySubscriptionState$Unsubscribed _:
+          throw SpinifySubscriptionException(
             message: 'Subscription is not subscribed',
             channel: channel,
           );
-        case CentrifugeSubscriptionState$Subscribed _:
+        case SpinifySubscriptionState$Subscribed _:
           return;
-        case CentrifugeSubscriptionState$Subscribing _:
+        case SpinifySubscriptionState$Subscribing _:
           await states.subscribed.first;
       }
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSubscriptionException(
+      final spinifyException = SpinifySubscriptionException(
         message: 'Subscription is not subscribed',
         channel: channel,
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
@@ -304,7 +301,7 @@ base mixin CentrifugeServerSubscriptionReadyMixin
   /// {@nodoc}
   void setSubscribed() {
     if (!state.isSubscribed)
-      _setState(CentrifugeSubscriptionState.subscribed(
+      _setState(SpinifySubscriptionState.subscribed(
         since: since,
         recoverable: state.recoverable,
       ));
@@ -314,7 +311,7 @@ base mixin CentrifugeServerSubscriptionReadyMixin
   /// {@nodoc}
   void setSubscribing() {
     if (!state.isSubscribing)
-      _setState(CentrifugeSubscriptionState.subscribing(
+      _setState(SpinifySubscriptionState.subscribing(
         since: since,
         recoverable: state.recoverable,
       ));
@@ -324,7 +321,7 @@ base mixin CentrifugeServerSubscriptionReadyMixin
   /// {@nodoc}
   void setUnsubscribed(int code, String reason) {
     if (!state.isUnsubscribed)
-      _setState(CentrifugeSubscriptionState.unsubscribed(
+      _setState(SpinifySubscriptionState.unsubscribed(
         code: code,
         reason: reason,
         recoverable: state.recoverable,
@@ -343,22 +340,20 @@ base mixin CentrifugeServerSubscriptionReadyMixin
 /// Mixin responsible for publishing.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionPublishingMixin
-    on
-        CentrifugeServerSubscriptionBase,
-        CentrifugeServerSubscriptionErrorsMixin {
+base mixin SpinifyServerSubscriptionPublishingMixin
+    on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
   @override
   Future<void> publish(List<int> data) async {
     try {
       await ready();
       await _transport.publish(channel, data);
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSendException(
+      final spinifyException = SpinifySendException(
         message: 'Error while publishing to channel $channel',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -366,14 +361,12 @@ base mixin CentrifugeServerSubscriptionPublishingMixin
 /// Mixin responsible for history.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionHistoryMixin
-    on
-        CentrifugeServerSubscriptionBase,
-        CentrifugeServerSubscriptionErrorsMixin {
+base mixin SpinifyServerSubscriptionHistoryMixin
+    on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
   @override
-  Future<CentrifugeHistory> history({
+  Future<SpinifyHistory> history({
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   }) async {
     await ready();
@@ -385,13 +378,13 @@ base mixin CentrifugeServerSubscriptionHistoryMixin
         reverse: reverse,
       );
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSubscriptionException(
+      final spinifyException = SpinifySubscriptionException(
         message: 'Error while fetching history',
         channel: channel,
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -399,39 +392,37 @@ base mixin CentrifugeServerSubscriptionHistoryMixin
 /// Mixin responsible for presence.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionPresenceMixin
-    on
-        CentrifugeServerSubscriptionBase,
-        CentrifugeServerSubscriptionErrorsMixin {
+base mixin SpinifyServerSubscriptionPresenceMixin
+    on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
   @override
-  Future<CentrifugePresence> presence() async {
+  Future<SpinifyPresence> presence() async {
     await ready();
     try {
       return await _transport.presence(channel);
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSubscriptionException(
+      final spinifyException = SpinifySubscriptionException(
         message: 'Error while fetching history',
         channel: channel,
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
   @override
-  Future<CentrifugePresenceStats> presenceStats() async {
+  Future<SpinifyPresenceStats> presenceStats() async {
     await ready();
     try {
       return await _transport.presenceStats(channel);
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSubscriptionException(
+      final spinifyException = SpinifySubscriptionException(
         message: 'Error while fetching history',
         channel: channel,
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -440,10 +431,10 @@ base mixin CentrifugeServerSubscriptionPresenceMixin
 /// SHOULD BE LAST MIXIN.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionQueueMixin
-    on CentrifugeServerSubscriptionBase {
+base mixin SpinifyServerSubscriptionQueueMixin
+    on SpinifyServerSubscriptionBase {
   /// {@nodoc}
-  final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
+  final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
 
   @override
   FutureOr<void> ready() => _eventQueue.push<void>(
@@ -458,12 +449,12 @@ base mixin CentrifugeServerSubscriptionQueueMixin
       );
 
   @override
-  Future<CentrifugeHistory> history({
+  Future<SpinifyHistory> history({
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   }) =>
-      _eventQueue.push<CentrifugeHistory>(
+      _eventQueue.push<SpinifyHistory>(
         'history',
         () => super.history(
           limit: limit,
@@ -473,12 +464,12 @@ base mixin CentrifugeServerSubscriptionQueueMixin
       );
 
   @override
-  Future<CentrifugePresence> presence() =>
-      _eventQueue.push<CentrifugePresence>('presence', super.presence);
+  Future<SpinifyPresence> presence() =>
+      _eventQueue.push<SpinifyPresence>('presence', super.presence);
 
   @override
-  Future<CentrifugePresenceStats> presenceStats() => _eventQueue
-      .push<CentrifugePresenceStats>('presenceStats', super.presenceStats);
+  Future<SpinifyPresenceStats> presenceStats() => _eventQueue
+      .push<SpinifyPresenceStats>('presenceStats', super.presenceStats);
 
   @override
   Future<void> close([int code = 0, String reason = 'closed']) => _eventQueue

@@ -8,9 +8,9 @@ import 'package:spinify/src/model/client_info.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-final class CentrifugePublication extends CentrifugeChannelPush {
+final class SpinifyPublication extends SpinifyChannelPush {
   /// {@macro publication}
-  const CentrifugePublication({
+  const SpinifyPublication({
     required super.timestamp,
     required super.channel,
     required this.data,
@@ -30,7 +30,7 @@ final class CentrifugePublication extends CentrifugeChannelPush {
 
   /// Optional information about client connection who published this
   /// (only exists if publication comes from client-side publish() API).
-  final CentrifugeClientInfo? info;
+  final SpinifyClientInfo? info;
 
   /// Optional tags, this is a map with string keys and string values
   final Map<String, String>? tags;

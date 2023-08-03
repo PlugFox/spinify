@@ -3,16 +3,16 @@ import 'dart:developer' as developer;
 
 import 'package:meta/meta.dart';
 
-/// Constants used to debug the Centrifuge client.
+/// Constants used to debug the Spinify client.
 /// --dart-define=dev.plugfox.ws.debug=true
 /// {@nodoc}
 @internal
 bool get $enableLogging =>
     const bool.fromEnvironment(
-      'dev.plugfox.centrifuge.log',
+      'dev.plugfox.spinify.log',
       defaultValue: false,
     ) ||
-    Zone.current[#dev.plugfox.centrifuge.log] == true;
+    Zone.current[#dev.plugfox.spinify.log] == true;
 
 /// Tracing information
 /// {@nodoc}
@@ -52,7 +52,7 @@ void Function(
       developer.log(
         reason ?? message?.toString() ?? '',
         level: level,
-        name: 'centrifuge',
+        name: 'spinify',
         error: message is Exception || message is Error ? message : null,
         stackTrace: stackTrace,
       );

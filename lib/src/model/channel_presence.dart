@@ -10,16 +10,16 @@ import 'package:spinify/src/model/client_info.dart';
 /// {@subCategory Channel}
 /// {@subCategory Presence}
 @immutable
-sealed class CentrifugeChannelPresence extends CentrifugeChannelPush {
+sealed class SpinifyChannelPresence extends SpinifyChannelPush {
   /// {@macro channel_presence}
-  const CentrifugeChannelPresence({
+  const SpinifyChannelPresence({
     required super.timestamp,
     required super.channel,
     required this.info,
   });
 
   /// Client info
-  final CentrifugeClientInfo info;
+  final SpinifyClientInfo info;
 
   /// Whether this is a join event
   abstract final bool isJoin;
@@ -29,9 +29,9 @@ sealed class CentrifugeChannelPresence extends CentrifugeChannelPush {
 }
 
 /// {@macro channel_presence}
-final class CentrifugeJoin extends CentrifugeChannelPresence {
+final class SpinifyJoin extends SpinifyChannelPresence {
   /// {@macro channel_presence}
-  const CentrifugeJoin({
+  const SpinifyJoin({
     required super.timestamp,
     required super.channel,
     required super.info,
@@ -48,9 +48,9 @@ final class CentrifugeJoin extends CentrifugeChannelPresence {
 }
 
 /// {@macro channel_presence}
-final class CentrifugeLeave extends CentrifugeChannelPresence {
+final class SpinifyLeave extends SpinifyChannelPresence {
   /// {@macro channel_presence}
-  const CentrifugeLeave({
+  const SpinifyLeave({
     required super.timestamp,
     required super.channel,
     required super.info,

@@ -3,9 +3,9 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template unsubscribe}
 /// Unsubscribe push from Centrifugo server.
 /// {@endtemplate}
-final class CentrifugeUnsubscribe extends CentrifugeChannelPush {
+final class SpinifyUnsubscribe extends SpinifyChannelPush {
   /// {@macro unsubscribe}
-  const CentrifugeUnsubscribe({
+  const SpinifyUnsubscribe({
     required super.timestamp,
     required super.channel,
     required this.code,

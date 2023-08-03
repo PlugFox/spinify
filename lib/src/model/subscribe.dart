@@ -4,9 +4,9 @@ import 'package:spinify/src/model/stream_position.dart';
 /// {@template subscribe}
 /// Subscribe push from Centrifugo server.
 /// {@endtemplate}
-final class CentrifugeSubscribe extends CentrifugeChannelPush {
+final class SpinifySubscribe extends SpinifyChannelPush {
   /// {@macro subscribe}
-  const CentrifugeSubscribe({
+  const SpinifySubscribe({
     required super.timestamp,
     required super.channel,
     required this.positioned,
@@ -28,5 +28,5 @@ final class CentrifugeSubscribe extends CentrifugeChannelPush {
   final List<int> data;
 
   /// Stream position.
-  final CentrifugeStreamPosition? streamPosition;
+  final SpinifyStreamPosition? streamPosition;
 }

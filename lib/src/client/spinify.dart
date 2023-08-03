@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-import 'package:spinify/src/client/centrifuge_interface.dart';
 import 'package:spinify/src/client/config.dart';
 import 'package:spinify/src/client/disconnect_code.dart';
 import 'package:spinify/src/client/observer.dart';
+import 'package:spinify/src/client/spinify_interface.dart';
 import 'package:spinify/src/client/state.dart';
 import 'package:spinify/src/client/states_stream.dart';
 import 'package:spinify/src/model/channel_presence.dart';
@@ -80,7 +80,7 @@ abstract base class SpinifyBase implements ISpinify {
   @nonVirtual
   late final ISpinifyTransport _transport;
 
-  /// Centrifuge config.
+  /// Spinify config.
   /// {@nodoc}
   @nonVirtual
   final SpinifyConfig _config;
@@ -95,7 +95,7 @@ abstract base class SpinifyBase implements ISpinify {
   late final ServerSubscriptionManager _serverSubscriptionManager =
       ServerSubscriptionManager(_transport);
 
-  /// Init centrifuge client, override this method to add custom logic.
+  /// Init spinify client, override this method to add custom logic.
   /// This method is called in constructor.
   /// {@nodoc}
   @protected
@@ -106,21 +106,21 @@ abstract base class SpinifyBase implements ISpinify {
   }
 
   /// Called when connection established.
-  /// Right before [CentrifugeState$Connected] state.
+  /// Right before [SpinifyState$Connected] state.
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _onConnected(CentrifugeState$Connected state) {
+  void _onConnected(SpinifyState$Connected state) {
     logger.fine('Connection established');
     Spinify.observer?.onConnected(this, state);
   }
 
   /// Called when connection lost.
-  /// Right before [CentrifugeState$Disconnected] state.
+  /// Right before [SpinifyState$Disconnected] state.
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _onDisconnected(CentrifugeState$Disconnected state) {
+  void _onDisconnected(SpinifyState$Disconnected state) {
     logger.fine('Connection lost');
     Spinify.observer?.onDisconnected(this, state);
   }
@@ -129,9 +129,12 @@ abstract base class SpinifyBase implements ISpinify {
   @mustCallSuper
   Future<void> close() async {
     await _transport.close();
-    logger.fine('Centrifuge client closed');
+    logger.fine('Spinify client closed');
     Spinify.observer?.onClose(this);
   }
+
+  @override
+  String toString() => 'Spinify{}';
 }
 
 /// Mixin responsible for event receiving and distribution by controllers
@@ -140,37 +143,37 @@ abstract base class SpinifyBase implements ISpinify {
 base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   @protected
   @nonVirtual
-  final StreamController<CentrifugeChannelPush> _pushController =
-      StreamController<CentrifugeChannelPush>.broadcast();
+  final StreamController<SpinifyChannelPush> _pushController =
+      StreamController<SpinifyChannelPush>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugePublication> _publicationsController =
-      StreamController<CentrifugePublication>.broadcast();
+  final StreamController<SpinifyPublication> _publicationsController =
+      StreamController<SpinifyPublication>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeMessage> _messagesController =
-      StreamController<CentrifugeMessage>.broadcast();
+  final StreamController<SpinifyMessage> _messagesController =
+      StreamController<SpinifyMessage>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeJoin> _joinController =
-      StreamController<CentrifugeJoin>.broadcast();
+  final StreamController<SpinifyJoin> _joinController =
+      StreamController<SpinifyJoin>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeLeave> _leaveController =
-      StreamController<CentrifugeLeave>.broadcast();
+  final StreamController<SpinifyLeave> _leaveController =
+      StreamController<SpinifyLeave>.broadcast();
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeChannelPresence> _presenceController =
-      StreamController<CentrifugeChannelPresence>.broadcast();
+  final StreamController<SpinifyChannelPresence> _presenceController =
+      StreamController<SpinifyChannelPresence>.broadcast();
 
   @override
   @nonVirtual
-  late final CentrifugePushesStream stream = CentrifugePushesStream(
+  late final SpinifyPushesStream stream = SpinifyPushesStream(
     pushes: _pushController.stream,
     publications: _publicationsController.stream,
     messages: _messagesController.stream,
@@ -191,37 +194,37 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   @nonVirtual
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
-  void _onEvent(CentrifugeEvent event) {
+  void _onEvent(SpinifyEvent event) {
     Spinify.observer?.onEvent(this, event);
-    if (event is! CentrifugeChannelPush) return;
+    if (event is! SpinifyChannelPush) return;
     // This is a push to a channel.
     _clientSubscriptionManager.onPush(event);
     _pushController.add(event);
     switch (event) {
-      case CentrifugePublication publication:
+      case SpinifyPublication publication:
         logger.fine(
             'Publication event received for channel ${publication.channel}');
         _publicationsController.add(publication);
-      case CentrifugeMessage message:
+      case SpinifyMessage message:
         logger.fine('Message event received for channel ${message.channel}');
         _messagesController.add(message);
-      case CentrifugeJoin join:
+      case SpinifyJoin join:
         logger.fine('Join event received for channel ${join.channel} '
             'and user ${join.info.user}');
         _presenceController.add(join);
         _joinController.add(join);
-      case CentrifugeLeave leave:
+      case SpinifyLeave leave:
         logger.fine('Leave event received for channel ${leave.channel} '
             'and user ${leave.info.user}');
         _presenceController.add(leave);
         _leaveController.add(leave);
-      case CentrifugeSubscribe subscribe:
+      case SpinifySubscribe subscribe:
         _serverSubscriptionManager.subscribe(subscribe);
-      case CentrifugeUnsubscribe unsubscribe:
+      case SpinifyUnsubscribe unsubscribe:
         _serverSubscriptionManager.unsubscribe(unsubscribe);
-      case CentrifugeConnect _:
+      case SpinifyConnect _:
         break;
-      case CentrifugeDisconnect event:
+      case SpinifyDisconnect event:
         final code = event.code;
         final reconnect =
             code < 3500 || code >= 5000 || (code >= 4000 && code < 4500);
@@ -235,7 +238,7 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
           disconnect().ignore();
         }
         break;
-      case CentrifugeRefresh _:
+      case SpinifyRefresh _:
         logger.fine('Refresh connection token by server push');
         _refreshToken();
         break;
@@ -246,7 +249,7 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   Future<void> close() async {
     await super.close();
     _transport.events.removeListener(_onEvent);
-    for (final controller in <StreamSink<CentrifugeEvent>>[
+    for (final controller in <StreamSink<SpinifyEvent>>[
       _pushController,
       _publicationsController,
       _messagesController,
@@ -259,7 +262,7 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   }
 }
 
-/// Mixin responsible for centrifuge states
+/// Mixin responsible for spinify states
 /// {@nodoc}
 @internal
 base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
@@ -269,16 +272,16 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
 
   @override
   @nonVirtual
-  CentrifugeState get state => _state;
+  SpinifyState get state => _state;
 
   @nonVirtual
   @protected
-  late CentrifugeState _state;
+  late SpinifyState _state;
 
   @override
   @nonVirtual
-  late final CentrifugeStatesStream states =
-      CentrifugeStatesStream(_statesController.stream);
+  late final SpinifyStatesStream states =
+      SpinifyStatesStream(_statesController.stream);
 
   @override
   void _initSpinify() {
@@ -291,20 +294,20 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
   @nonVirtual
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
-  void _onStateChange(CentrifugeState newState) {
+  void _onStateChange(SpinifyState newState) {
     final oldState = _state;
     logger.info('State changed: ${oldState.type} -> ${newState.type}');
     _refreshTimer?.cancel();
     _refreshTimer = null;
     switch (newState) {
-      case CentrifugeState$Disconnected state:
+      case SpinifyState$Disconnected state:
         _onDisconnected(state);
-      case CentrifugeState$Connecting _:
+      case SpinifyState$Connecting _:
         break;
-      case CentrifugeState$Connected state:
+      case SpinifyState$Connected state:
         _onConnected(state);
         if (state.expires == true) _setRefreshTimer(state.ttl);
-      case CentrifugeState$Closed _:
+      case SpinifyState$Closed _:
         break;
     }
     _statesController.add(_state = newState);
@@ -313,8 +316,8 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
 
   @protected
   @nonVirtual
-  final StreamController<CentrifugeState> _statesController =
-      StreamController<CentrifugeState>.broadcast();
+  final StreamController<SpinifyState> _statesController =
+      StreamController<SpinifyState>.broadcast();
 
   /// Refresh connection token when ttl is expired.
   /// {@nodoc}
@@ -344,7 +347,7 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
             'Error while refreshing connection token',
           );
           _emitError(
-            CentrifugeRefreshException(
+            SpinifyRefreshException(
               message: 'Error while refreshing connection token',
               error: error,
             ),
@@ -366,7 +369,7 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
 base mixin SpinifyErrorsMixin on SpinifyBase {
   @protected
   @nonVirtual
-  void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
+  void _emitError(SpinifyException exception, StackTrace stackTrace) =>
       Spinify.observer?.onError(exception, stackTrace);
 }
 
@@ -382,16 +385,16 @@ base mixin SpinifyConnectionMixin
       _refreshTimer?.cancel();
       _refreshTimer = null;
       await _transport.connect(url, _serverSubscriptionManager);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeConnectionException(
+      final spinifyException = SpinifyConnectionException(
         message: 'Error while connecting to $url',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
@@ -399,17 +402,17 @@ base mixin SpinifyConnectionMixin
   FutureOr<void> ready() async {
     try {
       switch (state) {
-        case CentrifugeState$Disconnected _:
-          throw const CentrifugeConnectionException(
+        case SpinifyState$Disconnected _:
+          throw const SpinifyConnectionException(
             message: 'Client is not connected',
           );
-        case CentrifugeState$Closed _:
-          throw const CentrifugeConnectionException(
+        case SpinifyState$Closed _:
+          throw const SpinifyConnectionException(
             message: 'Client is permanently closed',
           );
-        case CentrifugeState$Connected _:
+        case SpinifyState$Connected _:
           return;
-        case CentrifugeState$Connecting _:
+        case SpinifyState$Connecting _:
           await states.connected.first.timeout(_config.timeout);
       }
     } on TimeoutException catch (error, stackTrace) {
@@ -419,22 +422,22 @@ base mixin SpinifyConnectionMixin
             DisconnectCode.timeout.reason,
           )
           .ignore();
-      final centrifugeException = CentrifugeConnectionException(
+      final spinifyException = SpinifyConnectionException(
         message: 'Timeout exception while waiting for connection',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
-    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeConnectionException(
+      final spinifyException = SpinifyConnectionException(
         message: 'Client is not connected',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
@@ -446,16 +449,16 @@ base mixin SpinifyConnectionMixin
     logger.fine('Interactively disconnecting');
     try {
       await _transport.disconnect(code, reason);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeConnectionException(
+      final spinifyException = SpinifyConnectionException(
         message: 'Error while disconnecting',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
@@ -475,13 +478,13 @@ base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
     try {
       await ready();
       await _transport.sendAsyncMessage(data);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSendException(error: error);
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      final spinifyException = SpinifySendException(error: error);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -491,14 +494,14 @@ base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
 @internal
 base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
-  CentrifugeClientSubscription newSubscription(
+  SpinifyClientSubscription newSubscription(
     String channel, [
-    CentrifugeSubscriptionConfig? config,
+    SpinifySubscriptionConfig? config,
   ]) {
     final sub = _clientSubscriptionManager[channel] ??
         _serverSubscriptionManager[channel];
     if (sub != null) {
-      throw CentrifugeSubscriptionException(
+      throw SpinifySubscriptionException(
         channel: channel,
         message: 'Subscription already exists',
       );
@@ -507,41 +510,41 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   }
 
   @override
-  Map<String, CentrifugeClientSubscription> get subscriptions =>
+  Map<String, SpinifyClientSubscription> get subscriptions =>
       _clientSubscriptionManager.subscriptions;
 
   @override
-  CentrifugeClientSubscription? getSubscription(String channel) =>
+  SpinifyClientSubscription? getSubscription(String channel) =>
       _clientSubscriptionManager[channel];
 
   @override
   Future<void> removeSubscription(
-    CentrifugeClientSubscription subscription,
+    SpinifyClientSubscription subscription,
   ) async {
     try {
       await _clientSubscriptionManager.removeSubscription(subscription);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSubscriptionException(
+      final spinifyException = SpinifySubscriptionException(
         channel: subscription.channel,
         message: 'Error while unsubscribing',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
   @override
-  void _onConnected(CentrifugeState$Connected state) {
+  void _onConnected(SpinifyState$Connected state) {
     super._onConnected(state);
     _clientSubscriptionManager.subscribeAll();
   }
 
   @override
-  void _onDisconnected(CentrifugeState$Disconnected state) {
+  void _onDisconnected(SpinifyState$Disconnected state) {
     super._onDisconnected(state);
     _clientSubscriptionManager.unsubscribeAll();
   }
@@ -558,13 +561,13 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
 @internal
 base mixin SpinifyServerSubscriptionMixin on SpinifyBase {
   @override
-  void _onConnected(CentrifugeState$Connected state) {
+  void _onConnected(SpinifyState$Connected state) {
     super._onConnected(state);
     _serverSubscriptionManager.setSubscribedAll();
   }
 
   @override
-  void _onDisconnected(CentrifugeState$Disconnected state) {
+  void _onDisconnected(SpinifyState$Disconnected state) {
     super._onDisconnected(state);
     _serverSubscriptionManager.setSubscribingAll();
   }
@@ -586,16 +589,16 @@ base mixin SpinifyPublicationsMixin
     try {
       await ready();
       await _transport.publish(channel, data);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeSendException(
+      final spinifyException = SpinifySendException(
         message: 'Error while publishing to channel $channel',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -604,38 +607,38 @@ base mixin SpinifyPublicationsMixin
 /// {@nodoc}
 base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
-  Future<CentrifugePresence> presence(String channel) async {
+  Future<SpinifyPresence> presence(String channel) async {
     try {
       await ready();
       return await _transport.presence(channel);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeFetchException(
+      final spinifyException = SpinifyFetchException(
         message: 'Error while fetching presence for channel $channel',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 
   @override
-  Future<CentrifugePresenceStats> presenceStats(String channel) async {
+  Future<SpinifyPresenceStats> presenceStats(String channel) async {
     try {
       await ready();
       return await _transport.presenceStats(channel);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeFetchException(
+      final spinifyException = SpinifyFetchException(
         message: 'Error while fetching presence for channel $channel',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -644,10 +647,10 @@ base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyErrorsMixin {
 /// {@nodoc}
 base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
-  Future<CentrifugeHistory> history(
+  Future<SpinifyHistory> history(
     String channel, {
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   }) async {
     try {
@@ -658,16 +661,16 @@ base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyErrorsMixin {
         since: since,
         reverse: reverse,
       );
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeFetchException(
+      final spinifyException = SpinifyFetchException(
         message: 'Error while fetching history for channel $channel',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -680,16 +683,16 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
     try {
       await ready();
       return await _transport.rpc(method, data);
-    } on CentrifugeException catch (error, stackTrace) {
+    } on SpinifyException catch (error, stackTrace) {
       _emitError(error, stackTrace);
       rethrow;
     } on Object catch (error, stackTrace) {
-      final centrifugeException = CentrifugeFetchException(
+      final spinifyException = SpinifyFetchException(
         message: 'Error while remote procedure call for method $method',
         error: error,
       );
-      _emitError(centrifugeException, stackTrace);
-      Error.throwWithStackTrace(centrifugeException, stackTrace);
+      _emitError(spinifyException, stackTrace);
+      Error.throwWithStackTrace(spinifyException, stackTrace);
     }
   }
 }
@@ -700,7 +703,7 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
 @internal
 base mixin SpinifyQueueMixin on SpinifyBase {
   /// {@nodoc}
-  final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
+  final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
 
   @override
   Future<void> connect(String url) =>
@@ -714,27 +717,27 @@ base mixin SpinifyQueueMixin on SpinifyBase {
   FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready);
 
   @override
-  Future<CentrifugePresence> presence(String channel) =>
-      _eventQueue.push<CentrifugePresence>(
+  Future<SpinifyPresence> presence(String channel) =>
+      _eventQueue.push<SpinifyPresence>(
         'presence',
         () => super.presence(channel),
       );
 
   @override
-  Future<CentrifugePresenceStats> presenceStats(String channel) =>
-      _eventQueue.push<CentrifugePresenceStats>(
+  Future<SpinifyPresenceStats> presenceStats(String channel) =>
+      _eventQueue.push<SpinifyPresenceStats>(
         'presenceStats',
         () => super.presenceStats(channel),
       );
 
   @override
-  Future<CentrifugeHistory> history(
+  Future<SpinifyHistory> history(
     String channel, {
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   }) =>
-      _eventQueue.push<CentrifugeHistory>(
+      _eventQueue.push<SpinifyHistory>(
         'history',
         () => super.history(
           channel,

@@ -3,9 +3,9 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template disconnect}
 /// Disconnect push from Centrifugo server.
 /// {@endtemplate}
-final class CentrifugeDisconnect extends CentrifugeChannelPush {
+final class SpinifyDisconnect extends SpinifyChannelPush {
   /// {@macro disconnect}
-  const CentrifugeDisconnect({
+  const SpinifyDisconnect({
     required super.timestamp,
     required super.channel,
     required this.code,

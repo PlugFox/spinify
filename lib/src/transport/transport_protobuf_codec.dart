@@ -28,7 +28,6 @@ final class TransportProtobufEncoder extends Converter<pb.Command, List<int>> {
 
   @override
   List<int> convert(pb.GeneratedMessage input) {
-    // TODO(plugfox): Find out better way to encode.
     /* final buffer = pb.CodedBufferWriter();
     input.writeToCodedBufferWriter(buffer);
     return buffer.toBuffer(); */

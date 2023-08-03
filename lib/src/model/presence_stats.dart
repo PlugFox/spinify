@@ -5,9 +5,9 @@ import 'package:meta/meta.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-final class CentrifugePresenceStats {
+final class SpinifyPresenceStats {
   /// {@macro presence_stats}
-  const CentrifugePresenceStats({
+  const SpinifyPresenceStats({
     required this.channel,
     required this.clients,
     required this.users,

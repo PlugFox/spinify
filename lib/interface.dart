@@ -1,7 +1,7 @@
 library interface;
 
-export 'package:spinify/src/client/centrifuge_interface.dart';
 export 'package:spinify/src/client/config.dart';
+export 'package:spinify/src/client/spinify_interface.dart';
 export 'package:spinify/src/client/state.dart';
 export 'package:spinify/src/client/states_stream.dart';
 export 'package:spinify/src/model/client_info.dart';
@@ -11,7 +11,7 @@ export 'package:spinify/src/model/publication.dart';
 export 'package:spinify/src/subscription/subscription.dart'
     show
         ISpinifySubscription,
-        CentrifugeClientSubscription,
-        CentrifugeServerSubscription;
+        SpinifyClientSubscription,
+        SpinifyServerSubscription;
 export 'package:spinify/src/subscription/subscription_config.dart';
 export 'package:spinify/src/subscription/subscription_state.dart';

@@ -3,9 +3,9 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template connect}
 /// Connect push from Centrifugo server.
 /// {@endtemplate}
-final class CentrifugeConnect extends CentrifugeChannelPush {
+final class SpinifyConnect extends SpinifyChannelPush {
   /// {@macro connect}
-  const CentrifugeConnect({
+  const SpinifyConnect({
     required super.timestamp,
     required super.channel,
     required this.client,

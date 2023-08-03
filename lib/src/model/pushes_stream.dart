@@ -11,10 +11,10 @@ import 'package:spinify/src/model/publication.dart';
 /// {@subCategory Pushes}
 /// {@subCategory Events}
 /// {@subCategory Channel}
-final class CentrifugePushesStream extends StreamView<CentrifugeChannelPush> {
+final class SpinifyPushesStream extends StreamView<SpinifyChannelPush> {
   /// Stream of received events.
-  CentrifugePushesStream({
-    required Stream<CentrifugeChannelPush> pushes,
+  SpinifyPushesStream({
+    required Stream<SpinifyChannelPush> pushes,
     required this.publications,
     required this.messages,
     required this.presenceEvents,
@@ -23,23 +23,23 @@ final class CentrifugePushesStream extends StreamView<CentrifugeChannelPush> {
   }) : super(pushes);
 
   /// Publications stream.
-  final Stream<CentrifugePublication> publications;
+  final Stream<SpinifyPublication> publications;
 
   /// Messages stream.
-  final Stream<CentrifugeMessage> messages;
+  final Stream<SpinifyMessage> messages;
 
   /// Stream of presence (join & leave) events.
-  final Stream<CentrifugeChannelPresence> presenceEvents;
+  final Stream<SpinifyChannelPresence> presenceEvents;
 
   /// Join events
-  final Stream<CentrifugeJoin> joinEvents;
+  final Stream<SpinifyJoin> joinEvents;
 
   /// Leave events
-  final Stream<CentrifugeLeave> leaveEvents;
+  final Stream<SpinifyLeave> leaveEvents;
 
-  /// Filtered stream of data of [CentrifugeEvent].
-  Stream<T> whereType<T extends CentrifugeChannelPush>() =>
-      transform<T>(StreamTransformer<CentrifugeChannelPush, T>.fromHandlers(
+  /// Filtered stream of data of [SpinifyEvent].
+  Stream<T> whereType<T extends SpinifyChannelPush>() =>
+      transform<T>(StreamTransformer<SpinifyChannelPush, T>.fromHandlers(
         handleData: (data, sink) => switch (data) {
           T valid => sink.add(valid),
           _ => null,

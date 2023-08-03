@@ -3,9 +3,9 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template message}
 /// Message push from Centrifugo server.
 /// {@endtemplate}
-final class CentrifugeMessage extends CentrifugeChannelPush {
+final class SpinifyMessage extends SpinifyChannelPush {
   /// {@macro message}
-  const CentrifugeMessage({
+  const SpinifyMessage({
     required super.timestamp,
     required super.channel,
     required this.data,

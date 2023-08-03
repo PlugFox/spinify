@@ -32,10 +32,10 @@ final class SubcibedOnChannel {
   final bool recoverable;
 
   /// Stream position.
-  final CentrifugeStreamPosition? since;
+  final SpinifyStreamPosition? since;
 
   /// List of publications since last stream position.
-  final List<CentrifugePublication> publications;
+  final List<SpinifyPublication> publications;
 
   /// Whether channel is recovered after stream failure.
   final bool recovered;

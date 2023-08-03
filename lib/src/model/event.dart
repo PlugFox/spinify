@@ -1,12 +1,12 @@
 import 'package:meta/meta.dart';
 
-/// {@template centrifuge_event}
+/// {@template spinify_event}
 /// Base class for all channel events.
 /// {@endtemplate}
 @immutable
-abstract base class CentrifugeEvent {
-  /// {@template centrifuge_event}
-  const CentrifugeEvent({
+abstract base class SpinifyEvent {
+  /// {@template spinify_event}
+  const SpinifyEvent({
     required this.timestamp,
   });
 

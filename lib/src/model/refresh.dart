@@ -4,9 +4,9 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template refresh}
 /// Refresh push from Centrifugo server.
 /// {@endtemplate}
-final class CentrifugeRefresh extends CentrifugeChannelPush {
+final class SpinifyRefresh extends SpinifyChannelPush {
   /// {@macro refresh}
-  const CentrifugeRefresh({
+  const SpinifyRefresh({
     required super.timestamp,
     required super.channel,
     required this.expires,
@@ -26,9 +26,9 @@ final class CentrifugeRefresh extends CentrifugeChannelPush {
 /// {@nodoc}
 @internal
 @immutable
-final class CentrifugeRefreshResult {
+final class SpinifyRefreshResult {
   /// {@nodoc}
-  const CentrifugeRefreshResult({
+  const SpinifyRefreshResult({
     required this.expires,
     this.client,
     this.version,
@@ -51,9 +51,9 @@ final class CentrifugeRefreshResult {
 /// {@nodoc}
 @internal
 @immutable
-final class CentrifugeSubRefreshResult {
+final class SpinifySubRefreshResult {
   /// {@nodoc}
-  const CentrifugeSubRefreshResult({
+  const SpinifySubRefreshResult({
     required this.expires,
     this.ttl,
   });

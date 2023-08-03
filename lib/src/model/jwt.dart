@@ -20,11 +20,11 @@ import 'package:meta/meta.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-sealed class CentrifugeJWT {
+sealed class SpinifyJWT {
   /// {@macro jwt}
   ///
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
-  const factory CentrifugeJWT({
+  const factory SpinifyJWT({
     required String sub,
     int? exp,
     int? iat,
@@ -37,17 +37,17 @@ sealed class CentrifugeJWT {
     Map<String, Object?>? subs,
     Map<String, Object?>? meta,
     int? expireAt,
-  }) = _CentrifugeJWTImpl;
+  }) = _SpinifyJWTImpl;
 
   /// {@macro jwt}
   ///
   /// Parses JWT, if [secret] is provided
   /// then checks signature by HMAC-SHA256 algorithm.
-  factory CentrifugeJWT.decode(String jwt, [String? secret]) =
-      _CentrifugeJWTImpl.decode;
+  factory SpinifyJWT.decode(String jwt, [String? secret]) =
+      _SpinifyJWTImpl.decode;
 
   /// {@nodoc}
-  const CentrifugeJWT._();
+  const SpinifyJWT._();
 
   /// This is a standard JWT claim which must contain
   /// an ID of the current application user (as string).
@@ -233,8 +233,8 @@ sealed class CentrifugeJWT {
   String encode(String secret);
 }
 
-final class _CentrifugeJWTImpl extends CentrifugeJWT {
-  const _CentrifugeJWTImpl({
+final class _SpinifyJWTImpl extends SpinifyJWT {
+  const _SpinifyJWTImpl({
     required this.sub,
     this.exp,
     this.iat,
@@ -249,7 +249,7 @@ final class _CentrifugeJWTImpl extends CentrifugeJWT {
     this.expireAt,
   }) : super._();
 
-  factory _CentrifugeJWTImpl.decode(String jwt, [String? secret]) {
+  factory _SpinifyJWTImpl.decode(String jwt, [String? secret]) {
     // Разделение токена на составляющие части
     var parts = jwt.split('.');
     if (parts.length != 3) {
@@ -286,7 +286,7 @@ final class _CentrifugeJWTImpl extends CentrifugeJWT {
           const FormatException('Can\'t decode token payload'), stackTrace);
     }
     try {
-      return _CentrifugeJWTImpl(
+      return _SpinifyJWTImpl(
         sub: payload['sub'] as String,
         exp: payload['exp'] as int?,
         iat: payload['iat'] as int?,
@@ -392,7 +392,7 @@ final class _CentrifugeJWTImpl extends CentrifugeJWT {
   }
 
   @override
-  String toString() => 'CentrifugoJWT{sub: $sub}';
+  String toString() => 'SpinifyJWT{sub: $sub}';
 }
 
 /// A converter that converts Base64-encoded strings

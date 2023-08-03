@@ -5,9 +5,9 @@ import 'package:meta/meta.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-final class CentrifugeClientInfo {
+final class SpinifyClientInfo {
   /// {@macro client_info}
-  const CentrifugeClientInfo({
+  const SpinifyClientInfo({
     required this.user,
     required this.client,
     required this.connectionInfo,
@@ -37,14 +37,14 @@ final class CentrifugeClientInfo {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CentrifugeClientInfo &&
+      other is SpinifyClientInfo &&
           user == other.client &&
           client == other.client &&
           connectionInfo == other.connectionInfo &&
           channelInfo == other.channelInfo;
 
   @override
-  String toString() => 'CentrifugeClientInfo{'
+  String toString() => 'SpinifyClientInfo{'
       'user: $user, '
       'client: $client, '
       'connectionInfo: ${connectionInfo == null ? 'null' : 'bytes'}, '

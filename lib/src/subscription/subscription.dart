@@ -9,7 +9,7 @@ import 'package:spinify/src/subscription/subscription_state.dart';
 import 'package:spinify/src/subscription/subscription_states_stream.dart';
 
 /// {@template subscription}
-/// Centrifuge subscription interface.
+/// Spinify subscription interface.
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@category Entity}
@@ -18,16 +18,16 @@ abstract interface class ISpinifySubscription {
   abstract final String channel;
 
   /// Current subscription state.
-  abstract final CentrifugeSubscriptionState state;
+  abstract final SpinifySubscriptionState state;
 
   /// Offset of last successfully received message.
-  abstract final CentrifugeStreamPosition? since;
+  abstract final SpinifyStreamPosition? since;
 
   /// Stream of subscription states.
-  abstract final CentrifugeSubscriptionStateStream states;
+  abstract final SpinifySubscriptionStateStream states;
 
   /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final CentrifugePushesStream stream;
+  abstract final SpinifyPushesStream stream;
 
   /// Await for subscription to be ready.
   /// Ready resolves when subscription successfully subscribed.
@@ -39,17 +39,17 @@ abstract interface class ISpinifySubscription {
 
   /// Fetch publication history inside a channel.
   /// Only for channels where history is enabled.
-  Future<CentrifugeHistory> history({
+  Future<SpinifyHistory> history({
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   });
 
   /// Fetch presence information inside a channel.
-  Future<CentrifugePresence> presence();
+  Future<SpinifyPresence> presence();
 
   /// Fetch presence stats information inside a channel.
-  Future<CentrifugePresenceStats> presenceStats();
+  Future<SpinifyPresenceStats> presenceStats();
 }
 
 /// {@template client_subscription}
@@ -107,7 +107,7 @@ abstract interface class ISpinifySubscription {
 /// {@category Subscription}
 /// {@category Entity}
 /// {@subCategory Client-side}
-abstract interface class CentrifugeClientSubscription
+abstract interface class SpinifyClientSubscription
     implements ISpinifySubscription {
   /// Start subscribing to a channel
   Future<void> subscribe();
@@ -119,7 +119,7 @@ abstract interface class CentrifugeClientSubscription
   ]);
 
   @override
-  String toString() => 'CentrifugeClientSubscription{channel: $channel}';
+  String toString() => 'SpinifyClientSubscription{channel: $channel}';
 }
 
 /// {@template server_subscription}
@@ -137,8 +137,8 @@ abstract interface class CentrifugeClientSubscription
 /// {@category Subscription}
 /// {@category Entity}
 /// {@subCategory Server-side}
-abstract interface class CentrifugeServerSubscription
+abstract interface class SpinifyServerSubscription
     implements ISpinifySubscription {
   @override
-  String toString() => 'CentrifugeServerSubscription{channel: $channel}';
+  String toString() => 'SpinifyServerSubscription{channel: $channel}';
 }

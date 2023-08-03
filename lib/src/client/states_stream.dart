@@ -2,32 +2,32 @@ import 'dart:async';
 
 import 'package:spinify/src/client/state.dart';
 
-/// Stream of Centrifuge's [CentrifugeState] changes.
+/// Stream of Spinify's [SpinifyState] changes.
 /// {@category Client}
 /// {@category Entity}
-final class CentrifugeStatesStream extends StreamView<CentrifugeState> {
-  /// Stream of Centrifuge's [CentrifugeState] changes.
-  CentrifugeStatesStream(super.stream);
+final class SpinifyStatesStream extends StreamView<SpinifyState> {
+  /// Stream of Spinify's [SpinifyState] changes.
+  SpinifyStatesStream(super.stream);
 
   /// Connection has not yet been established, but the WebSocket is trying.
-  late final Stream<CentrifugeState$Disconnected> disconnected =
-      whereType<CentrifugeState$Disconnected>();
+  late final Stream<SpinifyState$Disconnected> disconnected =
+      whereType<SpinifyState$Disconnected>();
 
   /// Disconnected state
-  late final Stream<CentrifugeState$Connecting> connecting =
-      whereType<CentrifugeState$Connecting>();
+  late final Stream<SpinifyState$Connecting> connecting =
+      whereType<SpinifyState$Connecting>();
 
   /// Connected
-  late final Stream<CentrifugeState$Connected> connected =
-      whereType<CentrifugeState$Connected>();
+  late final Stream<SpinifyState$Connected> connected =
+      whereType<SpinifyState$Connected>();
 
   /// Permanently closed
-  late final Stream<CentrifugeState$Closed> closed =
-      whereType<CentrifugeState$Closed>();
+  late final Stream<SpinifyState$Closed> closed =
+      whereType<SpinifyState$Closed>();
 
-  /// Filtered stream of data of [CentrifugeState].
-  Stream<T> whereType<T extends CentrifugeState>() =>
-      transform<T>(StreamTransformer<CentrifugeState, T>.fromHandlers(
+  /// Filtered stream of data of [SpinifyState].
+  Stream<T> whereType<T extends SpinifyState>() =>
+      transform<T>(StreamTransformer<SpinifyState, T>.fromHandlers(
         handleData: (data, sink) => switch (data) {
           T valid => sink.add(valid),
           _ => null,

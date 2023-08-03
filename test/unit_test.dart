@@ -2,10 +2,10 @@
 
 import 'package:test/test.dart';
 
-import 'unit/centrifuge_test.dart' as centrifuge_test;
+import 'unit/spinify_test.dart' as spinify_test;
 
 void main() {
   group('Unit', () {
-    centrifuge_test.main();
+    spinify_test.main();
   });
 }

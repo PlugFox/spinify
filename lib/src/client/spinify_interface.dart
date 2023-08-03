@@ -12,7 +12,7 @@ import 'package:spinify/src/model/stream_position.dart';
 import 'package:spinify/src/subscription/subscription.dart';
 import 'package:spinify/src/subscription/subscription_config.dart';
 
-/// Centrifuge client interface.
+/// Spinify client interface.
 abstract interface class ISpinify
     implements
         ISpinifyStateOwner,
@@ -43,87 +43,87 @@ abstract interface class ISpinify
   Future<void> close();
 }
 
-/// Centrifuge client state owner interface.
+/// Spinify client state owner interface.
 abstract interface class ISpinifyStateOwner {
   /// State of client.
-  CentrifugeState get state;
+  SpinifyState get state;
 
   /// Stream of client states.
-  abstract final CentrifugeStatesStream states;
+  abstract final SpinifyStatesStream states;
 }
 
-/// Centrifuge send publication interface.
+/// Spinify send publication interface.
 abstract interface class ISpinifyPublicationSender {
   /// Publish data to specific subscription channel
   Future<void> publish(String channel, List<int> data);
 }
 
-/// Centrifuge send asynchronous message interface.
+/// Spinify send asynchronous message interface.
 abstract interface class ISpinifyAsyncMessageSender {
   /// Send asynchronous message to a server. This method makes sense
-  /// only when using Centrifuge library for Go on a server side. In Centrifuge
+  /// only when using Centrifuge library for Go on a server side. In Centrifugo
   /// asynchronous message handler does not exist.
   Future<void> send(List<int> data);
 }
 
-/// Centrifuge event receiver interface.
+/// Spinify event receiver interface.
 abstract interface class ISpinifyEventReceiver {
   /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final CentrifugePushesStream stream;
+  abstract final SpinifyPushesStream stream;
 }
 
-/// Centrifuge client subscriptions manager interface.
+/// Spinify client subscriptions manager interface.
 abstract interface class ISpinifyClientSubscriptionsManager {
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
   /// in the registry or throws an exception if the Subscription
   /// is already there. We will discuss common Subscription options below.
-  CentrifugeClientSubscription newSubscription(
+  SpinifyClientSubscription newSubscription(
     String channel, [
-    CentrifugeSubscriptionConfig? config,
+    SpinifySubscriptionConfig? config,
   ]);
 
   /// Get subscription to the channel
   /// from internal registry or null if not found.
   ///
-  /// You need to call [CentrifugeClientSubscription.subscribe]
+  /// You need to call [SpinifyClientSubscription.subscribe]
   /// to start receiving events
   /// in the channel.
-  CentrifugeClientSubscription? getSubscription(String channel);
+  SpinifyClientSubscription? getSubscription(String channel);
 
   /// Remove the [Subscription] from internal registry
-  /// and unsubscribe from [CentrifugeClientSubscription.channel].
-  Future<void> removeSubscription(CentrifugeClientSubscription subscription);
+  /// and unsubscribe from [SpinifyClientSubscription.channel].
+  Future<void> removeSubscription(SpinifyClientSubscription subscription);
 
   /// Get map wirth all registered client-side subscriptions.
   /// Returns all registered subscriptions,
   /// so you can iterate over all and do some action if required
   /// (for example, you want to unsubscribe/remove all subscriptions).
-  Map<String, CentrifugeClientSubscription> get subscriptions;
+  Map<String, SpinifyClientSubscription> get subscriptions;
 }
 
-/// Centrifuge presence owner interface.
+/// Spinify presence owner interface.
 abstract interface class ISpinifyPresenceOwner {
   /// Fetch presence information inside a channel.
-  Future<CentrifugePresence> presence(String channel);
+  Future<SpinifyPresence> presence(String channel);
 
   /// Fetch presence stats information inside a channel.
-  Future<CentrifugePresenceStats> presenceStats(String channel);
+  Future<SpinifyPresenceStats> presenceStats(String channel);
 }
 
-/// Centrifuge history owner interface.
+/// Spinify history owner interface.
 abstract interface class ISpinifyHistoryOwner {
   /// Fetch publication history inside a channel.
   /// Only for channels where history is enabled.
-  Future<CentrifugeHistory> history(
+  Future<SpinifyHistory> history(
     String channel, {
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   });
 }
 
-/// Centrifuge remote procedure call interface.
+/// Spinify remote procedure call interface.
 abstract interface class ISpinifyRemoteProcedureCall {
   /// Send arbitrary RPC and wait for response.
   Future<List<int>> rpc(String method, List<int> data);

@@ -7,16 +7,16 @@ import 'package:spinify/src/model/stream_position.dart';
 /// {@endtemplate}
 /// {@category Entity}
 @immutable
-final class CentrifugeHistory {
+final class SpinifyHistory {
   /// {@macro history}
-  const CentrifugeHistory({
+  const SpinifyHistory({
     required this.publications,
     required this.since,
   });
 
   /// Publications
-  final List<CentrifugePublication> publications;
+  final List<SpinifyPublication> publications;
 
   /// Offset and epoch of last publication in publications list
-  final CentrifugeStreamPosition since;
+  final SpinifyStreamPosition since;
 }

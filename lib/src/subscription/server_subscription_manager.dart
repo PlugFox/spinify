@@ -16,37 +16,37 @@ final class ServerSubscriptionManager {
   ServerSubscriptionManager(ISpinifyTransport transport)
       : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
-  /// Centrifuge client weak reference.
+  /// Spinify client weak reference.
   /// {@nodoc}
   final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Subscriptions registry (channel -> subscription).
-  /// Channel : CentrifugeClientSubscription
+  /// Channel : SpinifyClientSubscription
   /// {@nodoc}
-  final Map<String, CentrifugeServerSubscriptionImpl> _channelSubscriptions =
-      <String, CentrifugeServerSubscriptionImpl>{};
+  final Map<String, SpinifyServerSubscriptionImpl> _channelSubscriptions =
+      <String, SpinifyServerSubscriptionImpl>{};
 
   /// Get map wirth all registered client-side subscriptions.
   /// Returns all registered subscriptions,
   /// so you can iterate over all and do some action if required
   /// (for example, you want to unsubscribe/remove all subscriptions).
   /// {@nodoc}
-  Map<String, CentrifugeServerSubscription> get subscriptions =>
-      UnmodifiableMapView<String, CentrifugeServerSubscription>({
+  Map<String, SpinifyServerSubscription> get subscriptions =>
+      UnmodifiableMapView<String, SpinifyServerSubscription>({
         for (final entry in _channelSubscriptions.entries)
           entry.key: entry.value,
       });
 
-  /// Called on [CentrifugeSubscribe] push from server.
-  void subscribe(CentrifugeSubscribe subscribe) {}
+  /// Called on [SpinifySubscribe] push from server.
+  void subscribe(SpinifySubscribe subscribe) {}
 
-  /// Called on [CentrifugeUnsubscribe] push from server.
-  void unsubscribe(CentrifugeUnsubscribe subscribe) {}
+  /// Called on [SpinifyUnsubscribe] push from server.
+  void unsubscribe(SpinifyUnsubscribe subscribe) {}
 
   /// Called when client finished connection handshake with server.
   /// Add non existing subscriptions to registry and mark all connected.
   /// Remove subscriptions which are not in [subs] argument.
-  void upsert(List<CentrifugeSubscribe> subs) {
+  void upsert(List<SpinifySubscribe> subs) {
     final currentChannels = _channelSubscriptions.keys.toSet();
     // Remove subscriptions which are not in subs argument.
     for (final channel in currentChannels) {
@@ -55,7 +55,7 @@ final class ServerSubscriptionManager {
     }
     // Add non existing subscriptions to registry and mark all connected.
     for (final sub in subs) {
-      (_channelSubscriptions[sub.channel] ??= CentrifugeServerSubscriptionImpl(
+      (_channelSubscriptions[sub.channel] ??= SpinifyServerSubscriptionImpl(
         channel: sub.channel,
         transportWeakRef: _transportWeakRef,
       ))
@@ -109,15 +109,15 @@ final class ServerSubscriptionManager {
   /// Handle push event from server for the specific channel.
   /// {@nodoc}
   @internal
-  void onPush(CentrifugeChannelPush push) =>
+  void onPush(SpinifyChannelPush push) =>
       _channelSubscriptions[push.channel]?.onPush(push);
 
   /// Get subscription to the channel
   /// from internal registry or null if not found.
   ///
-  /// You need to call [CentrifugeClientSubscription.subscribe]
+  /// You need to call [SpinifyClientSubscription.subscribe]
   /// to start receiving events
   /// {@nodoc}
-  CentrifugeServerSubscription? operator [](String channel) =>
+  SpinifyServerSubscription? operator [](String channel) =>
       _channelSubscriptions[channel];
 }

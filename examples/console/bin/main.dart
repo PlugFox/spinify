@@ -12,11 +12,11 @@ void main([List<String>? args]) {
   final options = _extractOptions(args ?? const <String>[]);
   runZonedGuarded<void>(
     () async {
-      // Create centrifuge client.
+      // Create Spinify client.
       final client = Spinify(
         SpinifyConfig(
           client: (
-            name: 'Centrifuge Console Example',
+            name: 'Spinify Console Example',
             version: '0.0.1',
           ),
           getToken: () =>
@@ -54,7 +54,7 @@ void main([List<String>? args]) {
       io.exit(1);
     },
     zoneValues: {
-      #dev.plugfox.centrifuge.log: options.verbose,
+      #dev.plugfox.spinify.log: options.verbose,
     },
   );
 }
@@ -74,11 +74,11 @@ void main([List<String>? args]) {
         ))
       .parse(args);
   final token = result['token']?.toString() ??
-      io.Platform.environment['CENTRIFUGE_JWT_TOKEN'];
+      io.Platform.environment['SPINIFY_JWT_TOKEN'];
   if (token == null || token.isEmpty || token.split('.').length != 3) {
     print('Please provide a valid JWT token as argument with --token option '
         'or '
-        'CENTRIFUGE_JWT_TOKEN environment variable.');
+        'SPINIFY_JWT_TOKEN environment variable.');
     io.exit(1);
   }
   return (

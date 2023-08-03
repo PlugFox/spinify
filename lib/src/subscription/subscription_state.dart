@@ -13,40 +13,39 @@ import 'package:meta/meta.dart';
 /// {@category Subscription}
 /// {@category Entity}
 @immutable
-sealed class CentrifugeSubscriptionState
-    extends _$CentrifugeSubscriptionStateBase {
+sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
   /// {@macro subscription_state}
-  const CentrifugeSubscriptionState(
+  const SpinifySubscriptionState(
       {required super.timestamp,
       required super.since,
       required super.recoverable});
 
   /// Unsubscribed
   /// {@macro subscription_state}
-  factory CentrifugeSubscriptionState.unsubscribed({
+  factory SpinifySubscriptionState.unsubscribed({
     required int code,
     required String reason,
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
     bool recoverable,
-  }) = CentrifugeSubscriptionState$Unsubscribed;
+  }) = SpinifySubscriptionState$Unsubscribed;
 
   /// Subscribing
   /// {@macro subscription_state}
-  factory CentrifugeSubscriptionState.subscribing({
+  factory SpinifySubscriptionState.subscribing({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
     bool recoverable,
-  }) = CentrifugeSubscriptionState$Subscribing;
+  }) = SpinifySubscriptionState$Subscribing;
 
   /// Subscribed
   /// {@macro subscription_state}
-  factory CentrifugeSubscriptionState.subscribed({
+  factory SpinifySubscriptionState.subscribed({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
     bool recoverable,
     DateTime? ttl,
-  }) = CentrifugeSubscriptionState$Subscribed;
+  }) = SpinifySubscriptionState$Subscribed;
 }
 
 /// Unsubscribed state
@@ -54,10 +53,10 @@ sealed class CentrifugeSubscriptionState
 /// {@nodoc}
 /// {@category Subscription}
 /// {@category Entity}
-final class CentrifugeSubscriptionState$Unsubscribed
-    extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
+final class SpinifySubscriptionState$Unsubscribed
+    extends SpinifySubscriptionState with _$SpinifySubscriptionState {
   /// {@nodoc}
-  CentrifugeSubscriptionState$Unsubscribed({
+  SpinifySubscriptionState$Unsubscribed({
     required this.code,
     required this.reason,
     DateTime? timestamp,
@@ -85,14 +84,14 @@ final class CentrifugeSubscriptionState$Unsubscribed
 
   @override
   R map<R>({
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Unsubscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Unsubscribed>
         unsubscribed,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribing>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribing>
         subscribing,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribed>
         subscribed,
   }) =>
       unsubscribed(this);
@@ -111,10 +110,10 @@ final class CentrifugeSubscriptionState$Unsubscribed
 /// {@nodoc}
 /// {@category Subscription}
 /// {@category Entity}
-final class CentrifugeSubscriptionState$Subscribing
-    extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
+final class SpinifySubscriptionState$Subscribing
+    extends SpinifySubscriptionState with _$SpinifySubscriptionState {
   /// {@nodoc}
-  CentrifugeSubscriptionState$Subscribing({
+  SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
     bool recoverable = false,
@@ -134,14 +133,14 @@ final class CentrifugeSubscriptionState$Subscribing
 
   @override
   R map<R>({
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Unsubscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Unsubscribed>
         unsubscribed,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribing>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribing>
         subscribing,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribed>
         subscribed,
   }) =>
       subscribing(this);
@@ -160,10 +159,10 @@ final class CentrifugeSubscriptionState$Subscribing
 /// {@nodoc}
 /// {@category Subscription}
 /// {@category Entity}
-final class CentrifugeSubscriptionState$Subscribed
-    extends CentrifugeSubscriptionState with _$CentrifugeSubscriptionState {
+final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
+    with _$SpinifySubscriptionState {
   /// {@nodoc}
-  CentrifugeSubscriptionState$Subscribed({
+  SpinifySubscriptionState$Subscribed({
     DateTime? timestamp,
     ({fixnum.Int64 offset, String epoch})? since,
     bool recoverable = false,
@@ -187,14 +186,14 @@ final class CentrifugeSubscriptionState$Subscribed
 
   @override
   R map<R>({
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Unsubscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Unsubscribed>
         unsubscribed,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribing>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribing>
         subscribing,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribed>
         subscribed,
   }) =>
       subscribed(this);
@@ -210,18 +209,17 @@ final class CentrifugeSubscriptionState$Subscribed
 }
 
 /// {@nodoc}
-base mixin _$CentrifugeSubscriptionState on CentrifugeSubscriptionState {}
+base mixin _$SpinifySubscriptionState on SpinifySubscriptionState {}
 
-/// Pattern matching for [CentrifugeSubscriptionState].
-typedef CentrifugeSubscriptionStateMatch<R,
-        S extends CentrifugeSubscriptionState>
-    = R Function(S state);
+/// Pattern matching for [SpinifySubscriptionState].
+typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
+    Function(S state);
 
 /// {@nodoc}
 @immutable
-abstract base class _$CentrifugeSubscriptionStateBase {
+abstract base class _$SpinifySubscriptionStateBase {
   /// {@nodoc}
-  const _$CentrifugeSubscriptionStateBase({
+  const _$SpinifySubscriptionStateBase({
     required this.timestamp,
     required this.since,
     required this.recoverable,
@@ -245,29 +243,27 @@ abstract base class _$CentrifugeSubscriptionStateBase {
   /// Whether channel is subscribed.
   abstract final bool isSubscribed;
 
-  /// Pattern matching for [CentrifugeSubscriptionState].
+  /// Pattern matching for [SpinifySubscriptionState].
   R map<R>({
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Unsubscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Unsubscribed>
         unsubscribed,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribing>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribing>
         subscribing,
-    required CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribed>
+    required SpinifySubscriptionStateMatch<R,
+            SpinifySubscriptionState$Subscribed>
         subscribed,
   });
 
-  /// Pattern matching for [CentrifugeSubscriptionState].
+  /// Pattern matching for [SpinifySubscriptionState].
   R maybeMap<R>({
     required R Function() orElse,
-    CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Unsubscribed>?
+    SpinifySubscriptionStateMatch<R, SpinifySubscriptionState$Unsubscribed>?
         unsubscribed,
-    CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribing>?
+    SpinifySubscriptionStateMatch<R, SpinifySubscriptionState$Subscribing>?
         subscribing,
-    CentrifugeSubscriptionStateMatch<R, CentrifugeSubscriptionState$Subscribed>?
+    SpinifySubscriptionStateMatch<R, SpinifySubscriptionState$Subscribed>?
         subscribed,
   }) =>
       map<R>(
@@ -276,15 +272,13 @@ abstract base class _$CentrifugeSubscriptionStateBase {
         subscribed: subscribed ?? (_) => orElse(),
       );
 
-  /// Pattern matching for [CentrifugeSubscriptionState].
+  /// Pattern matching for [SpinifySubscriptionState].
   R? mapOrNull<R>({
-    CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Unsubscribed>?
+    SpinifySubscriptionStateMatch<R, SpinifySubscriptionState$Unsubscribed>?
         unsubscribed,
-    CentrifugeSubscriptionStateMatch<R,
-            CentrifugeSubscriptionState$Subscribing>?
+    SpinifySubscriptionStateMatch<R, SpinifySubscriptionState$Subscribing>?
         subscribing,
-    CentrifugeSubscriptionStateMatch<R, CentrifugeSubscriptionState$Subscribed>?
+    SpinifySubscriptionStateMatch<R, SpinifySubscriptionState$Subscribed>?
         subscribed,
   }) =>
       map<R?>(

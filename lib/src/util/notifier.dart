@@ -7,7 +7,7 @@ typedef ValueChanged<T> = void Function(T value);
 /// Notify about value changes.
 /// {@nodoc}
 @internal
-abstract interface class CentrifugeListenable<T> {
+abstract interface class SpinifyListenable<T> {
   /// Add listener.
   /// {@nodoc}
   void addListener(ValueChanged<T> listener);
@@ -20,10 +20,10 @@ abstract interface class CentrifugeListenable<T> {
 /// Notify about value changes.
 /// {@nodoc}
 @internal
-final class CentrifugeChangeNotifier<T> implements CentrifugeListenable<T> {
+final class SpinifyChangeNotifier<T> implements SpinifyListenable<T> {
   /// Notify about value changes.
   /// {@nodoc}
-  CentrifugeChangeNotifier();
+  SpinifyChangeNotifier();
 
   /// Notify about value changes.
   /// {@nodoc}

@@ -4,22 +4,22 @@ import 'package:meta/meta.dart';
 import 'package:spinify/src/model/pubspec.yaml.g.dart';
 
 /// Token used for authentication
-typedef CentrifugeToken = String;
+typedef SpinifyToken = String;
 
 /// Callback to get/refresh tokens
 /// This callback is used for initial connection
 /// and for refreshing expired tokens.
 ///
 /// If method returns null then connection will be established without token.
-typedef CentrifugeTokenCallback = FutureOr<CentrifugeToken?> Function();
+typedef SpinifyTokenCallback = FutureOr<SpinifyToken?> Function();
 
 /// Callback to get initial connection payload data.
 ///
 /// If method returns null then no payload will be sent at connect time.
-typedef CentrifugeConnectionPayloadCallback = FutureOr<List<int>?> Function();
+typedef SpinifyConnectionPayloadCallback = FutureOr<List<int>?> Function();
 
-/// {@template centrifuge_config}
-/// Centrifuge client common options.
+/// {@template spinify_config}
+/// Spinify client common options.
 ///
 /// There are several common options available when creating Client instance.
 ///
@@ -32,7 +32,7 @@ typedef CentrifugeConnectionPayloadCallback = FutureOr<List<int>?> Function();
 /// {@category Entity}
 @immutable
 final class SpinifyConfig {
-  /// {@macro centrifuge_config}
+  /// {@macro spinify_config}
   SpinifyConfig({
     this.getToken,
     this.getPayload,
@@ -52,7 +52,7 @@ final class SpinifyConfig {
 
   /// Create a default config
   ///
-  /// {@macro centrifuge_config}
+  /// {@macro spinify_config}
   factory SpinifyConfig.byDefault() = SpinifyConfig;
 
   /// Callback to get/refresh tokens
@@ -60,13 +60,13 @@ final class SpinifyConfig {
   /// and for refreshing expired tokens.
   ///
   /// If method returns null then connection will be established without token.
-  final CentrifugeTokenCallback? getToken;
+  final SpinifyTokenCallback? getToken;
 
   /// Callback to get connection payload data.
   /// The resulted data send with every connect request.
   ///
   /// If method returns null then no payload will be sent at connect time.
-  final CentrifugeConnectionPayloadCallback? getPayload;
+  final SpinifyConnectionPayloadCallback? getPayload;
 
   /// The additional delay between expected server heartbeat pings.
   ///
@@ -101,5 +101,5 @@ final class SpinifyConfig {
   final Duration timeout;
 
   @override
-  String toString() => 'CentrifugeConfig{}';
+  String toString() => 'SpinifyConfig{}';
 }

@@ -2,29 +2,29 @@ import 'dart:async';
 
 import 'package:spinify/src/subscription/subscription_state.dart';
 
-/// Stream of Centrifuge's [CentrifugeSubscriptionState] changes.
+/// Stream of Spinify's [SpinifySubscriptionState] changes.
 /// {@category Subscription}
 /// {@category Entity}
-final class CentrifugeSubscriptionStateStream
-    extends StreamView<CentrifugeSubscriptionState> {
-  /// Stream of Centrifuge's [CentrifugeSubscriptionState] changes.
-  CentrifugeSubscriptionStateStream(super.stream);
+final class SpinifySubscriptionStateStream
+    extends StreamView<SpinifySubscriptionState> {
+  /// Stream of Spinify's [SpinifySubscriptionState] changes.
+  SpinifySubscriptionStateStream(super.stream);
 
   /// Unsubscribed
-  late final Stream<CentrifugeSubscriptionState$Unsubscribed> unsubscribed =
-      whereType<CentrifugeSubscriptionState$Unsubscribed>();
+  late final Stream<SpinifySubscriptionState$Unsubscribed> unsubscribed =
+      whereType<SpinifySubscriptionState$Unsubscribed>();
 
   /// Subscribing
-  late final Stream<CentrifugeSubscriptionState$Subscribing> subscribing =
-      whereType<CentrifugeSubscriptionState$Subscribing>();
+  late final Stream<SpinifySubscriptionState$Subscribing> subscribing =
+      whereType<SpinifySubscriptionState$Subscribing>();
 
   /// Subscribed
-  late final Stream<CentrifugeSubscriptionState$Subscribed> subscribed =
-      whereType<CentrifugeSubscriptionState$Subscribed>();
+  late final Stream<SpinifySubscriptionState$Subscribed> subscribed =
+      whereType<SpinifySubscriptionState$Subscribed>();
 
-  /// Filtered stream of data of [CentrifugeSubscriptionState].
-  Stream<T> whereType<T extends CentrifugeSubscriptionState>() => transform<T>(
-          StreamTransformer<CentrifugeSubscriptionState, T>.fromHandlers(
+  /// Filtered stream of data of [SpinifySubscriptionState].
+  Stream<T> whereType<T extends SpinifySubscriptionState>() =>
+      transform<T>(StreamTransformer<SpinifySubscriptionState, T>.fromHandlers(
         handleData: (data, sink) => switch (data) {
           T valid => sink.add(valid),
           _ => null,

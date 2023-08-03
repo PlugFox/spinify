@@ -16,35 +16,35 @@ final class ClientSubscriptionManager {
   ClientSubscriptionManager(ISpinifyTransport transport)
       : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
-  /// Centrifuge client weak reference.
+  /// Spinify client weak reference.
   /// {@nodoc}
   final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Subscriptions registry (channel -> subscription).
-  /// Channel : CentrifugeClientSubscription
+  /// Channel : SpinifyClientSubscription
   /// {@nodoc}
-  final Map<String, CentrifugeClientSubscriptionImpl> _channelSubscriptions =
-      <String, CentrifugeClientSubscriptionImpl>{};
+  final Map<String, SpinifyClientSubscriptionImpl> _channelSubscriptions =
+      <String, SpinifyClientSubscriptionImpl>{};
 
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
   /// in the registry or throws an exception if the Subscription
   /// is already there. We will discuss common Subscription options below.
   /// {@nodoc}
-  CentrifugeClientSubscription newSubscription(
+  SpinifyClientSubscription newSubscription(
     String channel,
-    CentrifugeSubscriptionConfig? config,
+    SpinifySubscriptionConfig? config,
   ) {
     if (_channelSubscriptions.containsKey(channel)) {
-      throw CentrifugeSubscriptionException(
+      throw SpinifySubscriptionException(
         channel: channel,
         message: 'Subscription to a channel "$channel" already exists '
             'in client\'s internal registry',
       );
     }
-    return _channelSubscriptions[channel] = CentrifugeClientSubscriptionImpl(
+    return _channelSubscriptions[channel] = SpinifyClientSubscriptionImpl(
       channel: channel,
-      config: config ?? const CentrifugeSubscriptionConfig.byDefault(),
+      config: config ?? const SpinifySubscriptionConfig.byDefault(),
       transportWeakRef: _transportWeakRef,
     );
   }
@@ -54,17 +54,17 @@ final class ClientSubscriptionManager {
   /// so you can iterate over all and do some action if required
   /// (for example, you want to unsubscribe/remove all subscriptions).
   /// {@nodoc}
-  Map<String, CentrifugeClientSubscription> get subscriptions =>
-      UnmodifiableMapView<String, CentrifugeClientSubscription>({
+  Map<String, SpinifyClientSubscription> get subscriptions =>
+      UnmodifiableMapView<String, SpinifyClientSubscription>({
         for (final entry in _channelSubscriptions.entries)
           entry.key: entry.value,
       });
 
-  /// Remove the [CentrifugeClientSubscription] from internal registry
-  /// and unsubscribe from [CentrifugeClientSubscription.channel].
+  /// Remove the [SpinifyClientSubscription] from internal registry
+  /// and unsubscribe from [SpinifyClientSubscription.channel].
   /// {@nodoc}
   Future<void> removeSubscription(
-    CentrifugeClientSubscription subscription,
+    SpinifyClientSubscription subscription,
   ) async {
     final subFromRegistry = _channelSubscriptions[subscription.channel];
     try {
@@ -73,11 +73,11 @@ final class ClientSubscriptionManager {
         // If not the same subscription instance - unsubscribe it too.
         await subscription.unsubscribe();
       }
-    } on CentrifugeException {
+    } on SpinifyException {
       rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
-        CentrifugeSubscriptionException(
+        SpinifySubscriptionException(
           channel: subscription.channel,
           message: 'Error while unsubscribing',
           error: error,
@@ -124,15 +124,15 @@ final class ClientSubscriptionManager {
   /// Handle push event from server for the specific channel.
   /// {@nodoc}
   @internal
-  void onPush(CentrifugeChannelPush push) =>
+  void onPush(SpinifyChannelPush push) =>
       _channelSubscriptions[push.channel]?.onPush(push);
 
   /// Get subscription to the channel
   /// from internal registry or null if not found.
   ///
-  /// You need to call [CentrifugeClientSubscription.subscribe]
+  /// You need to call [SpinifyClientSubscription.subscribe]
   /// to start receiving events
   /// {@nodoc}
-  CentrifugeClientSubscription? operator [](String channel) =>
+  SpinifyClientSubscription? operator [](String channel) =>
       _channelSubscriptions[channel];
 }

@@ -36,22 +36,22 @@ import 'package:ws/ws.dart';
 
 /// {@nodoc}
 @internal
-abstract base class CentrifugeWSPBTransportBase implements ISpinifyTransport {
+abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
   /// {@nodoc}
-  CentrifugeWSPBTransportBase({
+  SpinifyWSPBTransportBase({
     required SpinifyConfig config,
   })  : _config = config,
         _webSocket = WebSocketClient(
           WebSocketOptions.selector(
             js: () => WebSocketOptions.js(
               connectionRetryInterval: null,
-              protocols: _$protocolsCentrifugeProtobuf,
+              protocols: _$protocolsSpinifyProtobuf,
               timeout: config.timeout,
               useBlobForBinary: false,
             ),
             vm: () => WebSocketOptions.vm(
               connectionRetryInterval: null,
-              protocols: _$protocolsCentrifugeProtobuf,
+              protocols: _$protocolsSpinifyProtobuf,
               timeout: config.timeout,
               headers: config.headers,
             ),
@@ -62,17 +62,17 @@ abstract base class CentrifugeWSPBTransportBase implements ISpinifyTransport {
 
   /// Protocols for websocket.
   /// {@nodoc}
-  static const List<String> _$protocolsCentrifugeProtobuf = <String>[
+  static const List<String> _$protocolsSpinifyProtobuf = <String>[
     'centrifuge-protobuf'
   ];
 
-  /// Centrifuge config.
+  /// Spinify config.
   /// {@nodoc}
   final SpinifyConfig _config;
 
   @override
-  final CentrifugeChangeNotifier<CentrifugeEvent> events =
-      CentrifugeChangeNotifier<CentrifugeEvent>();
+  final SpinifyChangeNotifier<SpinifyEvent> events =
+      SpinifyChangeNotifier<SpinifyEvent>();
 
   /// Init transport, override this method to add custom logic.
   /// {@nodoc}
@@ -117,15 +117,15 @@ abstract base class CentrifugeWSPBTransportBase implements ISpinifyTransport {
 /// {@nodoc}
 @internal
 // ignore: lines_longer_than_80_chars
-final class SpinifyWSPBTransport = CentrifugeWSPBTransportBase
+final class SpinifyWSPBTransport = SpinifyWSPBTransportBase
     with
-        CentrifugeWSPBReplyMixin,
-        CentrifugeWSPBStateHandlerMixin,
-        CentrifugeWSPBSenderMixin,
-        CentrifugeWSPBConnectionMixin,
-        CentrifugeWSPBPingPongMixin,
-        CentrifugeWSPBSubscription,
-        CentrifugeWSPBHandlerMixin;
+        SpinifyWSPBReplyMixin,
+        SpinifyWSPBStateHandlerMixin,
+        SpinifyWSPBSenderMixin,
+        SpinifyWSPBConnectionMixin,
+        SpinifyWSPBPingPongMixin,
+        SpinifyWSPBSubscription,
+        SpinifyWSPBHandlerMixin;
 
 /// Stored completer for responses.
 /// {@nodoc}
@@ -137,7 +137,7 @@ typedef _ReplyCompleter = ({
 /// Mixin responsible for holding reply completers.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBReplyMixin on CentrifugeWSPBTransportBase {
+base mixin SpinifyWSPBReplyMixin on SpinifyWSPBTransportBase {
   /// Completers for messages by id.
   /// Contains timer for timeout and completer for response.
   /// {@nodoc}
@@ -198,8 +198,8 @@ base mixin CentrifugeWSPBReplyMixin on CentrifugeWSPBTransportBase {
 /// Mixin responsible for sending data through websocket with protobuf.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBSenderMixin
-    on CentrifugeWSPBTransportBase, CentrifugeWSPBReplyMixin {
+base mixin SpinifyWSPBSenderMixin
+    on SpinifyWSPBTransportBase, SpinifyWSPBReplyMixin {
   /// Encoder protobuf commands to bytes.
   /// {@nodoc}
   static const Converter<pb.Command, List<int>> _commandEncoder =
@@ -223,7 +223,7 @@ base mixin CentrifugeWSPBSenderMixin
     await _sendCommand(command);
     final reply = await future;
     if (reply.hasError()) {
-      throw CentrifugeReplyException(
+      throw SpinifyReplyException(
         replyCode: reply.error.code,
         replyMessage: reply.error.message,
         temporary: reply.error.temporary,
@@ -321,11 +321,11 @@ base mixin CentrifugeWSPBSenderMixin
 /// Mixin responsible for connection.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBConnectionMixin
+base mixin SpinifyWSPBConnectionMixin
     on
-        CentrifugeWSPBTransportBase,
-        CentrifugeWSPBSenderMixin,
-        CentrifugeWSPBStateHandlerMixin {
+        SpinifyWSPBTransportBase,
+        SpinifyWSPBSenderMixin,
+        SpinifyWSPBStateHandlerMixin {
   @override
   Future<void> connect(
     String url,
@@ -336,7 +336,7 @@ base mixin CentrifugeWSPBConnectionMixin
       await _webSocket.connect(url);
       final request = pb.ConnectRequest();
       final token = await _config.getToken?.call();
-      assert(token == null || token.length > 5, 'Centrifuge JWT is too short');
+      assert(token == null || token.length > 5, 'Spinify JWT is too short');
       if (token != null) request.token = token;
       final payload = await _config.getPayload?.call();
       if (payload != null) request.data = payload;
@@ -346,9 +346,9 @@ base mixin CentrifugeWSPBConnectionMixin
       // Add server-side subscriptions to connect request.
       {
         final subs = serverSubscriptionManager.subscriptions.values;
-        for (final CentrifugeServerSubscription(
+        for (final SpinifyServerSubscription(
               channel: String channel,
-              state: CentrifugeSubscriptionState(:recoverable, :since),
+              state: SpinifySubscriptionState(:recoverable, :since),
             ) in subs) {
           if (since == null) continue;
           final subRequest = pb.SubscribeRequest()
@@ -363,7 +363,7 @@ base mixin CentrifugeWSPBConnectionMixin
         result = await _sendMessage(request, pb.ConnectResult());
       } on Object catch (error, stackTrace) {
         Error.throwWithStackTrace(
-          CentrifugeConnectionException(
+          SpinifyConnectionException(
             message: 'Error while making connect request',
             error: error,
           ),
@@ -378,12 +378,12 @@ base mixin CentrifugeWSPBConnectionMixin
 
       // Update server-side subscriptions.
       {
-        final subs = result.subs.entries.map<CentrifugeSubscribe>((e) {
+        final subs = result.subs.entries.map<SpinifySubscribe>((e) {
           final channel = e.key;
           final sub = e.value;
           final positioned = sub.hasPositioned() && sub.positioned;
           final recoverable = sub.hasRecoverable() && sub.recoverable;
-          return CentrifugeSubscribe(
+          return SpinifySubscribe(
             timestamp: now,
             channel: channel,
             positioned: positioned,
@@ -398,7 +398,7 @@ base mixin CentrifugeWSPBConnectionMixin
         serverSubscriptionManager.upsert(subs);
       }
 
-      _setState(CentrifugeState$Connected(
+      _setState(SpinifyState$Connected(
         url: url,
         timestamp: now,
         client: result.hasClient() ? result.client : null,
@@ -419,18 +419,18 @@ base mixin CentrifugeWSPBConnectionMixin
   }
 
   @override
-  Future<CentrifugeRefreshResult> sendRefresh(String token) {
+  Future<SpinifyRefreshResult> sendRefresh(String token) {
     if (!_state.isConnected) throw StateError('Not connected');
     return _sendMessage(pb.RefreshRequest()..token = token, pb.RefreshResult())
-        .then<CentrifugeRefreshResult>(
+        .then<SpinifyRefreshResult>(
       (result) {
         final state = _state;
-        if (state is CentrifugeState$Connected) {
+        if (state is SpinifyState$Connected) {
           final now = DateTime.now();
           final expires =
               result.hasExpires() && result.expires && result.hasTtl();
           final ttl = expires ? now.add(Duration(seconds: result.ttl)) : null;
-          _setState(CentrifugeState$Connected(
+          _setState(SpinifyState$Connected(
             url: state.url,
             timestamp: now,
             client: result.hasClient() ? result.client : null,
@@ -443,7 +443,7 @@ base mixin CentrifugeWSPBConnectionMixin
             session: state.session,
             data: state.data,
           ));
-          return CentrifugeRefreshResult(
+          return SpinifyRefreshResult(
             expires: expires,
             ttl: ttl,
           );
@@ -458,8 +458,8 @@ base mixin CentrifugeWSPBConnectionMixin
 /// Handler for websocket states.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBStateHandlerMixin
-    on CentrifugeWSPBTransportBase, CentrifugeWSPBReplyMixin {
+base mixin SpinifyWSPBStateHandlerMixin
+    on SpinifyWSPBTransportBase, SpinifyWSPBReplyMixin {
   // Subscribe to websocket state after first connection.
   /// Subscription to websocket state.
   /// {@nodoc}
@@ -467,11 +467,11 @@ base mixin CentrifugeWSPBStateHandlerMixin
 
   @override
   @nonVirtual
-  CentrifugeState get state => _state;
+  SpinifyState get state => _state;
 
   @protected
   @nonVirtual
-  CentrifugeState _state = CentrifugeState$Disconnected(
+  SpinifyState _state = SpinifyState$Disconnected(
     timestamp: DateTime.now(),
     closeCode: null,
     closeReason: 'Not connected yet',
@@ -480,19 +480,18 @@ base mixin CentrifugeWSPBStateHandlerMixin
   /// {@nodoc}
   @override
   @nonVirtual
-  final CentrifugeChangeNotifier<CentrifugeState> states =
-      CentrifugeChangeNotifier();
+  final SpinifyChangeNotifier<SpinifyState> states = SpinifyChangeNotifier();
 
   @override
   void _initTransport() {
     super._initTransport();
   }
 
-  /// Change state of centrifuge client.
+  /// Change state of spinify client.
   /// {@nodoc}
   @protected
   @nonVirtual
-  void _setState(CentrifugeState state) {
+  void _setState(SpinifyState state) {
     if (state == _state) return;
     states.notify(_state = state);
   }
@@ -503,14 +502,14 @@ base mixin CentrifugeWSPBStateHandlerMixin
   @pragma('dart2js:tryInline')
   void _handleWebSocketClosedStates(WebSocketClientState$Closed state) {
     _setState(
-      CentrifugeState$Disconnected(
+      SpinifyState$Disconnected(
         timestamp: DateTime.now(),
         closeCode: state.closeCode,
         closeReason: state.closeReason,
       ),
     );
     _failAllReplies(
-      const CentrifugeReplyException(
+      const SpinifyReplyException(
         replyCode: 3000,
         replyMessage: 'Connection closed',
         temporary: true,
@@ -525,7 +524,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
     ServerSubscriptionManager serverSubscriptionManager,
   ) {
     // Change state to connecting before connection.
-    _setState(CentrifugeState$Connecting(url: url));
+    _setState(SpinifyState$Connecting(url: url));
     // Subscribe to websocket state after initialization.
     _webSocketClosedStateSubscription ??= _webSocket.stateChanges.closed.listen(
       _handleWebSocketClosedStates,
@@ -537,7 +536,7 @@ base mixin CentrifugeWSPBStateHandlerMixin
   @override
   Future<void> close() async {
     _webSocketClosedStateSubscription?.cancel().ignore();
-    _setState(CentrifugeState$Closed());
+    _setState(SpinifyState$Closed());
     await super.close();
     states.close();
   }
@@ -546,11 +545,11 @@ base mixin CentrifugeWSPBStateHandlerMixin
 /// Handler for websocket messages and decode protobuf.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBHandlerMixin
+base mixin SpinifyWSPBHandlerMixin
     on
-        CentrifugeWSPBTransportBase,
-        CentrifugeWSPBSenderMixin,
-        CentrifugeWSPBPingPongMixin {
+        SpinifyWSPBTransportBase,
+        SpinifyWSPBSenderMixin,
+        SpinifyWSPBPingPongMixin {
   /// Encoder protobuf commands to bytes.
   /// {@nodoc}
   static const Converter<List<int>, Iterable<pb.Reply>> _replyDecoder =
@@ -600,7 +599,7 @@ base mixin CentrifugeWSPBHandlerMixin
   @pragma('dart2js:tryInline')
   void _onPing() {
     _restartPingTimer();
-    if (state case CentrifugeState$Connected(:bool? sendPong)) {
+    if (state case SpinifyState$Connected(:bool? sendPong)) {
       if (sendPong != true) return;
       _sendAsyncMessage(pb.PingRequest()).ignore();
       logger.fine('Pong message sent');
@@ -622,7 +621,7 @@ base mixin CentrifugeWSPBHandlerMixin
       events.notify($publicationDecode(push.channel)(push.pub));
     } else if (push.hasMessage()) {
       events.notify(
-        CentrifugeMessage(
+        SpinifyMessage(
           timestamp: now,
           channel: channel,
           data: push.message.hasData() ? push.message.data : const <int>[],
@@ -630,7 +629,7 @@ base mixin CentrifugeWSPBHandlerMixin
       );
     } else if (push.hasJoin()) {
       events.notify(
-        CentrifugeJoin(
+        SpinifyJoin(
           timestamp: now,
           channel: channel,
           info: $decodeClientInfo(push.join.info),
@@ -638,7 +637,7 @@ base mixin CentrifugeWSPBHandlerMixin
       );
     } else if (push.hasLeave()) {
       events.notify(
-        CentrifugeLeave(
+        SpinifyLeave(
           timestamp: now,
           channel: channel,
           info: $decodeClientInfo(push.join.info),
@@ -650,7 +649,7 @@ base mixin CentrifugeWSPBHandlerMixin
       final recoverable =
           push.subscribe.hasRecoverable() && push.subscribe.recoverable;
       events.notify(
-        CentrifugeSubscribe(
+        SpinifySubscribe(
           timestamp: now,
           channel: channel,
           positioned: positioned,
@@ -665,7 +664,7 @@ base mixin CentrifugeWSPBHandlerMixin
       );
     } else if (push.hasUnsubscribe()) {
       events.notify(
-        CentrifugeUnsubscribe(
+        SpinifyUnsubscribe(
           timestamp: now,
           channel: channel,
           code: push.unsubscribe.hasCode() ? push.unsubscribe.code : 0,
@@ -677,7 +676,7 @@ base mixin CentrifugeWSPBHandlerMixin
       final expires =
           connect.hasExpires() && connect.expires && connect.hasTtl();
       events.notify(
-        CentrifugeConnect(
+        SpinifyConnect(
           timestamp: now,
           channel: channel,
           data: push.message.hasData() ? push.message.data : const <int>[],
@@ -694,7 +693,7 @@ base mixin CentrifugeWSPBHandlerMixin
       );
     } else if (push.hasDisconnect()) {
       events.notify(
-        CentrifugeDisconnect(
+        SpinifyDisconnect(
           timestamp: now,
           channel: channel,
           code: push.disconnect.hasCode() ? push.disconnect.code : 0,
@@ -706,7 +705,7 @@ base mixin CentrifugeWSPBHandlerMixin
         ),
       );
     } else if (push.hasRefresh()) {
-      events.notify(CentrifugeRefresh(
+      events.notify(SpinifyRefresh(
         timestamp: now,
         channel: channel,
         expires: push.refresh.hasExpires() && push.refresh.expires,
@@ -724,21 +723,21 @@ base mixin CentrifugeWSPBHandlerMixin
   }
 }
 
-/// Mixin responsible for centrifuge subscriptions.
+/// Mixin responsible for spinify subscriptions.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBSubscription
-    on CentrifugeWSPBTransportBase, CentrifugeWSPBSenderMixin {
+base mixin SpinifyWSPBSubscription
+    on SpinifyWSPBTransportBase, SpinifyWSPBSenderMixin {
   @override
   Future<SubcibedOnChannel> subscribe(
     String channel,
-    CentrifugeSubscriptionConfig config,
-    CentrifugeStreamPosition? since,
+    SpinifySubscriptionConfig config,
+    SpinifyStreamPosition? since,
   ) async {
     if (!state.isConnected) {
-      throw CentrifugeSubscriptionException(
+      throw SpinifySubscriptionException(
         channel: channel,
-        message: 'Centrifuge client is not connected',
+        message: 'Spinify client is not connected',
       );
     }
     final request = pb.SubscribeRequest()
@@ -749,7 +748,7 @@ base mixin CentrifugeWSPBSubscription
     final token = await config.getToken?.call();
     assert(
       token == null || token.length > 5,
-      'Centrifuge Subscription JWT is too short',
+      'Spinify Subscription JWT is too short',
     );
     if (token != null && token.isNotEmpty) request.token = token;
     final data = await config.getPayload?.call();
@@ -774,7 +773,7 @@ base mixin CentrifugeWSPBSubscription
       rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
-        CentrifugeSubscriptionException(
+        SpinifySubscriptionException(
           channel: channel,
           message: 'Error while making subscribe request',
           error: error,
@@ -786,9 +785,9 @@ base mixin CentrifugeWSPBSubscription
     final publicationDecoder = $publicationDecode(channel);
     final publications = result.publications.isEmpty
         ? _emptyPublicationsList
-        : UnmodifiableListView<CentrifugePublication>(
+        : UnmodifiableListView<SpinifyPublication>(
             result.publications
-                .map<CentrifugePublication>(publicationDecoder)
+                .map<SpinifyPublication>(publicationDecoder)
                 .toList(growable: false),
           );
     final recoverable = result.hasRecoverable() && result.recoverable;
@@ -812,7 +811,7 @@ base mixin CentrifugeWSPBSubscription
   @override
   Future<void> unsubscribe(
     String channel,
-    CentrifugeSubscriptionConfig config,
+    SpinifySubscriptionConfig config,
   ) async {
     if (_webSocket.state.readyState.isDisconnecting ||
         _webSocket.state.readyState.isClosed) {
@@ -831,10 +830,10 @@ base mixin CentrifugeWSPBSubscription
       pb.PublishResult());
 
   @override
-  Future<CentrifugeHistory> history(
+  Future<SpinifyHistory> history(
     String channel, {
     int? limit,
-    CentrifugeStreamPosition? since,
+    SpinifyStreamPosition? since,
     bool? reverse,
   }) async {
     final request = pb.HistoryRequest()..channel = channel;
@@ -847,12 +846,12 @@ base mixin CentrifugeWSPBSubscription
     }
     final result = await _sendMessage(request, pb.HistoryResult());
     final publicationDecoder = $publicationDecode(channel);
-    return CentrifugeHistory(
+    return SpinifyHistory(
       publications: result.publications.isEmpty
           ? _emptyPublicationsList
-          : UnmodifiableListView<CentrifugePublication>(
+          : UnmodifiableListView<SpinifyPublication>(
               result.publications
-                  .map<CentrifugePublication>(publicationDecoder)
+                  .map<SpinifyPublication>(publicationDecoder)
                   .toList(growable: false),
             ),
       since: (epoch: result.epoch, offset: result.offset),
@@ -860,15 +859,15 @@ base mixin CentrifugeWSPBSubscription
   }
 
   @override
-  Future<CentrifugePresence> presence(String channel) =>
+  Future<SpinifyPresence> presence(String channel) =>
       _sendMessage(pb.PresenceRequest()..channel = channel, pb.PresenceResult())
-          .then<CentrifugePresence>(
-        (r) => CentrifugePresence(
+          .then<SpinifyPresence>(
+        (r) => SpinifyPresence(
           channel: channel,
-          clients: UnmodifiableMapView<String, CentrifugeClientInfo>(
-            <String, CentrifugeClientInfo>{
+          clients: UnmodifiableMapView<String, SpinifyClientInfo>(
+            <String, SpinifyClientInfo>{
               for (final e in r.presence.entries)
-                e.key: CentrifugeClientInfo(
+                e.key: SpinifyClientInfo(
                   user: e.value.user,
                   client: e.value.client,
                   channelInfo: e.value.hasChanInfo() ? e.value.chanInfo : null,
@@ -881,11 +880,11 @@ base mixin CentrifugeWSPBSubscription
       );
 
   @override
-  Future<CentrifugePresenceStats> presenceStats(String channel) => _sendMessage(
+  Future<SpinifyPresenceStats> presenceStats(String channel) => _sendMessage(
               pb.PresenceStatsRequest()..channel = channel,
               pb.PresenceStatsResult())
-          .then<CentrifugePresenceStats>(
-        (r) => CentrifugePresenceStats(
+          .then<SpinifyPresenceStats>(
+        (r) => SpinifyPresenceStats(
           channel: channel,
           clients: r.hasNumClients() ? r.numClients : 0,
           users: r.hasNumUsers() ? r.numUsers : 0,
@@ -893,7 +892,7 @@ base mixin CentrifugeWSPBSubscription
       );
 
   @override
-  Future<CentrifugeSubRefreshResult> sendSubRefresh(
+  Future<SpinifySubRefreshResult> sendSubRefresh(
     String channel,
     String token,
   ) =>
@@ -902,10 +901,10 @@ base mixin CentrifugeWSPBSubscription
                 ..channel = channel
                 ..token = token,
               pb.SubRefreshResult())
-          .then<CentrifugeSubRefreshResult>(
+          .then<SpinifySubRefreshResult>(
         (r) {
           final expires = r.hasExpires() && r.expires && r.hasTtl();
-          return CentrifugeSubRefreshResult(
+          return SpinifySubRefreshResult(
             expires: expires,
             ttl: expires ? DateTime.now().add(Duration(seconds: r.ttl)) : null,
           );
@@ -930,7 +929,7 @@ base mixin CentrifugeWSPBSubscription
 /// Usually a server sends pings every 25 seconds.
 /// {@nodoc}
 @internal
-base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
+base mixin SpinifyWSPBPingPongMixin on SpinifyWSPBTransportBase {
   @protected
   @nonVirtual
   Timer? _pingTimer;
@@ -953,7 +952,7 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
   @nonVirtual
   void _restartPingTimer() {
     _tearDownPingTimer();
-    if (state case CentrifugeState$Connected(:Duration pingInterval)) {
+    if (state case SpinifyState$Connected(:Duration pingInterval)) {
       _pingTimer = Timer(
         pingInterval + _config.serverPingDelay,
         () => disconnect(
@@ -977,16 +976,16 @@ base mixin CentrifugeWSPBPingPongMixin on CentrifugeWSPBTransportBase {
 }
 
 /// {@nodoc}
-final List<CentrifugePublication> _emptyPublicationsList =
-    List<CentrifugePublication>.empty(growable: false);
+final List<SpinifyPublication> _emptyPublicationsList =
+    List<SpinifyPublication>.empty(growable: false);
 
 /// {@nodoc}
 @internal
-CentrifugePublication Function(pb.Publication publication) $publicationDecode(
+SpinifyPublication Function(pb.Publication publication) $publicationDecode(
   String channel,
 ) {
   final timestamp = DateTime.now();
-  return (publication) => CentrifugePublication(
+  return (publication) => SpinifyPublication(
         timestamp: timestamp,
         channel: channel,
         offset: publication.hasOffset() ? publication.offset : null,
@@ -999,8 +998,7 @@ CentrifugePublication Function(pb.Publication publication) $publicationDecode(
 
 /// {@nodoc}
 @internal
-CentrifugeClientInfo $decodeClientInfo(pb.ClientInfo info) =>
-    CentrifugeClientInfo(
+SpinifyClientInfo $decodeClientInfo(pb.ClientInfo info) => SpinifyClientInfo(
       client: info.client,
       user: info.user,
       channelInfo: info.hasChanInfo() ? info.chanInfo : null,
