@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:centrifuge_dart/src/client/centrifuge.dart';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
 import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:centrifuge_dart/src/model/connect.dart';
@@ -24,7 +25,6 @@ import 'package:centrifuge_dart/src/util/event_queue.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
-import 'package:stack_trace/stack_trace.dart' as st;
 
 /// Server-side subscription implementation.
 /// {@nodoc}
@@ -258,27 +258,7 @@ base mixin CentrifugeServerSubscriptionErrorsMixin
   @protected
   @nonVirtual
   void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
-      _errorsController.add(
-        (
-          exception: exception,
-          stackTrace: st.Trace.from(stackTrace).terse,
-        ),
-      );
-
-  late final StreamController<
-          ({CentrifugeException exception, StackTrace stackTrace})>
-      _errorsController = StreamController<
-          ({CentrifugeException exception, StackTrace stackTrace})>.broadcast();
-
-  @override
-  late final Stream<({CentrifugeException exception, StackTrace stackTrace})>
-      errors = _errorsController.stream;
-
-  @override
-  Future<void> close([int code = 0, String reason = 'closed']) async {
-    await super.close(code, reason);
-    _errorsController.close().ignore();
-  }
+      Centrifuge.observer?.onError(exception, stackTrace);
 }
 
 /// Mixin responsible for ready method.

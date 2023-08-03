@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/exception.dart';
 import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
@@ -29,10 +28,6 @@ abstract interface class ICentrifugeSubscription {
 
   /// Stream of received pushes from Centrifugo server for a channel.
   abstract final CentrifugePushesStream stream;
-
-  /// Errors stream.
-  abstract final Stream<
-      ({CentrifugeException exception, StackTrace stackTrace})> errors;
 
   /// Await for subscription to be ready.
   /// Ready resolves when subscription successfully subscribed.

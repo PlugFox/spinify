@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
 import 'package:centrifuge_dart/src/client/config.dart';
 import 'package:centrifuge_dart/src/client/disconnect_code.dart';
+import 'package:centrifuge_dart/src/client/observer.dart';
 import 'package:centrifuge_dart/src/client/state.dart';
 import 'package:centrifuge_dart/src/client/states_stream.dart';
 import 'package:centrifuge_dart/src/model/channel_presence.dart';
@@ -28,7 +29,6 @@ import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
 import 'package:centrifuge_dart/src/util/event_queue.dart';
 import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
-import 'package:stack_trace/stack_trace.dart' as st;
 
 /// {@template centrifuge}
 /// Centrifuge client.
@@ -54,6 +54,9 @@ final class Centrifuge extends CentrifugeBase
   /// {@macro centrifuge}
   factory Centrifuge.connect(String url, [CentrifugeConfig? config]) =>
       Centrifuge(config)..connect(url);
+
+  /// The current [CentrifugeObserver] instance.
+  static CentrifugeObserver? observer;
 }
 
 /// {@nodoc}
@@ -93,7 +96,9 @@ abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _initCentrifuge() {}
+  void _initCentrifuge() {
+    Centrifuge.observer?.onCreate(this);
+  }
 
   /// Called when connection established.
   /// Right before [CentrifugeState$Connected] state.
@@ -102,6 +107,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @mustCallSuper
   void _onConnected(CentrifugeState$Connected state) {
     logger.fine('Connection established');
+    Centrifuge.observer?.onConnected(this, state);
   }
 
   /// Called when connection lost.
@@ -111,11 +117,15 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @mustCallSuper
   void _onDisconnected(CentrifugeState$Disconnected state) {
     logger.fine('Connection lost');
+    Centrifuge.observer?.onDisconnected(this, state);
   }
 
   @override
   @mustCallSuper
-  Future<void> close() async {}
+  Future<void> close() async {
+    await _transport.close();
+    Centrifuge.observer?.onClose(this);
+  }
 }
 
 /// Mixin responsible for event receiving and distribution by controllers
@@ -349,27 +359,7 @@ base mixin CentrifugeErrorsMixin on CentrifugeBase {
   @protected
   @nonVirtual
   void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
-      _errorsController.add(
-        (
-          exception: exception,
-          stackTrace: st.Trace.from(stackTrace).terse,
-        ),
-      );
-
-  late final StreamController<
-          ({CentrifugeException exception, StackTrace stackTrace})>
-      _errorsController = StreamController<
-          ({CentrifugeException exception, StackTrace stackTrace})>.broadcast();
-
-  @override
-  late final Stream<({CentrifugeException exception, StackTrace stackTrace})>
-      errors = _errorsController.stream;
-
-  @override
-  Future<void> close() async {
-    await super.close();
-    _errorsController.close().ignore();
-  }
+      Centrifuge.observer?.onError(exception, stackTrace);
 }
 
 /// Mixin responsible for connection.
@@ -465,7 +455,6 @@ base mixin CentrifugeConnectionMixin
   Future<void> close() async {
     logger.fine('Interactively closing');
     await super.close();
-    await _transport.close();
   }
 }
 

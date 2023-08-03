@@ -16,10 +16,6 @@ abstract interface class ICentrifuge
         ICentrifugeEventReceiver,
         ICentrifugeClientSubscriptionsManager,
         ICentrifugePresenceOwner {
-  /// Stream of errors.
-  abstract final Stream<
-      ({CentrifugeException exception, StackTrace stackTrace})> errors;
-
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
@@ -41,9 +37,6 @@ abstract interface class ICentrifuge
 
   /// Send arbitrary RPC and wait for response.
   /* Future<void> rpc(String method, data); */
-
-  /// Publish data to the channel.
-  /* Future<PublishResult> publish(String channel, List<int> data); */
 
   /// Send History command.
   /* Future<HistoryResult> history(String channel,
