@@ -500,8 +500,17 @@ base mixin CentrifugeClientSubscriptionMixin
   CentrifugeClientSubscription newSubscription(
     String channel, [
     CentrifugeSubscriptionConfig? config,
-  ]) =>
-      _clientSubscriptionManager.newSubscription(channel, config);
+  ]) {
+    final sub = _clientSubscriptionManager[channel] ??
+        _serverSubscriptionManager[channel];
+    if (sub != null) {
+      throw CentrifugeSubscriptionException(
+        channel: channel,
+        message: 'Subscription already exists',
+      );
+    }
+    return _clientSubscriptionManager.newSubscription(channel, config);
+  }
 
   @override
   Map<String, CentrifugeClientSubscription> get subscriptions =>
