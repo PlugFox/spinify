@@ -15,6 +15,7 @@ import 'package:spinify/src/model/event.dart';
 import 'package:spinify/src/model/exception.dart';
 import 'package:spinify/src/model/history.dart';
 import 'package:spinify/src/model/message.dart';
+import 'package:spinify/src/model/metrics.dart';
 import 'package:spinify/src/model/presence.dart';
 import 'package:spinify/src/model/presence_stats.dart';
 import 'package:spinify/src/model/publication.dart';
@@ -65,7 +66,8 @@ final class Spinify extends SpinifyBase
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
         SpinifyRPCMixin,
-        SpinifyQueueMixin {
+        SpinifyQueueMixin,
+        SpinifyMetricsMixin {
   /// {@macro spinify}
   Spinify([SpinifyConfig? config]) : super(config ?? SpinifyConfig.byDefault());
 
@@ -710,6 +712,42 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
       _emitError(spinifyException, stackTrace);
       Error.throwWithStackTrace(spinifyException, stackTrace);
     }
+  }
+}
+
+/// Responsible for metrics.
+/// {@nodoc}
+@internal
+base mixin SpinifyMetricsMixin on SpinifyBase {
+  int _connectsTotal = 0, _connectsSuccessful = 0;
+
+  @override
+  Future<void> connect(String url) async {
+    _connectsTotal++;
+    return super.connect(url);
+  }
+
+  @override
+  void _onConnected(SpinifyState$Connected state) {
+    super._onConnected(state);
+    _connectsSuccessful++;
+  }
+
+  /// Get metrics of Spinify client.
+  @override
+  SpinifyMetrics get metrics {
+    final timestamp = DateTime.now().toUtc();
+    final wsMetrics = _transport.metrics;
+    return SpinifyMetrics(
+      timestamp: timestamp,
+      lastUrl: wsMetrics.lastUrl,
+      reconnects: (successful: _connectsSuccessful, total: _connectsTotal),
+      state: state,
+      receivedCount: wsMetrics.receivedCount,
+      receivedSize: wsMetrics.receivedSize,
+      transferredCount: wsMetrics.transferredCount,
+      transferredSize: wsMetrics.transferredSize,
+    );
   }
 }
 

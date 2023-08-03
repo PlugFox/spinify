@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:spinify/src/client/state.dart';
 import 'package:spinify/src/client/states_stream.dart';
 import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/metrics.dart';
 import 'package:spinify/src/model/presence.dart';
 import 'package:spinify/src/model/presence_stats.dart';
 import 'package:spinify/src/model/pushes_stream.dart';
@@ -22,7 +23,8 @@ abstract interface class ISpinify
         ISpinifyClientSubscriptionsManager,
         ISpinifyPresenceOwner,
         ISpinifyHistoryOwner,
-        ISpinifyRemoteProcedureCall {
+        ISpinifyRemoteProcedureCall,
+        ISpinifyMetricsOwner {
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
@@ -127,4 +129,10 @@ abstract interface class ISpinifyHistoryOwner {
 abstract interface class ISpinifyRemoteProcedureCall {
   /// Send arbitrary RPC and wait for response.
   Future<List<int>> rpc(String method, List<int> data);
+}
+
+/// Spinify metrics interface.
+abstract interface class ISpinifyMetricsOwner {
+  /// Get metrics of Spinify client.
+  SpinifyMetrics get metrics;
 }

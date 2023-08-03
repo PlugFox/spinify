@@ -75,6 +75,9 @@ abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
   final SpinifyChangeNotifier<SpinifyEvent> events =
       SpinifyChangeNotifier<SpinifyEvent>();
 
+  @override
+  WebSocketMetrics get metrics => _webSocket.metrics;
+
   /// Init transport, override this method to add custom logic.
   /// {@nodoc}
   @protected

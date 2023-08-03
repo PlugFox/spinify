@@ -15,6 +15,7 @@ export 'package:spinify/src/model/exception.dart';
 export 'package:spinify/src/model/history.dart';
 export 'package:spinify/src/model/jwt.dart';
 export 'package:spinify/src/model/message.dart';
+export 'package:spinify/src/model/metrics.dart';
 export 'package:spinify/src/model/presence.dart';
 export 'package:spinify/src/model/presence_stats.dart';
 export 'package:spinify/src/model/publication.dart';

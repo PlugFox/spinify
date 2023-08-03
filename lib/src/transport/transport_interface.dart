@@ -12,6 +12,7 @@ import 'package:spinify/src/subscription/server_subscription_manager.dart';
 import 'package:spinify/src/subscription/subcibed_on_channel.dart';
 import 'package:spinify/src/subscription/subscription_config.dart';
 import 'package:spinify/src/util/notifier.dart';
+import 'package:ws/ws.dart';
 
 /// Class responsible for sending and receiving data from the server.
 /// {@nodoc}
@@ -28,6 +29,10 @@ abstract interface class ISpinifyTransport {
   /// Spinify events.
   /// {@nodoc}
   abstract final SpinifyListenable<SpinifyEvent> events;
+
+  /// Get web socket metrics.
+  /// {@nodoc}
+  WebSocketMetrics get metrics;
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.
