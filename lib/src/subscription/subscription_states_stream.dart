@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:spinify/src/subscription/subscription_state.dart';
 
 /// Stream of Spinify's [SpinifySubscriptionState] changes.
 /// {@category Subscription}
 /// {@category Entity}
+@immutable
 final class SpinifySubscriptionStateStream
     extends StreamView<SpinifySubscriptionState> {
   /// Stream of Spinify's [SpinifySubscriptionState] changes.
@@ -30,4 +32,7 @@ final class SpinifySubscriptionStateStream
           _ => null,
         },
       )).asBroadcastStream();
+
+  @override
+  String toString() => 'SpinifySubscriptionStateStream{}';
 }

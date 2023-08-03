@@ -198,7 +198,7 @@ final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.disconnected{$timestamp}';
+  String toString() => r'SpinifyState$Disconnected{}';
 }
 
 /// Connecting
@@ -250,7 +250,7 @@ final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.connecting{$timestamp}';
+  String toString() => r'SpinifyState$Connecting{}';
 }
 
 /// Connected
@@ -357,7 +357,7 @@ final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.connected{$timestamp}';
+  String toString() => r'SpinifyState$Connected{}';
 }
 
 /// Permanently closed
@@ -409,13 +409,14 @@ final class SpinifyState$Closed extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.closed{$timestamp}';
+  String toString() => r'SpinifyState$Closed{}';
 }
 
 /// {@nodoc}
 base mixin _$SpinifyState on SpinifyState {}
 
 /// Pattern matching for [SpinifyState].
+/// {@category Entity}
 typedef SpinifyStateMatch<R, S extends SpinifyState> = R Function(S state);
 
 /// {@nodoc}

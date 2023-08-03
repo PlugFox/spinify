@@ -4,7 +4,7 @@ import 'dart:developer' as developer;
 import 'package:meta/meta.dart';
 
 /// Constants used to debug the Spinify client.
-/// --dart-define=dev.plugfox.ws.debug=true
+/// --dart-define=dev.plugfox.spinify.debug=true
 /// {@nodoc}
 @internal
 bool get $enableLogging =>

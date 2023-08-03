@@ -19,13 +19,11 @@ export 'package:spinify/src/model/presence.dart';
 export 'package:spinify/src/model/presence_stats.dart';
 export 'package:spinify/src/model/publication.dart';
 export 'package:spinify/src/model/pushes_stream.dart';
-export 'package:spinify/src/model/refresh.dart' show SpinifyRefresh;
+export 'package:spinify/src/model/refresh.dart';
 export 'package:spinify/src/model/stream_position.dart';
 export 'package:spinify/src/model/subscribe.dart';
 export 'package:spinify/src/model/unsubscribe.dart';
 export 'package:spinify/src/subscription/subcibed_on_channel.dart';
-export 'package:spinify/src/subscription/subscription.dart'
-    show SpinifyClientSubscription, SpinifyServerSubscription;
 export 'package:spinify/src/subscription/subscription.dart';
 export 'package:spinify/src/subscription/subscription_config.dart';
 export 'package:spinify/src/subscription/subscription_state.dart';

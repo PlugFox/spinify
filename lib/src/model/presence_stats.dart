@@ -21,4 +21,7 @@ final class SpinifyPresenceStats {
 
   /// Users count
   final int users;
+
+  @override
+  String toString() => 'SpinifyPresenceStats{channel: $channel}';
 }

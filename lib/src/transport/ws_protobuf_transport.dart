@@ -20,6 +20,7 @@ import 'package:spinify/src/model/presence_stats.dart';
 import 'package:spinify/src/model/protobuf/client.pb.dart' as pb;
 import 'package:spinify/src/model/publication.dart';
 import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/refresh_result.dart';
 import 'package:spinify/src/model/stream_position.dart';
 import 'package:spinify/src/model/subscribe.dart';
 import 'package:spinify/src/model/unsubscribe.dart';

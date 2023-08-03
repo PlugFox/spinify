@@ -18,4 +18,7 @@ final class SpinifyPresence {
 
   /// Publications
   final Map<String, SpinifyClientInfo> clients;
+
+  @override
+  String toString() => 'SpinifyPresence{channel: $channel}';
 }

@@ -3,6 +3,8 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template disconnect}
 /// Disconnect push from Centrifugo server.
 /// {@endtemplate}
+/// {@category Event}
+/// {@subCategory Push}
 final class SpinifyDisconnect extends SpinifyChannelPush {
   /// {@macro disconnect}
   const SpinifyDisconnect({
@@ -24,4 +26,7 @@ final class SpinifyDisconnect extends SpinifyChannelPush {
 
   /// Reconnect flag.
   final bool reconnect;
+
+  @override
+  String toString() => 'SpinifyDisconnect{channel: $channel}';
 }

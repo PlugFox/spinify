@@ -4,6 +4,8 @@ import 'package:spinify/src/model/stream_position.dart';
 /// {@template subscribe}
 /// Subscribe push from Centrifugo server.
 /// {@endtemplate}
+/// {@category Event}
+/// {@subCategory Push}
 final class SpinifySubscribe extends SpinifyChannelPush {
   /// {@macro subscribe}
   const SpinifySubscribe({
@@ -29,4 +31,7 @@ final class SpinifySubscribe extends SpinifyChannelPush {
 
   /// Stream position.
   final SpinifyStreamPosition? streamPosition;
+
+  @override
+  String toString() => 'SpinifySubscribe{channel: $channel}';
 }

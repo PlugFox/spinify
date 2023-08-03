@@ -4,16 +4,23 @@ import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
 /// Token used for subscription.
+/// {@category Subscription}
+/// {@category Entity}
 typedef SpinifySubscriptionToken = String;
 
 /// Callback to get token for subscription.
 /// If method returns null then subscription will be established without token.
+/// {@category Subscription}
+/// {@category Entity}
 typedef SpinifySubscriptionTokenCallback = FutureOr<SpinifySubscriptionToken?>
     Function();
 
 /// Callback to set subscription payload data.
 ///
 /// If method returns null then no payload will be sent at subscribe time.
+
+/// {@category Subscription}
+/// {@category Entity}
 typedef SpinifySubscribePayloadCallback = FutureOr<List<int>?> Function();
 
 /// {@template subscription_config}
@@ -89,4 +96,7 @@ class SpinifySubscriptionConfig {
   /// Maximum time to wait for the subscription to be established.
   /// If not specified, the timeout will be 15 seconds.
   final Duration timeout;
+
+  @override
+  String toString() => 'SpinifySubscriptionConfig{}';
 }

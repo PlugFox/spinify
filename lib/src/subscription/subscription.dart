@@ -10,10 +10,33 @@ import 'package:spinify/src/subscription/subscription_states_stream.dart';
 
 /// {@template subscription}
 /// Spinify subscription interface.
+///
+/// Client allows subscribing on channels.
+/// This can be done by creating Subscription object.
+///
+/// ```dart
+/// final subscription = client.newSubscription('chat');
+/// await subscription.subscribe();
+/// ```
+/// When anewSubscription method is called Client allocates a new
+/// Subscription instance and saves it in the internal subscription registry.
+/// Having a registry of allocated subscriptions allows SDK to manage
+/// resubscribes upon reconnecting to a server.
+/// Centrifugo connectors do not allow creating two subscriptions to the
+/// same channel – in this case, newSubscription can throw an exception.
+///
+/// Subscription has 3 states:
+/// - [SpinifySubscriptionState$Unsubscribed]
+/// - [SpinifySubscriptionState$Subscribing]
+/// - [SpinifySubscriptionState$Subscribed]
+///
+/// When a new Subscription is created it has an unsubscribed state.
+///
+/// - For client-side subscriptions see [SpinifyClientSubscription].
+/// - For server-side subscriptions see [SpinifyServerSubscription].
 /// {@endtemplate}
 /// {@category Subscription}
-/// {@category Entity}
-abstract interface class ISpinifySubscription {
+abstract interface class SpinifySubscription {
   /// Channel name.
   abstract final String channel;
 
@@ -105,10 +128,9 @@ abstract interface class ISpinifySubscription {
 ///
 /// {@endtemplate}
 /// {@category Subscription}
-/// {@category Entity}
 /// {@subCategory Client-side}
 abstract interface class SpinifyClientSubscription
-    implements ISpinifySubscription {
+    implements SpinifySubscription {
   /// Start subscribing to a channel
   Future<void> subscribe();
 
@@ -117,9 +139,6 @@ abstract interface class SpinifyClientSubscription
     int code = 0,
     String reason = 'unsubscribe called',
   ]);
-
-  @override
-  String toString() => 'SpinifyClientSubscription{channel: $channel}';
 }
 
 /// {@template server_subscription}
@@ -135,10 +154,6 @@ abstract interface class SpinifyClientSubscription
 /// but without possibility to control them.
 /// {@endtemplate}
 /// {@category Subscription}
-/// {@category Entity}
 /// {@subCategory Server-side}
 abstract interface class SpinifyServerSubscription
-    implements ISpinifySubscription {
-  @override
-  String toString() => 'SpinifyServerSubscription{channel: $channel}';
-}
+    implements SpinifySubscription {}

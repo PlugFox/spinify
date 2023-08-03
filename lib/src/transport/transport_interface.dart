@@ -6,7 +6,7 @@ import 'package:spinify/src/model/event.dart';
 import 'package:spinify/src/model/history.dart';
 import 'package:spinify/src/model/presence.dart';
 import 'package:spinify/src/model/presence_stats.dart';
-import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/refresh_result.dart';
 import 'package:spinify/src/model/stream_position.dart';
 import 'package:spinify/src/subscription/server_subscription_manager.dart';
 import 'package:spinify/src/subscription/subcibed_on_channel.dart';

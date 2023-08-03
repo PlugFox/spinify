@@ -33,7 +33,23 @@ import 'package:spinify/src/util/event_queue.dart';
 import 'package:spinify/src/util/logger.dart' as logger;
 
 /// {@template spinify}
-/// Spinify client.
+/// Spinify client for Centrifuge.
+///
+/// Centrifugo SDKs use WebSocket as the main data transport and send/receive
+/// messages encoded according to our bidirectional protocol.
+/// That protocol is built on top of the Protobuf schema
+/// (both JSON and binary Protobuf formats are supported).
+/// It provides asynchronous communication, sending RPC,
+/// multiplexing subscriptions to channels, etc.
+///
+/// Client SDK wraps the protocol and exposes a set of APIs to developers.
+///
+/// Client connection has 4 states:
+/// - [SpinifyState$Disconnected]
+/// - [SpinifyState$Connecting]
+/// - [SpinifyState$Connected]
+/// - [SpinifyState$Closed]
+///
 /// {@endtemplate}
 /// {@category Client}
 final class Spinify extends SpinifyBase

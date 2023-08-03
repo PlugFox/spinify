@@ -67,6 +67,9 @@ final class SpinifySubscriptionState$Unsubscribed
             since: since,
             recoverable: recoverable);
 
+  @override
+  String get type => 'unsubscribed';
+
   /// Unsubscribe code.
   final int code;
 
@@ -103,7 +106,7 @@ final class SpinifySubscriptionState$Unsubscribed
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'unsubscribed';
+  String toString() => r'SpinifySubscriptionState$Unsubscribed{}';
 }
 
 /// Subscribing state
@@ -121,6 +124,9 @@ final class SpinifySubscriptionState$Subscribing
             timestamp: timestamp ?? DateTime.now(),
             since: since,
             recoverable: recoverable);
+
+  @override
+  String get type => 'subscribing';
 
   @override
   bool get isUnsubscribed => false;
@@ -152,7 +158,7 @@ final class SpinifySubscriptionState$Subscribing
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'subscribing';
+  String toString() => r'SpinifySubscriptionState$Subscribing{}';
 }
 
 /// Subscribed state
@@ -171,6 +177,9 @@ final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
             timestamp: timestamp ?? DateTime.now(),
             since: since,
             recoverable: recoverable);
+
+  @override
+  String get type => 'subscribed';
 
   /// Time to live in seconds.
   final DateTime? ttl;
@@ -205,13 +214,14 @@ final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'subscribed';
+  String toString() => r'SpinifySubscriptionState$Subscribed{}';
 }
 
 /// {@nodoc}
 base mixin _$SpinifySubscriptionState on SpinifySubscriptionState {}
 
 /// Pattern matching for [SpinifySubscriptionState].
+/// {@category Entity}
 typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
     Function(S state);
 
@@ -224,6 +234,9 @@ abstract base class _$SpinifySubscriptionStateBase {
     required this.since,
     required this.recoverable,
   });
+
+  /// Represents the current state type.
+  abstract final String type;
 
   /// Timestamp of state change.
   final DateTime timestamp;

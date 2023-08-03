@@ -148,6 +148,9 @@ abstract base class SpinifyClientSubscriptionBase
       ));
     _stateController.close().ignore();
   }
+
+  @override
+  String toString() => 'SpinifyClientSubscription{channel: $channel}';
 }
 
 /// Mixin responsible for event receiving and distribution by controllers
