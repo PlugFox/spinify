@@ -32,6 +32,10 @@ Connection related features
 - ✅ Ping-pong
 - ✅ Connection token refresh
 - ✅ Server-side subscriptions
+- ✅ Presence information
+- ✅ Presence stats
+- ✅ History information
+- ✅ Send custom RPC commands
 - ❌ Handle disconnect advice from the server
 - ❌ Batching API
 - ❌ Bidirectional WebSocket emulation
@@ -47,6 +51,10 @@ Connection related features
 - ✅ Subscription token refresh
 - ✅ Handle unsubscribe advice from the server
 - ✅ Manage subscription registry
+- ✅ Publish data into a channel
+- ✅ Enqueue methods
+- ✅ Set observer for hooking events & errors
+- ❌ Metrics
 - ❌ Optimistic subscriptions
 
 ## Example
