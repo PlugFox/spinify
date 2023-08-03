@@ -114,7 +114,9 @@ abstract base class CentrifugeServerSubscriptionBase
   /// {@nodoc}
   void _setState(CentrifugeSubscriptionState state) {
     if (_state == state) return;
+    final previousState = _state;
     _stateController.add(_state = state);
+    Centrifuge.observer?.onSubscriptionChanged(this, previousState, state);
   }
 
   /// Notify about new publication.

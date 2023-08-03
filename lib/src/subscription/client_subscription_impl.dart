@@ -118,7 +118,9 @@ abstract base class CentrifugeClientSubscriptionBase
   /// {@nodoc}
   void _setState(CentrifugeSubscriptionState state) {
     if (_state == state) return;
+    final previousState = _state;
     _stateController.add(_state = state);
+    Centrifuge.observer?.onSubscriptionChanged(this, previousState, state);
   }
 
   /// Notify about new publication.
@@ -378,7 +380,7 @@ base mixin CentrifugeClientSubscriptionSubscribeMixin
       since: since,
       recoverable: state.recoverable,
     ));
-    if (_transport.state.isClosed) return;
+    if (!_transport.state.isConnected) return;
     try {
       await _transport.unsubscribe(channel, _config);
     } on Object catch (error, stackTrace) {

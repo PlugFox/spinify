@@ -85,8 +85,7 @@ final class ClientSubscriptionManager {
         stackTrace,
       );
     } finally {
-      subFromRegistry?.close().ignore();
-      _channelSubscriptions.remove(subscription.channel);
+      _channelSubscriptions.remove(subscription.channel)?.close().ignore();
     }
   }
 

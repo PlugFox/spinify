@@ -80,15 +80,17 @@ final class ServerSubscriptionManager {
   void setSubscribingAll() {
     for (final entry in _channelSubscriptions.values) {
       if (entry.state.isSubscribing) continue;
+      entry.setSubscribing();
     }
   }
 
   /// Called when server sent unsubscribe push or server-side subscription
   /// previously existed in SDK registry disappeared upon Client reconnect.
   /// {@nodoc}
-  void setUnsubscribedAll() {
+  void setUnsubscribedAll([int code = 0, String reason = 'unsubscribed']) {
     for (final entry in _channelSubscriptions.values) {
       if (entry.state.isUnsubscribed) continue;
+      entry.setUnsubscribed(code, reason);
     }
   }
 

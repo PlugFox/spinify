@@ -290,7 +290,8 @@ base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _onStateChange(CentrifugeState newState) {
-    logger.info('State changed: ${_state.type} -> ${state.type}');
+    final oldState = _state;
+    logger.info('State changed: ${oldState.type} -> ${newState.type}');
     _refreshTimer?.cancel();
     _refreshTimer = null;
     switch (newState) {
@@ -305,6 +306,7 @@ base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
         break;
     }
     _statesController.add(_state = newState);
+    Centrifuge.observer?.onStateChanged(this, oldState, newState);
   }
 
   @protected
