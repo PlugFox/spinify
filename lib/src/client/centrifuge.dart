@@ -12,12 +12,14 @@ import 'package:centrifuge_dart/src/model/connect.dart';
 import 'package:centrifuge_dart/src/model/disconnect.dart';
 import 'package:centrifuge_dart/src/model/event.dart';
 import 'package:centrifuge_dart/src/model/exception.dart';
+import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/message.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/publication.dart';
 import 'package:centrifuge_dart/src/model/pushes_stream.dart';
 import 'package:centrifuge_dart/src/model/refresh.dart';
+import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:centrifuge_dart/src/model/subscribe.dart';
 import 'package:centrifuge_dart/src/model/unsubscribe.dart';
 import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
@@ -45,6 +47,7 @@ final class Centrifuge extends CentrifugeBase
         CentrifugeServerSubscriptionMixin,
         CentrifugePublicationsMixin,
         CentrifugePresenceMixin,
+        CentrifugeHistoryMixin,
         CentrifugeQueueMixin {
   /// {@macro centrifuge}
   Centrifuge([CentrifugeConfig? config])
@@ -604,11 +607,7 @@ base mixin CentrifugePublicationsMixin
 
 /// Mixin responsible for presence.
 /// {@nodoc}
-base mixin CentrifugePresenceMixin
-    on
-        CentrifugeBase,
-        CentrifugeErrorsMixin,
-        CentrifugeClientSubscriptionMixin {
+base mixin CentrifugePresenceMixin on CentrifugeBase, CentrifugeErrorsMixin {
   @override
   Future<CentrifugePresence> presence(String channel) async {
     try {
@@ -620,6 +619,56 @@ base mixin CentrifugePresenceMixin
     } on Object catch (error, stackTrace) {
       final centrifugeException = CentrifugeFetchException(
         message: 'Error while fetching presence for channel $channel',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+
+  @override
+  Future<CentrifugePresenceStats> presenceStats(String channel) async {
+    try {
+      await ready();
+      return await _transport.presenceStats(channel);
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeFetchException(
+        message: 'Error while fetching presence for channel $channel',
+        error: error,
+      );
+      _emitError(centrifugeException, stackTrace);
+      Error.throwWithStackTrace(centrifugeException, stackTrace);
+    }
+  }
+}
+
+/// Mixin responsible for history.
+/// {@nodoc}
+base mixin CentrifugeHistoryMixin on CentrifugeBase, CentrifugeErrorsMixin {
+  @override
+  Future<CentrifugeHistory> history(
+    String channel, {
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  }) async {
+    try {
+      await ready();
+      return await _transport.history(
+        channel,
+        limit: limit,
+        since: since,
+        reverse: reverse,
+      );
+    } on CentrifugeException catch (error, stackTrace) {
+      _emitError(error, stackTrace);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      final centrifugeException = CentrifugeFetchException(
+        message: 'Error while fetching history for channel $channel',
         error: error,
       );
       _emitError(centrifugeException, stackTrace);

@@ -3,9 +3,11 @@
 import 'dart:async';
 
 import 'package:centrifuge_dart/centrifuge.dart';
+import 'package:centrifuge_dart/src/model/history.dart';
 import 'package:centrifuge_dart/src/model/presence.dart';
 import 'package:centrifuge_dart/src/model/presence_stats.dart';
 import 'package:centrifuge_dart/src/model/pushes_stream.dart';
+import 'package:centrifuge_dart/src/model/stream_position.dart';
 
 /// Centrifuge client interface.
 abstract interface class ICentrifuge
@@ -15,7 +17,8 @@ abstract interface class ICentrifuge
         ICentrifugePublicationSender,
         ICentrifugeEventReceiver,
         ICentrifugeClientSubscriptionsManager,
-        ICentrifugePresenceOwner {
+        ICentrifugePresenceOwner,
+        ICentrifugeHistoryOwner {
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
@@ -37,10 +40,6 @@ abstract interface class ICentrifuge
 
   /// Send arbitrary RPC and wait for response.
   /* Future<void> rpc(String method, data); */
-
-  /// Send History command.
-  /* Future<HistoryResult> history(String channel,
-      {int limit = 0, StreamPosition? since, bool reverse = false}); */
 }
 
 /// Centrifuge client state owner interface.
@@ -109,4 +108,16 @@ abstract interface class ICentrifugePresenceOwner {
 
   /// Fetch presence stats information inside a channel.
   Future<CentrifugePresenceStats> presenceStats(String channel);
+}
+
+/// Centrifuge history owner interface.
+abstract interface class ICentrifugeHistoryOwner {
+  /// Fetch publication history inside a channel.
+  /// Only for channels where history is enabled.
+  Future<CentrifugeHistory> history(
+    String channel, {
+    int? limit,
+    CentrifugeStreamPosition? since,
+    bool? reverse,
+  });
 }
