@@ -212,6 +212,8 @@ base mixin SpinifyWSPBSenderMixin
 
   /// Speed meter of the connection.
   final SpinifySpeedMeter _speedMeter = SpinifySpeedMeter(15);
+
+  @override
   ({int min, int avg, int max}) get speed => _speedMeter.speed;
 
   /// Counter for messages.
