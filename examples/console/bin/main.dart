@@ -4,7 +4,7 @@ import 'dart:async';
 import 'dart:io' as io show exit, Platform;
 
 import 'package:args/args.dart' show ArgParser;
-import 'package:centrifuge_dart/centrifuge.dart';
+import 'package:spinify/spinify.dart';
 
 const url = 'ws://localhost:8000/connection/websocket?format=protobuf';
 
@@ -13,8 +13,8 @@ void main([List<String>? args]) {
   runZonedGuarded<void>(
     () async {
       // Create centrifuge client.
-      final client = Centrifuge(
-        CentrifugeConfig(
+      final client = Spinify(
+        SpinifyConfig(
           client: (
             name: 'Centrifuge Console Example',
             version: '0.0.1',

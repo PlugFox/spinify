@@ -1,27 +1,32 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/client/disconnect_code.dart';
-import 'package:centrifuge_dart/src/model/channel_presence.dart';
-import 'package:centrifuge_dart/src/model/channel_push.dart';
-import 'package:centrifuge_dart/src/model/connect.dart';
-import 'package:centrifuge_dart/src/model/disconnect.dart';
-import 'package:centrifuge_dart/src/model/event.dart';
-import 'package:centrifuge_dart/src/model/history.dart';
-import 'package:centrifuge_dart/src/model/message.dart';
-import 'package:centrifuge_dart/src/model/presence.dart';
-import 'package:centrifuge_dart/src/model/presence_stats.dart';
-import 'package:centrifuge_dart/src/model/pushes_stream.dart';
-import 'package:centrifuge_dart/src/model/refresh.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/model/subscribe.dart';
-import 'package:centrifuge_dart/src/model/unsubscribe.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
-import 'package:centrifuge_dart/src/transport/transport_interface.dart';
-import 'package:centrifuge_dart/src/util/event_queue.dart';
-import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
+import 'package:spinify/src/client/centrifuge.dart';
+import 'package:spinify/src/client/disconnect_code.dart';
+import 'package:spinify/src/model/channel_presence.dart';
+import 'package:spinify/src/model/channel_push.dart';
+import 'package:spinify/src/model/connect.dart';
+import 'package:spinify/src/model/disconnect.dart';
+import 'package:spinify/src/model/event.dart';
+import 'package:spinify/src/model/exception.dart';
+import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/message.dart';
+import 'package:spinify/src/model/presence.dart';
+import 'package:spinify/src/model/presence_stats.dart';
+import 'package:spinify/src/model/publication.dart';
+import 'package:spinify/src/model/pushes_stream.dart';
+import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/stream_position.dart';
+import 'package:spinify/src/model/subscribe.dart';
+import 'package:spinify/src/model/unsubscribe.dart';
+import 'package:spinify/src/subscription/subscription.dart';
+import 'package:spinify/src/subscription/subscription_config.dart';
+import 'package:spinify/src/subscription/subscription_state.dart';
+import 'package:spinify/src/subscription/subscription_states_stream.dart';
+import 'package:spinify/src/transport/transport_interface.dart';
+import 'package:spinify/src/util/event_queue.dart';
+import 'package:spinify/src/util/logger.dart' as logger;
 
 /// Client-side subscription implementation.
 /// {@nodoc}
@@ -51,7 +56,7 @@ abstract base class CentrifugeClientSubscriptionBase
   /// {@nodoc}
   CentrifugeClientSubscriptionBase({
     required this.channel,
-    required WeakReference<ICentrifugeTransport> transportWeakRef,
+    required WeakReference<ISpinifyTransport> transportWeakRef,
     required CentrifugeSubscriptionConfig config,
   }) : _config = config {
     _transportWeakRef = transportWeakRef;
@@ -73,12 +78,12 @@ abstract base class CentrifugeClientSubscriptionBase
   /// Weak reference to transport.
   /// {@nodoc}
   @nonVirtual
-  late final WeakReference<ICentrifugeTransport> _transportWeakRef;
+  late final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Internal transport responsible
   /// for sending, receiving, encoding and decoding data from the server.
   /// {@nodoc}
-  ICentrifugeTransport get _transport => _transportWeakRef.target!;
+  ISpinifyTransport get _transport => _transportWeakRef.target!;
 
   /// Subscription config.
   /// {@nodoc}
@@ -120,7 +125,7 @@ abstract base class CentrifugeClientSubscriptionBase
     if (_state == state) return;
     final previousState = _state;
     _stateController.add(_state = state);
-    Centrifuge.observer?.onSubscriptionChanged(this, previousState, state);
+    Spinify.observer?.onSubscriptionChanged(this, previousState, state);
   }
 
   /// Notify about new publication.
@@ -254,7 +259,7 @@ base mixin CentrifugeClientSubscriptionErrorsMixin
   @protected
   @nonVirtual
   void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
-      Centrifuge.observer?.onError(exception, stackTrace);
+      Spinify.observer?.onError(exception, stackTrace);
 }
 
 /// Mixin responsible for subscribing.

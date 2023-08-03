@@ -1,5 +1,5 @@
-import 'package:centrifuge_dart/src/model/event.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/event.dart';
 
 /// {@template centrifuge_channel_push}
 /// Base class for all channel push events.

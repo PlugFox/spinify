@@ -1,90 +1,89 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/client/centrifuge_interface.dart';
-import 'package:centrifuge_dart/src/client/config.dart';
-import 'package:centrifuge_dart/src/client/disconnect_code.dart';
-import 'package:centrifuge_dart/src/client/observer.dart';
-import 'package:centrifuge_dart/src/client/state.dart';
-import 'package:centrifuge_dart/src/client/states_stream.dart';
-import 'package:centrifuge_dart/src/model/channel_presence.dart';
-import 'package:centrifuge_dart/src/model/channel_push.dart';
-import 'package:centrifuge_dart/src/model/connect.dart';
-import 'package:centrifuge_dart/src/model/disconnect.dart';
-import 'package:centrifuge_dart/src/model/event.dart';
-import 'package:centrifuge_dart/src/model/exception.dart';
-import 'package:centrifuge_dart/src/model/history.dart';
-import 'package:centrifuge_dart/src/model/message.dart';
-import 'package:centrifuge_dart/src/model/presence.dart';
-import 'package:centrifuge_dart/src/model/presence_stats.dart';
-import 'package:centrifuge_dart/src/model/publication.dart';
-import 'package:centrifuge_dart/src/model/pushes_stream.dart';
-import 'package:centrifuge_dart/src/model/refresh.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/model/subscribe.dart';
-import 'package:centrifuge_dart/src/model/unsubscribe.dart';
-import 'package:centrifuge_dart/src/subscription/client_subscription_manager.dart';
-import 'package:centrifuge_dart/src/subscription/server_subscription_manager.dart';
-import 'package:centrifuge_dart/src/subscription/subscription.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_config.dart';
-import 'package:centrifuge_dart/src/transport/transport_interface.dart';
-import 'package:centrifuge_dart/src/transport/ws_protobuf_transport.dart';
-import 'package:centrifuge_dart/src/util/event_queue.dart';
-import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
+import 'package:spinify/src/client/centrifuge_interface.dart';
+import 'package:spinify/src/client/config.dart';
+import 'package:spinify/src/client/disconnect_code.dart';
+import 'package:spinify/src/client/observer.dart';
+import 'package:spinify/src/client/state.dart';
+import 'package:spinify/src/client/states_stream.dart';
+import 'package:spinify/src/model/channel_presence.dart';
+import 'package:spinify/src/model/channel_push.dart';
+import 'package:spinify/src/model/connect.dart';
+import 'package:spinify/src/model/disconnect.dart';
+import 'package:spinify/src/model/event.dart';
+import 'package:spinify/src/model/exception.dart';
+import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/message.dart';
+import 'package:spinify/src/model/presence.dart';
+import 'package:spinify/src/model/presence_stats.dart';
+import 'package:spinify/src/model/publication.dart';
+import 'package:spinify/src/model/pushes_stream.dart';
+import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/stream_position.dart';
+import 'package:spinify/src/model/subscribe.dart';
+import 'package:spinify/src/model/unsubscribe.dart';
+import 'package:spinify/src/subscription/client_subscription_manager.dart';
+import 'package:spinify/src/subscription/server_subscription_manager.dart';
+import 'package:spinify/src/subscription/subscription.dart';
+import 'package:spinify/src/subscription/subscription_config.dart';
+import 'package:spinify/src/transport/transport_interface.dart';
+import 'package:spinify/src/transport/ws_protobuf_transport.dart';
+import 'package:spinify/src/util/event_queue.dart';
+import 'package:spinify/src/util/logger.dart' as logger;
 
-/// {@template centrifuge}
-/// Centrifuge client.
+/// {@template spinify}
+/// Spinify client.
 /// {@endtemplate}
 /// {@category Client}
-final class Centrifuge extends CentrifugeBase
+final class Spinify extends SpinifyBase
     with
-        CentrifugeErrorsMixin,
-        CentrifugeStateMixin,
-        CentrifugeEventReceiverMixin,
-        CentrifugeConnectionMixin,
-        CentrifugeSendMixin,
-        CentrifugeClientSubscriptionMixin,
-        CentrifugeServerSubscriptionMixin,
-        CentrifugePublicationsMixin,
-        CentrifugePresenceMixin,
-        CentrifugeHistoryMixin,
-        CentrifugeRPCMixin,
-        CentrifugeQueueMixin {
-  /// {@macro centrifuge}
-  Centrifuge([CentrifugeConfig? config])
-      : super(config ?? CentrifugeConfig.byDefault());
+        SpinifyErrorsMixin,
+        SpinifyStateMixin,
+        SpinifyEventReceiverMixin,
+        SpinifyConnectionMixin,
+        SpinifySendMixin,
+        SpinifyClientSubscriptionMixin,
+        SpinifyServerSubscriptionMixin,
+        SpinifyPublicationsMixin,
+        SpinifyPresenceMixin,
+        SpinifyHistoryMixin,
+        SpinifyRPCMixin,
+        SpinifyQueueMixin {
+  /// {@macro spinify}
+  Spinify([SpinifyConfig? config]) : super(config ?? SpinifyConfig.byDefault());
 
   /// Create client and connect.
   ///
-  /// {@macro centrifuge}
-  factory Centrifuge.connect(String url, [CentrifugeConfig? config]) =>
-      Centrifuge(config)..connect(url);
+  /// {@macro spinify}
+  factory Spinify.connect(String url, [SpinifyConfig? config]) =>
+      Spinify(config)..connect(url);
 
-  /// The current [CentrifugeObserver] instance.
-  static CentrifugeObserver? observer;
+  /// The current [SpinifyObserver] instance.
+  static SpinifyObserver? observer;
 }
 
 /// {@nodoc}
 @internal
-abstract base class CentrifugeBase implements ICentrifuge {
+abstract base class SpinifyBase implements ISpinify {
   /// {@nodoc}
-  CentrifugeBase(CentrifugeConfig config) : _config = config {
-    _transport = CentrifugeWSPBTransport(
+  SpinifyBase(SpinifyConfig config) : _config = config {
+    _transport = SpinifyWSPBTransport(
       config: config,
     );
-    _initCentrifuge();
+    _initSpinify();
   }
 
   /// Internal transport responsible
   /// for sending, receiving, encoding and decoding data from the server.
   /// {@nodoc}
   @nonVirtual
-  late final ICentrifugeTransport _transport;
+  late final ISpinifyTransport _transport;
 
   /// Centrifuge config.
   /// {@nodoc}
   @nonVirtual
-  final CentrifugeConfig _config;
+  final SpinifyConfig _config;
 
   /// Manager responsible for client-side subscriptions.
   /// {@nodoc}
@@ -101,9 +100,9 @@ abstract base class CentrifugeBase implements ICentrifuge {
   /// {@nodoc}
   @protected
   @mustCallSuper
-  void _initCentrifuge() {
-    logger.fine('Centrifuge client initialized');
-    Centrifuge.observer?.onCreate(this);
+  void _initSpinify() {
+    logger.fine('Spinify client initialized');
+    Spinify.observer?.onCreate(this);
   }
 
   /// Called when connection established.
@@ -113,7 +112,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @mustCallSuper
   void _onConnected(CentrifugeState$Connected state) {
     logger.fine('Connection established');
-    Centrifuge.observer?.onConnected(this, state);
+    Spinify.observer?.onConnected(this, state);
   }
 
   /// Called when connection lost.
@@ -123,7 +122,7 @@ abstract base class CentrifugeBase implements ICentrifuge {
   @mustCallSuper
   void _onDisconnected(CentrifugeState$Disconnected state) {
     logger.fine('Connection lost');
-    Centrifuge.observer?.onDisconnected(this, state);
+    Spinify.observer?.onDisconnected(this, state);
   }
 
   @override
@@ -131,15 +130,14 @@ abstract base class CentrifugeBase implements ICentrifuge {
   Future<void> close() async {
     await _transport.close();
     logger.fine('Centrifuge client closed');
-    Centrifuge.observer?.onClose(this);
+    Spinify.observer?.onClose(this);
   }
 }
 
 /// Mixin responsible for event receiving and distribution by controllers
 /// and streams to subscribers.
 /// {@nodoc}
-base mixin CentrifugeEventReceiverMixin
-    on CentrifugeBase, CentrifugeStateMixin {
+base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   @protected
   @nonVirtual
   final StreamController<CentrifugeChannelPush> _pushController =
@@ -182,9 +180,9 @@ base mixin CentrifugeEventReceiverMixin
   );
 
   @override
-  void _initCentrifuge() {
+  void _initSpinify() {
     _transport.events.addListener(_onEvent);
-    super._initCentrifuge();
+    super._initSpinify();
   }
 
   /// Router for all events.
@@ -194,7 +192,7 @@ base mixin CentrifugeEventReceiverMixin
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _onEvent(CentrifugeEvent event) {
-    Centrifuge.observer?.onEvent(this, event);
+    Spinify.observer?.onEvent(this, event);
     if (event is! CentrifugeChannelPush) return;
     // This is a push to a channel.
     _clientSubscriptionManager.onPush(event);
@@ -264,7 +262,7 @@ base mixin CentrifugeEventReceiverMixin
 /// Mixin responsible for centrifuge states
 /// {@nodoc}
 @internal
-base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
   /// Refresh timer.
   /// {@nodoc}
   Timer? _refreshTimer;
@@ -283,10 +281,10 @@ base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
       CentrifugeStatesStream(_statesController.stream);
 
   @override
-  void _initCentrifuge() {
+  void _initSpinify() {
     _state = _transport.state;
     _transport.states.addListener(_onStateChange);
-    super._initCentrifuge();
+    super._initSpinify();
   }
 
   @protected
@@ -310,7 +308,7 @@ base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
         break;
     }
     _statesController.add(_state = newState);
-    Centrifuge.observer?.onStateChanged(this, oldState, newState);
+    Spinify.observer?.onStateChanged(this, oldState, newState);
   }
 
   @protected
@@ -365,18 +363,18 @@ base mixin CentrifugeStateMixin on CentrifugeBase, CentrifugeErrorsMixin {
 /// Mixin responsible for errors stream.
 /// {@nodoc}
 @internal
-base mixin CentrifugeErrorsMixin on CentrifugeBase {
+base mixin SpinifyErrorsMixin on SpinifyBase {
   @protected
   @nonVirtual
   void _emitError(CentrifugeException exception, StackTrace stackTrace) =>
-      Centrifuge.observer?.onError(exception, stackTrace);
+      Spinify.observer?.onError(exception, stackTrace);
 }
 
 /// Mixin responsible for connection.
 /// {@nodoc}
 @internal
-base mixin CentrifugeConnectionMixin
-    on CentrifugeBase, CentrifugeErrorsMixin, CentrifugeStateMixin {
+base mixin SpinifyConnectionMixin
+    on SpinifyBase, SpinifyErrorsMixin, SpinifyStateMixin {
   @override
   Future<void> connect(String url) async {
     logger.fine('Interactively connecting to $url');
@@ -471,7 +469,7 @@ base mixin CentrifugeConnectionMixin
 /// Mixin responsible for sending asynchronous messages.
 /// {@nodoc}
 @internal
-base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<void> send(List<int> data) async {
     try {
@@ -491,8 +489,7 @@ base mixin CentrifugeSendMixin on CentrifugeBase, CentrifugeErrorsMixin {
 /// Mixin responsible for client-side subscriptions.
 /// {@nodoc}
 @internal
-base mixin CentrifugeClientSubscriptionMixin
-    on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   CentrifugeClientSubscription newSubscription(
     String channel, [
@@ -559,7 +556,7 @@ base mixin CentrifugeClientSubscriptionMixin
 /// Mixin responsible for server-side subscriptions.
 /// {@nodoc}
 @internal
-base mixin CentrifugeServerSubscriptionMixin on CentrifugeBase {
+base mixin SpinifyServerSubscriptionMixin on SpinifyBase {
   @override
   void _onConnected(CentrifugeState$Connected state) {
     super._onConnected(state);
@@ -582,11 +579,8 @@ base mixin CentrifugeServerSubscriptionMixin on CentrifugeBase {
 /// Mixin responsible for publications.
 /// {@nodoc}
 @internal
-base mixin CentrifugePublicationsMixin
-    on
-        CentrifugeBase,
-        CentrifugeErrorsMixin,
-        CentrifugeClientSubscriptionMixin {
+base mixin SpinifyPublicationsMixin
+    on SpinifyBase, SpinifyErrorsMixin, SpinifyClientSubscriptionMixin {
   @override
   Future<void> publish(String channel, List<int> data) async {
     try {
@@ -608,7 +602,7 @@ base mixin CentrifugePublicationsMixin
 
 /// Mixin responsible for presence.
 /// {@nodoc}
-base mixin CentrifugePresenceMixin on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<CentrifugePresence> presence(String channel) async {
     try {
@@ -648,7 +642,7 @@ base mixin CentrifugePresenceMixin on CentrifugeBase, CentrifugeErrorsMixin {
 
 /// Mixin responsible for history.
 /// {@nodoc}
-base mixin CentrifugeHistoryMixin on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<CentrifugeHistory> history(
     String channel, {
@@ -680,7 +674,7 @@ base mixin CentrifugeHistoryMixin on CentrifugeBase, CentrifugeErrorsMixin {
 
 /// Mixin responsible for history.
 /// {@nodoc}
-base mixin CentrifugeRPCMixin on CentrifugeBase, CentrifugeErrorsMixin {
+base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<List<int>> rpc(String method, List<int> data) async {
     try {
@@ -704,7 +698,7 @@ base mixin CentrifugeRPCMixin on CentrifugeBase, CentrifugeErrorsMixin {
 /// SHOULD BE LAST MIXIN.
 /// {@nodoc}
 @internal
-base mixin CentrifugeQueueMixin on CentrifugeBase {
+base mixin SpinifyQueueMixin on SpinifyBase {
   /// {@nodoc}
   final CentrifugeEventQueue _eventQueue = CentrifugeEventQueue();
 

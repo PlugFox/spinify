@@ -1,7 +1,7 @@
-import 'package:centrifuge_dart/src/model/channel_push.dart';
-import 'package:centrifuge_dart/src/model/client_info.dart';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/channel_push.dart';
+import 'package:spinify/src/model/client_info.dart';
 
 /// {@template publication}
 /// Publication context

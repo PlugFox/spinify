@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/pubspec.yaml.g.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/pubspec.yaml.g.dart';
 
 /// Token used for authentication
 typedef CentrifugeToken = String;
@@ -31,9 +31,9 @@ typedef CentrifugeConnectionPayloadCallback = FutureOr<List<int>?> Function();
 /// {@category Client}
 /// {@category Entity}
 @immutable
-final class CentrifugeConfig {
+final class SpinifyConfig {
   /// {@macro centrifuge_config}
-  CentrifugeConfig({
+  SpinifyConfig({
     this.getToken,
     this.getPayload,
     this.connectionRetryInterval = (
@@ -53,7 +53,7 @@ final class CentrifugeConfig {
   /// Create a default config
   ///
   /// {@macro centrifuge_config}
-  factory CentrifugeConfig.byDefault() = CentrifugeConfig;
+  factory SpinifyConfig.byDefault() = SpinifyConfig;
 
   /// Callback to get/refresh tokens
   /// This callback is used for initial connection

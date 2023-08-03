@@ -1,4 +1,4 @@
-name: centrifuge_dart
+name: spinify
 
 description: >
   Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM
@@ -8,9 +8,9 @@ version: 0.0.1-pre.1
 
 homepage: https://centrifugal.dev
 
-repository: https://github.com/PlugFox/centrifuge-client
+repository: https://github.com/PlugFox/spinify
 
-issue_tracker: https://github.com/PlugFox/centrifuge-client/issues
+issue_tracker: https://github.com/PlugFox/spinify/issues
 
 funding:
   - https://www.buymeacoffee.com/plugfox
@@ -18,11 +18,11 @@ funding:
   - https://boosty.to/plugfox
 
 topics:
+  - spinify
   - centrifugo
   - centrifuge
   - websocket
   - cross-platform
-  - client
 
 platforms:
   android:

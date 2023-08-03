@@ -1,24 +1,24 @@
 import 'dart:collection';
 
-import 'package:centrifuge_dart/src/model/channel_push.dart';
-import 'package:centrifuge_dart/src/model/subscribe.dart';
-import 'package:centrifuge_dart/src/model/unsubscribe.dart';
-import 'package:centrifuge_dart/src/subscription/server_subscription_impl.dart';
-import 'package:centrifuge_dart/src/subscription/subscription.dart';
-import 'package:centrifuge_dart/src/transport/transport_interface.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/channel_push.dart';
+import 'package:spinify/src/model/subscribe.dart';
+import 'package:spinify/src/model/unsubscribe.dart';
+import 'package:spinify/src/subscription/server_subscription_impl.dart';
+import 'package:spinify/src/subscription/subscription.dart';
+import 'package:spinify/src/transport/transport_interface.dart';
 
 /// Responsible for managing client-side subscriptions.
 /// {@nodoc}
 @internal
 final class ServerSubscriptionManager {
   /// {@nodoc}
-  ServerSubscriptionManager(ICentrifugeTransport transport)
-      : _transportWeakRef = WeakReference<ICentrifugeTransport>(transport);
+  ServerSubscriptionManager(ISpinifyTransport transport)
+      : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
   /// Centrifuge client weak reference.
   /// {@nodoc}
-  final WeakReference<ICentrifugeTransport> _transportWeakRef;
+  final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : CentrifugeClientSubscription

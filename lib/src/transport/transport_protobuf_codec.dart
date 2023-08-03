@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
-import 'package:centrifuge_dart/src/util/logger.dart' as logger;
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
+import 'package:spinify/src/model/protobuf/client.pb.dart' as pb;
+import 'package:spinify/src/util/logger.dart' as logger;
 
 /// {@nodoc}
 @internal

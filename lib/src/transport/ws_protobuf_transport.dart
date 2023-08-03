@@ -2,38 +2,44 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/client/disconnect_code.dart';
-import 'package:centrifuge_dart/src/model/channel_presence.dart';
-import 'package:centrifuge_dart/src/model/connect.dart';
-import 'package:centrifuge_dart/src/model/disconnect.dart';
-import 'package:centrifuge_dart/src/model/event.dart';
-import 'package:centrifuge_dart/src/model/history.dart';
-import 'package:centrifuge_dart/src/model/message.dart';
-import 'package:centrifuge_dart/src/model/presence.dart';
-import 'package:centrifuge_dart/src/model/presence_stats.dart';
-import 'package:centrifuge_dart/src/model/protobuf/client.pb.dart' as pb;
-import 'package:centrifuge_dart/src/model/refresh.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/model/subscribe.dart';
-import 'package:centrifuge_dart/src/model/unsubscribe.dart';
-import 'package:centrifuge_dart/src/subscription/server_subscription_manager.dart';
-import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
-import 'package:centrifuge_dart/src/transport/transport_interface.dart';
-import 'package:centrifuge_dart/src/transport/transport_protobuf_codec.dart';
-import 'package:centrifuge_dart/src/util/logger.dart' as logger;
-import 'package:centrifuge_dart/src/util/notifier.dart';
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
+import 'package:spinify/src/client/config.dart';
+import 'package:spinify/src/client/disconnect_code.dart';
+import 'package:spinify/src/client/state.dart';
+import 'package:spinify/src/model/channel_presence.dart';
+import 'package:spinify/src/model/client_info.dart';
+import 'package:spinify/src/model/connect.dart';
+import 'package:spinify/src/model/disconnect.dart';
+import 'package:spinify/src/model/event.dart';
+import 'package:spinify/src/model/exception.dart';
+import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/message.dart';
+import 'package:spinify/src/model/presence.dart';
+import 'package:spinify/src/model/presence_stats.dart';
+import 'package:spinify/src/model/protobuf/client.pb.dart' as pb;
+import 'package:spinify/src/model/publication.dart';
+import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/stream_position.dart';
+import 'package:spinify/src/model/subscribe.dart';
+import 'package:spinify/src/model/unsubscribe.dart';
+import 'package:spinify/src/subscription/server_subscription_manager.dart';
+import 'package:spinify/src/subscription/subcibed_on_channel.dart';
+import 'package:spinify/src/subscription/subscription.dart';
+import 'package:spinify/src/subscription/subscription_config.dart';
+import 'package:spinify/src/subscription/subscription_state.dart';
+import 'package:spinify/src/transport/transport_interface.dart';
+import 'package:spinify/src/transport/transport_protobuf_codec.dart';
+import 'package:spinify/src/util/logger.dart' as logger;
+import 'package:spinify/src/util/notifier.dart';
 import 'package:ws/ws.dart';
 
 /// {@nodoc}
 @internal
-abstract base class CentrifugeWSPBTransportBase
-    implements ICentrifugeTransport {
+abstract base class CentrifugeWSPBTransportBase implements ISpinifyTransport {
   /// {@nodoc}
   CentrifugeWSPBTransportBase({
-    required CentrifugeConfig config,
+    required SpinifyConfig config,
   })  : _config = config,
         _webSocket = WebSocketClient(
           WebSocketOptions.selector(
@@ -62,7 +68,7 @@ abstract base class CentrifugeWSPBTransportBase
 
   /// Centrifuge config.
   /// {@nodoc}
-  final CentrifugeConfig _config;
+  final SpinifyConfig _config;
 
   @override
   final CentrifugeChangeNotifier<CentrifugeEvent> events =
@@ -111,7 +117,7 @@ abstract base class CentrifugeWSPBTransportBase
 /// {@nodoc}
 @internal
 // ignore: lines_longer_than_80_chars
-final class CentrifugeWSPBTransport = CentrifugeWSPBTransportBase
+final class SpinifyWSPBTransport = CentrifugeWSPBTransportBase
     with
         CentrifugeWSPBReplyMixin,
         CentrifugeWSPBStateHandlerMixin,

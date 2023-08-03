@@ -1,21 +1,22 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/model/event.dart';
-import 'package:centrifuge_dart/src/model/history.dart';
-import 'package:centrifuge_dart/src/model/presence.dart';
-import 'package:centrifuge_dart/src/model/presence_stats.dart';
-import 'package:centrifuge_dart/src/model/refresh.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/subscription/server_subscription_manager.dart';
-import 'package:centrifuge_dart/src/subscription/subcibed_on_channel.dart';
-import 'package:centrifuge_dart/src/util/notifier.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/client/state.dart';
+import 'package:spinify/src/model/event.dart';
+import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/presence.dart';
+import 'package:spinify/src/model/presence_stats.dart';
+import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/stream_position.dart';
+import 'package:spinify/src/subscription/server_subscription_manager.dart';
+import 'package:spinify/src/subscription/subcibed_on_channel.dart';
+import 'package:spinify/src/subscription/subscription_config.dart';
+import 'package:spinify/src/util/notifier.dart';
 
 /// Class responsible for sending and receiving data from the server.
 /// {@nodoc}
 @internal
-abstract interface class ICentrifugeTransport {
+abstract interface class ISpinifyTransport {
   /// Current state
   /// {@nodoc}
   CentrifugeState get state;

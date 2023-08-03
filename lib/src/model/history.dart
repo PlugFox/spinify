@@ -1,6 +1,6 @@
-import 'package:centrifuge_dart/src/model/publication.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/publication.dart';
+import 'package:spinify/src/model/stream_position.dart';
 
 /// {@template history}
 /// History

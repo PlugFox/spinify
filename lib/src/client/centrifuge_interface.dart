@@ -2,24 +2,27 @@
 
 import 'dart:async';
 
-import 'package:centrifuge_dart/centrifuge.dart';
-import 'package:centrifuge_dart/src/model/history.dart';
-import 'package:centrifuge_dart/src/model/presence.dart';
-import 'package:centrifuge_dart/src/model/presence_stats.dart';
-import 'package:centrifuge_dart/src/model/pushes_stream.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
+import 'package:spinify/src/client/state.dart';
+import 'package:spinify/src/client/states_stream.dart';
+import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/presence.dart';
+import 'package:spinify/src/model/presence_stats.dart';
+import 'package:spinify/src/model/pushes_stream.dart';
+import 'package:spinify/src/model/stream_position.dart';
+import 'package:spinify/src/subscription/subscription.dart';
+import 'package:spinify/src/subscription/subscription_config.dart';
 
 /// Centrifuge client interface.
-abstract interface class ICentrifuge
+abstract interface class ISpinify
     implements
-        ICentrifugeStateOwner,
-        ICentrifugeAsyncMessageSender,
-        ICentrifugePublicationSender,
-        ICentrifugeEventReceiver,
-        ICentrifugeClientSubscriptionsManager,
-        ICentrifugePresenceOwner,
-        ICentrifugeHistoryOwner,
-        ICentrifugeRemoteProcedureCall {
+        ISpinifyStateOwner,
+        ISpinifyAsyncMessageSender,
+        ISpinifyPublicationSender,
+        ISpinifyEventReceiver,
+        ISpinifyClientSubscriptionsManager,
+        ISpinifyPresenceOwner,
+        ISpinifyHistoryOwner,
+        ISpinifyRemoteProcedureCall {
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
@@ -41,7 +44,7 @@ abstract interface class ICentrifuge
 }
 
 /// Centrifuge client state owner interface.
-abstract interface class ICentrifugeStateOwner {
+abstract interface class ISpinifyStateOwner {
   /// State of client.
   CentrifugeState get state;
 
@@ -50,13 +53,13 @@ abstract interface class ICentrifugeStateOwner {
 }
 
 /// Centrifuge send publication interface.
-abstract interface class ICentrifugePublicationSender {
+abstract interface class ISpinifyPublicationSender {
   /// Publish data to specific subscription channel
   Future<void> publish(String channel, List<int> data);
 }
 
 /// Centrifuge send asynchronous message interface.
-abstract interface class ICentrifugeAsyncMessageSender {
+abstract interface class ISpinifyAsyncMessageSender {
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifuge
   /// asynchronous message handler does not exist.
@@ -64,13 +67,13 @@ abstract interface class ICentrifugeAsyncMessageSender {
 }
 
 /// Centrifuge event receiver interface.
-abstract interface class ICentrifugeEventReceiver {
+abstract interface class ISpinifyEventReceiver {
   /// Stream of received pushes from Centrifugo server for a channel.
   abstract final CentrifugePushesStream stream;
 }
 
 /// Centrifuge client subscriptions manager interface.
-abstract interface class ICentrifugeClientSubscriptionsManager {
+abstract interface class ISpinifyClientSubscriptionsManager {
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
   /// in the registry or throws an exception if the Subscription
@@ -100,7 +103,7 @@ abstract interface class ICentrifugeClientSubscriptionsManager {
 }
 
 /// Centrifuge presence owner interface.
-abstract interface class ICentrifugePresenceOwner {
+abstract interface class ISpinifyPresenceOwner {
   /// Fetch presence information inside a channel.
   Future<CentrifugePresence> presence(String channel);
 
@@ -109,7 +112,7 @@ abstract interface class ICentrifugePresenceOwner {
 }
 
 /// Centrifuge history owner interface.
-abstract interface class ICentrifugeHistoryOwner {
+abstract interface class ISpinifyHistoryOwner {
   /// Fetch publication history inside a channel.
   /// Only for channels where history is enabled.
   Future<CentrifugeHistory> history(
@@ -121,7 +124,7 @@ abstract interface class ICentrifugeHistoryOwner {
 }
 
 /// Centrifuge remote procedure call interface.
-abstract interface class ICentrifugeRemoteProcedureCall {
+abstract interface class ISpinifyRemoteProcedureCall {
   /// Send arbitrary RPC and wait for response.
   Future<List<int>> rpc(String method, List<int> data);
 }

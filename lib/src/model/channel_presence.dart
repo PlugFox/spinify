@@ -1,6 +1,6 @@
-import 'package:centrifuge_dart/src/model/channel_push.dart';
-import 'package:centrifuge_dart/src/model/client_info.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/channel_push.dart';
+import 'package:spinify/src/model/client_info.dart';
 
 /// {@template channel_presence}
 /// Channel presence.

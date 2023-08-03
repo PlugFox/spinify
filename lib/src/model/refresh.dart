@@ -1,5 +1,5 @@
-import 'package:centrifuge_dart/src/model/channel_push.dart';
 import 'package:meta/meta.dart';
+import 'package:spinify/src/model/channel_push.dart';
 
 /// {@template refresh}
 /// Refresh push from Centrifugo server.

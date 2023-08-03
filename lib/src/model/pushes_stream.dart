@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/channel_presence.dart';
-import 'package:centrifuge_dart/src/model/channel_push.dart';
-import 'package:centrifuge_dart/src/model/event.dart';
-import 'package:centrifuge_dart/src/model/message.dart';
-import 'package:centrifuge_dart/src/model/publication.dart';
+import 'package:spinify/src/model/channel_presence.dart';
+import 'package:spinify/src/model/channel_push.dart';
+import 'package:spinify/src/model/event.dart';
+import 'package:spinify/src/model/message.dart';
+import 'package:spinify/src/model/publication.dart';
 
 /// Stream of received pushes from Centrifugo server for a channel.
 /// {@category Entity}

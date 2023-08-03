@@ -1,4 +1,4 @@
-import 'package:centrifuge_dart/src/model/channel_push.dart';
+import 'package:spinify/src/model/channel_push.dart';
 
 /// {@template disconnect}
 /// Disconnect push from Centrifugo server.

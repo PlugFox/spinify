@@ -1,19 +1,19 @@
 import 'dart:async';
 
-import 'package:centrifuge_dart/src/model/history.dart';
-import 'package:centrifuge_dart/src/model/presence.dart';
-import 'package:centrifuge_dart/src/model/presence_stats.dart';
-import 'package:centrifuge_dart/src/model/pushes_stream.dart';
-import 'package:centrifuge_dart/src/model/stream_position.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_state.dart';
-import 'package:centrifuge_dart/src/subscription/subscription_states_stream.dart';
+import 'package:spinify/src/model/history.dart';
+import 'package:spinify/src/model/presence.dart';
+import 'package:spinify/src/model/presence_stats.dart';
+import 'package:spinify/src/model/pushes_stream.dart';
+import 'package:spinify/src/model/stream_position.dart';
+import 'package:spinify/src/subscription/subscription_state.dart';
+import 'package:spinify/src/subscription/subscription_states_stream.dart';
 
 /// {@template subscription}
 /// Centrifuge subscription interface.
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@category Entity}
-abstract interface class ICentrifugeSubscription {
+abstract interface class ISpinifySubscription {
   /// Channel name.
   abstract final String channel;
 
@@ -108,7 +108,7 @@ abstract interface class ICentrifugeSubscription {
 /// {@category Entity}
 /// {@subCategory Client-side}
 abstract interface class CentrifugeClientSubscription
-    implements ICentrifugeSubscription {
+    implements ISpinifySubscription {
   /// Start subscribing to a channel
   Future<void> subscribe();
 
@@ -138,7 +138,7 @@ abstract interface class CentrifugeClientSubscription
 /// {@category Entity}
 /// {@subCategory Server-side}
 abstract interface class CentrifugeServerSubscription
-    implements ICentrifugeSubscription {
+    implements ISpinifySubscription {
   @override
   String toString() => 'CentrifugeServerSubscription{channel: $channel}';
 }
