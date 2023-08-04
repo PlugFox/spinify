@@ -99,4 +99,4 @@ We appreciate any form of support, whether it's a financial donation or just a s
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+[The MIT License](https://opensource.org/licenses/MIT)
