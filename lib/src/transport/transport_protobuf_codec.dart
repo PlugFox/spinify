@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
-import 'package:spinify/src/model/protobuf/client.pb.dart' as pb;
+import 'package:spinify/src/transport/protobuf/client.pb.dart' as pb;
 import 'package:spinify/src/util/logger.dart' as logger;
 
 /// {@nodoc}

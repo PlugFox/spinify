@@ -93,13 +93,13 @@ sealed class Pubspec {
   static const PubspecVersion version = (
     /// Non-canonical string representation of the version as provided
     /// in the pubspec.yaml file.
-    representation: r'0.0.1-pre.1',
+    representation: r'0.0.1-pre.4',
 
     /// Returns a 'canonicalized' representation
     /// of the application version.
     /// This represents the version string in accordance with
     /// Semantic Versioning (SemVer) standards.
-    canonical: r'0.0.1-pre.1',
+    canonical: r'0.0.1-pre.4',
 
     /// MAJOR version when you make incompatible API changes.
     /// The major version number: 1 in "1.2.3".
@@ -115,7 +115,7 @@ sealed class Pubspec {
     patch: 1,
 
     /// The pre-release identifier: "foo" in "1.2.3-foo".
-    preRelease: <String>[r'pre', r'1'],
+    preRelease: <String>[r'pre', r'4'],
 
     /// The build identifier: "foo" in "1.2.3+foo".
     build: <String>[],
@@ -124,13 +124,13 @@ sealed class Pubspec {
   /// Build date and time (UTC)
   static final DateTime timestamp = DateTime.utc(
     2023,
-    7,
-    16,
-    16,
-    24,
-    19,
-    363,
-    242,
+    8,
+    4,
+    4,
+    45,
+    29,
+    391,
+    533,
   );
 
   /// Name
@@ -150,7 +150,7 @@ sealed class Pubspec {
   /// Try to pick a name that is clear, terse, and not already in use.
   /// A quick search of packages on the [pub.dev site](https://pub.dev/packages)
   /// to make sure that nothing else is using your name is recommended.
-  static const String name = r'centrifuge_dart';
+  static const String name = r'spinify';
 
   /// Description
   ///
@@ -193,8 +193,7 @@ sealed class Pubspec {
   /// While providing a repository is optional,
   /// please provide it or homepage (or both).
   /// It helps users understand where your package is coming from.
-  static const String repository =
-      r'https://github.com/PlugFox/centrifuge-client';
+  static const String repository = r'https://github.com/PlugFox/spinify';
 
   /// Issue tracker
   ///
@@ -208,7 +207,7 @@ sealed class Pubspec {
   /// then the pub.dev site uses the default issue tracker
   /// (https://github.com/<user>/<repository>/issues).
   static const String issueTracker =
-      r'https://github.com/PlugFox/centrifuge-client/issues';
+      r'https://github.com/PlugFox/spinify/issues';
 
   /// Documentation
   ///
@@ -350,11 +349,11 @@ sealed class Pubspec {
   /// When choosing topics, consider if existing topics are relevant.
   /// Tagging with existing topics helps users discover your package.
   static const List<Object> topics = <Object>[
+    r'spinify',
     r'centrifugo',
     r'centrifuge',
     r'websocket',
     r'cross-platform',
-    r'client',
   ];
 
   /// Environment
@@ -427,10 +426,11 @@ sealed class Pubspec {
   /// see [Package dependencies](https://dart.dev/tools/pub/dependencies).
   static const Map<String, Object> dependencies = <String, Object>{
     'meta': r'^1.9.1',
-    'ws': r'^0.1.2',
+    'ws': r'^1.0.0-pre.6',
     'protobuf': r'^3.0.0',
     'crypto': r'^3.0.3',
     'fixnum': r'^1.1.0',
+    'stack_trace': r'^1.11.1',
   };
 
   /// Developer dependencies
