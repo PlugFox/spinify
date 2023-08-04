@@ -296,8 +296,8 @@ base mixin SpinifyClientSubscriptionSubscribeMixin
         _config,
         switch (state.since) {
           null => null,
-          ({String epoch, fixnum.Int64 offset}) s => (
-              epoch: s.epoch,
+          (epoch: String epoch, offset: fixnum.Int64 _) => (
+              epoch: epoch,
               offset: _offset,
             ),
         },
