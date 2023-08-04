@@ -1,0 +1,5 @@
+{
+  "ENVIRONMENT": "development",
+  "CENTRIFUGE_BASE_URL": "http://localhost:8000",
+  "CENTRIFUGE_TIMEOUT": 8000
+}
