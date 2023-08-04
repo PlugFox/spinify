@@ -1,3 +1,3 @@
-## 0.0.1-pre.5
+## 0.0.1-pre.6
 
 - **ADDED**: Initial release
