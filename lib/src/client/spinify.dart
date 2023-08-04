@@ -727,9 +727,18 @@ base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
   int _connectsTotal = 0, _connectsSuccessful = 0, _disconnects = 0;
   DateTime? _lastDisconnectTime, _lastConnectTime;
   ({int? code, String? reason})? _lastDisconnect;
+  String? _lastUrl;
+  late DateTime _initializedAt;
+
+  @override
+  void _initSpinify() {
+    _initializedAt = DateTime.now().toUtc();
+    super._initSpinify();
+  }
 
   @override
   Future<void> connect(String url) async {
+    _lastUrl = url;
     _connectsTotal++;
     return super.connect(url);
   }
@@ -737,26 +746,26 @@ base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
   @override
   void _onConnected(SpinifyState$Connected state) {
     _lastConnectTime = DateTime.now().toUtc();
-    super._onConnected(state);
     _connectsSuccessful++;
+    super._onConnected(state);
   }
 
   @override
   void _onDisconnected(SpinifyState$Disconnected state) {
     _lastDisconnectTime = DateTime.now().toUtc();
-    super._onDisconnected(state);
     _lastDisconnect = (code: state.closeCode, reason: state.closeReason);
     _disconnects = 0;
+    super._onDisconnected(state);
   }
 
   /// Get metrics of Spinify client.
   @override
   SpinifyMetrics get metrics {
     final timestamp = DateTime.now().toUtc();
-    final wsMetrics = _transport.metrics;
     return SpinifyMetrics(
       timestamp: timestamp,
-      lastUrl: wsMetrics.lastUrl,
+      initializedAt: _initializedAt,
+      lastUrl: _lastUrl,
       reconnects: (successful: _connectsSuccessful, total: _connectsTotal),
       subscriptions: (
         client: _clientSubscriptionManager.count,
@@ -764,10 +773,8 @@ base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
       ),
       speed: _transport.speed,
       state: state,
-      receivedCount: wsMetrics.receivedCount,
-      receivedSize: wsMetrics.receivedSize,
-      transferredCount: wsMetrics.transferredCount,
-      transferredSize: wsMetrics.transferredSize,
+      received: _transport.received,
+      transferred: _transport.transferred,
       lastConnectTime: _lastConnectTime,
       lastDisconnectTime: _lastDisconnectTime,
       disconnects: _disconnects,

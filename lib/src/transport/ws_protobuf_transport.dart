@@ -76,9 +76,6 @@ abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
   final SpinifyChangeNotifier<SpinifyEvent> events =
       SpinifyChangeNotifier<SpinifyEvent>();
 
-  @override
-  WebSocketMetrics get metrics => _webSocket.metrics;
-
   /// Init transport, override this method to add custom logic.
   /// {@nodoc}
   @protected
@@ -329,10 +326,18 @@ base mixin SpinifyWSPBSenderMixin
     return cmd;
   }
 
-  Future<void> _sendCommand(pb.Command command) {
+  BigInt _transferredCount = BigInt.zero;
+  BigInt _transferredSize = BigInt.zero;
+  @override
+  ({BigInt count, BigInt size}) get transferred =>
+      (count: _transferredCount, size: _transferredSize);
+
+  Future<void> _sendCommand(pb.Command command) async {
     if (!_webSocket.state.readyState.isOpen) throw StateError('Not connected');
     final data = _commandEncoder.convert(command);
-    return _webSocket.add(data);
+    await _webSocket.add(data);
+    _transferredCount += BigInt.one;
+    _transferredSize += BigInt.from(data.length);
   }
 }
 
@@ -577,6 +582,12 @@ base mixin SpinifyWSPBHandlerMixin
   /// {@nodoc}
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
+  BigInt _receivedCount = BigInt.zero;
+  BigInt _receivedSize = BigInt.zero;
+  @override
+  ({BigInt count, BigInt size}) get received =>
+      (count: _receivedCount, size: _receivedSize);
+
   @override
   Future<void> connect(
     String url,
@@ -596,6 +607,8 @@ base mixin SpinifyWSPBHandlerMixin
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _handleWebSocketMessage(List<int> response) {
+    _receivedCount += BigInt.one;
+    _receivedSize += BigInt.from(response.length);
     final replies = _replyDecoder.convert(response);
     for (final reply in replies) {
       if (reply.hasId() && reply.id > 0) {

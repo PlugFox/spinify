@@ -12,7 +12,6 @@ import 'package:spinify/src/subscription/server_subscription_manager.dart';
 import 'package:spinify/src/subscription/subcibed_on_channel.dart';
 import 'package:spinify/src/subscription/subscription_config.dart';
 import 'package:spinify/src/util/notifier.dart';
-import 'package:ws/ws.dart';
 
 /// Class responsible for sending and receiving data from the server.
 /// {@nodoc}
@@ -30,9 +29,13 @@ abstract interface class ISpinifyTransport {
   /// {@nodoc}
   abstract final SpinifyListenable<SpinifyEvent> events;
 
-  /// Get web socket metrics.
+  /// Received bytes count & size.
   /// {@nodoc}
-  WebSocketMetrics get metrics;
+  ({BigInt count, BigInt size}) get received;
+
+  /// Transferred bytes count & size.
+  /// {@nodoc}
+  ({BigInt count, BigInt size}) get transferred;
 
   /// Message response timeout in milliseconds.
   /// {@nodoc}

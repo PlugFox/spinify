@@ -23,14 +23,13 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// {@macro metrics}
   const SpinifyMetrics({
     required this.timestamp,
+    required this.initializedAt,
     required this.state,
-    required this.transferredSize,
-    required this.receivedSize,
+    required this.transferred,
+    required this.received,
     required this.reconnects,
     required this.subscriptions,
     required this.speed,
-    required this.transferredCount,
-    required this.receivedCount,
     required this.lastUrl,
     required this.lastConnectTime,
     required this.lastDisconnectTime,
@@ -42,14 +41,17 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// Timestamp of the metrics.
   final DateTime timestamp;
 
+  /// The time when the client was initialized.
+  final DateTime initializedAt;
+
   /// The current state of the client.
   final SpinifyState state;
 
-  /// The total number of bytes sent.
-  final BigInt transferredSize;
+  /// The total number of messages & size of bytes sent.
+  final ({BigInt count, BigInt size}) transferred;
 
-  /// The total number of bytes received.
-  final BigInt receivedSize;
+  /// The total number of messages & size of bytes received.
+  final ({BigInt count, BigInt size}) received;
 
   /// The total number of times the connection has been re-established.
   final ({int successful, int total}) reconnects;
@@ -65,12 +67,6 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// - avg - average speed
   /// - max - maximum speed
   final ({int min, int avg, int max}) speed;
-
-  /// The total number of messages sent.
-  final BigInt transferredCount;
-
-  /// The total number of messages received.
-  final BigInt receivedCount;
 
   /// The last URL used to connect.
   final String? lastUrl;
@@ -96,7 +92,11 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// Convert metrics to JSON.
   Map<String, Object?> toJson() => <String, Object?>{
         'timestamp': timestamp.toIso8601String(),
+        'initializedAt': initializedAt.toIso8601String(),
+        'lastConnectTime': lastConnectTime?.toIso8601String(),
+        'lastDisconnectTime': lastDisconnectTime?.toIso8601String(),
         'state': state.toJson(),
+        'lastUrl': lastUrl,
         'reconnects': <String, int>{
           'successful': reconnects.successful,
           'total': reconnects.total,
@@ -120,13 +120,15 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
           'avg': speed.avg,
           'max': speed.max,
         },
-        'transferredSize': transferredSize,
-        'receivedSize': receivedSize,
-        'transferredCount': transferredCount,
-        'receivedCount': receivedCount,
-        'lastUrl': lastUrl,
-        'lastConnectTime': lastConnectTime?.toIso8601String(),
-        'lastDisconnectTime': lastDisconnectTime?.toIso8601String(),
+        'transferred': <String, BigInt>{
+          'count': transferred.count,
+          'size': transferred.size,
+        },
+        'received': <String, BigInt>{
+          'count': received.count,
+          'size': received.size,
+        },
+        'isRefreshActive': isRefreshActive,
         'disconnects': disconnects,
         'lastDisconnect': switch (lastDisconnect) {
           (:int? code, :String? reason) => <String, Object?>{
@@ -135,7 +137,6 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
             },
           _ => null,
         },
-        'isRefreshActive': isRefreshActive,
       };
 
   @override
