@@ -102,13 +102,13 @@ final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
           'total': reconnects.total,
         },
         'subscriptions': <String, Map<String, int>>{
-          'client': {
+          'client': <String, int>{
             'total': subscriptions.client.total,
             'unsubscribed': subscriptions.client.unsubscribed,
             'subscribing': subscriptions.client.subscribing,
             'subscribed': subscriptions.client.subscribed,
           },
-          'server': {
+          'server': <String, int>{
             'total': subscriptions.server.total,
             'unsubscribed': subscriptions.server.unsubscribed,
             'subscribing': subscriptions.server.subscribing,
