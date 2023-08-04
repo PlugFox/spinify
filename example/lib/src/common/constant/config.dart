@@ -20,8 +20,12 @@ abstract final class Config {
           int.fromEnvironment('CENTRIFUGE_TIMEOUT', defaultValue: 15000));
 
   /// Secret for HMAC token.
-  static const String passwordMinLength =
+  static const String centrifugeToken =
       String.fromEnvironment('CENTRIFUGE_TOKEN_HMAC_SECRET');
+
+  /// Channel by default.
+  static const String centrifugeChannel =
+      String.fromEnvironment('CENTRIFUGE_CHANNEL');
 
   // --- Layout --- //
 

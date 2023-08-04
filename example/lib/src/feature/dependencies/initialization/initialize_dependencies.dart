@@ -96,7 +96,7 @@ mixin InitializeDependencies {
         (
           'Authentication repository',
           (dependencies) => dependencies.authenticationRepository =
-              AuthenticationRepositoryFake(),
+              AuthenticationRepositoryImpl(),
         ),
         (
           'Fake delay 1',

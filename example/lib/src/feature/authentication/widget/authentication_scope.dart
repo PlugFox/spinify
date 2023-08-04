@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/widgets.dart';
 import 'package:spinifyapp/src/feature/authentication/controller/authentication_controller.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
@@ -9,13 +11,13 @@ import 'package:spinifyapp/src/feature/dependencies/widget/dependencies_scope.da
 class AuthenticationScope extends StatefulWidget {
   /// {@macro authentication_scope}
   const AuthenticationScope({
-    required this.signInScreen,
+    required this.signInForm,
     required this.child,
     super.key,
   });
 
-  /// Sign In screen for unauthenticated users.
-  final Widget signInScreen;
+  /// Sign In form for unauthenticated users.
+  final Widget signInForm;
 
   /// The widget below this widget in the tree.
   final Widget child;
@@ -36,6 +38,7 @@ class AuthenticationScope extends StatefulWidget {
 class _AuthenticationScopeState extends State<AuthenticationScope> {
   late final AuthenticationController _authenticationController;
   User _user = const User.unauthenticated();
+  bool _showForm = true;
 
   @override
   void initState() {
@@ -55,17 +58,56 @@ class _AuthenticationScopeState extends State<AuthenticationScope> {
 
   void _onAuthenticationControllerChanged() {
     final user = _authenticationController.state.user;
-    if (!identical(_user, user)) setState(() => _user = user);
+    if (!identical(_user, user)) {
+      if (user.isNotAuthenticated) _showForm = true;
+      setState(() => _user = user);
+    }
   }
 
   @override
   Widget build(BuildContext context) => _InheritedAuthenticationScope(
         controller: _authenticationController,
         user: _user,
-        child: switch (_user) {
-          UnauthenticatedUser _ => widget.signInScreen,
+        /* child: switch (_user) {
+          UnauthenticatedUser _ => widget.signInForm,
           AuthenticatedUser _ => widget.child,
-        },
+        }, */
+        child: ClipRect(
+          child: StatefulBuilder(
+              builder: (context, setState) => Stack(
+                    children: <Widget>[
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          ignoring: _user.isNotAuthenticated,
+                          child: widget.child,
+                        ),
+                      ),
+                      if (_showForm)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            ignoring: _user.isAuthenticated,
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 350),
+                              onEnd: () => setState(() => _showForm = false),
+                              curve: Curves.easeInOut,
+                              opacity: _user.isNotAuthenticated ? 1 : 0,
+                              child: RepaintBoundary(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 2.5,
+                                    sigmaY: 2.5,
+                                  ),
+                                  child: Center(
+                                    child: widget.signInForm,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )),
+        ),
       );
 }
 

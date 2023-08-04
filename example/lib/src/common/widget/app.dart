@@ -3,7 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:spinifyapp/src/common/localization/localization.dart';
 import 'package:spinifyapp/src/common/widget/window_scope.dart';
 import 'package:spinifyapp/src/feature/authentication/widget/authentication_scope.dart';
-import 'package:spinifyapp/src/feature/authentication/widget/sign_in_screen.dart';
+import 'package:spinifyapp/src/feature/authentication/widget/sign_in_form.dart';
+import 'package:spinifyapp/src/feature/chat/widget/chat_screen.dart';
 
 /// {@template app}
 /// App widget.
@@ -27,17 +28,17 @@ class App extends StatelessWidget {
             ? ThemeData.dark(useMaterial3: true)
             : ThemeData.light(
                 useMaterial3: true), // TODO(plugfox): implement theme
-        home: const Placeholder(),
+        home: const AuthenticationScope(
+          signInForm: SignInForm(),
+          child: ChatScreen(),
+        ),
         supportedLocales: Localization.supportedLocales,
         locale: const Locale('en', 'US'), // TODO(plugfox): implement locale
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
           child: WindowScope(
             title: Localization.of(context).title,
-            child: AuthenticationScope(
-              signInScreen: const SignInScreen(),
-              child: child ?? const SizedBox.shrink(),
-            ),
+            child: child ?? const SizedBox.shrink(),
           ),
         ),
       );

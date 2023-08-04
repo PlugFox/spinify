@@ -1,30 +1,18 @@
 import 'dart:async';
 
+import 'package:spinifyapp/src/feature/authentication/model/sign_in_data.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 
 abstract interface class IAuthenticationRepository {
   Stream<User> userChanges();
   FutureOr<User> getUser();
-  Future<void> signInAnonymously();
-
-  /* Future<void> sendSignInWithEmailLink(String email);
-  Future<void> signInWithEmailLink(String email, String emailLink);
-  Future<void> signInWithEmailAndPassword(String email, String password);
-  Future<void> signInWithFacebook();
-  Future<void> signInWithApple();
-  Future<void> signInWithTwitter();
-  Future<void> signInWithGithub();
-  Future<void> signInWithPhoneNumber(String phoneNumber);
-  Future<void> sendPasswordResetEmail(String email);
-  Future<void> confirmPasswordReset(String code, String newPassword);
-  Future<void> signUpWithEmailAndPassword(String email, String password);
-  Future<void> deleteUser();
-  Future<bool> isSignedIn();
-  Future<void> signInWithGoogle();
-  Future<void> signOut(); */
+  Future<void> signIn(SignInData data);
+  Future<void> signOut();
 }
 
-class AuthenticationRepositoryFake implements IAuthenticationRepository {
+class AuthenticationRepositoryImpl implements IAuthenticationRepository {
+  AuthenticationRepositoryImpl();
+
   final StreamController<User> _userController =
       StreamController<User>.broadcast();
   User _user = const User.unauthenticated();
@@ -36,6 +24,13 @@ class AuthenticationRepositoryFake implements IAuthenticationRepository {
   Stream<User> userChanges() => _userController.stream;
 
   @override
-  Future<void> signInAnonymously() => Future<void>.sync(() => _userController
-      .add(_user = const User.authenticated(id: 'anonymous-user-id')));
+  Future<void> signIn(SignInData data) {
+    // TODO(plugfox): implement signIn
+    return Future<void>.sync(() => _userController
+        .add(_user = const User.authenticated(id: 'anonymous-user-id')));
+  }
+
+  @override
+  Future<void> signOut() => Future<void>.sync(
+      () => _userController.add(_user = const User.unauthenticated()));
 }
