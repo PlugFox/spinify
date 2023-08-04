@@ -50,7 +50,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
 
 /// Unsubscribed state
 ///
-/// {@nodoc}
+/// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Unsubscribed
@@ -100,6 +100,13 @@ final class SpinifySubscriptionState$Unsubscribed
       unsubscribed(this);
 
   @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        ...super.toJson(),
+        'code': code,
+        'reason': reason,
+      };
+
+  @override
   int get hashCode => Object.hash(0, timestamp, since);
 
   @override
@@ -110,7 +117,8 @@ final class SpinifySubscriptionState$Unsubscribed
 }
 
 /// Subscribing state
-/// {@nodoc}
+///
+/// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribing
@@ -162,7 +170,8 @@ final class SpinifySubscriptionState$Subscribing
 }
 
 /// Subscribed state
-/// {@nodoc}
+///
+/// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
@@ -206,6 +215,12 @@ final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
         subscribed,
   }) =>
       subscribed(this);
+
+  @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        ...super.toJson(),
+        if (ttl != null) 'ttl': ttl?.toUtc().toIso8601String(),
+      };
 
   @override
   int get hashCode => Object.hash(2, timestamp, since, recoverable, ttl);
@@ -299,4 +314,18 @@ abstract base class _$SpinifySubscriptionStateBase {
         subscribing: subscribing ?? (_) => null,
         subscribed: subscribed ?? (_) => null,
       );
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+        if (since != null)
+          'since': switch (since) {
+            (:fixnum.Int64 offset, :String epoch) => <String, Object>{
+                'offset': offset,
+                'epoch': epoch,
+              },
+            _ => null,
+          },
+        'recoverable': recoverable,
+      };
 }

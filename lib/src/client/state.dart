@@ -485,7 +485,7 @@ abstract base class _$SpinifyStateBase {
 
   Map<String, Object?> toJson() => <String, Object?>{
         'type': type,
-        'timestamp': timestamp.microsecondsSinceEpoch,
+        'timestamp': timestamp.toUtc().toIso8601String(),
         if (url != null) 'url': url,
       };
 }
