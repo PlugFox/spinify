@@ -11,7 +11,7 @@ get:
 test: get
 	@dart test --debug --coverage=.coverage --platform chrome,vm
 
-publish:
+publish: generate
 	@yes | dart pub publish
 
 deploy: publish

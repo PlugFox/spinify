@@ -93,17 +93,17 @@ sealed class Pubspec {
   static const PubspecVersion version = (
     /// Non-canonical string representation of the version as provided
     /// in the pubspec.yaml file.
-    representation: r'0.0.1-pre.6',
+    representation: r'1.0.0+1',
 
     /// Returns a 'canonicalized' representation
     /// of the application version.
     /// This represents the version string in accordance with
     /// Semantic Versioning (SemVer) standards.
-    canonical: r'0.0.1-pre.6',
+    canonical: r'1.0.0+1',
 
     /// MAJOR version when you make incompatible API changes.
     /// The major version number: 1 in "1.2.3".
-    major: 0,
+    major: 1,
 
     /// MINOR version when you add functionality
     /// in a backward compatible manner.
@@ -112,13 +112,13 @@ sealed class Pubspec {
 
     /// PATCH version when you make backward compatible bug fixes.
     /// The patch version number: 3 in "1.2.3".
-    patch: 1,
+    patch: 0,
 
     /// The pre-release identifier: "foo" in "1.2.3-foo".
-    preRelease: <String>[r'pre', r'6'],
+    preRelease: <String>[],
 
     /// The build identifier: "foo" in "1.2.3+foo".
-    build: <String>[],
+    build: <String>[r'1'],
   );
 
   /// Build date and time (UTC)
@@ -126,11 +126,11 @@ sealed class Pubspec {
     2023,
     8,
     4,
-    8,
-    56,
-    57,
-    323,
-    753,
+    9,
+    6,
+    50,
+    841,
+    552,
   );
 
   /// Name
@@ -150,7 +150,7 @@ sealed class Pubspec {
   /// Try to pick a name that is clear, terse, and not already in use.
   /// A quick search of packages on the [pub.dev site](https://pub.dev/packages)
   /// to make sure that nothing else is using your name is recommended.
-  static const String name = r'spinify';
+  static const String name = r'spinifyapp';
 
   /// Description
   ///
@@ -165,8 +165,7 @@ sealed class Pubspec {
   /// Think of the description as the sales pitch for your package.
   /// Users see it when they [browse for packages](https://pub.dev/packages).
   /// The description is plain text: no markdown or HTML.
-  static const String description =
-      r'Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM over WebSockets';
+  static const String description = r'Spinify App Example';
 
   /// Homepage
   ///
@@ -231,7 +230,7 @@ sealed class Pubspec {
   /// ```yaml
   /// publish_to: none
   /// ```
-  static const String publishTo = r'https://pub.dev/';
+  static const String publishTo = r'none';
 
   /// Funding
   ///
@@ -358,7 +357,8 @@ sealed class Pubspec {
 
   /// Environment
   static const Map<String, String> environment = <String, String>{
-    'sdk': '>=3.0.0 <4.0.0',
+    'sdk': '>=3.1.0-63.1.beta <4.0.0',
+    'flutter': '>=3.1.0-63.1.beta <4.0.0',
   };
 
   /// Platforms
@@ -425,20 +425,38 @@ sealed class Pubspec {
   /// For more information,
   /// see [Package dependencies](https://dart.dev/tools/pub/dependencies).
   static const Map<String, Object> dependencies = <String, Object>{
-    'meta': r'^1.9.1',
-    'ws': r'^1.0.0-pre.6',
-    'protobuf': r'^3.0.0',
-    'crypto': r'^3.0.3',
-    'fixnum': r'^1.1.0',
-    'stack_trace': r'^1.11.0',
+    'flutter': <String, Object>{
+      'sdk': r'flutter',
+    },
+    'flutter_localizations': <String, Object>{
+      'sdk': r'flutter',
+    },
+    'intl': r'any',
+    'collection': r'any',
+    'async': r'any',
+    'meta': r'any',
+    'path': r'any',
+    'platform_info': r'^4.0.2',
+    'win32': r'^5.0.6',
+    'window_manager': r'^0.3.5',
+    'l': r'^4.0.2',
+    'spinify': <String, Object>{
+      'path': r'../',
+    },
+    'cupertino_icons': r'^1.0.2',
   };
 
   /// Developer dependencies
   static const Map<String, Object> devDependencies = <String, Object>{
+    'flutter_test': <String, Object>{
+      'sdk': r'flutter',
+    },
+    'integration_test': <String, Object>{
+      'sdk': r'flutter',
+    },
     'build_runner': r'^2.4.6',
-    'pubspec_generator': r'^4.0.0',
-    'lints': r'^2.0.1',
-    'test': r'^1.24.2',
+    'pubspec_generator': r'>=4.0.0 <5.0.0',
+    'flutter_lints': r'^2.0.1',
   };
 
   /// Dependency overrides
@@ -493,5 +511,17 @@ sealed class Pubspec {
     'dependencies': dependencies,
     'dev_dependencies': devDependencies,
     'dependency_overrides': dependencyOverrides,
+    'flutter': <String, Object>{
+      'generate': true,
+      'uses-material-design': true,
+    },
+    'flutter_intl': <String, Object>{
+      'enabled': true,
+      'class_name': r'GeneratedLocalization',
+      'main_locale': r'en',
+      'arb_dir': r'lib/src/common/localization',
+      'output_dir': r'lib/src/common/localization/generated',
+      'use_deferred_loading': false,
+    },
   };
 }

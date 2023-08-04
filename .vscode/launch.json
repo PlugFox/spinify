@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Console (example)",
+      "name": "Example",
       "request": "launch",
       "type": "dart",
-      "program": "examples/console/bin/main.dart",
+      "program": "example",
       "env": {
         "ENVIRONMENT": "local"
       },
