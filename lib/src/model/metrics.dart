@@ -6,6 +6,9 @@ import 'package:spinify/src/client/state.dart';
 /// - unsubscribed
 /// - subscribing
 /// - subscribed
+///
+/// {@category Metrics}
+/// {@category Entity}
 typedef SpinifySubscriptionCount = ({
   int total,
   int unsubscribed,
@@ -16,7 +19,8 @@ typedef SpinifySubscriptionCount = ({
 /// {@template metrics}
 /// Metrics of Spinify client.
 /// {@endtemplate}
-/// {@category Client}
+///
+/// {@category Metrics}
 /// {@category Entity}
 @immutable
 final class SpinifyMetrics implements Comparable<SpinifyMetrics> {
