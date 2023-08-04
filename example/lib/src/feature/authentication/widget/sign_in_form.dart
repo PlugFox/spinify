@@ -241,6 +241,7 @@ class _SignInFormState extends State<_SignInForm> {
                       ),
                     ],
                   ),
+                  // TODO(plugfox): generate & copy
                   SignInTextField(
                     focusNode: _secretFocusNode,
                     controller: _secretController,

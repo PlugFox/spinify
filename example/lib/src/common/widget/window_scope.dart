@@ -10,13 +10,13 @@ import 'package:window_manager/window_manager.dart';
 class WindowScope extends StatefulWidget {
   /// {@macro window_scope}
   const WindowScope({
-    required this.title,
     required this.child,
+    this.title,
     super.key,
   });
 
   /// Title of the window.
-  final String title;
+  final String? title;
 
   /// The widget below this widget in the tree.
   final Widget child;
@@ -93,13 +93,15 @@ class _WindowTitleState extends State<_WindowTitle> with WindowListener {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        height: 24,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onPanStart: (details) => windowManager.startDragging(),
-          onDoubleTap: null,
-          /* () async {
+  Widget build(BuildContext context) {
+    final title = context.findAncestorWidgetOfExactType<WindowScope>()?.title;
+    return SizedBox(
+      height: 24,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanStart: (details) => windowManager.startDragging(),
+        onDoubleTap: null,
+        /* () async {
             bool isMaximized = await windowManager.isMaximized();
             if (!isMaximized) {
               windowManager.maximize();
@@ -107,11 +109,12 @@ class _WindowTitleState extends State<_WindowTitle> with WindowListener {
               windowManager.unmaximize();
             }
           }, */
-          child: Material(
-            color: Theme.of(context).primaryColor,
-            child: Stack(
-              alignment: Alignment.center,
-              children: <Widget>[
+        child: Material(
+          color: Theme.of(context).primaryColor,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              if (title != null)
                 Builder(
                   builder: (context) {
                     final size = MediaQuery.of(context).size;
@@ -133,11 +136,7 @@ class _WindowTitleState extends State<_WindowTitle> with WindowListener {
                             ),
                           ),
                           child: Text(
-                            context
-                                    .findAncestorWidgetOfExactType<
-                                        WindowScope>()
-                                    ?.title ??
-                                'App',
+                            title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context)
@@ -150,16 +149,17 @@ class _WindowTitleState extends State<_WindowTitle> with WindowListener {
                     );
                   },
                 ),
-                _WindowButtons$Windows(
-                  isFullScreen: _isFullScreen,
-                  isAlwaysOnTop: _isAlwaysOnTop,
-                  setAlwaysOnTop: setAlwaysOnTop,
-                ),
-              ],
-            ),
+              _WindowButtons$Windows(
+                isFullScreen: _isFullScreen,
+                isAlwaysOnTop: _isAlwaysOnTop,
+                setAlwaysOnTop: setAlwaysOnTop,
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _WindowButtons$Windows extends StatelessWidget {

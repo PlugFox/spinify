@@ -68,15 +68,12 @@ class _AuthenticationScopeState extends State<AuthenticationScope> {
   Widget build(BuildContext context) => _InheritedAuthenticationScope(
         controller: _authenticationController,
         user: _user,
-        /* child: switch (_user) {
-          UnauthenticatedUser _ => widget.signInForm,
-          AuthenticatedUser _ => widget.child,
-        }, */
         child: ClipRect(
           child: StatefulBuilder(
               builder: (context, setState) => Stack(
                     children: <Widget>[
                       Positioned.fill(
+                        key: const ValueKey<String>('child'),
                         child: IgnorePointer(
                           ignoring: _user.isNotAuthenticated,
                           child: widget.child,
@@ -84,6 +81,7 @@ class _AuthenticationScopeState extends State<AuthenticationScope> {
                       ),
                       if (_showForm)
                         Positioned.fill(
+                          key: const ValueKey<String>('authentication-form'),
                           child: IgnorePointer(
                             ignoring: _user.isAuthenticated,
                             child: AnimatedOpacity(
