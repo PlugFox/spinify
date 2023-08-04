@@ -29,25 +29,46 @@ final class AuthenticationController
 
   void signIn(SignInData data) => handle(
         () async {
-          setState(AuthenticationState.processing(
-              user: state.user, message: 'Logging in...'));
+          setState(
+            AuthenticationState.processing(
+              user: state.user,
+              message: 'Logging in...',
+            ),
+          );
           await _repository.signIn(data);
         },
-        (error, _) => setState(AuthenticationState.idle(
-            user: state.user, error: ErrorUtil.formatMessage(error))),
-        () => setState(AuthenticationState.idle(user: state.user)),
+        (error, _) => setState(
+          AuthenticationState.idle(
+            user: state.user,
+            error: ErrorUtil.formatMessage(error),
+          ),
+        ),
+        () => setState(
+          AuthenticationState.idle(user: state.user),
+        ),
       );
 
   void signOut() => handle(
         () async {
-          setState(AuthenticationState.processing(
-              user: state.user, message: 'Logging out...'));
+          setState(
+            AuthenticationState.processing(
+              user: state.user,
+              message: 'Logging out...',
+            ),
+          );
           await _repository.signOut();
         },
-        (error, _) => setState(AuthenticationState.idle(
-            user: state.user, error: ErrorUtil.formatMessage(error))),
+        (error, _) => setState(
+          AuthenticationState.idle(
+            user: state.user,
+            error: ErrorUtil.formatMessage(error),
+          ),
+        ),
         () => setState(
-            const AuthenticationState.idle(user: User.unauthenticated())),
+          const AuthenticationState.idle(
+            user: User.unauthenticated(),
+          ),
+        ),
       );
 
   @override

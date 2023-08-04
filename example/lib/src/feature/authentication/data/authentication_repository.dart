@@ -24,13 +24,22 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
   Stream<User> userChanges() => _userController.stream;
 
   @override
-  Future<void> signIn(SignInData data) {
-    // TODO(plugfox): implement signIn
-    return Future<void>.sync(() => _userController
-        .add(_user = const User.authenticated(id: 'anonymous-user-id')));
-  }
+  Future<void> signIn(SignInData data) => Future<void>.sync(
+        () => _userController.add(
+          _user = User.authenticated(
+            username: data.username,
+            endpoint: data.endpoint,
+            token: data.token,
+            channel: data.channel,
+            secret: data.secret,
+          ),
+        ),
+      );
 
   @override
   Future<void> signOut() => Future<void>.sync(
-      () => _userController.add(_user = const User.unauthenticated()));
+        () => _userController.add(
+          _user = const User.unauthenticated(),
+        ),
+      );
 }

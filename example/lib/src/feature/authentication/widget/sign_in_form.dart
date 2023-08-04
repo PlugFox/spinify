@@ -70,8 +70,8 @@ class _SignInForm extends StatefulWidget {
 
 /// State for widget _SignInForm.
 class _SignInFormState extends State<_SignInForm> {
-  late final AuthenticationController authenticationController;
-  final TextEditingController _endpointController =
+  // Make it static so that it doesn't get disposed when the widget is rebuilt.
+  static final TextEditingController _endpointController =
           TextEditingController(text: Config.centrifugeBaseUrl),
       _tokenController = TextEditingController(text: Config.centrifugeToken),
       _channelController =
@@ -93,29 +93,27 @@ class _SignInFormState extends State<_SignInForm> {
 
   final ValueNotifier<bool> _validNotifier = ValueNotifier<bool>(false);
 
+  late final AuthenticationController authenticationController;
   late final Listenable _observer;
-  late final List<TextEditingController> _controllers = <TextEditingController>[
-    _endpointController,
-    _tokenController,
-    _channelController,
-    _usernameController,
-    _secretController,
-  ];
 
   @override
   void initState() {
     super.initState();
     authenticationController = AuthenticationScope.controllerOf(context);
-    _observer = Listenable.merge(_controllers)..addListener(_onChanged);
+    _observer = Listenable.merge(<TextEditingController>[
+      _endpointController,
+      _tokenController,
+      _channelController,
+      _usernameController,
+      _secretController,
+    ])
+      ..addListener(_onChanged);
     _onChanged();
   }
 
   @override
   void dispose() {
     _observer.removeListener(_onChanged);
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
     _validNotifier.dispose();
     super.dispose();
   }
@@ -287,7 +285,7 @@ class _SignInFormState extends State<_SignInForm> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        child: const Text('Sign In Anonymously'),
+                        child: const Text('Sign In'),
                       ),
                     ),
                   ),
@@ -405,14 +403,3 @@ class _SignInTextFieldState extends State<SignInTextField> {
         ),
       );
 }
-
-/* class _UsernameTextFormatter extends TextInputFormatter {
-  const _UsernameTextFormatter();
-  @override
-  TextEditingValue formatEditUpdate(
-          TextEditingValue oldValue, TextEditingValue newValue) =>
-      TextEditingValue(
-        text: newValue.text.toLowerCase(),
-        selection: newValue.selection,
-      );
-} */

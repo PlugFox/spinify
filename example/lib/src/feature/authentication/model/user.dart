@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 
-/// User id type.
-typedef UserId = String;
+/// User username type.
+typedef Username = String;
 
 /// {@template user}
 /// The user entry model.
@@ -16,11 +16,15 @@ sealed class User with _UserPatternMatching, _UserShortcuts {
 
   /// {@macro user}
   const factory User.authenticated({
-    required UserId id,
+    required Username username,
+    required String endpoint,
+    required String token,
+    required String channel,
+    String? secret,
   }) = AuthenticatedUser;
 
-  /// The user's id.
-  abstract final UserId? id;
+  /// The user's username.
+  abstract final Username? username;
 }
 
 /// {@macro user}
@@ -31,7 +35,7 @@ class UnauthenticatedUser extends User {
   const UnauthenticatedUser() : super._();
 
   @override
-  UserId? get id => null;
+  Username? get username => null;
 
   @override
   @nonVirtual
@@ -48,7 +52,9 @@ class UnauthenticatedUser extends User {
   int get hashCode => -2;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UnauthenticatedUser && id == other.id;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UnauthenticatedUser && username == other.username;
 
   @override
   String toString() => 'UnauthenticatedUser()';
@@ -56,24 +62,49 @@ class UnauthenticatedUser extends User {
 
 final class AuthenticatedUser extends User {
   const AuthenticatedUser({
-    required this.id,
+    required this.username,
+    required this.endpoint,
+    required this.token,
+    required this.channel,
+    this.secret,
   }) : super._();
 
   factory AuthenticatedUser.fromJson(Map<String, Object> json) {
     if (json.isEmpty) throw FormatException('Json is empty', json);
     if (json
         case <String, Object?>{
-          'id': UserId id,
+          'username': Username username,
+          'endpoint': String endpoint,
+          'token': String token,
+          'channel': String channel,
+          'secret': String? secret,
         })
       return AuthenticatedUser(
-        id: id,
+        username: username,
+        endpoint: endpoint,
+        token: token,
+        channel: channel,
+        secret: secret,
       );
     throw FormatException('Invalid json format', json);
   }
 
   @override
   @nonVirtual
-  final UserId id;
+  final Username username;
+
+  /// Centrifuge endpoint
+  final String endpoint;
+
+  /// Centrifuge HMAC token for JWT authentication.
+  /// **BEWARE**: You should not store the token in the real app!
+  final String token;
+
+  /// Centrifuge channel.
+  final String channel;
+
+  /// Centrifuge secret (optional)
+  final String? secret;
 
   @override
   @nonVirtual
@@ -87,17 +118,19 @@ final class AuthenticatedUser extends User {
       authenticated(this);
 
   Map<String, Object> toJson() => {
-        'id': id,
+        'username': username,
       };
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => username.hashCode;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AuthenticatedUser && id == other.id;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AuthenticatedUser && username == other.username;
 
   @override
-  String toString() => 'AuthenticatedUser(id: $id)';
+  String toString() => 'AuthenticatedUser(username: $username)';
 }
 
 mixin _UserPatternMatching {

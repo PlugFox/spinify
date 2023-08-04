@@ -10,10 +10,20 @@ final class SignInData {
     String? secret,
   }) : secret = secret == null || secret.isEmpty ? null : secret;
 
+  /// Centrifuge endpoint
   final String endpoint;
+
+  /// Centrifuge HMAC token for JWT authentication.
+  /// **BEWARE**: You should not store the token in the real app!
   final String token;
+
+  /// Centrifuge username.
   final String username;
+
+  /// Centrifuge channel.
   final String channel;
+
+  /// Centrifuge secret (optional)
   final String? secret;
 
   static final RegExp _urlValidator = RegExp(
