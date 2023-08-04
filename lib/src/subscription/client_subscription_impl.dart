@@ -139,13 +139,14 @@ abstract base class SpinifyClientSubscriptionBase
   @internal
   @mustCallSuper
   Future<void> close([int code = 0, String reason = 'closed']) async {
-    if (!_state.isUnsubscribed)
+    if (!_state.isUnsubscribed) {
       _setState(SpinifySubscriptionState.unsubscribed(
         code: code,
         reason: reason,
         recoverable: false,
         since: since,
       ));
+    }
     _stateController.close().ignore();
   }
 
@@ -308,8 +309,9 @@ base mixin SpinifyClientSubscriptionSubscribeMixin
         recoverable: subscribed.recoverable,
         ttl: subscribed.ttl,
       ));
-      if (subscribed.publications.isNotEmpty)
+      if (subscribed.publications.isNotEmpty) {
         subscribed.publications.forEach(_handlePublication);
+      }
       if (subscribed.expires) _setRefreshTimer(subscribed.ttl);
     } on SpinifyException catch (error, stackTrace) {
       unsubscribe(0, 'error while subscribing').ignore();
