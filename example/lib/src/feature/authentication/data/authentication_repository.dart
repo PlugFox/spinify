@@ -48,8 +48,8 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
           },
           channels: <String>[
             switch (secret) {
+              null || '' => channel,
               String secret => encodeChannel(secret),
-              null => channel,
             }
           ],
         );
@@ -63,17 +63,27 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
   Stream<User> userChanges() => _userController.stream;
 
   @override
-  Future<void> signIn(SignInData data) => Future<void>.sync(
-        () => _userController.add(
-          _user = User.authenticated(
+  Future<void> signIn(SignInData data) {
+    String encryptedChannel(String channel, String secret) => '${data.channel}'
+        '#'
+        '${hex.encode(utf8.encoder.fuse(sha256).convert(secret).bytes)}';
+    return Future<void>.sync(
+      () => _userController.add(
+        _user = User.authenticated(
             username: data.username,
             endpoint: data.endpoint,
             token: data.token,
-            channel: data.channel,
-            secret: data.secret,
-          ),
-        ),
-      );
+            channel: switch (data.secret) {
+              null || '' => data.channel,
+              String secret => encryptedChannel(data.channel, secret),
+            },
+            secret: switch (data.secret) {
+              null || '' => null,
+              String secret => secret,
+            }),
+      ),
+    );
+  }
 
   @override
   Future<void> signOut() => Future<void>.sync(

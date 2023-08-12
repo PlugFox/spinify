@@ -3,6 +3,8 @@ import 'package:spinifyapp/src/common/controller/state_consumer.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_controller.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
+import 'package:spinifyapp/src/feature/chat/controller/chat_messages_controller.dart';
+import 'package:spinifyapp/src/feature/chat/controller/chat_messages_state.dart';
 import 'package:spinifyapp/src/feature/dependencies/widget/dependencies_scope.dart';
 
 /// {@template chat_screen}
@@ -21,50 +23,134 @@ class ChatRoom extends StatefulWidget {
 
 /// State for widget ChatRoom.
 class _ChatRoomState extends State<ChatRoom> {
-  late final ChatConnectionController _chatConnectionController;
+  late final ChatConnectionController _connectionController;
+  late final ChatMessagesController _messagesController;
+  final TextEditingController _textEditingController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _chatConnectionController = ChatConnectionController(
-        repository: DependenciesScope.of(context).chatRepository);
-    _chatConnectionController.connect(widget.user.endpoint);
+    final repository = DependenciesScope.of(context).chatRepository;
+    _connectionController = ChatConnectionController(repository: repository);
+    _messagesController = ChatMessagesController(repository: repository);
+    _connectionController.connect(widget.user.endpoint);
   }
 
   @override
   void didUpdateWidget(covariant ChatRoom oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.user != widget.user) {
-      _chatConnectionController.disconnect();
-      _chatConnectionController.connect(widget.user.endpoint);
+      _connectionController.disconnect();
+      _connectionController.connect(widget.user.endpoint);
     }
   }
 
   @override
   void dispose() {
-    _chatConnectionController.dispose();
+    _messagesController.dispose();
+    _connectionController.dispose();
+    _textEditingController.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: StateConsumer(
-          controller: _chatConnectionController,
-          builder: (context, state, child) => switch (state) {
-            ChatConnectionState.connecting => const CircularProgressIndicator(),
-            ChatConnectionState.connected => const Text('Connected'),
-            ChatConnectionState.disconnected => const Text('Disconnected'),
-          },
-        ),
+  Widget build(BuildContext context) => Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: ListView.builder(
+              scrollDirection: Axis.vertical,
+              padding: const EdgeInsets.only(
+                top: 16,
+                bottom: 84,
+              ),
+              reverse: true,
+              itemCount: 1000,
+              itemBuilder: (context, index) => ListTile(
+                title: Text('Item $index'),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 8,
+                  right: 8,
+                  bottom: 16,
+                ),
+                child: SizedBox(
+                  width: 480,
+                  height: 48,
+                  child: StateConsumer<ChatConnectionState>(
+                    controller: _connectionController,
+                    builder: (context, connectionState, _) =>
+                        StateConsumer<ChatMessagesState>(
+                      controller: _messagesController,
+                      listener: (context, previous, current) {
+                        switch (current) {
+                          case ChatMessagesState$Successful state:
+                            _textEditingController.clear();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(state.message),
+                              ),
+                            );
+                          case ChatMessagesState$Error state:
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(state.message),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          default:
+                            break;
+                        }
+                      },
+                      builder: (context, messagesState, child) => Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: TextField(
+                              controller: _textEditingController,
+                              enabled: connectionState.isConnected,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: 'Enter a search term',
+                              ),
+                            ),
+                          ),
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _textEditingController,
+                            builder: (context, value, _) {
+                              final enabled = connectionState.isConnected &&
+                                  messagesState.isIdling &&
+                                  value.text.isNotEmpty;
+                              return IconButton(
+                                icon: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 350),
+                                  child: switch (connectionState) {
+                                    ChatConnectionState$Connecting _ =>
+                                      const CircularProgressIndicator(),
+                                    ChatConnectionState$Connected _ =>
+                                      const Icon(Icons.send),
+                                    ChatConnectionState$Disconnected _ =>
+                                      const Icon(Icons.send_outlined),
+                                  },
+                                ),
+                                onPressed: enabled
+                                    ? () => _messagesController.sendMessage(
+                                          widget.user,
+                                          'Hello World',
+                                        )
+                                    : null,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+          ),
+        ],
       );
-
-  /* @override
-  Widget build(BuildContext context) => ListView.builder(
-        scrollDirection: Axis.vertical,
-        reverse: true,
-        itemCount: 1000,
-        itemBuilder: (context, index) => ListTile(
-          title: Text('Item $index'),
-        ),
-      ); */
 }

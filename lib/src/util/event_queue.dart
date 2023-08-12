@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
+import 'package:spinify/src/util/logger.dart';
 
 /// {@nodoc}
 @internal
@@ -46,17 +47,22 @@ final class SpinifyEventQueue {
             await event();
           }
         } on Object catch (error, stackTrace) {
-          /* warning(
+          warning(
             error,
             stackTrace,
             'Error while processing event "${event.id}"',
-          ); */
+          );
           Future<void>.sync(() => event.reject(error, stackTrace)).ignore();
         }
-        _queue.removeFirst();
-        final isEmpty = _queue.isEmpty;
-        if (isEmpty) _processing = null;
-        return !isEmpty;
+        if (_queue.isEmpty) {
+          _processing = null;
+          return false;
+        } else {
+          _queue.removeFirst();
+          final isEmpty = _queue.isEmpty;
+          if (isEmpty) _processing = null;
+          return !isEmpty;
+        }
       });
 }
 

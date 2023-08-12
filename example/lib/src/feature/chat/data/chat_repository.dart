@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:spinify/spinify.dart';
+import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
+import 'package:spinifyapp/src/feature/chat/model/message.dart';
 
 /// Chat repository
 abstract interface class IChatRepository {
@@ -18,6 +20,9 @@ abstract interface class IChatRepository {
 
   /// Disconnect from chat server
   Future<void> disconnect();
+
+  /// Send message to chat server
+  Future<void> sendMessage(AuthenticatedUser user, String message);
 }
 
 final class ChatRepositorySpinifyImpl implements IChatRepository {
@@ -36,9 +41,9 @@ final class ChatRepositorySpinifyImpl implements IChatRepository {
 
   ChatConnectionState _spinifyStateToConnectionState(SpinifyState state) =>
       switch (state) {
-        SpinifyState$Connected _ => ChatConnectionState.connected,
-        SpinifyState$Connecting _ => ChatConnectionState.connecting,
-        _ => ChatConnectionState.disconnected,
+        SpinifyState$Connected _ => const ChatConnectionState.connected(),
+        SpinifyState$Connecting _ => const ChatConnectionState.connecting(),
+        _ => const ChatConnectionState.disconnected(),
       };
 
   @override
@@ -49,4 +54,37 @@ final class ChatRepositorySpinifyImpl implements IChatRepository {
 
   @override
   Future<void> disconnect() => _spinify.disconnect();
+
+  @override
+  Future<void> sendMessage(AuthenticatedUser user, String message) async {
+    if (!_spinify.state.isConnected) {
+      throw Exception('Spinify is not connected');
+    }
+    final serverChannels = _spinify.subscriptions.server.values.toList();
+    final AuthenticatedUser(:channel, :username, :secret) = user;
+    if (!serverChannels.any((c) => c.channel == channel))
+      throw Exception('Spinify server channel is not set');
+    List<int> data;
+    switch (secret) {
+      case null || '':
+        data = const PlainMessageEncoder().convert(
+          PlainMessage(
+            author: username,
+            text: message,
+            createdAt: DateTime.now(),
+            version: 1,
+          ),
+        );
+      case String secret:
+        data = EncryptedMessageEncoder(secretKey: secret).convert(
+          EncryptedMessage(
+            author: username,
+            text: message,
+            createdAt: DateTime.now(),
+            version: 1,
+          ),
+        );
+    }
+    await _spinify.publish(channel, data);
+  }
 }

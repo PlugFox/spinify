@@ -66,7 +66,7 @@ final class Spinify extends SpinifyBase
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
         SpinifyRPCMixin,
-        SpinifyQueueMixin,
+        /* SpinifyQueueMixin, */
         SpinifyMetricsMixin {
   /// {@macro spinify}
   Spinify([SpinifyConfig? config]) : super(config ?? SpinifyConfig.byDefault());
