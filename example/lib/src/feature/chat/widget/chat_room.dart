@@ -72,78 +72,71 @@ class _ChatRoomState extends State<ChatRoom> {
             height: 64,
             child: ColoredBox(
               color: Colors.grey.withOpacity(0.2),
-              child: Column(
-                children: <Widget>[
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: StateConsumer<ChatConnectionState>(
-                        controller: _connectionController,
-                        builder: (context, connectionState, _) =>
-                            StateConsumer<ChatMessagesState>(
-                          controller: _messagesController,
-                          listener: (context, previous, current) {
-                            switch (current) {
-                              case ChatMessagesState$Successful _:
-                                _textEditingController.clear();
-                              case ChatMessagesState$Error state:
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(state.message),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              default:
-                                break;
-                            }
-                          },
-                          builder: (context, messagesState, child) => Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: TextField(
-                                  controller: _textEditingController,
-                                  enabled: connectionState.isConnected,
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: 'Write a message...',
-                                  ),
-                                ),
-                              ),
-                              ValueListenableBuilder<TextEditingValue>(
-                                valueListenable: _textEditingController,
-                                builder: (context, value, _) {
-                                  final enabled = connectionState.isConnected &&
-                                      messagesState.isIdling &&
-                                      value.text.isNotEmpty;
-                                  return IconButton(
-                                    icon: AnimatedSwitcher(
-                                      duration:
-                                          const Duration(milliseconds: 350),
-                                      child: switch (connectionState) {
-                                        ChatConnectionState$Connecting _ =>
-                                          const CircularProgressIndicator(),
-                                        ChatConnectionState$Connected _ =>
-                                          const Icon(Icons.send),
-                                        ChatConnectionState$Disconnected _ =>
-                                          const Icon(Icons.send_outlined),
-                                      },
-                                    ),
-                                    onPressed: enabled
-                                        ? () => _messagesController.sendMessage(
-                                              widget.user,
-                                              'Hello World',
-                                            )
-                                        : null,
-                                  );
-                                },
-                              ),
-                            ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: StateConsumer<ChatConnectionState>(
+                  controller: _connectionController,
+                  builder: (context, connectionState, _) =>
+                      StateConsumer<ChatMessagesState>(
+                    controller: _messagesController,
+                    listener: (context, previous, current) {
+                      switch (current) {
+                        case ChatMessagesState$Successful _:
+                          _textEditingController.clear();
+                        case ChatMessagesState$Error state:
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(state.message),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        default:
+                          break;
+                      }
+                    },
+                    builder: (context, messagesState, child) => Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: TextField(
+                            controller: _textEditingController,
+                            enabled: connectionState.isConnected,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Write a message...',
+                            ),
                           ),
                         ),
-                      ),
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _textEditingController,
+                          builder: (context, value, _) {
+                            final enabled = connectionState.isConnected &&
+                                messagesState.isIdling &&
+                                value.text.isNotEmpty;
+                            return IconButton(
+                              icon: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 350),
+                                child: switch (connectionState) {
+                                  ChatConnectionState$Connecting _ =>
+                                    const CircularProgressIndicator(),
+                                  ChatConnectionState$Connected _ =>
+                                    const Icon(Icons.send),
+                                  ChatConnectionState$Disconnected _ =>
+                                    const Icon(Icons.send_outlined),
+                                },
+                              ),
+                              onPressed: enabled
+                                  ? () => _messagesController.sendMessage(
+                                        widget.user,
+                                        'Hello World',
+                                      )
+                                  : null,
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
