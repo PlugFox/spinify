@@ -75,3 +75,5 @@ integration_test/screenshots/
 # Firebase
 .firebase/
 
+# Config
+config/local.json

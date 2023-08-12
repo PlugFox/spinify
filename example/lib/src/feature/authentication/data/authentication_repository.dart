@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart';
+import 'package:spinify/spinify.dart';
 import 'package:spinifyapp/src/feature/authentication/model/sign_in_data.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 
@@ -25,7 +29,31 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
   Future<String> getToken() async {
     switch (_user) {
       case AuthenticatedUser user:
-        return user.token;
+        final AuthenticatedUser(
+          :String username,
+          :String token,
+          :String channel,
+          :String? secret
+        ) = user;
+        final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        String encodeChannel(String secret) => '$channel'
+            '#'
+            '${hex.encode(utf8.encoder.fuse(sha256).convert(secret).bytes)}';
+        SpinifyJWT jwt = SpinifyJWT(
+          sub: username,
+          exp: now + (24 * 60 * 60),
+          iat: now,
+          info: <String, Object?>{
+            'username': username,
+          },
+          channels: <String>[
+            switch (secret) {
+              String secret => encodeChannel(secret),
+              null => channel,
+            }
+          ],
+        );
+        return jwt.encode(token);
       case UnauthenticatedUser _:
         throw Exception('User is not authenticated');
     }
