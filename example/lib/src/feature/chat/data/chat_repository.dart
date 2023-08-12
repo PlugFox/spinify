@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:l/l.dart';
 import 'package:spinify/spinify.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
@@ -26,7 +27,12 @@ abstract interface class IChatRepository {
 }
 
 final class ChatRepositorySpinifyImpl implements IChatRepository {
-  ChatRepositorySpinifyImpl({required Spinify spinify}) : _spinify = spinify;
+  ChatRepositorySpinifyImpl({required Spinify spinify}) : _spinify = spinify {
+    // TODO(plugfox): remove
+    spinify.stream.publications.listen((event) {
+      l.s('publications: ${const PlainMessageDecoder().convert(event.data).text} ');
+    }, cancelOnError: false);
+  }
 
   /// Centrifugo client
   final Spinify _spinify;

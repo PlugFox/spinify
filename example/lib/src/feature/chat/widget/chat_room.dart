@@ -135,7 +135,7 @@ class _ChatRoomState extends State<ChatRoom> {
                                 onPressed: enabled
                                     ? () => _messagesController.sendMessage(
                                           widget.user,
-                                          'Hello World',
+                                          value.text,
                                         )
                                     : null,
                               );
