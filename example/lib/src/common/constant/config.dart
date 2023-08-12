@@ -40,6 +40,9 @@ abstract final class Config {
 /// Environment flavor.
 /// e.g. development, staging, production
 enum EnvironmentFlavor {
+  /// Local
+  local('local'),
+
   /// Development
   development('development'),
 
@@ -55,9 +58,10 @@ enum EnvironmentFlavor {
   /// {@nodoc}
   factory EnvironmentFlavor.from(String? value) =>
       switch (value?.trim().toLowerCase()) {
-        'development' || 'debug' || 'develop' || 'dev' => development,
-        'staging' || 'profile' || 'stage' || 'stg' => staging,
-        'production' || 'release' || 'prod' || 'prd' => production,
+        'local' || 'loc' || 'lcl' || 'l' => development,
+        'development' || 'debug' || 'develop' || 'dev' || 'd' => development,
+        'staging' || 'profile' || 'stage' || 'stg' || 's' => staging,
+        'production' || 'release' || 'prod' || 'prd' || 'p' => production,
         _ => const bool.fromEnvironment('dart.vm.product')
             ? production
             : development,

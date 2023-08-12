@@ -136,7 +136,7 @@ sealed class SpinifyState extends _$SpinifyStateBase {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Disconnected extends SpinifyState {
   /// Disconnected
   ///
   /// {@macro state}
@@ -206,7 +206,7 @@ final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Connecting extends SpinifyState {
   /// Connecting
   ///
   /// {@macro state}
@@ -258,7 +258,7 @@ final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Connected extends SpinifyState {
   /// Connected
   ///
   /// {@macro state}
@@ -365,7 +365,7 @@ final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Closed extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Closed extends SpinifyState {
   /// Permanently closed
   ///
   /// {@macro state}
@@ -411,9 +411,6 @@ final class SpinifyState$Closed extends SpinifyState with _$SpinifyState {
   @override
   String toString() => r'SpinifyState$Closed{}';
 }
-
-/// {@nodoc}
-base mixin _$SpinifyState on SpinifyState {}
 
 /// Pattern matching for [SpinifyState].
 /// {@category Entity}

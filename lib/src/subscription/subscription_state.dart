@@ -54,7 +54,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Unsubscribed
-    extends SpinifySubscriptionState with _$SpinifySubscriptionState {
+    extends SpinifySubscriptionState {
   /// {@nodoc}
   SpinifySubscriptionState$Unsubscribed({
     required this.code,
@@ -122,7 +122,7 @@ final class SpinifySubscriptionState$Unsubscribed
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribing
-    extends SpinifySubscriptionState with _$SpinifySubscriptionState {
+    extends SpinifySubscriptionState {
   /// {@nodoc}
   SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
@@ -174,8 +174,8 @@ final class SpinifySubscriptionState$Subscribing
 /// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
-final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
-    with _$SpinifySubscriptionState {
+final class SpinifySubscriptionState$Subscribed
+    extends SpinifySubscriptionState {
   /// {@nodoc}
   SpinifySubscriptionState$Subscribed({
     DateTime? timestamp,
@@ -231,9 +231,6 @@ final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
   @override
   String toString() => r'SpinifySubscriptionState$Subscribed{}';
 }
-
-/// {@nodoc}
-base mixin _$SpinifySubscriptionState on SpinifySubscriptionState {}
 
 /// Pattern matching for [SpinifySubscriptionState].
 /// {@category Entity}

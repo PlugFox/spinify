@@ -38,8 +38,7 @@ final class ChatRepositorySpinifyImpl implements IChatRepository {
       switch (state) {
         SpinifyState$Connected _ => ChatConnectionState.connected,
         SpinifyState$Connecting _ => ChatConnectionState.connecting,
-        SpinifyState$Disconnected _ => ChatConnectionState.disconnected,
-        SpinifyState$Closed _ => ChatConnectionState.disconnected,
+        _ => ChatConnectionState.disconnected,
       };
 
   @override
