@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:l/l.dart';
 import 'package:meta/meta.dart';
 import 'package:platform_info/platform_info.dart';
+import 'package:spinify/spinify.dart';
 import 'package:spinifyapp/src/common/constant/config.dart';
 import 'package:spinifyapp/src/common/constant/pubspec.yaml.g.dart';
 import 'package:spinifyapp/src/common/controller/controller.dart';
 import 'package:spinifyapp/src/common/controller/controller_observer.dart';
 import 'package:spinifyapp/src/common/util/screen_util.dart';
 import 'package:spinifyapp/src/feature/authentication/data/authentication_repository.dart';
+import 'package:spinifyapp/src/feature/chat/data/chat_repository.dart';
 import 'package:spinifyapp/src/feature/dependencies/initialization/platform/initialization_vm.dart'
     // ignore: uri_does_not_exist
     if (dart.library.html) 'package:spinifyapp/src/feature/dependencies/initialization/platform/initialization_js.dart';
@@ -24,6 +26,9 @@ class _MutableDependencies implements Dependencies {
 
   @override
   late IAuthenticationRepository authenticationRepository;
+
+  @override
+  late IChatRepository chatRepository;
 }
 
 @internal
@@ -99,16 +104,15 @@ mixin InitializeDependencies {
               AuthenticationRepositoryImpl(),
         ),
         (
-          'Fake delay 1',
-          (_) => Future<void>.delayed(const Duration(seconds: 1)),
-        ),
-        (
-          'Fake delay 2',
-          (_) => Future<void>.delayed(const Duration(seconds: 1)),
-        ),
-        (
-          'Fake delay 3',
-          (_) => Future<void>.delayed(const Duration(seconds: 1)),
+          'Chat repository',
+          (dependencies) =>
+              dependencies.chatRepository = ChatRepositorySpinifyImpl(
+                spinify: Spinify(
+                  SpinifyConfig(
+                    getToken: dependencies.authenticationRepository.getToken,
+                  ),
+                ),
+              ),
         ),
       ];
 }

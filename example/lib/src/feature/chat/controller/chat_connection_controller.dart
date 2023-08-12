@@ -17,4 +17,10 @@ final class ChatConnectionController
   void connect(String url) => handle(() => _repository.connect(url));
 
   void disconnect() => handle(_repository.disconnect);
+
+  @override
+  void dispose() {
+    _repository.disconnect();
+    super.dispose();
+  }
 }

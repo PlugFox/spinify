@@ -6,6 +6,7 @@ import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 abstract interface class IAuthenticationRepository {
   Stream<User> userChanges();
   FutureOr<User> getUser();
+  FutureOr<String> getToken();
   Future<void> signIn(SignInData data);
   Future<void> signOut();
 }
@@ -19,6 +20,16 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
 
   @override
   FutureOr<User> getUser() => _user;
+
+  @override
+  Future<String> getToken() async {
+    switch (_user) {
+      case AuthenticatedUser user:
+        return user.token;
+      case UnauthenticatedUser _:
+        throw Exception('User is not authenticated');
+    }
+  }
 
   @override
   Stream<User> userChanges() => _userController.stream;

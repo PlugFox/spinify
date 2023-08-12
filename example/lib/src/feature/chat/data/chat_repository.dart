@@ -18,18 +18,10 @@ abstract interface class IChatRepository {
 
   /// Disconnect from chat server
   Future<void> disconnect();
-
-  /// Dispose
-  Future<void> dispose();
 }
 
 final class ChatRepositorySpinifyImpl implements IChatRepository {
-  ChatRepositorySpinifyImpl({required FutureOr<String?> Function()? getToken})
-      : _spinify = Spinify(
-          SpinifyConfig(
-            getToken: getToken,
-          ),
-        );
+  ChatRepositorySpinifyImpl({required Spinify spinify}) : _spinify = spinify;
 
   /// Centrifugo client
   final Spinify _spinify;
@@ -58,9 +50,4 @@ final class ChatRepositorySpinifyImpl implements IChatRepository {
 
   @override
   Future<void> disconnect() => _spinify.disconnect();
-
-  @override
-  Future<void> dispose() async {
-    await _spinify.close();
-  }
 }

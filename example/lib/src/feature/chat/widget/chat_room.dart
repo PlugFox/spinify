@@ -3,7 +3,7 @@ import 'package:spinifyapp/src/common/controller/state_consumer.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_controller.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
-import 'package:spinifyapp/src/feature/chat/data/chat_repository.dart';
+import 'package:spinifyapp/src/feature/dependencies/widget/dependencies_scope.dart';
 
 /// {@template chat_screen}
 /// ChatRoom widget.
@@ -21,15 +21,13 @@ class ChatRoom extends StatefulWidget {
 
 /// State for widget ChatRoom.
 class _ChatRoomState extends State<ChatRoom> {
-  late final IChatRepository _repository;
   late final ChatConnectionController _chatConnectionController;
 
   @override
   void initState() {
     super.initState();
-    _repository = ChatRepositorySpinifyImpl(getToken: () => widget.user.token);
-    _chatConnectionController =
-        ChatConnectionController(repository: _repository);
+    _chatConnectionController = ChatConnectionController(
+        repository: DependenciesScope.of(context).chatRepository);
     _chatConnectionController.connect(widget.user.endpoint);
   }
 
@@ -45,7 +43,6 @@ class _ChatRoomState extends State<ChatRoom> {
   @override
   void dispose() {
     _chatConnectionController.dispose();
-    _repository.dispose();
     super.dispose();
   }
 
