@@ -1,29 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:spinifyapp/src/common/controller/state_consumer.dart';
 import 'package:spinifyapp/src/common/localization/localization.dart';
-import 'package:spinifyapp/src/feature/authentication/controller/authentication_controller.dart';
 import 'package:spinifyapp/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:spinifyapp/src/feature/chat/widget/chat_room.dart';
 
 /// {@template chat_screen}
 /// ChatScreen widget.
 /// {@endtemplate}
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends StatelessWidget {
   /// {@macro chat_screen}
   const ChatScreen({super.key});
-
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
-  late final AuthenticationController authController;
-
-  @override
-  void initState() {
-    super.initState();
-    authController = AuthenticationScope.controllerOf(context);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> {
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
           child: state.user.map<Widget>(
-            authenticated: (user) => const ChatRoom(),
+            authenticated: (user) => ChatRoom(user: user),
             unauthenticated: (_) => const SizedBox.expand(),
           ),
         ),

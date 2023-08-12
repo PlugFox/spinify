@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
+import 'package:spinifyapp/src/common/controller/state_consumer.dart';
+import 'package:spinifyapp/src/feature/authentication/model/user.dart';
+import 'package:spinifyapp/src/feature/chat/controller/chat_connection_controller.dart';
+import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
+import 'package:spinifyapp/src/feature/chat/data/chat_repository.dart';
 
 /// {@template chat_screen}
 /// ChatRoom widget.
 /// {@endtemplate}
 class ChatRoom extends StatefulWidget {
   /// {@macro chat_screen}
-  const ChatRoom({super.key});
+  const ChatRoom({required this.user, super.key});
 
-  /// The state from the closest instance of this class
-  /// that encloses the given context, if any.
-  @internal
-  static _ChatRoomState? maybeOf(BuildContext context) =>
-      context.findAncestorStateOfType<_ChatRoomState>();
+  /// The user that is currently logged in
+  final AuthenticatedUser user;
 
   @override
   State<ChatRoom> createState() => _ChatRoomState();
@@ -20,34 +21,47 @@ class ChatRoom extends StatefulWidget {
 
 /// State for widget ChatRoom.
 class _ChatRoomState extends State<ChatRoom> {
-  /* #region Lifecycle */
+  late final IChatRepository _repository;
+  late final ChatConnectionController _chatConnectionController;
+
   @override
   void initState() {
     super.initState();
-    // Initial state initialization
+    _repository = ChatRepositorySpinifyImpl(getToken: () => widget.user.token);
+    _chatConnectionController =
+        ChatConnectionController(repository: _repository);
+    _chatConnectionController.connect(widget.user.endpoint);
   }
 
   @override
-  void didUpdateWidget(ChatRoom oldWidget) {
+  void didUpdateWidget(covariant ChatRoom oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Widget configuration changed
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // The configuration of InheritedWidgets has changed
-    // Also called after initState but before build
+    if (oldWidget.user != widget.user) {
+      _chatConnectionController.disconnect();
+      _chatConnectionController.connect(widget.user.endpoint);
+    }
   }
 
   @override
   void dispose() {
-    // Permanent removal of a tree stent
+    _chatConnectionController.dispose();
+    _repository.dispose();
     super.dispose();
   }
-  /* #endregion */
 
   @override
+  Widget build(BuildContext context) => Center(
+        child: StateConsumer(
+          controller: _chatConnectionController,
+          builder: (context, state, child) => switch (state) {
+            ChatConnectionState.connecting => const CircularProgressIndicator(),
+            ChatConnectionState.connected => const Text('Connected'),
+            ChatConnectionState.disconnected => const Text('Disconnected'),
+          },
+        ),
+      );
+
+  /* @override
   Widget build(BuildContext context) => ListView.builder(
         scrollDirection: Axis.vertical,
         reverse: true,
@@ -55,5 +69,5 @@ class _ChatRoomState extends State<ChatRoom> {
         itemBuilder: (context, index) => ListTile(
           title: Text('Item $index'),
         ),
-      );
+      ); */
 }

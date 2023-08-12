@@ -53,8 +53,7 @@ class UnauthenticatedUser extends User {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is UnauthenticatedUser && username == other.username;
+      identical(this, other) || other is UnauthenticatedUser;
 
   @override
   String toString() => 'UnauthenticatedUser()';
@@ -127,7 +126,12 @@ final class AuthenticatedUser extends User {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AuthenticatedUser && username == other.username;
+      other is AuthenticatedUser &&
+          username == other.username &&
+          endpoint == other.endpoint &&
+          token == other.token &&
+          channel == other.channel &&
+          secret == other.secret;
 
   @override
   String toString() => 'AuthenticatedUser(username: $username)';
