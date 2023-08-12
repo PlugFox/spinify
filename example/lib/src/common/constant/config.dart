@@ -27,6 +27,9 @@ abstract final class Config {
   static const String centrifugeChannel =
       String.fromEnvironment('CENTRIFUGE_CHANNEL');
 
+  /// Username by default.
+  static const String centrifugeUsername =
+      String.fromEnvironment('CENTRIFUGE_USERNAME');
   // --- Layout --- //
 
   /// Maximum screen layout width for screen with list view.

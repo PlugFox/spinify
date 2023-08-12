@@ -76,7 +76,8 @@ class _SignInFormState extends State<_SignInForm> {
       _tokenController = TextEditingController(text: Config.centrifugeToken),
       _channelController =
           TextEditingController(text: Config.centrifugeChannel),
-      _usernameController = TextEditingController(),
+      _usernameController =
+          TextEditingController(text: Config.centrifugeUsername),
       _secretController = TextEditingController();
 
   final FocusNode _endpointFocusNode = FocusNode(),
