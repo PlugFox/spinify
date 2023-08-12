@@ -66,7 +66,7 @@ final class Spinify extends SpinifyBase
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
         SpinifyRPCMixin,
-        /* SpinifyQueueMixin, */
+        SpinifyQueueMixin,
         SpinifyMetricsMixin {
   /// {@macro spinify}
   Spinify([SpinifyConfig? config]) : super(config ?? SpinifyConfig.byDefault());
@@ -800,8 +800,8 @@ base mixin SpinifyQueueMixin on SpinifyBase {
   Future<void> publish(String channel, List<int> data) =>
       _eventQueue.push<void>('publish', () => super.publish(channel, data));
 
-  @override
-  FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready);
+  /* @override
+  FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready); */
 
   @override
   Future<SpinifyPresence> presence(String channel) =>

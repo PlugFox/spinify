@@ -54,15 +54,12 @@ class _ChatRoomState extends State<ChatRoom> {
   }
 
   @override
-  Widget build(BuildContext context) => Stack(
+  Widget build(BuildContext context) => Column(
         children: <Widget>[
-          Positioned.fill(
+          Expanded(
             child: ListView.builder(
               scrollDirection: Axis.vertical,
-              padding: const EdgeInsets.only(
-                top: 16,
-                bottom: 84,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
               reverse: true,
               itemCount: 1000,
               itemBuilder: (context, index) => ListTile(
@@ -70,86 +67,85 @@ class _ChatRoomState extends State<ChatRoom> {
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 8,
-                  right: 8,
-                  bottom: 16,
-                ),
-                child: SizedBox(
-                  width: 480,
-                  height: 48,
-                  child: StateConsumer<ChatConnectionState>(
-                    controller: _connectionController,
-                    builder: (context, connectionState, _) =>
-                        StateConsumer<ChatMessagesState>(
-                      controller: _messagesController,
-                      listener: (context, previous, current) {
-                        switch (current) {
-                          case ChatMessagesState$Successful state:
-                            _textEditingController.clear();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(state.message),
-                              ),
-                            );
-                          case ChatMessagesState$Error state:
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(state.message),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          default:
-                            break;
-                        }
-                      },
-                      builder: (context, messagesState, child) => Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: _textEditingController,
-                              enabled: connectionState.isConnected,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: 'Enter a search term',
-                              ),
-                            ),
-                          ),
-                          ValueListenableBuilder<TextEditingValue>(
-                            valueListenable: _textEditingController,
-                            builder: (context, value, _) {
-                              final enabled = connectionState.isConnected &&
-                                  messagesState.isIdling &&
-                                  value.text.isNotEmpty;
-                              return IconButton(
-                                icon: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 350),
-                                  child: switch (connectionState) {
-                                    ChatConnectionState$Connecting _ =>
-                                      const CircularProgressIndicator(),
-                                    ChatConnectionState$Connected _ =>
-                                      const Icon(Icons.send),
-                                    ChatConnectionState$Disconnected _ =>
-                                      const Icon(Icons.send_outlined),
-                                  },
+          const Divider(height: 1, thickness: .5),
+          SizedBox(
+            height: 64,
+            child: ColoredBox(
+              color: Colors.grey.withOpacity(0.2),
+              child: Column(
+                children: <Widget>[
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: StateConsumer<ChatConnectionState>(
+                        controller: _connectionController,
+                        builder: (context, connectionState, _) =>
+                            StateConsumer<ChatMessagesState>(
+                          controller: _messagesController,
+                          listener: (context, previous, current) {
+                            switch (current) {
+                              case ChatMessagesState$Successful _:
+                                _textEditingController.clear();
+                              case ChatMessagesState$Error state:
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(state.message),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              default:
+                                break;
+                            }
+                          },
+                          builder: (context, messagesState, child) => Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: TextField(
+                                  controller: _textEditingController,
+                                  enabled: connectionState.isConnected,
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'Write a message...',
+                                  ),
                                 ),
-                                onPressed: enabled
-                                    ? () => _messagesController.sendMessage(
-                                          widget.user,
-                                          'Hello World',
-                                        )
-                                    : null,
-                              );
-                            },
+                              ),
+                              ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _textEditingController,
+                                builder: (context, value, _) {
+                                  final enabled = connectionState.isConnected &&
+                                      messagesState.isIdling &&
+                                      value.text.isNotEmpty;
+                                  return IconButton(
+                                    icon: AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 350),
+                                      child: switch (connectionState) {
+                                        ChatConnectionState$Connecting _ =>
+                                          const CircularProgressIndicator(),
+                                        ChatConnectionState$Connected _ =>
+                                          const Icon(Icons.send),
+                                        ChatConnectionState$Disconnected _ =>
+                                          const Icon(Icons.send_outlined),
+                                      },
+                                    ),
+                                    onPressed: enabled
+                                        ? () => _messagesController.sendMessage(
+                                              widget.user,
+                                              'Hello World',
+                                            )
+                                        : null,
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                )),
+                ],
+              ),
+            ),
           ),
         ],
       );

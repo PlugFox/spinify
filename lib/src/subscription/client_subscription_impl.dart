@@ -38,7 +38,8 @@ final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase
         SpinifyClientSubscriptionSubscribeMixin,
         SpinifyClientSubscriptionPublishingMixin,
         SpinifyClientSubscriptionHistoryMixin,
-        SpinifyClientSubscriptionPresenceMixin /* SpinifyClientSubscriptionQueueMixin */ {
+        SpinifyClientSubscriptionPresenceMixin,
+        SpinifyClientSubscriptionQueueMixin {
   /// {@nodoc}
   SpinifyClientSubscriptionImpl({
     required super.channel,
@@ -562,12 +563,6 @@ base mixin SpinifyClientSubscriptionQueueMixin
     on SpinifyClientSubscriptionBase {
   /// {@nodoc}
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
-
-  @override
-  FutureOr<void> ready() => _eventQueue.push<void>(
-        'ready',
-        super.ready,
-      );
 
   @override
   Future<void> subscribe() => _eventQueue.push<void>(

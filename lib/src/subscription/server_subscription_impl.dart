@@ -36,7 +36,8 @@ final class SpinifyServerSubscriptionImpl extends SpinifyServerSubscriptionBase
         SpinifyServerSubscriptionReadyMixin,
         SpinifyServerSubscriptionPublishingMixin,
         SpinifyServerSubscriptionHistoryMixin,
-        SpinifyServerSubscriptionPresenceMixin /* SpinifyServerSubscriptionQueueMixin */ {
+        SpinifyServerSubscriptionPresenceMixin,
+        SpinifyServerSubscriptionQueueMixin {
   /// {@nodoc}
   SpinifyServerSubscriptionImpl({
     required super.channel,
