@@ -1,9 +1,8 @@
 import 'package:meta/meta.dart';
+import 'package:spinifyapp/src/feature/chat/model/message.dart';
 
-/// {@template chat_messages_state_placeholder}
-/// Entity placeholder for ChatMessagesState
-/// {@endtemplate}
-typedef ChatMessagesEntity = Object;
+/// Chat messages entity.
+typedef ChatMessages = List<Message>;
 
 /// {@template chat_messages_state}
 /// ChatMessagesState.
@@ -12,28 +11,28 @@ sealed class ChatMessagesState extends _$ChatMessagesStateBase {
   /// Idling state
   /// {@macro chat_messages_state}
   const factory ChatMessagesState.idle({
-    required ChatMessagesEntity? data,
+    required ChatMessages data,
     String message,
   }) = ChatMessagesState$Idle;
 
   /// Processing
   /// {@macro chat_messages_state}
   const factory ChatMessagesState.processing({
-    required ChatMessagesEntity? data,
+    required ChatMessages data,
     String message,
   }) = ChatMessagesState$Processing;
 
   /// Successful
   /// {@macro chat_messages_state}
   const factory ChatMessagesState.successful({
-    required ChatMessagesEntity? data,
+    required ChatMessages data,
     String message,
   }) = ChatMessagesState$Successful;
 
   /// An error has occurred
   /// {@macro chat_messages_state}
   const factory ChatMessagesState.error({
-    required ChatMessagesEntity? data,
+    required ChatMessages data,
     String message,
   }) = ChatMessagesState$Error;
 
@@ -41,7 +40,7 @@ sealed class ChatMessagesState extends _$ChatMessagesStateBase {
   const ChatMessagesState({required super.data, required super.message});
 
   static ChatMessagesState get initial =>
-      const ChatMessagesState.idle(data: null);
+      const ChatMessagesState.idle(data: <Message>[]);
 }
 
 /// Idling state
@@ -49,6 +48,16 @@ sealed class ChatMessagesState extends _$ChatMessagesStateBase {
 final class ChatMessagesState$Idle extends ChatMessagesState {
   /// {@nodoc}
   const ChatMessagesState$Idle({required super.data, super.message = 'Idling'});
+
+  @override
+  ChatMessagesState$Idle copyWith({
+    ChatMessages? data,
+    String? message,
+  }) =>
+      ChatMessagesState$Idle(
+        data: data ?? this.data,
+        message: message ?? this.message,
+      );
 }
 
 /// Processing
@@ -57,6 +66,16 @@ final class ChatMessagesState$Processing extends ChatMessagesState {
   /// {@nodoc}
   const ChatMessagesState$Processing(
       {required super.data, super.message = 'Processing'});
+
+  @override
+  ChatMessagesState$Processing copyWith({
+    ChatMessages? data,
+    String? message,
+  }) =>
+      ChatMessagesState$Processing(
+        data: data ?? this.data,
+        message: message ?? this.message,
+      );
 }
 
 /// Successful
@@ -65,6 +84,16 @@ final class ChatMessagesState$Successful extends ChatMessagesState {
   /// {@nodoc}
   const ChatMessagesState$Successful(
       {required super.data, super.message = 'Successful'});
+
+  @override
+  ChatMessagesState$Successful copyWith({
+    ChatMessages? data,
+    String? message,
+  }) =>
+      ChatMessagesState$Successful(
+        data: data ?? this.data,
+        message: message ?? this.message,
+      );
 }
 
 /// Error
@@ -73,6 +102,16 @@ final class ChatMessagesState$Error extends ChatMessagesState {
   /// {@nodoc}
   const ChatMessagesState$Error(
       {required super.data, super.message = 'An error has occurred.'});
+
+  @override
+  ChatMessagesState$Error copyWith({
+    ChatMessages? data,
+    String? message,
+  }) =>
+      ChatMessagesState$Error(
+        data: data ?? this.data,
+        message: message ?? this.message,
+      );
 }
 
 /// Pattern matching for [ChatMessagesState].
@@ -87,14 +126,11 @@ abstract base class _$ChatMessagesStateBase {
 
   /// Data entity payload.
   @nonVirtual
-  final ChatMessagesEntity? data;
+  final ChatMessages data;
 
   /// Message or state description.
   @nonVirtual
   final String message;
-
-  /// Has data?
-  bool get hasData => data != null;
 
   /// If an error has occurred?
   bool get hasError => maybeMap<bool>(orElse: () => false, error: (_) => true);
@@ -105,6 +141,12 @@ abstract base class _$ChatMessagesStateBase {
 
   /// Is in idle state?
   bool get isIdling => !isProcessing;
+
+  /// Copy with new data.
+  ChatMessagesState copyWith({
+    ChatMessages? data,
+    String? message,
+  });
 
   /// Pattern matching for [ChatMessagesState].
   R map<R>({

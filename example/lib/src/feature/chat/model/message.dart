@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:meta/meta.dart';
 
 @immutable
-sealed class Message {
+sealed class Message implements Comparable<Message> {
   const Message({
     required this.author,
     required this.text,
@@ -60,6 +60,9 @@ final class PlainMessage extends Message {
   String get type => 'plain';
 
   @override
+  int compareTo(Message other) => createdAt.compareTo(other.createdAt);
+
+  @override
   Map<String, Object?> toJson() => <String, Object?>{
         'type': type,
         'author': author,
@@ -80,7 +83,7 @@ final class EncryptedMessage extends Message {
   factory EncryptedMessage.fromJson(Map<String, Object?> json) {
     if (json
         case <String, Object?>{
-          'type': 'plain',
+          'type': 'encrypted',
           'author': String author,
           'text': String text,
           'version': int version,
@@ -94,6 +97,9 @@ final class EncryptedMessage extends Message {
       );
     throw const FormatException('Invalid message type');
   }
+
+  @override
+  int compareTo(Message other) => createdAt.compareTo(other.createdAt);
 
   @override
   String get type => 'encrypted';

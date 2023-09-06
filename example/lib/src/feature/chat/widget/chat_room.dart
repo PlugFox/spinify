@@ -24,7 +24,7 @@ class ChatRoom extends StatefulWidget {
 /// State for widget ChatRoom.
 class _ChatRoomState extends State<ChatRoom> {
   late final ChatConnectionController _connectionController;
-  late final ChatMessagesController _messagesController;
+  late ChatMessagesController _messagesController;
   final TextEditingController _textEditingController = TextEditingController();
 
   @override
@@ -32,7 +32,8 @@ class _ChatRoomState extends State<ChatRoom> {
     super.initState();
     final repository = DependenciesScope.of(context).chatRepository;
     _connectionController = ChatConnectionController(repository: repository);
-    _messagesController = ChatMessagesController(repository: repository);
+    _messagesController =
+        ChatMessagesController(user: widget.user, repository: repository);
     _connectionController.connect(widget.user.endpoint);
   }
 
@@ -42,6 +43,11 @@ class _ChatRoomState extends State<ChatRoom> {
     if (oldWidget.user != widget.user) {
       _connectionController.disconnect();
       _connectionController.connect(widget.user.endpoint);
+      _messagesController.dispose();
+      _messagesController = ChatMessagesController(
+        user: widget.user,
+        repository: DependenciesScope.of(context).chatRepository,
+      );
     }
   }
 
@@ -57,15 +63,18 @@ class _ChatRoomState extends State<ChatRoom> {
   Widget build(BuildContext context) => Column(
         children: <Widget>[
           Expanded(
-            child: RepaintBoundary(
-              child: ListView.builder(
-                scrollDirection: Axis.vertical,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-                reverse: true,
-                itemCount: 1000,
-                itemBuilder: (context, index) => ListTile(
-                  title: Text('Item $index'),
+            child: StateConsumer<ChatMessagesState>(
+              controller: _messagesController,
+              builder: (context, messagesState, child) => RepaintBoundary(
+                child: ListView.builder(
+                  scrollDirection: Axis.vertical,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  reverse: true,
+                  itemCount: messagesState.data.length,
+                  itemBuilder: (context, index) => Card(
+                    child: Text(messagesState.data[index].text),
+                  ),
                 ),
               ),
             ),
@@ -84,6 +93,8 @@ class _ChatRoomState extends State<ChatRoom> {
                     builder: (context, connectionState, _) =>
                         StateConsumer<ChatMessagesState>(
                       controller: _messagesController,
+                      buildWhen: (previous, current) =>
+                          !(previous.isIdling && current.isIdling),
                       listener: (context, previous, current) {
                         switch (current) {
                           case ChatMessagesState$Successful _:
@@ -133,10 +144,8 @@ class _ChatRoomState extends State<ChatRoom> {
                                   },
                                 ),
                                 onPressed: enabled
-                                    ? () => _messagesController.sendMessage(
-                                          widget.user,
-                                          value.text,
-                                        )
+                                    ? () => _messagesController
+                                        .sendMessage(value.text)
                                     : null,
                               );
                             },

@@ -32,13 +32,9 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
         final AuthenticatedUser(
           :String username,
           :String token,
-          :String channel,
-          :String? secret
+          :String channel
         ) = user;
         final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        String encodeChannel(String secret) => '$channel'
-            '#'
-            '${hex.encode(utf8.encoder.fuse(sha256).convert(secret).bytes)}';
         SpinifyJWT jwt = SpinifyJWT(
           sub: username,
           exp: now + (24 * 60 * 60),
@@ -46,12 +42,7 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
           info: <String, Object?>{
             'username': username,
           },
-          channels: <String>[
-            switch (secret) {
-              null || '' => channel,
-              String secret => encodeChannel(secret),
-            }
-          ],
+          channels: <String>[channel],
         );
         return jwt.encode(token);
       case UnauthenticatedUser _:
@@ -64,19 +55,20 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
 
   @override
   Future<void> signIn(SignInData data) {
-    String encryptedChannel(String channel, String secret) => '${data.channel}'
-        '#'
-        '${hex.encode(utf8.encoder.fuse(sha256).convert(secret).bytes)}';
+    String buildChannelName(String channel, [String? secret]) =>
+        switch (secret) {
+          null || '' => channel,
+          String secret => '$channel'
+              '#'
+              '${hex.encode(utf8.encoder.fuse(sha256).convert(secret).bytes)}',
+        };
     return Future<void>.sync(
       () => _userController.add(
         _user = User.authenticated(
             username: data.username,
             endpoint: data.endpoint,
             token: data.token,
-            channel: switch (data.secret) {
-              null || '' => data.channel,
-              String secret => encryptedChannel(data.channel, secret),
-            },
+            channel: buildChannelName(data.channel, data.secret),
             secret: switch (data.secret) {
               null || '' => null,
               String secret => secret,

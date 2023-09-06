@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:l/l.dart';
 import 'package:spinify/spinify.dart';
@@ -8,7 +9,8 @@ import 'package:spinifyapp/src/feature/chat/model/message.dart';
 
 /// Chat repository
 abstract interface class IChatRepository {
-  Stream<SpinifyMessage> get messages;
+  /// Receive messages stream
+  Stream<Message> getMessages(String channel, [String? secret]);
 
   /// Connection state
   ChatConnectionState get connectionState;
@@ -27,12 +29,7 @@ abstract interface class IChatRepository {
 }
 
 final class ChatRepositorySpinifyImpl implements IChatRepository {
-  ChatRepositorySpinifyImpl({required Spinify spinify}) : _spinify = spinify {
-    // TODO(plugfox): remove
-    spinify.stream.publications.listen((event) {
-      l.s('publications: ${const PlainMessageDecoder().convert(event.data).text} ');
-    }, cancelOnError: false);
-  }
+  ChatRepositorySpinifyImpl({required Spinify spinify}) : _spinify = spinify;
 
   /// Centrifugo client
   final Spinify _spinify;
@@ -53,7 +50,24 @@ final class ChatRepositorySpinifyImpl implements IChatRepository {
       };
 
   @override
-  Stream<SpinifyMessage> get messages => throw UnimplementedError();
+  Stream<Message> getMessages(String channel, [String? secret]) {
+    void ignoreErrors(Object error, StackTrace? stackTrace) {
+      l.w('Error receiving message: $error', stackTrace);
+    }
+
+    final Converter<List<int>, Message> decoder;
+    if (secret != null && secret.isNotEmpty) {
+      decoder = EncryptedMessageDecoder(secretKey: secret);
+    } else {
+      decoder = const PlainMessageDecoder();
+    }
+
+    return _spinify.stream.publications
+        .where((event) => event.channel == channel)
+        .map<List<int>>((event) => event.data)
+        .map<Message>(decoder.convert)
+        .handleError(ignoreErrors);
+  }
 
   @override
   Future<void> connect(String url) => _spinify.connect(url);
