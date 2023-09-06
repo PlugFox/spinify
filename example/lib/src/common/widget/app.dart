@@ -39,7 +39,9 @@ class App extends StatelessWidget {
                 .firstWhereOrNull((e) => e.languageCode == platform.locale) ??
             const Locale('en', 'US'),
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaleFactor: 1),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.noScaling,
+          ),
           child: WindowScope(
             /* title: Localization.of(context).title, */
             child: child ?? const SizedBox.shrink(),
