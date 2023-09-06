@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:spinifyapp/src/common/controller/state_consumer.dart';
+import 'package:spinifyapp/src/common/util/date_util.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_controller.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_messages_controller.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_messages_state.dart';
+import 'package:spinifyapp/src/feature/chat/model/message.dart';
 import 'package:spinifyapp/src/feature/dependencies/widget/dependencies_scope.dart';
 
 /// {@template chat_screen}
@@ -72,8 +74,9 @@ class _ChatRoomState extends State<ChatRoom> {
                       const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
                   reverse: true,
                   itemCount: messagesState.data.length,
-                  itemBuilder: (context, index) => Card(
-                    child: Text(messagesState.data[index].text),
+                  itemBuilder: (context, index) => ChatMessageBubble(
+                    message: messagesState.data[index],
+                    currentUser: widget.user,
                   ),
                 ),
               ),
@@ -159,5 +162,79 @@ class _ChatRoomState extends State<ChatRoom> {
             ),
           ),
         ],
+      );
+}
+
+/// {@template chat_room}
+/// ChatMessageBubble widget.
+/// {@endtemplate}
+class ChatMessageBubble extends StatelessWidget {
+  /// {@macro chat_room}
+  const ChatMessageBubble(
+      {required this.message, required this.currentUser, super.key});
+
+  final Message message;
+  final AuthenticatedUser currentUser;
+
+  static const List<Color> _$colors = Colors.primaries;
+  static Color _getColorForUsername(String username) =>
+      _$colors[username.codeUnitAt(0) % _$colors.length];
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: message.author == currentUser.username
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: BoxConstraints.loose(
+            const Size.fromWidth(512),
+          ),
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Stack(
+              fit: StackFit.loose,
+              children: <Widget>[
+                Positioned(
+                  top: 4,
+                  left: 8,
+                  child: Text(
+                    message.author,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: _getColorForUsername(message.author),
+                      letterSpacing: 1,
+                      height: 1,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 16, 8, 14),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 128),
+                    child: Text(message.text),
+                  ),
+                ),
+                Positioned(
+                  bottom: 4,
+                  right: 4,
+                  child: Text(
+                    message.createdAt.format(),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey,
+                      letterSpacing: 1.2,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
 }

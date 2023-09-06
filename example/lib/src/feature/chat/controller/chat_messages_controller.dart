@@ -26,7 +26,7 @@ final class ChatMessagesController extends StateController<ChatMessagesState>
   late final StreamSubscription<Message> _messagesSubscription;
   late final Set<Message> _messages = SplayTreeSet<Message>.of(
     state.data,
-    (a, b) => a.compareTo(b),
+    (a, b) => b.compareTo(a),
   );
 
   void _onMessage(Message message) {
