@@ -70,6 +70,9 @@ final class PlainMessage extends Message {
         'version': version,
         'createdAt': createdAt.millisecondsSinceEpoch ~/ 1000,
       };
+
+  @override
+  String toString() => '$author: $text';
 }
 
 final class EncryptedMessage extends Message {
@@ -112,6 +115,9 @@ final class EncryptedMessage extends Message {
         'version': version,
         'createdAt': createdAt.millisecondsSinceEpoch ~/ 1000,
       };
+
+  @override
+  String toString() => '$author: $text';
 }
 
 @immutable

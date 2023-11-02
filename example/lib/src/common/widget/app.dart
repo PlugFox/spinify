@@ -40,7 +40,8 @@ class App extends StatelessWidget {
             const Locale('en', 'US'),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling,
+            /* textScaler: TextScaler.noScaling, */
+            textScaleFactor: 1,
           ),
           child: WindowScope(
             /* title: Localization.of(context).title, */
