@@ -55,7 +55,7 @@ Connection related features
 - ✅ Publish data into a channel
 - ✅ Enqueue methods
 - ✅ Set observer for hooking events & errors
-- ❌ Metrics
+- ✅ Metrics
 - ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
 - ❌ JSON transport
@@ -99,4 +99,4 @@ We appreciate any form of support, whether it's a financial donation or just a s
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+[The MIT License](https://opensource.org/licenses/MIT)

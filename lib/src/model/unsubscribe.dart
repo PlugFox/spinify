@@ -3,6 +3,8 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template unsubscribe}
 /// Unsubscribe push from Centrifugo server.
 /// {@endtemplate}
+/// {@category Event}
+/// {@subCategory Push}
 final class SpinifyUnsubscribe extends SpinifyChannelPush {
   /// {@macro unsubscribe}
   const SpinifyUnsubscribe({
@@ -20,4 +22,7 @@ final class SpinifyUnsubscribe extends SpinifyChannelPush {
 
   /// Reason of unsubscribe.
   final String reason;
+
+  @override
+  String toString() => 'SpinifyUnsubscribe{channel: $channel}';
 }

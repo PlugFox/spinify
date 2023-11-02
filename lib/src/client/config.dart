@@ -4,6 +4,9 @@ import 'package:meta/meta.dart';
 import 'package:spinify/src/model/pubspec.yaml.g.dart';
 
 /// Token used for authentication
+///
+/// {@category Client}
+/// {@category Entity}
 typedef SpinifyToken = String;
 
 /// Callback to get/refresh tokens
@@ -11,11 +14,17 @@ typedef SpinifyToken = String;
 /// and for refreshing expired tokens.
 ///
 /// If method returns null then connection will be established without token.
+///
+/// {@category Client}
+/// {@category Entity}
 typedef SpinifyTokenCallback = FutureOr<SpinifyToken?> Function();
 
 /// Callback to get initial connection payload data.
 ///
 /// If method returns null then no payload will be sent at connect time.
+///
+/// {@category Client}
+/// {@category Entity}
 typedef SpinifyConnectionPayloadCallback = FutureOr<List<int>?> Function();
 
 /// {@template spinify_config}

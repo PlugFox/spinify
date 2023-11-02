@@ -3,6 +3,8 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template connect}
 /// Connect push from Centrifugo server.
 /// {@endtemplate}
+/// {@category Event}
+/// {@subCategory Push}
 final class SpinifyConnect extends SpinifyChannelPush {
   /// {@macro connect}
   const SpinifyConnect({
@@ -51,4 +53,7 @@ final class SpinifyConnect extends SpinifyChannelPush {
 
   /// Payload of connected push.
   final List<int> data;
+
+  @override
+  String toString() => 'SpinifyConnect{channel: $channel}';
 }

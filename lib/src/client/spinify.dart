@@ -15,6 +15,7 @@ import 'package:spinify/src/model/event.dart';
 import 'package:spinify/src/model/exception.dart';
 import 'package:spinify/src/model/history.dart';
 import 'package:spinify/src/model/message.dart';
+import 'package:spinify/src/model/metrics.dart';
 import 'package:spinify/src/model/presence.dart';
 import 'package:spinify/src/model/presence_stats.dart';
 import 'package:spinify/src/model/publication.dart';
@@ -33,7 +34,23 @@ import 'package:spinify/src/util/event_queue.dart';
 import 'package:spinify/src/util/logger.dart' as logger;
 
 /// {@template spinify}
-/// Spinify client.
+/// Spinify client for Centrifuge.
+///
+/// Centrifugo SDKs use WebSocket as the main data transport and send/receive
+/// messages encoded according to our bidirectional protocol.
+/// That protocol is built on top of the Protobuf schema
+/// (both JSON and binary Protobuf formats are supported).
+/// It provides asynchronous communication, sending RPC,
+/// multiplexing subscriptions to channels, etc.
+///
+/// Client SDK wraps the protocol and exposes a set of APIs to developers.
+///
+/// Client connection has 4 states:
+/// - [SpinifyState$Disconnected]
+/// - [SpinifyState$Connecting]
+/// - [SpinifyState$Connected]
+/// - [SpinifyState$Closed]
+///
 /// {@endtemplate}
 /// {@category Client}
 final class Spinify extends SpinifyBase
@@ -49,7 +66,8 @@ final class Spinify extends SpinifyBase
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
         SpinifyRPCMixin,
-        SpinifyQueueMixin {
+        SpinifyQueueMixin,
+        SpinifyMetricsMixin {
   /// {@macro spinify}
   Spinify([SpinifyConfig? config]) : super(config ?? SpinifyConfig.byDefault());
 
@@ -94,6 +112,15 @@ abstract base class SpinifyBase implements ISpinify {
   /// {@nodoc}
   late final ServerSubscriptionManager _serverSubscriptionManager =
       ServerSubscriptionManager(_transport);
+
+  @override
+  ({
+    Map<String, SpinifyClientSubscription> client,
+    Map<String, SpinifyServerSubscription> server,
+  }) get subscriptions => (
+        client: _clientSubscriptionManager.subscriptions,
+        server: _serverSubscriptionManager.subscriptions
+      );
 
   /// Init spinify client, override this method to add custom logic.
   /// This method is called in constructor.
@@ -510,10 +537,6 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   }
 
   @override
-  Map<String, SpinifyClientSubscription> get subscriptions =>
-      _clientSubscriptionManager.subscriptions;
-
-  @override
   SpinifyClientSubscription? getSubscription(String channel) =>
       _clientSubscriptionManager[channel];
 
@@ -697,6 +720,70 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
   }
 }
 
+/// Responsible for metrics.
+/// {@nodoc}
+@internal
+base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
+  int _connectsTotal = 0, _connectsSuccessful = 0, _disconnects = 0;
+  DateTime? _lastDisconnectTime, _lastConnectTime;
+  ({int? code, String? reason})? _lastDisconnect;
+  String? _lastUrl;
+  late DateTime _initializedAt;
+
+  @override
+  void _initSpinify() {
+    _initializedAt = DateTime.now().toUtc();
+    super._initSpinify();
+  }
+
+  @override
+  Future<void> connect(String url) async {
+    _lastUrl = url;
+    _connectsTotal++;
+    return super.connect(url);
+  }
+
+  @override
+  void _onConnected(SpinifyState$Connected state) {
+    _lastConnectTime = DateTime.now().toUtc();
+    _connectsSuccessful++;
+    super._onConnected(state);
+  }
+
+  @override
+  void _onDisconnected(SpinifyState$Disconnected state) {
+    _lastDisconnectTime = DateTime.now().toUtc();
+    _lastDisconnect = (code: state.closeCode, reason: state.closeReason);
+    _disconnects = 0;
+    super._onDisconnected(state);
+  }
+
+  /// Get metrics of Spinify client.
+  @override
+  SpinifyMetrics get metrics {
+    final timestamp = DateTime.now().toUtc();
+    return SpinifyMetrics(
+      timestamp: timestamp,
+      initializedAt: _initializedAt,
+      lastUrl: _lastUrl,
+      reconnects: (successful: _connectsSuccessful, total: _connectsTotal),
+      subscriptions: (
+        client: _clientSubscriptionManager.count,
+        server: _serverSubscriptionManager.count,
+      ),
+      speed: _transport.speed,
+      state: state,
+      received: _transport.received,
+      transferred: _transport.transferred,
+      lastConnectTime: _lastConnectTime,
+      lastDisconnectTime: _lastDisconnectTime,
+      disconnects: _disconnects,
+      lastDisconnect: _lastDisconnect,
+      isRefreshActive: _refreshTimer?.isActive ?? false,
+    );
+  }
+}
+
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
 /// {@nodoc}
@@ -713,8 +800,8 @@ base mixin SpinifyQueueMixin on SpinifyBase {
   Future<void> publish(String channel, List<int> data) =>
       _eventQueue.push<void>('publish', () => super.publish(channel, data));
 
-  @override
-  FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready);
+  /* @override
+  FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready); */
 
   @override
   Future<SpinifyPresence> presence(String channel) =>

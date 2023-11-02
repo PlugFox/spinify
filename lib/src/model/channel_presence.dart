@@ -6,9 +6,8 @@ import 'package:spinify/src/model/client_info.dart';
 /// Channel presence.
 /// Join / Leave events.
 /// {@endtemplate}
-/// {@category Entity}
-/// {@subCategory Channel}
-/// {@subCategory Presence}
+/// {@category Event}
+/// {@subCategory Push}
 @immutable
 sealed class SpinifyChannelPresence extends SpinifyChannelPush {
   /// {@macro channel_presence}
@@ -29,6 +28,9 @@ sealed class SpinifyChannelPresence extends SpinifyChannelPush {
 }
 
 /// {@macro channel_presence}
+/// {@category Event}
+/// {@subCategory Push}
+/// {@subCategory Presence}
 final class SpinifyJoin extends SpinifyChannelPresence {
   /// {@macro channel_presence}
   const SpinifyJoin({
@@ -45,9 +47,15 @@ final class SpinifyJoin extends SpinifyChannelPresence {
 
   @override
   bool get isLeave => false;
+
+  @override
+  String toString() => 'SpinifyJoin{channel: $channel}';
 }
 
 /// {@macro channel_presence}
+/// {@category Event}
+/// {@subCategory Push}
+/// {@subCategory Presence}
 final class SpinifyLeave extends SpinifyChannelPresence {
   /// {@macro channel_presence}
   const SpinifyLeave({
@@ -64,4 +72,7 @@ final class SpinifyLeave extends SpinifyChannelPresence {
 
   @override
   bool get isLeave => true;
+
+  @override
+  String toString() => 'SpinifyLeave{channel: $channel}';
 }

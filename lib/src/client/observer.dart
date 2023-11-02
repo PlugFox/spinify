@@ -23,10 +23,10 @@ abstract class SpinifyObserver {
   /// from [prev] to [next].
   void onStateChanged(ISpinify client, SpinifyState prev, SpinifyState next) {}
 
-  /// Called whenever a [ISpinifySubscription] changes its state
+  /// Called whenever a [SpinifySubscription] changes its state
   /// from [prev] to [next].
   /// Works both for client-side and server-side subscriptions.
-  void onSubscriptionChanged(ISpinifySubscription subscription,
+  void onSubscriptionChanged(SpinifySubscription subscription,
       SpinifySubscriptionState prev, SpinifySubscriptionState next) {}
 
   /// Called whenever a [ISpinify] client changes its state

@@ -12,6 +12,75 @@
       "problemMatcher": []
     },
     {
+      "label": "Get protoc plugin",
+      "type": "shell",
+      "command": ["dart pub global activate protoc_plugin"],
+      "dependsOn": ["Dependencies"],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate protobuf",
+      "type": "shell",
+      "command": [
+        "protoc",
+        "--proto_path=lib/src/transport/protobuf",
+        "--dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto"
+      ],
+      "dependsOn": ["Get protoc plugin"],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Codegenerate",
+      "type": "shell",
+      "command": ["dart run build_runner build --delete-conflicting-outputs"],
+      "dependsOn": ["Dependencies"],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": [
+        "dart format --fix -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/"
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Prepare example",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/example"
+      },
+      "command": [
+        "dart pub global activate intl_utils",
+        "dart pub global run intl_utils:generate",
+        "fvm flutter pub get",
+        /* "&& fvm flutter gen-l10n --arb-dir lib/src/common/localization --output-dir lib/src/common/localization/generated --template-arb-file intl_en.arb", */
+        "&& fvm flutter pub run build_runner build --delete-conflicting-outputs",
+        "&& dart format --fix -l 80 ."
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Start Centrifugo Server",
       "type": "shell",
       "windows": {

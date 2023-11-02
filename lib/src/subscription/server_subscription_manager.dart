@@ -6,6 +6,7 @@ import 'package:spinify/src/model/subscribe.dart';
 import 'package:spinify/src/model/unsubscribe.dart';
 import 'package:spinify/src/subscription/server_subscription_impl.dart';
 import 'package:spinify/src/subscription/subscription.dart';
+import 'package:spinify/src/subscription/subscription_state.dart';
 import 'package:spinify/src/transport/transport_interface.dart';
 
 /// Responsible for managing client-side subscriptions.
@@ -19,6 +20,28 @@ final class ServerSubscriptionManager {
   /// Spinify client weak reference.
   /// {@nodoc}
   final WeakReference<ISpinifyTransport> _transportWeakRef;
+
+  /// Subscriptions count.
+  ({int total, int unsubscribed, int subscribing, int subscribed}) get count {
+    var total = 0, unsubscribed = 0, subscribing = 0, subscribed = 0;
+    for (final entry in _channelSubscriptions.values) {
+      total++;
+      switch (entry.state) {
+        case SpinifySubscriptionState$Unsubscribed _:
+          unsubscribed++;
+        case SpinifySubscriptionState$Subscribing _:
+          subscribing++;
+        case SpinifySubscriptionState$Subscribed _:
+          subscribed++;
+      }
+    }
+    return (
+      total: total,
+      unsubscribed: unsubscribed,
+      subscribing: subscribing,
+      subscribed: subscribed,
+    );
+  }
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : SpinifyClientSubscription

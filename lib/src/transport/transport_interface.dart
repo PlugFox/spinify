@@ -6,7 +6,7 @@ import 'package:spinify/src/model/event.dart';
 import 'package:spinify/src/model/history.dart';
 import 'package:spinify/src/model/presence.dart';
 import 'package:spinify/src/model/presence_stats.dart';
-import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/refresh_result.dart';
 import 'package:spinify/src/model/stream_position.dart';
 import 'package:spinify/src/subscription/server_subscription_manager.dart';
 import 'package:spinify/src/subscription/subcibed_on_channel.dart';
@@ -28,6 +28,18 @@ abstract interface class ISpinifyTransport {
   /// Spinify events.
   /// {@nodoc}
   abstract final SpinifyListenable<SpinifyEvent> events;
+
+  /// Received bytes count & size.
+  /// {@nodoc}
+  ({BigInt count, BigInt size}) get received;
+
+  /// Transferred bytes count & size.
+  /// {@nodoc}
+  ({BigInt count, BigInt size}) get transferred;
+
+  /// Message response timeout in milliseconds.
+  /// {@nodoc}
+  ({int min, int avg, int max}) get speed;
 
   /// Connect to the server.
   /// [url] is a URL of endpoint.

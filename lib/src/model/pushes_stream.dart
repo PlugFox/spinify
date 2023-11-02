@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:spinify/src/model/channel_presence.dart';
 import 'package:spinify/src/model/channel_push.dart';
 import 'package:spinify/src/model/event.dart';
@@ -7,13 +8,15 @@ import 'package:spinify/src/model/message.dart';
 import 'package:spinify/src/model/publication.dart';
 
 /// Stream of received pushes from Centrifugo server for a channel.
-/// {@category Entity}
-/// {@subCategory Pushes}
-/// {@subCategory Events}
+/// {@category Event}
+/// {@category Client}
+/// {@category Subscription}
+/// {@subCategory Push}
 /// {@subCategory Channel}
+@immutable
 final class SpinifyPushesStream extends StreamView<SpinifyChannelPush> {
   /// Stream of received events.
-  SpinifyPushesStream({
+  const SpinifyPushesStream({
     required Stream<SpinifyChannelPush> pushes,
     required this.publications,
     required this.messages,
@@ -45,4 +48,7 @@ final class SpinifyPushesStream extends StreamView<SpinifyChannelPush> {
           _ => null,
         },
       )).asBroadcastStream();
+
+  @override
+  String toString() => 'SpinifyPushesStream{}';
 }

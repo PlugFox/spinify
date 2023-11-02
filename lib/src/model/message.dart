@@ -3,6 +3,8 @@ import 'package:spinify/src/model/channel_push.dart';
 /// {@template message}
 /// Message push from Centrifugo server.
 /// {@endtemplate}
+/// {@category Event}
+/// {@subCategory Push}
 final class SpinifyMessage extends SpinifyChannelPush {
   /// {@macro message}
   const SpinifyMessage({
@@ -16,4 +18,7 @@ final class SpinifyMessage extends SpinifyChannelPush {
 
   /// Payload of message.
   final List<int> data;
+
+  @override
+  String toString() => 'SpinifyMessage{channel: $channel}';
 }

@@ -136,7 +136,7 @@ sealed class SpinifyState extends _$SpinifyStateBase {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Disconnected extends SpinifyState {
   /// Disconnected
   ///
   /// {@macro state}
@@ -198,7 +198,7 @@ final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.disconnected{$timestamp}';
+  String toString() => r'SpinifyState$Disconnected{}';
 }
 
 /// Connecting
@@ -206,7 +206,7 @@ final class SpinifyState$Disconnected extends SpinifyState with _$SpinifyState {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Connecting extends SpinifyState {
   /// Connecting
   ///
   /// {@macro state}
@@ -250,7 +250,7 @@ final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.connecting{$timestamp}';
+  String toString() => r'SpinifyState$Connecting{}';
 }
 
 /// Connected
@@ -258,7 +258,7 @@ final class SpinifyState$Connecting extends SpinifyState with _$SpinifyState {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Connected extends SpinifyState {
   /// Connected
   ///
   /// {@macro state}
@@ -357,7 +357,7 @@ final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.connected{$timestamp}';
+  String toString() => r'SpinifyState$Connected{}';
 }
 
 /// Permanently closed
@@ -365,7 +365,7 @@ final class SpinifyState$Connected extends SpinifyState with _$SpinifyState {
 /// {@macro state}
 /// {@category Client}
 /// {@category Entity}
-final class SpinifyState$Closed extends SpinifyState with _$SpinifyState {
+final class SpinifyState$Closed extends SpinifyState {
   /// Permanently closed
   ///
   /// {@macro state}
@@ -409,13 +409,11 @@ final class SpinifyState$Closed extends SpinifyState with _$SpinifyState {
           other.timestamp.isAtSameMomentAs(timestamp));
 
   @override
-  String toString() => 'SpinifyState.closed{$timestamp}';
+  String toString() => r'SpinifyState$Closed{}';
 }
 
-/// {@nodoc}
-base mixin _$SpinifyState on SpinifyState {}
-
 /// Pattern matching for [SpinifyState].
+/// {@category Entity}
 typedef SpinifyStateMatch<R, S extends SpinifyState> = R Function(S state);
 
 /// {@nodoc}
@@ -484,7 +482,7 @@ abstract base class _$SpinifyStateBase {
 
   Map<String, Object?> toJson() => <String, Object?>{
         'type': type,
-        'timestamp': timestamp.microsecondsSinceEpoch,
+        'timestamp': timestamp.toUtc().toIso8601String(),
         if (url != null) 'url': url,
       };
 }

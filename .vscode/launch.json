@@ -2,20 +2,34 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Console (example)",
+      "name": "Example (lcl)",
       "request": "launch",
       "type": "dart",
-      "program": "examples/console/bin/main.dart",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/example",
+      "program": "lib/main.dart",
       "env": {
         "ENVIRONMENT": "local"
       },
       "console": "debugConsole",
       "runTestsOnDevice": false,
       "toolArgs": [],
-      "args": [
-        // "--token=X.Y.Z",
-        "--verbose"
-      ]
+      "args": ["--dart-define-from-file=config/local.json"]
+    },
+    {
+      "name": "Example (dev)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/example",
+      "program": "lib/main.dart",
+      "env": {
+        "ENVIRONMENT": "development"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "toolArgs": [],
+      "args": ["--dart-define-from-file=config/development.json"]
     }
   ]
 }

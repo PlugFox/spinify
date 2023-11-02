@@ -3,6 +3,9 @@ import 'package:spinify/src/model/publication.dart';
 import 'package:spinify/src/model/stream_position.dart';
 
 /// Subscribed on channel message.
+/// {@category Subscription}
+/// {@category Entity}
+/// {@subCategory Channel}
 @immutable
 final class SubcibedOnChannel {
   /// Subscribed on channel message.
@@ -48,4 +51,7 @@ final class SubcibedOnChannel {
 
   /// Raw data.
   final List<int>? data;
+
+  @override
+  String toString() => 'SubcibedOnChannel{channel: $channel}';
 }

@@ -6,8 +6,8 @@ analyzer:
     - "build/**"
     # Codegen
     - "lib/**.g.dart"
-    - "lib/src/model/protobuf/*"
-    - "lib/src/model/pubspec.yaml.g.dart"
+    - "lib/src/transport/protobuf/*"
+    - "lib/src/transport/pubspec.yaml.g.dart"
     # Tests
     - "test/**.mocks.dart"
     - ".test_coverage.dart"
@@ -89,10 +89,9 @@ linter:
     close_sinks: true
     control_flow_in_finally: true
     empty_statements: true
-    iterable_contains_unrelated_type: true
+    collection_methods_unrelated_type: true
     join_return_with_assignment: true
     leading_newlines_in_multiline_strings: true
-    list_remove_unrelated_type: true
     literal_only_boolean_expressions: true
     missing_whitespace_between_adjacent_strings: true
     no_adjacent_strings_in_list: true

@@ -3,8 +3,9 @@ import 'package:meta/meta.dart';
 /// {@template spinify_event}
 /// Base class for all channel events.
 /// {@endtemplate}
+/// {@category Event}
 @immutable
-abstract base class SpinifyEvent {
+abstract base class SpinifyEvent implements Comparable<SpinifyEvent> {
   /// {@template spinify_event}
   const SpinifyEvent({
     required this.timestamp,
@@ -18,4 +19,10 @@ abstract base class SpinifyEvent {
 
   /// Whether this event is a push event.
   bool get isPush;
+
+  @override
+  int compareTo(SpinifyEvent other) => timestamp.compareTo(other.timestamp);
+
+  @override
+  String toString() => 'SpinifyEvent{type: $type}';
 }

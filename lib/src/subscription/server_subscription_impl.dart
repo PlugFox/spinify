@@ -48,7 +48,7 @@ final class SpinifyServerSubscriptionImpl extends SpinifyServerSubscriptionBase
 /// {@nodoc}
 @internal
 abstract base class SpinifyServerSubscriptionBase
-    implements SpinifyServerSubscription {
+    extends SpinifyServerSubscription {
   /// {@nodoc}
   SpinifyServerSubscriptionBase({
     required this.channel,
@@ -139,6 +139,9 @@ abstract base class SpinifyServerSubscriptionBase
       ));
     _stateController.close().ignore();
   }
+
+  @override
+  String toString() => 'SpinifyServerSubscription{channel: $channel}';
 }
 
 /// Mixin responsible for event receiving and distribution by controllers

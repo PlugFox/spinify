@@ -19,4 +19,7 @@ final class SpinifyHistory {
 
   /// Offset and epoch of last publication in publications list
   final SpinifyStreamPosition since;
+
+  @override
+  String toString() => 'SpinifyHistory{}';
 }

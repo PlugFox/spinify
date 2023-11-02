@@ -17,9 +17,9 @@ import 'package:spinify/src/model/history.dart';
 import 'package:spinify/src/model/message.dart';
 import 'package:spinify/src/model/presence.dart';
 import 'package:spinify/src/model/presence_stats.dart';
-import 'package:spinify/src/model/protobuf/client.pb.dart' as pb;
 import 'package:spinify/src/model/publication.dart';
 import 'package:spinify/src/model/refresh.dart';
+import 'package:spinify/src/model/refresh_result.dart';
 import 'package:spinify/src/model/stream_position.dart';
 import 'package:spinify/src/model/subscribe.dart';
 import 'package:spinify/src/model/unsubscribe.dart';
@@ -28,10 +28,12 @@ import 'package:spinify/src/subscription/subcibed_on_channel.dart';
 import 'package:spinify/src/subscription/subscription.dart';
 import 'package:spinify/src/subscription/subscription_config.dart';
 import 'package:spinify/src/subscription/subscription_state.dart';
+import 'package:spinify/src/transport/protobuf/client.pb.dart' as pb;
 import 'package:spinify/src/transport/transport_interface.dart';
 import 'package:spinify/src/transport/transport_protobuf_codec.dart';
 import 'package:spinify/src/util/logger.dart' as logger;
 import 'package:spinify/src/util/notifier.dart';
+import 'package:spinify/src/util/speed_meter.dart';
 import 'package:ws/ws.dart';
 
 /// {@nodoc}
@@ -205,6 +207,12 @@ base mixin SpinifyWSPBSenderMixin
   static const Converter<pb.Command, List<int>> _commandEncoder =
       TransportProtobufEncoder();
 
+  /// Speed meter of the connection.
+  final SpinifySpeedMeter _speedMeter = SpinifySpeedMeter(15);
+
+  @override
+  ({int min, int avg, int max}) get speed => _speedMeter.speed;
+
   /// Counter for messages.
   /// {@nodoc}
   int _messageId = 1;
@@ -220,8 +228,15 @@ base mixin SpinifyWSPBSenderMixin
     final command = _createCommand(request, false);
     // Send command and wait for response.
     final future = _awaitReply(command.id);
-    await _sendCommand(command);
-    final reply = await future;
+    final stopwatch = Stopwatch()..start();
+    pb.Reply reply;
+    try {
+      await _sendCommand(command);
+      reply = await future;
+      _speedMeter.add(stopwatch.elapsedMilliseconds);
+    } finally {
+      stopwatch.stop();
+    }
     if (reply.hasError()) {
       throw SpinifyReplyException(
         replyCode: reply.error.code,
@@ -311,10 +326,18 @@ base mixin SpinifyWSPBSenderMixin
     return cmd;
   }
 
-  Future<void> _sendCommand(pb.Command command) {
+  BigInt _transferredCount = BigInt.zero;
+  BigInt _transferredSize = BigInt.zero;
+  @override
+  ({BigInt count, BigInt size}) get transferred =>
+      (count: _transferredCount, size: _transferredSize);
+
+  Future<void> _sendCommand(pb.Command command) async {
     if (!_webSocket.state.readyState.isOpen) throw StateError('Not connected');
     final data = _commandEncoder.convert(command);
-    return _webSocket.add(data);
+    await _webSocket.add(data);
+    _transferredCount += BigInt.one;
+    _transferredSize += BigInt.from(data.length);
   }
 }
 
@@ -559,6 +582,12 @@ base mixin SpinifyWSPBHandlerMixin
   /// {@nodoc}
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
+  BigInt _receivedCount = BigInt.zero;
+  BigInt _receivedSize = BigInt.zero;
+  @override
+  ({BigInt count, BigInt size}) get received =>
+      (count: _receivedCount, size: _receivedSize);
+
   @override
   Future<void> connect(
     String url,
@@ -578,6 +607,8 @@ base mixin SpinifyWSPBHandlerMixin
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   void _handleWebSocketMessage(List<int> response) {
+    _receivedCount += BigInt.one;
+    _receivedSize += BigInt.from(response.length);
     final replies = _replyDecoder.convert(response);
     for (final reply in replies) {
       if (reply.hasId() && reply.id > 0) {

@@ -51,7 +51,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase
 /// {@nodoc}
 @internal
 abstract base class SpinifyClientSubscriptionBase
-    implements SpinifyClientSubscription {
+    extends SpinifyClientSubscription {
   /// {@nodoc}
   SpinifyClientSubscriptionBase({
     required this.channel,
@@ -139,15 +139,19 @@ abstract base class SpinifyClientSubscriptionBase
   @internal
   @mustCallSuper
   Future<void> close([int code = 0, String reason = 'closed']) async {
-    if (!_state.isUnsubscribed)
+    if (!_state.isUnsubscribed) {
       _setState(SpinifySubscriptionState.unsubscribed(
         code: code,
         reason: reason,
         recoverable: false,
         since: since,
       ));
+    }
     _stateController.close().ignore();
   }
+
+  @override
+  String toString() => 'SpinifyClientSubscription{channel: $channel}';
 }
 
 /// Mixin responsible for event receiving and distribution by controllers
@@ -292,8 +296,8 @@ base mixin SpinifyClientSubscriptionSubscribeMixin
         _config,
         switch (state.since) {
           null => null,
-          ({String epoch, fixnum.Int64 offset}) s => (
-              epoch: s.epoch,
+          (epoch: String epoch, offset: fixnum.Int64 _) => (
+              epoch: epoch,
               offset: _offset,
             ),
         },
@@ -305,8 +309,9 @@ base mixin SpinifyClientSubscriptionSubscribeMixin
         recoverable: subscribed.recoverable,
         ttl: subscribed.ttl,
       ));
-      if (subscribed.publications.isNotEmpty)
+      if (subscribed.publications.isNotEmpty) {
         subscribed.publications.forEach(_handlePublication);
+      }
       if (subscribed.expires) _setRefreshTimer(subscribed.ttl);
     } on SpinifyException catch (error, stackTrace) {
       unsubscribe(0, 'error while subscribing').ignore();
@@ -558,12 +563,6 @@ base mixin SpinifyClientSubscriptionQueueMixin
     on SpinifyClientSubscriptionBase {
   /// {@nodoc}
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
-
-  @override
-  FutureOr<void> ready() => _eventQueue.push<void>(
-        'ready',
-        super.ready,
-      );
 
   @override
   Future<void> subscribe() => _eventQueue.push<void>(

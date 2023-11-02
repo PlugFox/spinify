@@ -50,22 +50,22 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
 
 /// Unsubscribed state
 ///
-/// {@nodoc}
+/// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Unsubscribed
-    extends SpinifySubscriptionState with _$SpinifySubscriptionState {
+    extends SpinifySubscriptionState {
   /// {@nodoc}
   SpinifySubscriptionState$Unsubscribed({
     required this.code,
     required this.reason,
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
-    bool recoverable = false,
-  }) : super(
-            timestamp: timestamp ?? DateTime.now(),
-            since: since,
-            recoverable: recoverable);
+    super.since,
+    super.recoverable = false,
+  }) : super(timestamp: timestamp ?? DateTime.now());
+
+  @override
+  String get type => 'unsubscribed';
 
   /// Unsubscribe code.
   final int code;
@@ -97,30 +97,38 @@ final class SpinifySubscriptionState$Unsubscribed
       unsubscribed(this);
 
   @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        ...super.toJson(),
+        'code': code,
+        'reason': reason,
+      };
+
+  @override
   int get hashCode => Object.hash(0, timestamp, since);
 
   @override
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'unsubscribed';
+  String toString() => r'SpinifySubscriptionState$Unsubscribed{}';
 }
 
 /// Subscribing state
-/// {@nodoc}
+///
+/// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribing
-    extends SpinifySubscriptionState with _$SpinifySubscriptionState {
+    extends SpinifySubscriptionState {
   /// {@nodoc}
   SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
-    bool recoverable = false,
-  }) : super(
-            timestamp: timestamp ?? DateTime.now(),
-            since: since,
-            recoverable: recoverable);
+    super.since,
+    super.recoverable = false,
+  }) : super(timestamp: timestamp ?? DateTime.now());
+
+  @override
+  String get type => 'subscribing';
 
   @override
   bool get isUnsubscribed => false;
@@ -152,25 +160,26 @@ final class SpinifySubscriptionState$Subscribing
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'subscribing';
+  String toString() => r'SpinifySubscriptionState$Subscribing{}';
 }
 
 /// Subscribed state
-/// {@nodoc}
+///
+/// {@macro subscription_state}
 /// {@category Subscription}
 /// {@category Entity}
-final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
-    with _$SpinifySubscriptionState {
+final class SpinifySubscriptionState$Subscribed
+    extends SpinifySubscriptionState {
   /// {@nodoc}
   SpinifySubscriptionState$Subscribed({
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
-    bool recoverable = false,
+    super.since,
+    super.recoverable = false,
     this.ttl,
-  }) : super(
-            timestamp: timestamp ?? DateTime.now(),
-            since: since,
-            recoverable: recoverable);
+  }) : super(timestamp: timestamp ?? DateTime.now());
+
+  @override
+  String get type => 'subscribed';
 
   /// Time to live in seconds.
   final DateTime? ttl;
@@ -199,19 +208,23 @@ final class SpinifySubscriptionState$Subscribed extends SpinifySubscriptionState
       subscribed(this);
 
   @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        ...super.toJson(),
+        if (ttl != null) 'ttl': ttl?.toUtc().toIso8601String(),
+      };
+
+  @override
   int get hashCode => Object.hash(2, timestamp, since, recoverable, ttl);
 
   @override
   bool operator ==(Object other) => identical(this, other);
 
   @override
-  String toString() => 'subscribed';
+  String toString() => r'SpinifySubscriptionState$Subscribed{}';
 }
 
-/// {@nodoc}
-base mixin _$SpinifySubscriptionState on SpinifySubscriptionState {}
-
 /// Pattern matching for [SpinifySubscriptionState].
+/// {@category Entity}
 typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
     Function(S state);
 
@@ -224,6 +237,9 @@ abstract base class _$SpinifySubscriptionStateBase {
     required this.since,
     required this.recoverable,
   });
+
+  /// Represents the current state type.
+  abstract final String type;
 
   /// Timestamp of state change.
   final DateTime timestamp;
@@ -286,4 +302,18 @@ abstract base class _$SpinifySubscriptionStateBase {
         subscribing: subscribing ?? (_) => null,
         subscribed: subscribed ?? (_) => null,
       );
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+        if (since != null)
+          'since': switch (since) {
+            (:fixnum.Int64 offset, :String epoch) => <String, Object>{
+                'offset': offset,
+                'epoch': epoch,
+              },
+            _ => null,
+          },
+        'recoverable': recoverable,
+      };
 }

@@ -19,6 +19,7 @@ import 'package:meta/meta.dart';
 /// https://centrifugal.dev/docs/server/authentication#connection-jwt-claims
 /// {@endtemplate}
 /// {@category Entity}
+/// {@subCategory JWT}
 @immutable
 sealed class SpinifyJWT {
   /// {@macro jwt}

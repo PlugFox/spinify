@@ -4,6 +4,9 @@ import 'package:spinify/src/model/event.dart';
 /// {@template spinify_channel_push}
 /// Base class for all channel push events.
 /// {@endtemplate}
+/// {@category Event}
+/// {@subCategory Push}
+@immutable
 abstract base class SpinifyChannelPush extends SpinifyEvent {
   /// {@template spinify_channel_push}
   const SpinifyChannelPush({
@@ -17,4 +20,7 @@ abstract base class SpinifyChannelPush extends SpinifyEvent {
   @override
   @nonVirtual
   bool get isPush => true;
+
+  @override
+  String toString() => 'SpinifyChannelPush{channel: $channel}';
 }

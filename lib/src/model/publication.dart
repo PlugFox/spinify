@@ -6,7 +6,8 @@ import 'package:spinify/src/model/client_info.dart';
 /// {@template publication}
 /// Publication context
 /// {@endtemplate}
-/// {@category Entity}
+/// {@category Event}
+/// {@subCategory Push}
 @immutable
 final class SpinifyPublication extends SpinifyChannelPush {
   /// {@macro publication}
@@ -34,4 +35,7 @@ final class SpinifyPublication extends SpinifyChannelPush {
 
   /// Optional tags, this is a map with string keys and string values
   final Map<String, String>? tags;
+
+  @override
+  String toString() => 'SpinifyPublication{channel: $channel}';
 }
