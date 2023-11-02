@@ -60,12 +60,9 @@ final class SpinifySubscriptionState$Unsubscribed
     required this.code,
     required this.reason,
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
-    bool recoverable = false,
-  }) : super(
-            timestamp: timestamp ?? DateTime.now(),
-            since: since,
-            recoverable: recoverable);
+    super.since,
+    super.recoverable = false,
+  }) : super(timestamp: timestamp ?? DateTime.now());
 
   @override
   String get type => 'unsubscribed';
@@ -126,12 +123,9 @@ final class SpinifySubscriptionState$Subscribing
   /// {@nodoc}
   SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
-    bool recoverable = false,
-  }) : super(
-            timestamp: timestamp ?? DateTime.now(),
-            since: since,
-            recoverable: recoverable);
+    super.since,
+    super.recoverable = false,
+  }) : super(timestamp: timestamp ?? DateTime.now());
 
   @override
   String get type => 'subscribing';
@@ -179,13 +173,10 @@ final class SpinifySubscriptionState$Subscribed
   /// {@nodoc}
   SpinifySubscriptionState$Subscribed({
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
-    bool recoverable = false,
+    super.since,
+    super.recoverable = false,
     this.ttl,
-  }) : super(
-            timestamp: timestamp ?? DateTime.now(),
-            since: since,
-            recoverable: recoverable);
+  }) : super(timestamp: timestamp ?? DateTime.now());
 
   @override
   String get type => 'subscribed';
