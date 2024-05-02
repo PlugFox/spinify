@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 /// {@category Event}
 @immutable
 abstract base class SpinifyEvent implements Comparable<SpinifyEvent> {
-  /// {@template spinify_event}
+  /// {@macro spinify_event}
   const SpinifyEvent({
     required this.timestamp,
   });

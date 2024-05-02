@@ -31,7 +31,7 @@ final class Localization extends generated.GeneratedLocalization {
   /// Get language by code.
   static ({String name, String nativeName})? getLanguageByCode(String code) =>
       switch (_isoLangs[code]) {
-        (:String name, :String nativeName) => (
+        (String name, String nativeName) => (
             name: name,
             nativeName: nativeName
           ),

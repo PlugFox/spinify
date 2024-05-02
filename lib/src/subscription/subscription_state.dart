@@ -55,6 +55,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
 /// {@category Entity}
 final class SpinifySubscriptionState$Unsubscribed
     extends SpinifySubscriptionState {
+  /// {@macro subscription_state}
   SpinifySubscriptionState$Unsubscribed({
     required this.code,
     required this.reason,
@@ -119,6 +120,7 @@ final class SpinifySubscriptionState$Unsubscribed
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribing
     extends SpinifySubscriptionState {
+  /// {@macro subscription_state}
   SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
     super.since,
@@ -168,6 +170,7 @@ final class SpinifySubscriptionState$Subscribing
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribed
     extends SpinifySubscriptionState {
+  /// {@macro subscription_state}
   SpinifySubscriptionState$Subscribed({
     DateTime? timestamp,
     super.since,

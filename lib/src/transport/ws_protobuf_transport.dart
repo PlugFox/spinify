@@ -979,6 +979,7 @@ base mixin SpinifyWSPBPingPongMixin on SpinifyWSPBTransportBase {
 final List<SpinifyPublication> _emptyPublicationsList =
     List<SpinifyPublication>.empty(growable: false);
 
+/// Decode protobuf messages to Spinify models.
 @internal
 SpinifyPublication Function(pb.Publication publication) $publicationDecode(
   String channel,
@@ -995,6 +996,7 @@ SpinifyPublication Function(pb.Publication publication) $publicationDecode(
       );
 }
 
+/// Decode protobuf client info to Spinify client info.
 @internal
 SpinifyClientInfo $decodeClientInfo(pb.ClientInfo info) => SpinifyClientInfo(
       client: info.client,
