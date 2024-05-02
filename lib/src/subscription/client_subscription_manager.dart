@@ -10,15 +10,12 @@ import 'package:spinify/src/subscription/subscription_state.dart';
 import 'package:spinify/src/transport/transport_interface.dart';
 
 /// Responsible for managing client-side subscriptions.
-/// {@nodoc}
 @internal
 final class ClientSubscriptionManager {
-  /// {@nodoc}
   ClientSubscriptionManager(ISpinifyTransport transport)
       : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
   /// Spinify client weak reference.
-  /// {@nodoc}
   final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Subscriptions count.
@@ -45,7 +42,6 @@ final class ClientSubscriptionManager {
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : SpinifyClientSubscription
-  /// {@nodoc}
   final Map<String, SpinifyClientSubscriptionImpl> _channelSubscriptions =
       <String, SpinifyClientSubscriptionImpl>{};
 
@@ -53,7 +49,6 @@ final class ClientSubscriptionManager {
   /// `newSubscription(channel, config)` allocates a new Subscription
   /// in the registry or throws an exception if the Subscription
   /// is already there. We will discuss common Subscription options below.
-  /// {@nodoc}
   SpinifyClientSubscription newSubscription(
     String channel,
     SpinifySubscriptionConfig? config,
@@ -76,7 +71,6 @@ final class ClientSubscriptionManager {
   /// Returns all registered subscriptions,
   /// so you can iterate over all and do some action if required
   /// (for example, you want to unsubscribe/remove all subscriptions).
-  /// {@nodoc}
   Map<String, SpinifyClientSubscription> get subscriptions =>
       UnmodifiableMapView<String, SpinifyClientSubscription>({
         for (final entry in _channelSubscriptions.entries)
@@ -85,7 +79,6 @@ final class ClientSubscriptionManager {
 
   /// Remove the [SpinifyClientSubscription] from internal registry
   /// and unsubscribe from [SpinifyClientSubscription.channel].
-  /// {@nodoc}
   Future<void> removeSubscription(
     SpinifyClientSubscription subscription,
   ) async {
@@ -113,7 +106,6 @@ final class ClientSubscriptionManager {
   }
 
   /// Establish all subscriptions for the specific client.
-  /// {@nodoc}
   void subscribeAll() {
     for (final entry in _channelSubscriptions.values) {
       entry.subscribe().ignore();
@@ -122,7 +114,6 @@ final class ClientSubscriptionManager {
 
   /// Disconnect all subscriptions for the specific client
   /// from internal registry.
-  /// {@nodoc}
   void unsubscribeAll([
     int code = 0,
     String reason = 'connection closed',
@@ -133,7 +124,6 @@ final class ClientSubscriptionManager {
   }
 
   /// Remove all subscriptions for the specific client from internal registry.
-  /// {@nodoc}
   void close([
     int code = 0,
     String reason = 'client closed',
@@ -145,7 +135,6 @@ final class ClientSubscriptionManager {
   }
 
   /// Handle push event from server for the specific channel.
-  /// {@nodoc}
   @internal
   void onPush(SpinifyChannelPush push) =>
       _channelSubscriptions[push.channel]?.onPush(push);
@@ -155,7 +144,6 @@ final class ClientSubscriptionManager {
   ///
   /// You need to call [SpinifyClientSubscription.subscribe]
   /// to start receiving events
-  /// {@nodoc}
   SpinifyClientSubscription? operator [](String channel) =>
       _channelSubscriptions[channel];
 }

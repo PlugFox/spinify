@@ -1,10 +1,8 @@
 import 'package:meta/meta.dart';
 
-/// {@nodoc}
 @internal
 @immutable
 final class SpinifyRefreshResult {
-  /// {@nodoc}
   const SpinifyRefreshResult({
     required this.expires,
     this.client,
@@ -25,11 +23,9 @@ final class SpinifyRefreshResult {
   final DateTime? ttl;
 }
 
-/// {@nodoc}
 @internal
 @immutable
 final class SpinifySubRefreshResult {
-  /// {@nodoc}
   const SpinifySubRefreshResult({
     required this.expires,
     this.ttl,

@@ -27,7 +27,6 @@ import 'package:spinify/src/util/event_queue.dart';
 import 'package:spinify/src/util/logger.dart' as logger;
 
 /// Server-side subscription implementation.
-/// {@nodoc}
 @internal
 final class SpinifyServerSubscriptionImpl extends SpinifyServerSubscriptionBase
     with
@@ -38,18 +37,15 @@ final class SpinifyServerSubscriptionImpl extends SpinifyServerSubscriptionBase
         SpinifyServerSubscriptionHistoryMixin,
         SpinifyServerSubscriptionPresenceMixin,
         SpinifyServerSubscriptionQueueMixin {
-  /// {@nodoc}
   SpinifyServerSubscriptionImpl({
     required super.channel,
     required super.transportWeakRef,
   });
 }
 
-/// {@nodoc}
 @internal
 abstract base class SpinifyServerSubscriptionBase
     extends SpinifyServerSubscription {
-  /// {@nodoc}
   SpinifyServerSubscriptionBase({
     required this.channel,
     required WeakReference<ISpinifyTransport> transportWeakRef,
@@ -71,17 +67,14 @@ abstract base class SpinifyServerSubscriptionBase
   fixnum.Int64 _offset = fixnum.Int64.ZERO;
 
   /// Weak reference to transport.
-  /// {@nodoc}
   @nonVirtual
   late final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Internal transport responsible
   /// for sending, receiving, encoding and decoding data from the server.
-  /// {@nodoc}
   ISpinifyTransport get _transport => _transportWeakRef.target!;
 
   /// Init subscription.
-  /// {@nodoc}
   @protected
   @mustCallSuper
   void _initSubscription() {
@@ -93,24 +86,20 @@ abstract base class SpinifyServerSubscriptionBase
   /// - `unsubscribed`
   /// - `subscribing`
   /// - `subscribed`
-  /// {@nodoc}
   @override
   SpinifySubscriptionState get state => _state;
   late SpinifySubscriptionState _state;
 
   /// Stream of subscription states.
-  /// {@nodoc}
   @override
   late final SpinifySubscriptionStateStream states =
       SpinifySubscriptionStateStream(_stateController.stream);
 
   /// States controller.
-  /// {@nodoc}
   final StreamController<SpinifySubscriptionState> _stateController =
       StreamController<SpinifySubscriptionState>.broadcast();
 
   /// Set new state.
-  /// {@nodoc}
   void _setState(SpinifySubscriptionState state) {
     if (_state == state) return;
     final previousState = _state;
@@ -119,14 +108,12 @@ abstract base class SpinifyServerSubscriptionBase
   }
 
   /// Notify about new publication.
-  /// {@nodoc}
   @nonVirtual
   void _handlePublication(SpinifyPublication publication) {
     final offset = publication.offset;
     if (offset != null && offset > _offset) _offset = offset;
   }
 
-  /// {@nodoc}
   @internal
   @mustCallSuper
   Future<void> close([int code = 0, String reason = 'closed']) async {
@@ -146,7 +133,6 @@ abstract base class SpinifyServerSubscriptionBase
 
 /// Mixin responsible for event receiving and distribution by controllers
 /// and streams to subscribers.
-/// {@nodoc}
 base mixin SpinifyServerSubscriptionEventReceiverMixin
     on SpinifyServerSubscriptionBase {
   @protected
@@ -197,7 +183,6 @@ base mixin SpinifyServerSubscriptionEventReceiverMixin
 
   /// Handle push event from server for the specific channel.
   /// Called from `SpinifyClientSubscriptionsManager.onPush`
-  /// {@nodoc}
   @internal
   @nonVirtual
   void onPush(SpinifyChannelPush push) {
@@ -255,7 +240,6 @@ base mixin SpinifyServerSubscriptionEventReceiverMixin
 }
 
 /// Mixin responsible for errors stream.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionErrorsMixin
     on SpinifyServerSubscriptionBase {
@@ -266,12 +250,10 @@ base mixin SpinifyServerSubscriptionErrorsMixin
 }
 
 /// Mixin responsible for ready method.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionReadyMixin
     on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
   /// Await for subscription to be ready.
-  /// {@nodoc}
   @override
   FutureOr<void> ready() async {
     try {
@@ -301,7 +283,6 @@ base mixin SpinifyServerSubscriptionReadyMixin
   }
 
   /// Mark subscription as ready.
-  /// {@nodoc}
   void setSubscribed() {
     if (!state.isSubscribed)
       _setState(SpinifySubscriptionState.subscribed(
@@ -311,7 +292,6 @@ base mixin SpinifyServerSubscriptionReadyMixin
   }
 
   /// Mark subscription as subscribing.
-  /// {@nodoc}
   void setSubscribing() {
     if (!state.isSubscribing)
       _setState(SpinifySubscriptionState.subscribing(
@@ -321,7 +301,6 @@ base mixin SpinifyServerSubscriptionReadyMixin
   }
 
   /// Mark subscription as unsubscribed.
-  /// {@nodoc}
   void setUnsubscribed(int code, String reason) {
     if (!state.isUnsubscribed)
       _setState(SpinifySubscriptionState.unsubscribed(
@@ -341,7 +320,6 @@ base mixin SpinifyServerSubscriptionReadyMixin
 }
 
 /// Mixin responsible for publishing.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionPublishingMixin
     on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
@@ -362,7 +340,6 @@ base mixin SpinifyServerSubscriptionPublishingMixin
 }
 
 /// Mixin responsible for history.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionHistoryMixin
     on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
@@ -393,7 +370,6 @@ base mixin SpinifyServerSubscriptionHistoryMixin
 }
 
 /// Mixin responsible for presence.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionPresenceMixin
     on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
@@ -432,11 +408,9 @@ base mixin SpinifyServerSubscriptionPresenceMixin
 
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionQueueMixin
     on SpinifyServerSubscriptionBase {
-  /// {@nodoc}
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
 
   @override

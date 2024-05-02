@@ -36,10 +36,8 @@ import 'package:spinify/src/util/notifier.dart';
 import 'package:spinify/src/util/speed_meter.dart';
 import 'package:ws/ws.dart';
 
-/// {@nodoc}
 @internal
 abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
-  /// {@nodoc}
   SpinifyWSPBTransportBase({
     required SpinifyConfig config,
   })  : _config = config,
@@ -63,13 +61,11 @@ abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
   }
 
   /// Protocols for websocket.
-  /// {@nodoc}
   static const List<String> _$protocolsSpinifyProtobuf = <String>[
     'centrifuge-protobuf'
   ];
 
   /// Spinify config.
-  /// {@nodoc}
   final SpinifyConfig _config;
 
   @override
@@ -77,13 +73,11 @@ abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
       SpinifyChangeNotifier<SpinifyEvent>();
 
   /// Init transport, override this method to add custom logic.
-  /// {@nodoc}
   @protected
   @mustCallSuper
   void _initTransport() {}
 
   /// Websocket client.
-  /// {@nodoc}
   @nonVirtual
   final WebSocketClient _webSocket;
 
@@ -116,7 +110,6 @@ abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
 
 /// Class responsible for sending and receiving data from the server
 /// through the Protobuf & WebSocket protocol.
-/// {@nodoc}
 @internal
 // ignore: lines_longer_than_80_chars
 final class SpinifyWSPBTransport = SpinifyWSPBTransportBase
@@ -130,23 +123,19 @@ final class SpinifyWSPBTransport = SpinifyWSPBTransportBase
         SpinifyWSPBHandlerMixin;
 
 /// Stored completer for responses.
-/// {@nodoc}
 typedef _ReplyCompleter = ({
   void Function(pb.Reply reply) complete,
   void Function(Object error, StackTrace stackTrace) fail,
 });
 
 /// Mixin responsible for holding reply completers.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBReplyMixin on SpinifyWSPBTransportBase {
   /// Completers for messages by id.
   /// Contains timer for timeout and completer for response.
-  /// {@nodoc}
   final Map<int, _ReplyCompleter> _replyCompleters = <int, _ReplyCompleter>{};
 
   /// Observe reply future by command id.
-  /// {@nodoc}
   Future<pb.Reply> _awaitReply(int commandId, [Duration? timeout]) {
     final completer = Completer<pb.Reply>.sync();
     final timeoutTimer = timeout != null && timeout > Duration.zero
@@ -183,12 +172,10 @@ base mixin SpinifyWSPBReplyMixin on SpinifyWSPBTransportBase {
   }
 
   /// Complete reply by id.
-  /// {@nodoc}
   void _completeReply(pb.Reply reply) =>
       _replyCompleters.remove(reply.id)?.complete(reply);
 
   /// Fail all replies.
-  /// {@nodoc}
   void _failAllReplies(Object error, StackTrace stackTrace) {
     for (final completer in _replyCompleters.values) {
       completer.fail(error, stackTrace);
@@ -198,12 +185,10 @@ base mixin SpinifyWSPBReplyMixin on SpinifyWSPBTransportBase {
 }
 
 /// Mixin responsible for sending data through websocket with protobuf.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBSenderMixin
     on SpinifyWSPBTransportBase, SpinifyWSPBReplyMixin {
   /// Encoder protobuf commands to bytes.
-  /// {@nodoc}
   static const Converter<pb.Command, List<int>> _commandEncoder =
       TransportProtobufEncoder();
 
@@ -214,10 +199,8 @@ base mixin SpinifyWSPBSenderMixin
   ({int min, int avg, int max}) get speed => _speedMeter.speed;
 
   /// Counter for messages.
-  /// {@nodoc}
   int _messageId = 1;
 
-  /// {@nodoc}
   @nonVirtual
   @protected
   Future<Rep> _sendMessage<Req extends pb.GeneratedMessage,
@@ -275,7 +258,6 @@ base mixin SpinifyWSPBSenderMixin
   Future<void> sendAsyncMessage(List<int> data) =>
       _sendAsyncMessage(pb.Message()..data = data);
 
-  /// {@nodoc}
   @nonVirtual
   @protected
   Future<void> _sendAsyncMessage<Req extends pb.GeneratedMessage>(
@@ -342,7 +324,6 @@ base mixin SpinifyWSPBSenderMixin
 }
 
 /// Mixin responsible for connection.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBConnectionMixin
     on
@@ -479,13 +460,11 @@ base mixin SpinifyWSPBConnectionMixin
 }
 
 /// Handler for websocket states.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBStateHandlerMixin
     on SpinifyWSPBTransportBase, SpinifyWSPBReplyMixin {
   // Subscribe to websocket state after first connection.
   /// Subscription to websocket state.
-  /// {@nodoc}
   StreamSubscription<WebSocketClientState>? _webSocketClosedStateSubscription;
 
   @override
@@ -500,7 +479,6 @@ base mixin SpinifyWSPBStateHandlerMixin
     closeReason: 'Not connected yet',
   );
 
-  /// {@nodoc}
   @override
   @nonVirtual
   final SpinifyChangeNotifier<SpinifyState> states = SpinifyChangeNotifier();
@@ -511,7 +489,6 @@ base mixin SpinifyWSPBStateHandlerMixin
   }
 
   /// Change state of spinify client.
-  /// {@nodoc}
   @protected
   @nonVirtual
   void _setState(SpinifyState state) {
@@ -566,7 +543,6 @@ base mixin SpinifyWSPBStateHandlerMixin
 }
 
 /// Handler for websocket messages and decode protobuf.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBHandlerMixin
     on
@@ -574,12 +550,10 @@ base mixin SpinifyWSPBHandlerMixin
         SpinifyWSPBSenderMixin,
         SpinifyWSPBPingPongMixin {
   /// Encoder protobuf commands to bytes.
-  /// {@nodoc}
   static const Converter<List<int>, Iterable<pb.Reply>> _replyDecoder =
       TransportProtobufDecoder();
 
   /// Subscription to websocket messages/data.
-  /// {@nodoc}
   StreamSubscription<List<int>>? _webSocketMessageSubscription;
 
   BigInt _receivedCount = BigInt.zero;
@@ -601,7 +575,6 @@ base mixin SpinifyWSPBHandlerMixin
     return super.connect(url, serverSubscriptionManager);
   }
 
-  /// {@nodoc}
   @protected
   @nonVirtual
   @pragma('vm:prefer-inline')
@@ -755,7 +728,6 @@ base mixin SpinifyWSPBHandlerMixin
 }
 
 /// Mixin responsible for spinify subscriptions.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBSubscription
     on SpinifyWSPBTransportBase, SpinifyWSPBSenderMixin {
@@ -958,7 +930,6 @@ base mixin SpinifyWSPBSubscription
 /// When client does not receive ping from a server for some
 /// time it can consider connection broken and try to reconnect.
 /// Usually a server sends pings every 25 seconds.
-/// {@nodoc}
 @internal
 base mixin SpinifyWSPBPingPongMixin on SpinifyWSPBTransportBase {
   @protected
@@ -978,7 +949,6 @@ base mixin SpinifyWSPBPingPongMixin on SpinifyWSPBTransportBase {
   /// Start or restart keepalive timer,
   /// you should restart it after each received ping message.
   /// Or connection will be closed by timeout.
-  /// {@nodoc}
   @protected
   @nonVirtual
   void _restartPingTimer() {
@@ -1006,11 +976,9 @@ base mixin SpinifyWSPBPingPongMixin on SpinifyWSPBTransportBase {
   }
 }
 
-/// {@nodoc}
 final List<SpinifyPublication> _emptyPublicationsList =
     List<SpinifyPublication>.empty(growable: false);
 
-/// {@nodoc}
 @internal
 SpinifyPublication Function(pb.Publication publication) $publicationDecode(
   String channel,
@@ -1027,7 +995,6 @@ SpinifyPublication Function(pb.Publication publication) $publicationDecode(
       );
 }
 
-/// {@nodoc}
 @internal
 SpinifyClientInfo $decodeClientInfo(pb.ClientInfo info) => SpinifyClientInfo(
       client: info.client,

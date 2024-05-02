@@ -55,7 +55,6 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
 /// {@category Entity}
 final class SpinifySubscriptionState$Unsubscribed
     extends SpinifySubscriptionState {
-  /// {@nodoc}
   SpinifySubscriptionState$Unsubscribed({
     required this.code,
     required this.reason,
@@ -120,7 +119,6 @@ final class SpinifySubscriptionState$Unsubscribed
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribing
     extends SpinifySubscriptionState {
-  /// {@nodoc}
   SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
     super.since,
@@ -170,7 +168,6 @@ final class SpinifySubscriptionState$Subscribing
 /// {@category Entity}
 final class SpinifySubscriptionState$Subscribed
     extends SpinifySubscriptionState {
-  /// {@nodoc}
   SpinifySubscriptionState$Subscribed({
     DateTime? timestamp,
     super.since,
@@ -228,10 +225,8 @@ final class SpinifySubscriptionState$Subscribed
 typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
     Function(S state);
 
-/// {@nodoc}
 @immutable
 abstract base class _$SpinifySubscriptionStateBase {
-  /// {@nodoc}
   const _$SpinifySubscriptionStateBase({
     required this.timestamp,
     required this.since,

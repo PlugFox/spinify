@@ -81,10 +81,8 @@ final class Spinify extends SpinifyBase
   static SpinifyObserver? observer;
 }
 
-/// {@nodoc}
 @internal
 abstract base class SpinifyBase implements ISpinify {
-  /// {@nodoc}
   SpinifyBase(SpinifyConfig config) : _config = config {
     _transport = SpinifyWSPBTransport(
       config: config,
@@ -94,22 +92,18 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// Internal transport responsible
   /// for sending, receiving, encoding and decoding data from the server.
-  /// {@nodoc}
   @nonVirtual
   late final ISpinifyTransport _transport;
 
   /// Spinify config.
-  /// {@nodoc}
   @nonVirtual
   final SpinifyConfig _config;
 
   /// Manager responsible for client-side subscriptions.
-  /// {@nodoc}
   late final ClientSubscriptionManager _clientSubscriptionManager =
       ClientSubscriptionManager(_transport);
 
   /// Manager responsible for client-side subscriptions.
-  /// {@nodoc}
   late final ServerSubscriptionManager _serverSubscriptionManager =
       ServerSubscriptionManager(_transport);
 
@@ -124,7 +118,6 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// Init spinify client, override this method to add custom logic.
   /// This method is called in constructor.
-  /// {@nodoc}
   @protected
   @mustCallSuper
   void _initSpinify() {
@@ -134,7 +127,6 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// Called when connection established.
   /// Right before [SpinifyState$Connected] state.
-  /// {@nodoc}
   @protected
   @mustCallSuper
   void _onConnected(SpinifyState$Connected state) {
@@ -144,7 +136,6 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// Called when connection lost.
   /// Right before [SpinifyState$Disconnected] state.
-  /// {@nodoc}
   @protected
   @mustCallSuper
   void _onDisconnected(SpinifyState$Disconnected state) {
@@ -166,7 +157,6 @@ abstract base class SpinifyBase implements ISpinify {
 
 /// Mixin responsible for event receiving and distribution by controllers
 /// and streams to subscribers.
-/// {@nodoc}
 base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   @protected
   @nonVirtual
@@ -216,7 +206,6 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
   }
 
   /// Router for all events.
-  /// {@nodoc}
   @protected
   @nonVirtual
   @pragma('vm:prefer-inline')
@@ -290,11 +279,9 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
 }
 
 /// Mixin responsible for spinify states
-/// {@nodoc}
 @internal
 base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
   /// Refresh timer.
-  /// {@nodoc}
   Timer? _refreshTimer;
 
   @override
@@ -347,7 +334,6 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
       StreamController<SpinifyState>.broadcast();
 
   /// Refresh connection token when ttl is expired.
-  /// {@nodoc}
   void _setRefreshTimer(DateTime? ttl) {
     _refreshTimer?.cancel();
     _refreshTimer = null;
@@ -359,7 +345,6 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
   }
 
   /// Refresh token for subscription.
-  /// {@nodoc}
   void _refreshToken() => Future<void>(() async {
         try {
           _refreshTimer?.cancel();
@@ -391,7 +376,6 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for errors stream.
-/// {@nodoc}
 @internal
 base mixin SpinifyErrorsMixin on SpinifyBase {
   @protected
@@ -401,7 +385,6 @@ base mixin SpinifyErrorsMixin on SpinifyBase {
 }
 
 /// Mixin responsible for connection.
-/// {@nodoc}
 @internal
 base mixin SpinifyConnectionMixin
     on SpinifyBase, SpinifyErrorsMixin, SpinifyStateMixin {
@@ -497,7 +480,6 @@ base mixin SpinifyConnectionMixin
 }
 
 /// Mixin responsible for sending asynchronous messages.
-/// {@nodoc}
 @internal
 base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
@@ -517,7 +499,6 @@ base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for client-side subscriptions.
-/// {@nodoc}
 @internal
 base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
@@ -580,7 +561,6 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for server-side subscriptions.
-/// {@nodoc}
 @internal
 base mixin SpinifyServerSubscriptionMixin on SpinifyBase {
   @override
@@ -603,7 +583,6 @@ base mixin SpinifyServerSubscriptionMixin on SpinifyBase {
 }
 
 /// Mixin responsible for publications.
-/// {@nodoc}
 @internal
 base mixin SpinifyPublicationsMixin
     on SpinifyBase, SpinifyErrorsMixin, SpinifyClientSubscriptionMixin {
@@ -627,7 +606,6 @@ base mixin SpinifyPublicationsMixin
 }
 
 /// Mixin responsible for presence.
-/// {@nodoc}
 base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<SpinifyPresence> presence(String channel) async {
@@ -667,7 +645,6 @@ base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for history.
-/// {@nodoc}
 base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<SpinifyHistory> history(
@@ -699,7 +676,6 @@ base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for history.
-/// {@nodoc}
 base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<List<int>> rpc(String method, List<int> data) async {
@@ -721,7 +697,6 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Responsible for metrics.
-/// {@nodoc}
 @internal
 base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
   int _connectsTotal = 0, _connectsSuccessful = 0, _disconnects = 0;
@@ -786,10 +761,8 @@ base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
 
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
-/// {@nodoc}
 @internal
 base mixin SpinifyQueueMixin on SpinifyBase {
-  /// {@nodoc}
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
 
   @override

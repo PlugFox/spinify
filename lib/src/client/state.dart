@@ -416,10 +416,8 @@ final class SpinifyState$Closed extends SpinifyState {
 /// {@category Entity}
 typedef SpinifyStateMatch<R, S extends SpinifyState> = R Function(S state);
 
-/// {@nodoc}
 @immutable
 abstract base class _$SpinifyStateBase {
-  /// {@nodoc}
   const _$SpinifyStateBase(this.timestamp);
 
   /// Represents the current state type.

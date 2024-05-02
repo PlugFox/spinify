@@ -27,23 +27,17 @@ sealed class ChatConnectionState extends _$ChatConnectionStateBase {
 }
 
 /// Disconnected
-/// {@nodoc}
 final class ChatConnectionState$Disconnected extends ChatConnectionState {
-  /// {@nodoc}
   const ChatConnectionState$Disconnected({super.message = 'Disconnected'});
 }
 
 /// Connecting
-/// {@nodoc}
 final class ChatConnectionState$Connecting extends ChatConnectionState {
-  /// {@nodoc}
   const ChatConnectionState$Connecting({super.message = 'Connecting'});
 }
 
 /// Connected
-/// {@nodoc}
 final class ChatConnectionState$Connected extends ChatConnectionState {
-  /// {@nodoc}
   const ChatConnectionState$Connected({super.message = 'Connected'});
 }
 
@@ -51,10 +45,8 @@ final class ChatConnectionState$Connected extends ChatConnectionState {
 typedef ChatConnectionStateMatch<R, S extends ChatConnectionState> = R Function(
     S state);
 
-/// {@nodoc}
 @immutable
 abstract base class _$ChatConnectionStateBase {
-  /// {@nodoc}
   const _$ChatConnectionStateBase({required this.message});
 
   /// Message or state description.
