@@ -8,7 +8,7 @@ import 'package:spinify/src/model/event.dart';
 /// {@subCategory Push}
 @immutable
 abstract base class SpinifyChannelPush extends SpinifyEvent {
-  /// {@template spinify_channel_push}
+  /// {@macro spinify_channel_push}
   const SpinifyChannelPush({
     required super.timestamp,
     required this.channel,

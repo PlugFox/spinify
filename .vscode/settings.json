@@ -5,15 +5,15 @@
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "editor.suggestSelection": "first",
     "editor.tabCompletion": "onlySnippets",
-    "editor.wordBasedSuggestions": false,
+    "editor.wordBasedSuggestions": "off",
     "editor.selectionHighlight": false,
     "editor.defaultFormatter": "Dart-Code.dart-code",
     "editor.formatOnSave": true,
     "editor.formatOnType": true,
     "editor.formatOnPaste": true,
     "editor.codeActionsOnSave": {
-      "source.fixAll": true,
-      "source.organizeImports": true
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
     },
     "editor.quickSuggestions": {
       "comments": "on",
@@ -21,7 +21,9 @@
       "other": "on"
     },
     "editor.links": true,
-    "editor.rulers": [80]
+    "editor.rulers": [
+      80
+    ]
   },
   "dart.lineLength": 80,
   "dart.doNotFormat": [
@@ -36,10 +38,8 @@
     "**.pbjson.dart",
     "**/generated/**"
   ],
-
   // Flutter Version Manager
   //"dart.flutterSdkPath": ".fvm/flutter_sdk",
-
   // Remove .fvm files from search
   "search.exclude": {
     //"**/.fvm": true,
@@ -47,7 +47,6 @@
     "coverage": true,
     "build": true
   },
-
   // Remove from file watching
   "files.watcherExclude": {
     //"**/.fvm": true,
@@ -55,7 +54,6 @@
     "coverage": true,
     "build": true
   },
-
   // Causes the debug view to automatically appear when a breakpoint is hit. This
   // setting is global and not configurable per-language.
   "debug.openDebug": "openOnDebugBreak",

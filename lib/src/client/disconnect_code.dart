@@ -11,7 +11,6 @@ import 'package:meta/meta.dart';
 ///
 /// Client implementation can use codes <3000 for client-side
 /// specific disconnect reasons.
-/// {@nodoc}
 @internal
 enum DisconnectCode {
   /// Disconnect called
@@ -32,7 +31,6 @@ enum DisconnectCode {
   /// Unsubscribe error
   unsubscribeError(5, 'unsubscribe error');
 
-  /// {@nodoc}
   const DisconnectCode(this.code, this.reason);
 
   /// Disconnect code.

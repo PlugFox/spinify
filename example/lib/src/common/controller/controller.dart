@@ -26,14 +26,16 @@ abstract interface class IControllerObserver {
   void onDispose(IController controller);
 
   /// Called on any state change in the controller.
-  void onStateChanged(IController controller, Object prevState, Object nextState);
+  void onStateChanged(
+      IController controller, Object prevState, Object nextState);
 
   /// Called on any error in the controller.
   void onError(IController controller, Object error, StackTrace stackTrace);
 }
 
-/// {@template controller}
+/// {@macro controller}
 abstract base class Controller with ChangeNotifier implements IController {
+  /// {@macro controller}
   Controller() {
     runZonedGuarded<void>(
       () => Controller.observer?.onCreate(this),
@@ -44,6 +46,7 @@ abstract base class Controller with ChangeNotifier implements IController {
   /// Controller observer
   static IControllerObserver? observer;
 
+  /// Whether the controller is disposed.
   bool get isDisposed => _$isDisposed;
   bool _$isDisposed = false;
 

@@ -44,9 +44,7 @@ sealed class ChatMessagesState extends _$ChatMessagesStateBase {
 }
 
 /// Idling state
-/// {@nodoc}
 final class ChatMessagesState$Idle extends ChatMessagesState {
-  /// {@nodoc}
   const ChatMessagesState$Idle({required super.data, super.message = 'Idling'});
 
   @override
@@ -61,9 +59,7 @@ final class ChatMessagesState$Idle extends ChatMessagesState {
 }
 
 /// Processing
-/// {@nodoc}
 final class ChatMessagesState$Processing extends ChatMessagesState {
-  /// {@nodoc}
   const ChatMessagesState$Processing(
       {required super.data, super.message = 'Processing'});
 
@@ -79,9 +75,7 @@ final class ChatMessagesState$Processing extends ChatMessagesState {
 }
 
 /// Successful
-/// {@nodoc}
 final class ChatMessagesState$Successful extends ChatMessagesState {
-  /// {@nodoc}
   const ChatMessagesState$Successful(
       {required super.data, super.message = 'Successful'});
 
@@ -97,9 +91,7 @@ final class ChatMessagesState$Successful extends ChatMessagesState {
 }
 
 /// Error
-/// {@nodoc}
 final class ChatMessagesState$Error extends ChatMessagesState {
-  /// {@nodoc}
   const ChatMessagesState$Error(
       {required super.data, super.message = 'An error has occurred.'});
 
@@ -118,10 +110,8 @@ final class ChatMessagesState$Error extends ChatMessagesState {
 typedef ChatMessagesStateMatch<R, S extends ChatMessagesState> = R Function(
     S state);
 
-/// {@nodoc}
 @immutable
 abstract base class _$ChatMessagesStateBase {
-  /// {@nodoc}
   const _$ChatMessagesStateBase({required this.data, required this.message});
 
   /// Data entity payload.

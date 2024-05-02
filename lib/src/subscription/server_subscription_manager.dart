@@ -10,15 +10,12 @@ import 'package:spinify/src/subscription/subscription_state.dart';
 import 'package:spinify/src/transport/transport_interface.dart';
 
 /// Responsible for managing client-side subscriptions.
-/// {@nodoc}
 @internal
 final class ServerSubscriptionManager {
-  /// {@nodoc}
   ServerSubscriptionManager(ISpinifyTransport transport)
       : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
   /// Spinify client weak reference.
-  /// {@nodoc}
   final WeakReference<ISpinifyTransport> _transportWeakRef;
 
   /// Subscriptions count.
@@ -45,7 +42,6 @@ final class ServerSubscriptionManager {
 
   /// Subscriptions registry (channel -> subscription).
   /// Channel : SpinifyClientSubscription
-  /// {@nodoc}
   final Map<String, SpinifyServerSubscriptionImpl> _channelSubscriptions =
       <String, SpinifyServerSubscriptionImpl>{};
 
@@ -53,7 +49,6 @@ final class ServerSubscriptionManager {
   /// Returns all registered subscriptions,
   /// so you can iterate over all and do some action if required
   /// (for example, you want to unsubscribe/remove all subscriptions).
-  /// {@nodoc}
   Map<String, SpinifyServerSubscription> get subscriptions =>
       UnmodifiableMapView<String, SpinifyServerSubscription>({
         for (final entry in _channelSubscriptions.entries)
@@ -89,7 +84,6 @@ final class ServerSubscriptionManager {
   /// Called when subscribed to a server-side channel upon Client moving to
   /// connected state or during connection lifetime if server sends Subscribe
   /// push message.
-  /// {@nodoc}
   void setSubscribedAll() {
     for (final entry in _channelSubscriptions.values) {
       if (entry.state.isSubscribed) continue;
@@ -99,7 +93,6 @@ final class ServerSubscriptionManager {
   /// Called when existing connection lost (Client reconnects) or Client
   /// explicitly disconnected. Client continue keeping server-side subscription
   /// registry with stream position information where applicable.
-  /// {@nodoc}
   void setSubscribingAll() {
     for (final entry in _channelSubscriptions.values) {
       if (entry.state.isSubscribing) continue;
@@ -109,7 +102,6 @@ final class ServerSubscriptionManager {
 
   /// Called when server sent unsubscribe push or server-side subscription
   /// previously existed in SDK registry disappeared upon Client reconnect.
-  /// {@nodoc}
   void setUnsubscribedAll([int code = 0, String reason = 'unsubscribed']) {
     for (final entry in _channelSubscriptions.values) {
       if (entry.state.isUnsubscribed) continue;
@@ -118,7 +110,6 @@ final class ServerSubscriptionManager {
   }
 
   /// Close all subscriptions.
-  /// {@nodoc}
   void close([
     int code = 0,
     String reason = 'client closed',
@@ -130,7 +121,6 @@ final class ServerSubscriptionManager {
   }
 
   /// Handle push event from server for the specific channel.
-  /// {@nodoc}
   @internal
   void onPush(SpinifyChannelPush push) =>
       _channelSubscriptions[push.channel]?.onPush(push);
@@ -140,7 +130,6 @@ final class ServerSubscriptionManager {
   ///
   /// You need to call [SpinifyClientSubscription.subscribe]
   /// to start receiving events
-  /// {@nodoc}
   SpinifyServerSubscription? operator [](String channel) =>
       _channelSubscriptions[channel];
 }

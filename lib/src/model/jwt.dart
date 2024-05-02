@@ -47,7 +47,6 @@ sealed class SpinifyJWT {
   factory SpinifyJWT.decode(String jwt, [String? secret]) =
       _SpinifyJWTImpl.decode;
 
-  /// {@nodoc}
   const SpinifyJWT._();
 
   /// This is a standard JWT claim which must contain
@@ -398,9 +397,7 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
 
 /// A converter that converts Base64-encoded strings
 /// to unpadded Base64-encoded strings.
-/// {@nodoc}
 class _UnpaddedBase64Converter extends Converter<String, String> {
-  /// {@nodoc}
   const _UnpaddedBase64Converter();
 
   @override

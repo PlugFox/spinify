@@ -4,10 +4,8 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:spinify/src/util/logger.dart';
 
-/// {@nodoc}
 @internal
 final class SpinifyEventQueue {
-  /// {@nodoc}
   SpinifyEventQueue();
 
   final DoubleLinkedQueue<SpinifyTask<Object?>> _queue =
@@ -16,7 +14,6 @@ final class SpinifyEventQueue {
   bool _isClosed = false;
 
   /// Push it at the end of the queue.
-  /// {@nodoc}
   Future<T> push<T>(String id, FutureOr<T> Function() fn) {
     final task = SpinifyTask<T>(id, fn);
     _queue.add(task);
@@ -27,14 +24,12 @@ final class SpinifyEventQueue {
   /// Mark the queue as closed.
   /// The queue will be processed until it's empty.
   /// But all new and current events will be rejected with [WSClientClosed].
-  /// {@nodoc}
   FutureOr<void> close() async {
     _isClosed = true;
     await _processing;
   }
 
   /// Execute the queue.
-  /// {@nodoc}
   void _exec() => _processing ??= Future.doWhile(() async {
         final event = _queue.first;
         try {
@@ -66,27 +61,20 @@ final class SpinifyEventQueue {
       });
 }
 
-/// {@nodoc}
 @internal
 class SpinifyTask<T> {
-  /// {@nodoc}
   SpinifyTask(this.id, FutureOr<T> Function() fn)
       : _fn = fn,
         _completer = Completer<T>();
 
-  /// {@nodoc}
   final Completer<T> _completer;
 
-  /// {@nodoc}
   final String id;
 
-  /// {@nodoc}
   final FutureOr<T> Function() _fn;
 
-  /// {@nodoc}
   Future<T> get future => _completer.future;
 
-  /// {@nodoc}
   FutureOr<T> call() async {
     final result = await _fn();
     if (!_completer.isCompleted) {
@@ -95,7 +83,6 @@ class SpinifyTask<T> {
     return result;
   }
 
-  /// {@nodoc}
   void reject(Object error, [StackTrace? stackTrace]) {
     if (_completer.isCompleted) return; // coverage:ignore-line
     _completer.completeError(error, stackTrace);

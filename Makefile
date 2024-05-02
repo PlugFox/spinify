@@ -1,4 +1,4 @@
-.PHONY: format get test publish deploy centrifugo-up centrifugo-down coverage analyze check pana generate
+.PHONY: format get outdated test publish deploy centrifugo-up centrifugo-down coverage analyze check pana generate
 
 format:
 	@echo "Formatting the code"
@@ -7,6 +7,9 @@ format:
 
 get:
 	@dart pub get
+
+outdated:
+	@dart pub outdated --show-all --dev-dependencies --dependency-overrides --transitive --no-prereleases
 
 test: get
 	@dart test --debug --coverage=.coverage --platform chrome,vm

@@ -1,38 +1,30 @@
 import 'package:meta/meta.dart';
 
 /// Notify about value changes.
-/// {@nodoc}
 typedef ValueChanged<T> = void Function(T value);
 
 /// Notify about value changes.
-/// {@nodoc}
 @internal
 abstract interface class SpinifyListenable<T> {
   /// Add listener.
-  /// {@nodoc}
   void addListener(ValueChanged<T> listener);
 
   /// Remove listener.
-  /// {@nodoc}
   void removeListener(ValueChanged<T> listener);
 }
 
 /// Notify about value changes.
-/// {@nodoc}
 @internal
 final class SpinifyChangeNotifier<T> implements SpinifyListenable<T> {
   /// Notify about value changes.
-  /// {@nodoc}
   SpinifyChangeNotifier();
 
   /// Notify about value changes.
-  /// {@nodoc}
   void notify(T value) {
     for (var i = 0; i < _listeners.length; i++) _listeners[i](value);
   }
 
   /// Listeners.
-  /// {@nodoc}
   final List<ValueChanged<T>> _listeners = <ValueChanged<T>>[];
 
   @override
