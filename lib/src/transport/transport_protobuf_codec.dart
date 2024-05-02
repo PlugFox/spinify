@@ -5,10 +5,8 @@ import 'package:protobuf/protobuf.dart' as pb;
 import 'package:spinify/src/transport/protobuf/client.pb.dart' as pb;
 import 'package:spinify/src/util/logger.dart' as logger;
 
-/// {@nodoc}
 @internal
 final class TransportProtobufCodec extends Codec<Object, List<int>> {
-  /// {@nodoc}
   const TransportProtobufCodec();
 
   @override
@@ -20,10 +18,8 @@ final class TransportProtobufCodec extends Codec<Object, List<int>> {
       const TransportProtobufEncoder();
 }
 
-/// {@nodoc}
 @internal
 final class TransportProtobufEncoder extends Converter<pb.Command, List<int>> {
-  /// {@nodoc}
   const TransportProtobufEncoder();
 
   @override
@@ -39,11 +35,9 @@ final class TransportProtobufEncoder extends Converter<pb.Command, List<int>> {
   }
 }
 
-/// {@nodoc}
 @internal
 final class TransportProtobufDecoder
     extends Converter<List<int>, Iterable<pb.Reply>> {
-  /// {@nodoc}
   const TransportProtobufDecoder();
 
   @override
