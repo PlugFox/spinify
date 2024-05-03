@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:l/l.dart';
-import 'package:spinify/spinify.dart';
+import 'package:spinify/spinify.old.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 import 'package:spinifyapp/src/feature/chat/controller/chat_connection_state.dart';
 import 'package:spinifyapp/src/feature/chat/model/message.dart';
