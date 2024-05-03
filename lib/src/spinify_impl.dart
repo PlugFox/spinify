@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import '../src.old/subscription/subscription.dart';
 import 'event_bus.dart';
 import 'model/config.dart';
+import 'model/events.dart';
 import 'model/history.dart';
 import 'model/metrics.dart';
 import 'model/presence.dart';
@@ -16,20 +17,12 @@ import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'spinify_interface.dart';
 
-/// Spinify client events.
-@internal
-abstract interface class ClientEvents {
-  static const String prefix = 'client';
-  static const String init = '${prefix}_init';
-  static const String close = '${prefix}_close';
-}
-
 /// Base class for Spinify client.
 abstract base class SpinifyBase implements ISpinify {
   /// Create a new Spinify client.
   SpinifyBase(this.config) : id = _idCounter++ {
     _bucket = SpinifyEventBus.instance.registerClient(this);
-    _init();
+    _initClient();
   }
 
   /// Unique client ID counter for Spinify clients.
@@ -51,14 +44,14 @@ abstract base class SpinifyBase implements ISpinify {
   late final SpinifyEventBus$Bucket _bucket;
 
   @mustCallSuper
-  void _init() {
+  void _initClient() {
     _bucket
       ..pushEvent(ClientEvents.init)
-      ..subscribe(ClientEvents.close, _onClose);
+      ..subscribe(ClientEvents.close, _spinifyBase$OnClose);
   }
 
   @mustCallSuper
-  Future<void> _onClose(_) async {
+  Future<void> _spinifyBase$OnClose(_) async {
     _isClosed = true;
     SpinifyEventBus.instance.unregisterClient(this);
   }
@@ -83,14 +76,60 @@ abstract base class SpinifyBase implements ISpinify {
   String toString() => 'Spinify{}';
 }
 
+/// Base mixin for Spinify client state management.
 base mixin SpinifyStateMixin on SpinifyBase {
   @override
-  SpinifyState get state => throw UnimplementedError();
+  SpinifyState get state => _state;
+  SpinifyState _state = SpinifyState$Disconnected();
 
   @override
-  SpinifyStatesStream get states => throw UnimplementedError();
+  late final SpinifyStatesStream states =
+      SpinifyStatesStream(_statesController.stream);
+
+  @nonVirtual
+  final StreamController<SpinifyState> _statesController =
+      StreamController<SpinifyState>.broadcast();
+
+  @override
+  @mustCallSuper
+  void _initClient() {
+    _bucket
+      ..subscribe(ClientEvents.disconnected, _spinifyStateMixin$OnDisconnected)
+      ..subscribe(ClientEvents.connecting, _spinifyStateMixin$OnConnecting)
+      ..subscribe(ClientEvents.connected, _spinifyStateMixin$OnConnectedState);
+    super._initClient();
+  }
+
+  @nonVirtual
+  void _changeState(SpinifyState state) {
+    _statesController.add(_state = state);
+    _bucket.pushEvent(ClientEvents.stateChanged, state);
+  }
+
+  @mustCallSuper
+  Future<void> _spinifyStateMixin$OnDisconnected(Object? data) async {
+    _changeState(data as SpinifyState$Disconnected);
+  }
+
+  @mustCallSuper
+  Future<void> _spinifyStateMixin$OnConnecting(Object? data) async {
+    _changeState(data as SpinifyState$Connecting);
+  }
+
+  @mustCallSuper
+  Future<void> _spinifyStateMixin$OnConnectedState(Object? data) async {
+    _changeState(data as SpinifyState$Connected);
+  }
+
+  @override
+  @mustCallSuper
+  Future<void> close() async {
+    await super.close();
+    _changeState(SpinifyState$Closed());
+  }
 }
 
+/// Base mixin for Spinify client connection management (connect & disconnect).
 base mixin SpinifyConnectionMixin on SpinifyBase {
   @override
   Future<void> connect(String url) {
@@ -103,11 +142,19 @@ base mixin SpinifyConnectionMixin on SpinifyBase {
   }
 
   @override
-  Future<void> disconnect([int code = 0, String reason = 'Disconnect called']) {
-    throw UnimplementedError();
+  Future<void> disconnect(
+      [int code = 0, String reason = 'Disconnect called']) async {
+    // ...
+  }
+
+  @override
+  Future<void> close() async {
+    await disconnect();
+    await super.close();
   }
 }
 
+/// Base mixin for Spinify client message sending.
 base mixin SpinifySendMixin on SpinifyBase {
   @override
   Future<void> send(List<int> data) {
@@ -115,6 +162,7 @@ base mixin SpinifySendMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify client subscription management.
 base mixin SpinifyClientSubscriptionMixin on SpinifyBase {
   @override
   ({
@@ -139,8 +187,10 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify server subscription management.
 base mixin SpinifyServerSubscriptionMixin on SpinifyBase {}
 
+/// Base mixin for Spinify client publications management.
 base mixin SpinifyPublicationsMixin on SpinifyBase {
   @override
   Future<void> publish(String channel, List<int> data) {
@@ -148,6 +198,7 @@ base mixin SpinifyPublicationsMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify client presence management.
 base mixin SpinifyPresenceMixin on SpinifyBase {
   @override
   Future<SpinifyPresence> presence(String channel) {
@@ -160,6 +211,7 @@ base mixin SpinifyPresenceMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify client history management.
 base mixin SpinifyHistoryMixin on SpinifyBase {
   @override
   Future<SpinifyHistory> history(String channel,
@@ -168,6 +220,7 @@ base mixin SpinifyHistoryMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify client RPC management.
 base mixin SpinifyRPCMixin on SpinifyBase {
   @override
   Future<List<int>> rpc(String method, List<int> data) {
@@ -175,6 +228,7 @@ base mixin SpinifyRPCMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify client metrics management.
 base mixin SpinifyMetricsMixin on SpinifyBase {
   @override
   SpinifyMetrics get metrics => throw UnimplementedError();

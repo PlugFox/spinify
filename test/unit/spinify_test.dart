@@ -6,8 +6,10 @@ void main() {
     test('Create_and_close_client', () async {
       final client = Spinify();
       expect(client.isClosed, isFalse);
+      expect(client.state, isA<SpinifyState$Disconnected>());
       await client.close();
       expect(client.isClosed, isTrue);
+      expect(client.state, isA<SpinifyState$Closed>());
     });
 
     test('Create_and_close_multiple_clients', () async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer' as dev;
+
+//import 'dart:developer' as dev;
 
 import 'package:meta/meta.dart';
 
@@ -115,27 +116,26 @@ final class SpinifyEventBus$Bucket {
   Future<void> _processEvents() async {
     if (_processing) return;
     _processing = true;
-    dev.Timeline.instantSync('$_debugLabel _processEvents() start');
+    //dev.Timeline.instantSync('$_debugLabel _processEvents() start');
     log.fine('$_debugLabel start processing events');
     while (_queue.isNotEmpty) {
       var task = _queue.removeFirst();
       final event = task.event;
-      log.fine('$_debugLabel processing "$event"');
       try {
         await _notifySubscribers(event, task.data);
         task.completer.complete(null);
-        //dev.Timeline.instantSync('$_debugLabel event "$event" processed');
-        //log.fine('$_debugLabel event "$event" processed');
+        //dev.Timeline.instantSync('$_debugLabel $event');
+        log.fine('$_debugLabel $event');
       } on Object catch (error, stackTrace) {
-        final reason = '$_debugLabel error processing event "$event"';
-        dev.Timeline.instantSync(reason);
+        final reason = '$_debugLabel $event error';
+        //dev.Timeline.instantSync(reason);
         log.warning(error, stackTrace, reason);
         task.completer.completeError(error, stackTrace);
       }
     }
     _processing = false;
     log.fine('$_debugLabel end processing events');
-    dev.Timeline.instantSync('$_debugLabel _processEvents() end');
+    //dev.Timeline.instantSync('$_debugLabel _processEvents() end');
   }
 
   /// Notify the subscribers
