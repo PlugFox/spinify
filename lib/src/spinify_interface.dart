@@ -1,17 +1,16 @@
-// ignore_for_file: one_member_abstracts
-
 import 'dart:async';
 
-import '../../src.old/client/state.dart';
-import '../../src.old/client/states_stream.dart';
-import '../../src.old/model/history.dart';
-import '../../src.old/model/metrics.dart';
-import '../../src.old/model/presence.dart';
-import '../../src.old/model/presence_stats.dart';
-import '../../src.old/model/pushes_stream.dart';
-import '../../src.old/model/stream_position.dart';
-import '../../src.old/subscription/subscription.dart';
-import '../../src.old/subscription/subscription_config.dart';
+import '../src.old/subscription/subscription.dart';
+import 'model/config.dart';
+import 'model/history.dart';
+import 'model/metrics.dart';
+import 'model/presence.dart';
+import 'model/presence_stats.dart';
+import 'model/pushes_stream.dart';
+import 'model/state.dart';
+import 'model/states_stream.dart';
+import 'model/stream_position.dart';
+import 'model/subscription_config.dart';
 
 /// Spinify client interface.
 abstract interface class ISpinify
@@ -25,6 +24,15 @@ abstract interface class ISpinify
         ISpinifyHistoryOwner,
         ISpinifyRemoteProcedureCall,
         ISpinifyMetricsOwner {
+  /// Unique client identifier.
+  abstract final int id;
+
+  /// Spinify configuration.
+  abstract final SpinifyConfig config;
+
+  /// True if client is closed.
+  bool get isClosed;
+
   /// Connect to the server.
   /// [url] is a URL of endpoint.
   Future<void> connect(String url);
@@ -55,12 +63,14 @@ abstract interface class ISpinifyStateOwner {
 }
 
 /// Spinify send publication interface.
+// ignore: one_member_abstracts
 abstract interface class ISpinifyPublicationSender {
   /// Publish data to specific subscription channel
   Future<void> publish(String channel, List<int> data);
 }
 
 /// Spinify send asynchronous message interface.
+// ignore: one_member_abstracts
 abstract interface class ISpinifyAsyncMessageSender {
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifugo
@@ -122,6 +132,7 @@ abstract interface class ISpinifyPresenceOwner {
 }
 
 /// Spinify history owner interface.
+// ignore: one_member_abstracts
 abstract interface class ISpinifyHistoryOwner {
   /// Fetch publication history inside a channel.
   /// Only for channels where history is enabled.
@@ -134,6 +145,7 @@ abstract interface class ISpinifyHistoryOwner {
 }
 
 /// Spinify remote procedure call interface.
+// ignore: one_member_abstracts
 abstract interface class ISpinifyRemoteProcedureCall {
   /// Send arbitrary RPC and wait for response.
   Future<List<int>> rpc(String method, List<int> data);
