@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:protobuf/protobuf.dart' as pb;
-import 'package:spinify/src.old/transport/protobuf/client.pb.dart' as pb;
-import 'package:spinify/src.old/util/logger.dart' as logger;
+
+import '../util/logger.dart' as logger;
+import 'protobuf/client.pb.dart' as pb;
 
 /// Codec for encoding and decoding protobuf messages.
 final class TransportProtobufCodec extends Codec<Object, List<int>> {

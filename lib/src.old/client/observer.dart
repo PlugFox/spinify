@@ -1,9 +1,9 @@
-import 'package:spinify/src.old/client/spinify_interface.dart';
-import 'package:spinify/src.old/client/state.dart';
-import 'package:spinify/src.old/model/event.dart';
-import 'package:spinify/src.old/model/exception.dart';
-import 'package:spinify/src.old/subscription/subscription.dart';
-import 'package:spinify/src.old/subscription/subscription_state.dart';
+import '../model/event.dart';
+import '../model/exception.dart';
+import '../subscription/subscription.dart';
+import '../subscription/subscription_state.dart';
+import 'spinify_interface.dart';
+import 'state.dart';
 
 /// An interface for observing the behavior of Spinify instances.
 /// {@category Client}

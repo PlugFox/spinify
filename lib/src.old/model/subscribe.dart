@@ -1,5 +1,5 @@
-import 'package:spinify/src.old/model/channel_push.dart';
-import 'package:spinify/src.old/model/stream_position.dart';
+import 'channel_push.dart';
+import 'stream_position.dart';
 
 /// {@template subscribe}
 /// Subscribe push from Centrifugo server.

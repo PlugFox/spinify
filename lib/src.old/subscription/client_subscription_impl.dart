@@ -2,31 +2,32 @@ import 'dart:async';
 
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/client/disconnect_code.dart';
-import 'package:spinify/src.old/client/spinify.dart';
-import 'package:spinify/src.old/model/channel_presence.dart';
-import 'package:spinify/src.old/model/channel_push.dart';
-import 'package:spinify/src.old/model/connect.dart';
-import 'package:spinify/src.old/model/disconnect.dart';
-import 'package:spinify/src.old/model/event.dart';
-import 'package:spinify/src.old/model/exception.dart';
-import 'package:spinify/src.old/model/history.dart';
-import 'package:spinify/src.old/model/message.dart';
-import 'package:spinify/src.old/model/presence.dart';
-import 'package:spinify/src.old/model/presence_stats.dart';
-import 'package:spinify/src.old/model/publication.dart';
-import 'package:spinify/src.old/model/pushes_stream.dart';
-import 'package:spinify/src.old/model/refresh.dart';
-import 'package:spinify/src.old/model/stream_position.dart';
-import 'package:spinify/src.old/model/subscribe.dart';
-import 'package:spinify/src.old/model/unsubscribe.dart';
-import 'package:spinify/src.old/subscription/subscription.dart';
-import 'package:spinify/src.old/subscription/subscription_config.dart';
-import 'package:spinify/src.old/subscription/subscription_state.dart';
-import 'package:spinify/src.old/subscription/subscription_states_stream.dart';
-import 'package:spinify/src.old/transport/transport_interface.dart';
-import 'package:spinify/src.old/util/event_queue.dart';
-import 'package:spinify/src.old/util/logger.dart' as logger;
+
+import '../client/disconnect_code.dart';
+import '../client/spinify.dart';
+import '../model/channel_presence.dart';
+import '../model/channel_push.dart';
+import '../model/connect.dart';
+import '../model/disconnect.dart';
+import '../model/event.dart';
+import '../model/exception.dart';
+import '../model/history.dart';
+import '../model/message.dart';
+import '../model/presence.dart';
+import '../model/presence_stats.dart';
+import '../model/publication.dart';
+import '../model/pushes_stream.dart';
+import '../model/refresh.dart';
+import '../model/stream_position.dart';
+import '../model/subscribe.dart';
+import '../model/unsubscribe.dart';
+import '../transport/transport_interface.dart';
+import '../util/event_queue.dart';
+import '../util/logger.dart' as logger;
+import 'subscription.dart';
+import 'subscription_config.dart';
+import 'subscription_state.dart';
+import 'subscription_states_stream.dart';
 
 /// Client-side subscription implementation.
 final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase

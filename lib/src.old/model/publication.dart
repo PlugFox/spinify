@@ -1,7 +1,7 @@
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/channel_push.dart';
-import 'package:spinify/src.old/model/client_info.dart';
+import 'channel_push.dart';
+import 'client_info.dart';
 
 /// {@template publication}
 /// Publication context

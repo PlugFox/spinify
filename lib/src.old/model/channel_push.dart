@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/event.dart';
+import 'event.dart';
 
 /// {@template spinify_channel_push}
 /// Base class for all channel push events.

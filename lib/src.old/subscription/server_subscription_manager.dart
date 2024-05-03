@@ -1,12 +1,12 @@
 import 'dart:collection';
 
-import 'package:spinify/src.old/model/channel_push.dart';
-import 'package:spinify/src.old/model/subscribe.dart';
-import 'package:spinify/src.old/model/unsubscribe.dart';
-import 'package:spinify/src.old/subscription/server_subscription_impl.dart';
-import 'package:spinify/src.old/subscription/subscription.dart';
-import 'package:spinify/src.old/subscription/subscription_state.dart';
-import 'package:spinify/src.old/transport/transport_interface.dart';
+import '../model/channel_push.dart';
+import '../model/subscribe.dart';
+import '../model/unsubscribe.dart';
+import '../transport/transport_interface.dart';
+import 'server_subscription_impl.dart';
+import 'subscription.dart';
+import 'subscription_state.dart';
 
 /// Responsible for managing client-side subscriptions.
 final class ServerSubscriptionManager {

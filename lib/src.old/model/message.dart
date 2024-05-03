@@ -1,4 +1,4 @@
-import 'package:spinify/src.old/model/channel_push.dart';
+import 'channel_push.dart';
 
 /// {@template message}
 /// Message push from Centrifugo server.

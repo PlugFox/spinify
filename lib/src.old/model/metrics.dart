@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/client/state.dart';
+import '../client/state.dart';
 
 /// Subscription count
 /// - total

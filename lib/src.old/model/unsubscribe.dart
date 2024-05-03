@@ -1,4 +1,4 @@
-import 'package:spinify/src.old/model/channel_push.dart';
+import 'channel_push.dart';
 
 /// {@template unsubscribe}
 /// Unsubscribe push from Centrifugo server.

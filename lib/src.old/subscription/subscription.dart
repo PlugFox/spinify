@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:spinify/src.old/model/history.dart';
-import 'package:spinify/src.old/model/presence.dart';
-import 'package:spinify/src.old/model/presence_stats.dart';
-import 'package:spinify/src.old/model/pushes_stream.dart';
-import 'package:spinify/src.old/model/stream_position.dart';
-import 'package:spinify/src.old/subscription/subscription_state.dart';
-import 'package:spinify/src.old/subscription/subscription_states_stream.dart';
+import '../model/history.dart';
+import '../model/presence.dart';
+import '../model/presence_stats.dart';
+import '../model/pushes_stream.dart';
+import '../model/stream_position.dart';
+import 'subscription_state.dart';
+import 'subscription_states_stream.dart';
 
 /// {@template subscription}
 /// Spinify subscription interface.

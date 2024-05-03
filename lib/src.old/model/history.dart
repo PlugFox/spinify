@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/publication.dart';
-import 'package:spinify/src.old/model/stream_position.dart';
+import 'publication.dart';
+import 'stream_position.dart';
 
 /// {@template history}
 /// History

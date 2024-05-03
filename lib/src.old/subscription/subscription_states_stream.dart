@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/subscription/subscription_state.dart';
+import 'subscription_state.dart';
 
 /// Stream of Spinify's [SpinifySubscriptionState] changes.
 /// {@category Subscription}

@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/client_info.dart';
+import 'client_info.dart';
 
 /// {@template presence}
 /// Presence

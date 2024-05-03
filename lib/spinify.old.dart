@@ -1,4 +1,4 @@
-library spinify;
+library spinify.old;
 
 export 'src.old/client/config.dart';
 export 'src.old/client/observer.dart';

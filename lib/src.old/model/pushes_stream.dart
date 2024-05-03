@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/channel_presence.dart';
-import 'package:spinify/src.old/model/channel_push.dart';
-import 'package:spinify/src.old/model/event.dart';
-import 'package:spinify/src.old/model/message.dart';
-import 'package:spinify/src.old/model/publication.dart';
+import 'channel_presence.dart';
+import 'channel_push.dart';
+import 'event.dart';
+import 'message.dart';
+import 'publication.dart';
 
 /// Stream of received pushes from Centrifugo server for a channel.
 /// {@category Event}

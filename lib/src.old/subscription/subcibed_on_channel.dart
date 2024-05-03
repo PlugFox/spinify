@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/publication.dart';
-import 'package:spinify/src.old/model/stream_position.dart';
+import '../model/publication.dart';
+import '../model/stream_position.dart';
 
 /// Subscribed on channel message.
 /// {@category Subscription}

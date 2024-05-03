@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:spinify/src.old/util/logger.dart';
+import 'logger.dart';
 
 /// Event Queue
 final class SpinifyEventQueue {

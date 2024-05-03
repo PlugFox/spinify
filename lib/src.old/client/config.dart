@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-import 'package:spinify/src.old/model/pubspec.yaml.g.dart';
+import '../model/pubspec.yaml.g.dart';
 
 /// Token used for authentication
 ///

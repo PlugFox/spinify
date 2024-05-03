@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:spinify/src.old/client/state.dart';
+import 'state.dart';
 
 /// Stream of Spinify's [SpinifyState] changes.
 /// {@category Client}
