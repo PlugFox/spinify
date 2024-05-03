@@ -1,6 +1,5 @@
 import 'dart:collection';
 
-import 'package:meta/meta.dart';
 import 'package:spinify/src.old/model/channel_push.dart';
 import 'package:spinify/src.old/model/exception.dart';
 import 'package:spinify/src.old/subscription/client_subscription_impl.dart';
@@ -10,8 +9,8 @@ import 'package:spinify/src.old/subscription/subscription_state.dart';
 import 'package:spinify/src.old/transport/transport_interface.dart';
 
 /// Responsible for managing client-side subscriptions.
-@internal
 final class ClientSubscriptionManager {
+  /// Responsible for managing client-side subscriptions.
   ClientSubscriptionManager(ISpinifyTransport transport)
       : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
@@ -135,7 +134,6 @@ final class ClientSubscriptionManager {
   }
 
   /// Handle push event from server for the specific channel.
-  @internal
   void onPush(SpinifyChannelPush push) =>
       _channelSubscriptions[push.channel]?.onPush(push);
 

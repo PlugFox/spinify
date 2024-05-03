@@ -1,13 +1,12 @@
 import 'dart:convert';
 
-import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
+import 'package:spinify/src.old/transport/protobuf/client.pb.dart' as pb;
+import 'package:spinify/src.old/util/logger.dart' as logger;
 
-import '../util/logger.dart' as logger;
-import 'protobuf/client.pb.dart' as pb;
-
-@internal
+/// Codec for encoding and decoding protobuf messages.
 final class TransportProtobufCodec extends Codec<Object, List<int>> {
+  /// Create a new instance of [TransportProtobufCodec].
   const TransportProtobufCodec();
 
   @override
@@ -19,8 +18,9 @@ final class TransportProtobufCodec extends Codec<Object, List<int>> {
       const TransportProtobufEncoder();
 }
 
-@internal
+/// Encoder for protobuf messages.
 final class TransportProtobufEncoder extends Converter<pb.Command, List<int>> {
+  /// Create a new instance of [TransportProtobufEncoder].
   const TransportProtobufEncoder();
 
   @override
@@ -36,9 +36,10 @@ final class TransportProtobufEncoder extends Converter<pb.Command, List<int>> {
   }
 }
 
-@internal
+/// Decoder for protobuf messages.
 final class TransportProtobufDecoder
     extends Converter<List<int>, Iterable<pb.Reply>> {
+  /// Create a new instance of [TransportProtobufDecoder].
   const TransportProtobufDecoder();
 
   @override

@@ -81,8 +81,9 @@ final class Spinify extends SpinifyBase
   static SpinifyObserver? observer;
 }
 
-@internal
+/// Base class for Spinify client.
 abstract base class SpinifyBase implements ISpinify {
+  /// Create a new Spinify client.
   SpinifyBase(SpinifyConfig config) : _config = config {
     _transport = SpinifyWSPBTransport(
       config: config,
@@ -279,7 +280,6 @@ base mixin SpinifyEventReceiverMixin on SpinifyBase, SpinifyStateMixin {
 }
 
 /// Mixin responsible for spinify states
-@internal
 base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
   /// Refresh timer.
   Timer? _refreshTimer;
@@ -376,7 +376,6 @@ base mixin SpinifyStateMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for errors stream.
-@internal
 base mixin SpinifyErrorsMixin on SpinifyBase {
   @protected
   @nonVirtual
@@ -385,7 +384,6 @@ base mixin SpinifyErrorsMixin on SpinifyBase {
 }
 
 /// Mixin responsible for connection.
-@internal
 base mixin SpinifyConnectionMixin
     on SpinifyBase, SpinifyErrorsMixin, SpinifyStateMixin {
   @override
@@ -480,7 +478,6 @@ base mixin SpinifyConnectionMixin
 }
 
 /// Mixin responsible for sending asynchronous messages.
-@internal
 base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   Future<void> send(List<int> data) async {
@@ -499,7 +496,6 @@ base mixin SpinifySendMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for client-side subscriptions.
-@internal
 base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
   @override
   SpinifyClientSubscription newSubscription(
@@ -561,7 +557,6 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Mixin responsible for server-side subscriptions.
-@internal
 base mixin SpinifyServerSubscriptionMixin on SpinifyBase {
   @override
   void _onConnected(SpinifyState$Connected state) {
@@ -583,7 +578,6 @@ base mixin SpinifyServerSubscriptionMixin on SpinifyBase {
 }
 
 /// Mixin responsible for publications.
-@internal
 base mixin SpinifyPublicationsMixin
     on SpinifyBase, SpinifyErrorsMixin, SpinifyClientSubscriptionMixin {
   @override
@@ -697,7 +691,6 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyErrorsMixin {
 }
 
 /// Responsible for metrics.
-@internal
 base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
   int _connectsTotal = 0, _connectsSuccessful = 0, _disconnects = 0;
   DateTime? _lastDisconnectTime, _lastConnectTime;
@@ -761,7 +754,6 @@ base mixin SpinifyMetricsMixin on SpinifyBase, SpinifyStateMixin {
 
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
-@internal
 base mixin SpinifyQueueMixin on SpinifyBase {
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
 

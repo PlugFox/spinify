@@ -8,6 +8,8 @@ analyzer:
     - "lib/**.g.dart"
     - "lib/src/transport/protobuf/*"
     - "lib/src/transport/pubspec.yaml.g.dart"
+    - "lib/src.old/transport/protobuf/*"
+    - "lib/src.old/transport/pubspec.yaml.g.dart"
     # Tests
     - "test/**.mocks.dart"
     - ".test_coverage.dart"

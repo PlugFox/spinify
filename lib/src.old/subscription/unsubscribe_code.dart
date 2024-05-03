@@ -1,7 +1,4 @@
-import 'package:meta/meta.dart';
-
 /// Unsubscribe codes.
-@internal
 enum UnsubscribeCode {
   /// Disconnect called
   unsubscribeCalled(0, 'unsubscribe called'),

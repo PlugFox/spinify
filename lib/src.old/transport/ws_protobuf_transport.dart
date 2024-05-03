@@ -36,8 +36,9 @@ import 'package:spinify/src.old/util/notifier.dart';
 import 'package:spinify/src.old/util/speed_meter.dart';
 import 'package:ws/ws.dart';
 
-@internal
+/// Base class for Spinify transport with Protobuf & WebSocket protocol.
 abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
+  /// Create a new instance of [SpinifyWSPBTransportBase].
   SpinifyWSPBTransportBase({
     required SpinifyConfig config,
   })  : _config = config,
@@ -110,7 +111,6 @@ abstract base class SpinifyWSPBTransportBase implements ISpinifyTransport {
 
 /// Class responsible for sending and receiving data from the server
 /// through the Protobuf & WebSocket protocol.
-@internal
 // ignore: lines_longer_than_80_chars
 final class SpinifyWSPBTransport = SpinifyWSPBTransportBase
     with
@@ -129,7 +129,6 @@ typedef _ReplyCompleter = ({
 });
 
 /// Mixin responsible for holding reply completers.
-@internal
 base mixin SpinifyWSPBReplyMixin on SpinifyWSPBTransportBase {
   /// Completers for messages by id.
   /// Contains timer for timeout and completer for response.
@@ -185,7 +184,6 @@ base mixin SpinifyWSPBReplyMixin on SpinifyWSPBTransportBase {
 }
 
 /// Mixin responsible for sending data through websocket with protobuf.
-@internal
 base mixin SpinifyWSPBSenderMixin
     on SpinifyWSPBTransportBase, SpinifyWSPBReplyMixin {
   /// Encoder protobuf commands to bytes.
@@ -324,7 +322,6 @@ base mixin SpinifyWSPBSenderMixin
 }
 
 /// Mixin responsible for connection.
-@internal
 base mixin SpinifyWSPBConnectionMixin
     on
         SpinifyWSPBTransportBase,
@@ -460,7 +457,6 @@ base mixin SpinifyWSPBConnectionMixin
 }
 
 /// Handler for websocket states.
-@internal
 base mixin SpinifyWSPBStateHandlerMixin
     on SpinifyWSPBTransportBase, SpinifyWSPBReplyMixin {
   // Subscribe to websocket state after first connection.
@@ -543,7 +539,6 @@ base mixin SpinifyWSPBStateHandlerMixin
 }
 
 /// Handler for websocket messages and decode protobuf.
-@internal
 base mixin SpinifyWSPBHandlerMixin
     on
         SpinifyWSPBTransportBase,
@@ -728,7 +723,6 @@ base mixin SpinifyWSPBHandlerMixin
 }
 
 /// Mixin responsible for spinify subscriptions.
-@internal
 base mixin SpinifyWSPBSubscription
     on SpinifyWSPBTransportBase, SpinifyWSPBSenderMixin {
   @override
@@ -930,7 +924,6 @@ base mixin SpinifyWSPBSubscription
 /// When client does not receive ping from a server for some
 /// time it can consider connection broken and try to reconnect.
 /// Usually a server sends pings every 25 seconds.
-@internal
 base mixin SpinifyWSPBPingPongMixin on SpinifyWSPBTransportBase {
   @protected
   @nonVirtual
@@ -980,7 +973,6 @@ final List<SpinifyPublication> _emptyPublicationsList =
     List<SpinifyPublication>.empty(growable: false);
 
 /// Decode protobuf messages to Spinify models.
-@internal
 SpinifyPublication Function(pb.Publication publication) $publicationDecode(
   String channel,
 ) {
@@ -997,7 +989,6 @@ SpinifyPublication Function(pb.Publication publication) $publicationDecode(
 }
 
 /// Decode protobuf client info to Spinify client info.
-@internal
 SpinifyClientInfo $decodeClientInfo(pb.ClientInfo info) => SpinifyClientInfo(
       client: info.client,
       user: info.user,

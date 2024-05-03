@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:meta/meta.dart';
 import 'package:spinify/src.old/util/logger.dart';
 
-@internal
+/// Event Queue
 final class SpinifyEventQueue {
+  /// Create a new instance of [SpinifyEventQueue].
   SpinifyEventQueue();
 
   final DoubleLinkedQueue<SpinifyTask<Object?>> _queue =
@@ -61,20 +61,24 @@ final class SpinifyEventQueue {
       });
 }
 
-@internal
+/// Task for the [SpinifyEventQueue].
 class SpinifyTask<T> {
+  /// Create a new instance of [SpinifyTask].
   SpinifyTask(this.id, FutureOr<T> Function() fn)
       : _fn = fn,
         _completer = Completer<T>();
 
   final Completer<T> _completer;
 
+  /// Unique identifier for the task.
   final String id;
 
   final FutureOr<T> Function() _fn;
 
+  /// Future of the task.
   Future<T> get future => _completer.future;
 
+  /// Execute the task.
   FutureOr<T> call() async {
     final result = await _fn();
     if (!_completer.isCompleted) {
@@ -83,6 +87,7 @@ class SpinifyTask<T> {
     return result;
   }
 
+  /// Reject the task with [error] and [stackTrace].
   void reject(Object error, [StackTrace? stackTrace]) {
     if (_completer.isCompleted) return; // coverage:ignore-line
     _completer.completeError(error, stackTrace);

@@ -1,18 +1,16 @@
 import 'dart:collection';
 
-import 'package:meta/meta.dart';
-
-import '../model/channel_push.dart';
-import '../model/subscribe.dart';
-import '../model/unsubscribe.dart';
-import '../transport/transport_interface.dart';
-import 'server_subscription_impl.dart';
-import 'subscription.dart';
-import 'subscription_state.dart';
+import 'package:spinify/src.old/model/channel_push.dart';
+import 'package:spinify/src.old/model/subscribe.dart';
+import 'package:spinify/src.old/model/unsubscribe.dart';
+import 'package:spinify/src.old/subscription/server_subscription_impl.dart';
+import 'package:spinify/src.old/subscription/subscription.dart';
+import 'package:spinify/src.old/subscription/subscription_state.dart';
+import 'package:spinify/src.old/transport/transport_interface.dart';
 
 /// Responsible for managing client-side subscriptions.
-@internal
 final class ServerSubscriptionManager {
+  /// Create a new instance of [ServerSubscriptionManager].
   ServerSubscriptionManager(ISpinifyTransport transport)
       : _transportWeakRef = WeakReference<ISpinifyTransport>(transport);
 
@@ -122,7 +120,6 @@ final class ServerSubscriptionManager {
   }
 
   /// Handle push event from server for the specific channel.
-  @internal
   void onPush(SpinifyChannelPush push) =>
       _channelSubscriptions[push.channel]?.onPush(push);
 

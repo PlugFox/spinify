@@ -1,8 +1,8 @@
 import 'package:meta/meta.dart';
 
-@internal
-@immutable
+/// Result of connection refresh
 final class SpinifyRefreshResult {
+  /// Result of connection refresh
   const SpinifyRefreshResult({
     required this.expires,
     this.client,
@@ -23,9 +23,10 @@ final class SpinifyRefreshResult {
   final DateTime? ttl;
 }
 
-@internal
+/// Result of subscription refresh
 @immutable
 final class SpinifySubRefreshResult {
+  /// Result of connection refresh
   const SpinifySubRefreshResult({
     required this.expires,
     this.ttl,

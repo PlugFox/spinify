@@ -1,9 +1,8 @@
 import 'dart:math' as math;
 
-import 'package:meta/meta.dart';
-
-@internal
+/// Speed meter
 class SpinifySpeedMeter {
+  /// Speed meter
   SpinifySpeedMeter(this.size) : _speeds = List.filled(size, 0);
 
   /// Size of the speed meter

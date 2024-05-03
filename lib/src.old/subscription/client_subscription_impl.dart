@@ -29,7 +29,6 @@ import 'package:spinify/src.old/util/event_queue.dart';
 import 'package:spinify/src.old/util/logger.dart' as logger;
 
 /// Client-side subscription implementation.
-@internal
 final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase
     with
         SpinifyClientSubscriptionEventReceiverMixin,
@@ -39,6 +38,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase
         SpinifyClientSubscriptionHistoryMixin,
         SpinifyClientSubscriptionPresenceMixin,
         SpinifyClientSubscriptionQueueMixin {
+  /// Client-side subscription implementation.
   SpinifyClientSubscriptionImpl({
     required super.channel,
     required super.transportWeakRef,
@@ -46,9 +46,10 @@ final class SpinifyClientSubscriptionImpl extends SpinifyClientSubscriptionBase
   }) : super(config: config ?? const SpinifySubscriptionConfig.byDefault());
 }
 
-@internal
+/// Base class for client-side subscription.
 abstract base class SpinifyClientSubscriptionBase
     extends SpinifyClientSubscription {
+  /// Client-side subscription implementation.
   SpinifyClientSubscriptionBase({
     required this.channel,
     required WeakReference<ISpinifyTransport> transportWeakRef,
@@ -122,7 +123,7 @@ abstract base class SpinifyClientSubscriptionBase
     if (offset != null && offset > _offset) _offset = offset;
   }
 
-  @internal
+  /// Close subscription.
   @mustCallSuper
   Future<void> close([int code = 0, String reason = 'closed']) async {
     if (!_state.isUnsubscribed) {
@@ -192,7 +193,6 @@ base mixin SpinifyClientSubscriptionEventReceiverMixin
 
   /// Handle push event from server for the specific channel.
   /// Called from `SpinifyClientSubscriptionsManager.onPush`
-  @internal
   @nonVirtual
   void onPush(SpinifyChannelPush push) {
     // This is a push to a channel.
@@ -239,7 +239,6 @@ base mixin SpinifyClientSubscriptionEventReceiverMixin
 }
 
 /// Mixin responsible for errors stream.
-@internal
 base mixin SpinifyClientSubscriptionErrorsMixin
     on SpinifyClientSubscriptionBase {
   @protected
@@ -249,7 +248,6 @@ base mixin SpinifyClientSubscriptionErrorsMixin
 }
 
 /// Mixin responsible for subscribing.
-@internal
 base mixin SpinifyClientSubscriptionSubscribeMixin
     on SpinifyClientSubscriptionBase, SpinifyClientSubscriptionErrorsMixin {
   /// Refresh timer.
@@ -442,7 +440,6 @@ base mixin SpinifyClientSubscriptionSubscribeMixin
 }
 
 /// Mixin responsible for publishing.
-@internal
 base mixin SpinifyClientSubscriptionPublishingMixin
     on SpinifyClientSubscriptionBase, SpinifyClientSubscriptionErrorsMixin {
   @override
@@ -462,7 +459,6 @@ base mixin SpinifyClientSubscriptionPublishingMixin
 }
 
 /// Mixin responsible for history.
-@internal
 base mixin SpinifyClientSubscriptionHistoryMixin
     on SpinifyClientSubscriptionBase, SpinifyClientSubscriptionErrorsMixin {
   @override
@@ -492,7 +488,6 @@ base mixin SpinifyClientSubscriptionHistoryMixin
 }
 
 /// Mixin responsible for presence.
-@internal
 base mixin SpinifyClientSubscriptionPresenceMixin
     on SpinifyClientSubscriptionBase, SpinifyClientSubscriptionErrorsMixin {
   @override
@@ -530,7 +525,6 @@ base mixin SpinifyClientSubscriptionPresenceMixin
 
 /// Mixin responsible for queue.
 /// SHOULD BE LAST MIXIN.
-@internal
 base mixin SpinifyClientSubscriptionQueueMixin
     on SpinifyClientSubscriptionBase {
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();

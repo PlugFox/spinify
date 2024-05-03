@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 /// Disconnect codes.
 ///
 /// Server may send custom disconnect codes to a client.
@@ -11,7 +9,6 @@ import 'package:meta/meta.dart';
 ///
 /// Client implementation can use codes <3000 for client-side
 /// specific disconnect reasons.
-@internal
 enum DisconnectCode {
   /// Disconnect called
   disconnectCalled(0, 'disconnect called'),

@@ -5,7 +5,6 @@ import 'package:meta/meta.dart';
 
 /// Constants used to debug the Spinify client.
 /// --dart-define=dev.plugfox.spinify.debug=true
-@internal
 bool get $enableLogging =>
     const bool.fromEnvironment(
       'dev.plugfox.spinify.log',

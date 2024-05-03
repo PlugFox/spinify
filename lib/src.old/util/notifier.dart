@@ -1,10 +1,7 @@
-import 'package:meta/meta.dart';
-
 /// Notify about value changes.
 typedef ValueChanged<T> = void Function(T value);
 
 /// Notify about value changes.
-@internal
 abstract interface class SpinifyListenable<T> {
   /// Add listener.
   void addListener(ValueChanged<T> listener);
@@ -14,7 +11,6 @@ abstract interface class SpinifyListenable<T> {
 }
 
 /// Notify about value changes.
-@internal
 final class SpinifyChangeNotifier<T> implements SpinifyListenable<T> {
   /// Notify about value changes.
   SpinifyChangeNotifier();

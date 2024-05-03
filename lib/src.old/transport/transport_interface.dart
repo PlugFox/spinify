@@ -1,21 +1,18 @@
 import 'dart:async';
 
-import 'package:meta/meta.dart';
-
-import '../client/state.dart';
-import '../model/event.dart';
-import '../model/history.dart';
-import '../model/presence.dart';
-import '../model/presence_stats.dart';
-import '../model/refresh_result.dart';
-import '../model/stream_position.dart';
-import '../subscription/server_subscription_manager.dart';
-import '../subscription/subcibed_on_channel.dart';
-import '../subscription/subscription_config.dart';
-import '../util/notifier.dart';
+import 'package:spinify/src.old/client/state.dart';
+import 'package:spinify/src.old/model/event.dart';
+import 'package:spinify/src.old/model/history.dart';
+import 'package:spinify/src.old/model/presence.dart';
+import 'package:spinify/src.old/model/presence_stats.dart';
+import 'package:spinify/src.old/model/refresh_result.dart';
+import 'package:spinify/src.old/model/stream_position.dart';
+import 'package:spinify/src.old/subscription/server_subscription_manager.dart';
+import 'package:spinify/src.old/subscription/subcibed_on_channel.dart';
+import 'package:spinify/src.old/subscription/subscription_config.dart';
+import 'package:spinify/src.old/util/notifier.dart';
 
 /// Class responsible for sending and receiving data from the server.
-@internal
 abstract interface class ISpinifyTransport {
   /// Current state
   SpinifyState get state;
