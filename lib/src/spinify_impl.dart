@@ -41,7 +41,7 @@ abstract base class SpinifyBase implements ISpinify {
   final SpinifyConfig config;
 
   /// Event Bus Bucket for client events and event subscriptions.
-  late final SpinifyEventBus$Bucket _bucket;
+  late final ISpinifyEventBus$Bucket _bucket;
 
   @mustCallSuper
   void _initClient() {
