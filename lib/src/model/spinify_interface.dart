@@ -1,16 +1,16 @@
 import 'dart:async';
 
-import '../src.old/subscription/subscription.dart';
-import 'model/config.dart';
-import 'model/history.dart';
-import 'model/metrics.dart';
-import 'model/presence.dart';
-import 'model/presence_stats.dart';
-import 'model/pushes_stream.dart';
-import 'model/state.dart';
-import 'model/states_stream.dart';
-import 'model/stream_position.dart';
-import 'model/subscription_config.dart';
+import '../../src.old/subscription/subscription.dart';
+import 'config.dart';
+import 'history.dart';
+import 'metrics.dart';
+import 'presence.dart';
+import 'presence_stats.dart';
+import 'pushes_stream.dart';
+import 'state.dart';
+import 'states_stream.dart';
+import 'stream_position.dart';
+import 'subscription_config.dart';
 
 /// Spinify client interface.
 abstract interface class ISpinify

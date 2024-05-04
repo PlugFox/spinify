@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'model/history.dart';
-import 'model/presence.dart';
-import 'model/presence_stats.dart';
-import 'model/pushes_stream.dart';
-import 'model/stream_position.dart';
-import 'model/subscription_state.dart';
-import 'model/subscription_states_stream.dart';
+import 'history.dart';
+import 'presence.dart';
+import 'presence_stats.dart';
+import 'pushes_stream.dart';
+import 'stream_position.dart';
+import 'subscription_state.dart';
+import 'subscription_states_stream.dart';
 
 /// {@template subscription}
 /// Spinify subscription interface.

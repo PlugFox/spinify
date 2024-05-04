@@ -4,25 +4,95 @@ import 'package:meta/meta.dart';
 
 import '../src.old/subscription/subscription.dart';
 import 'event_bus.dart';
+import 'model/command.dart';
 import 'model/config.dart';
-import 'model/events.dart';
+import 'model/event_bus_events.dart';
 import 'model/history.dart';
 import 'model/metrics.dart';
 import 'model/presence.dart';
 import 'model/presence_stats.dart';
 import 'model/pushes_stream.dart';
+import 'model/reply.dart';
+import 'model/spinify_interface.dart';
 import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
-import 'spinify_interface.dart';
+import 'model/transport_interface.dart';
+import 'transport_ws_pb_stub.dart'
+    // ignore: uri_does_not_exist
+    if (dart.library.html) 'transport_ws_pb_js.dart'
+    // ignore: uri_does_not_exist
+    if (dart.library.io) 'transport_ws_pb_vm.dart';
+
+abstract base class SpinifyCallbacks {
+  static Future<void> Function(Object?) _castCallback<T>(
+      Future<void> Function(T data) fn) {
+    Future<void> skip(_) async {}
+    return (data) {
+      if (data is T) return fn(data);
+      assert(false, 'Unexpected data type: $data');
+      return skip(data);
+    };
+  }
+
+  @mustCallSuper
+  void _initCallbacks(ISpinifyEventBus$Bucket bucket) {
+    void subscribeVoid(String event, Future<void> Function() callback) {
+      bucket.subscribe(event, (_) => callback());
+    }
+
+    void subscribeValue<T>(
+        String event, Future<void> Function(T data) callback) {
+      bucket.subscribe(event, _castCallback(_onConnecting));
+    }
+
+    subscribeVoid(ClientEvents.init, _onInit);
+    subscribeVoid(ClientEvents.close, _onClose);
+    subscribeValue(ClientEvents.connecting, _onConnecting);
+    subscribeValue(ClientEvents.connected, _onConnected);
+    subscribeValue(ClientEvents.disconnected, _onDisconnected);
+    subscribeValue(ClientEvents.stateChanged, _onStateChanged);
+    subscribeValue(ClientEvents.command, _onCommand);
+    subscribeValue(ClientEvents.reply, _onReply);
+
+    bucket.pushEvent(ClientEvents.init);
+  }
+
+  @mustCallSuper
+  Future<void> _onInit() async {}
+
+  @mustCallSuper
+  Future<void> _onClose() async {}
+
+  @mustCallSuper
+  Future<void> _onConnecting(SpinifyState$Connecting state) async {}
+
+  @mustCallSuper
+  Future<void> _onConnected(SpinifyState$Connected state) async {}
+
+  @mustCallSuper
+  Future<void> _onDisconnected(SpinifyState$Disconnected state) async {}
+
+  @mustCallSuper
+  Future<void> _onStateChanged(SpinifyState state) async {}
+
+  @mustCallSuper
+  Future<void> _onCommand(SpinifyCommand command) async {}
+
+  @mustCallSuper
+  Future<void> _onReply(SpinifyReply reply) async {}
+}
 
 /// Base class for Spinify client.
-abstract base class SpinifyBase implements ISpinify {
+abstract base class SpinifyBase extends SpinifyCallbacks implements ISpinify {
   /// Create a new Spinify client.
-  SpinifyBase(this.config) : id = _idCounter++ {
+  SpinifyBase(this.config, {CreateSpinifyTransport? createTransport})
+      : id = _idCounter++,
+        _createTransport = createTransport ?? $create$WS$PB$Transport {
     _bucket = SpinifyEventBus.instance.registerClient(this);
-    _initClient();
+    _initCallbacks(_bucket);
+    _bucket.pushEvent(ClientEvents.init);
   }
 
   /// Unique client ID counter for Spinify clients.
@@ -42,16 +112,11 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// Event Bus Bucket for client events and event subscriptions.
   late final ISpinifyEventBus$Bucket _bucket;
+  final CreateSpinifyTransport _createTransport;
 
-  @mustCallSuper
-  void _initClient() {
-    _bucket
-      ..pushEvent(ClientEvents.init)
-      ..subscribe(ClientEvents.close, _spinifyBase$OnClose);
-  }
-
-  @mustCallSuper
-  Future<void> _spinifyBase$OnClose(_) async {
+  @override
+  Future<void> _onClose() async {
+    await super._onClose();
     _isClosed = true;
     SpinifyEventBus.instance.unregisterClient(this);
   }
@@ -90,42 +155,35 @@ base mixin SpinifyStateMixin on SpinifyBase {
   final StreamController<SpinifyState> _statesController =
       StreamController<SpinifyState>.broadcast();
 
-  @override
-  @mustCallSuper
-  void _initClient() {
-    _bucket
-      ..subscribe(ClientEvents.disconnected, _spinifyStateMixin$OnDisconnected)
-      ..subscribe(ClientEvents.connecting, _spinifyStateMixin$OnConnecting)
-      ..subscribe(ClientEvents.connected, _spinifyStateMixin$OnConnectedState);
-    super._initClient();
-  }
-
   @nonVirtual
-  void _changeState(SpinifyState state) {
+  Future<void> _changeState(SpinifyState state) {
     _statesController.add(_state = state);
-    _bucket.pushEvent(ClientEvents.stateChanged, state);
+    return _bucket.pushEvent(ClientEvents.stateChanged, state);
   }
 
-  @mustCallSuper
-  Future<void> _spinifyStateMixin$OnDisconnected(Object? data) async {
-    _changeState(data as SpinifyState$Disconnected);
+  @override
+  Future<void> _onConnecting(SpinifyState$Connecting state) async {
+    await super._onConnecting(state);
+    await _changeState(state);
   }
 
-  @mustCallSuper
-  Future<void> _spinifyStateMixin$OnConnecting(Object? data) async {
-    _changeState(data as SpinifyState$Connecting);
+  @override
+  Future<void> _onConnected(SpinifyState$Connected state) async {
+    await super._onConnected(state);
+    await _changeState(state);
   }
 
-  @mustCallSuper
-  Future<void> _spinifyStateMixin$OnConnectedState(Object? data) async {
-    _changeState(data as SpinifyState$Connected);
+  @override
+  Future<void> _onDisconnected(SpinifyState$Disconnected state) async {
+    await super._onDisconnected(state);
+    await _changeState(state);
   }
 
   @override
   @mustCallSuper
   Future<void> close() async {
     await super.close();
-    _changeState(SpinifyState$Closed());
+    await _changeState(SpinifyState$Closed());
   }
 }
 

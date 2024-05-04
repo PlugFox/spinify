@@ -6,13 +6,12 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 
 import 'logger.dart' as log;
-import 'spinify_interface.dart';
+import 'model/spinify_interface.dart';
 
 /// SpinifyBus Singleton class
 /// That class is used to manage the event queue and work as a singleton
 /// event bus to process, dispatch and manage all the events
 /// in the Spinify clients.
-@internal
 @immutable
 final class SpinifyEventBus {
   SpinifyEventBus._internal();
@@ -84,6 +83,7 @@ abstract interface class ISpinifyEventBus$Bucket {
   void unsubscribe(String event, Future<void> Function() callback);
 
   /// Dispose the bucket
+  /// Do not use it directly
   @internal
   @visibleForTesting
   void dispose();

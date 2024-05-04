@@ -1,3 +1,5 @@
 {
-  "recommendations": ["dart-code.dart-code"]
+  "recommendations": [
+    "dart-code.dart-code",
+  ]
 }

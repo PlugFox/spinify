@@ -1,4 +1,4 @@
-import 'package:spinify/spinify.dart';
+import 'package:spinify/spinify_developer.dart';
 import 'package:test/test.dart';
 
 void main() {
