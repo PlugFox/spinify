@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
-import '../spinify.dart';
+import '../spinify_developer.dart';
 import 'event_bus.dart';
 import 'model/codes.dart';
 import 'model/command.dart';
@@ -14,13 +14,10 @@ import 'model/presence.dart';
 import 'model/presence_stats.dart';
 import 'model/pushes_stream.dart';
 import 'model/reply.dart';
-import 'model/spinify_interface.dart';
-import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/subscription_interface.dart';
-import 'model/transport_interface.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.html) 'transport_ws_pb_js.dart'
@@ -176,26 +173,21 @@ base mixin SpinifyStateMixin on SpinifyBase {
       StreamController<SpinifyState>.broadcast();
 
   @nonVirtual
-  void _changeState(SpinifyState state) =>
-      _statesController.add(_state = state);
+  void _setState(SpinifyState state) => _statesController.add(_state = state);
 
   @override
   Future<void> _onConnect(String url) async {
-    _changeState(SpinifyState$Connecting(
+    _setState(SpinifyState$Connecting(
       url: url,
       timestamp: DateTime.now(),
     ));
     await super._onConnect(url);
-    _changeState(SpinifyState$Connected(
-      url: url,
-      timestamp: DateTime.now(),
-    ));
   }
 
   @override
   Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
     await super._onDisconnect(arg);
-    _changeState(SpinifyState$Disconnected(
+    _setState(SpinifyState$Disconnected(
       closeCode: arg.code,
       closeReason: arg.reason,
       timestamp: DateTime.now(),
@@ -205,7 +197,7 @@ base mixin SpinifyStateMixin on SpinifyBase {
   @override
   Future<void> _onClose() async {
     await super._onClose();
-    _changeState(SpinifyState$Closed(timestamp: DateTime.now()));
+    _setState(SpinifyState$Closed(timestamp: DateTime.now()));
   }
 }
 
@@ -240,7 +232,8 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 }
 
 /// Base mixin for Spinify client connection management (connect & disconnect).
-base mixin SpinifyConnectionMixin on SpinifyBase, SpinifyCommandMixin {
+base mixin SpinifyConnectionMixin
+    on SpinifyBase, SpinifyCommandMixin, SpinifyStateMixin {
   Completer<void>? _readyCompleter;
 
   @override
@@ -262,10 +255,8 @@ base mixin SpinifyConnectionMixin on SpinifyBase, SpinifyCommandMixin {
       // Prepare connect request.
       final request = await _prepareConnectRequest();
 
-      final reply = await _sendCommand(request);
-
-      //final now = DateTime.now();
-      //final expires = result.hasExpires() && result.expires && result.hasTtl();
+      final reply = await _sendCommand<SpinifyConnectResult>(request);
+      _setStateFromConnectionResult(reply);
 
       // Notify ready.
       _readyCompleter?.complete();
@@ -276,6 +267,10 @@ base mixin SpinifyConnectionMixin on SpinifyBase, SpinifyCommandMixin {
               SpinifyConnectingCode.transportClosed, 'Failed to connect')
           .ignore();
       _transport = null;
+      _setState(SpinifyState$Disconnected(
+          closeCode: SpinifyConnectingCode.connectCalled,
+          closeReason: 'Failed to connect',
+          timestamp: DateTime.now()));
       _readyCompleter?.completeError(error, stackTrace);
       rethrow;
     }
@@ -295,6 +290,47 @@ base mixin SpinifyConnectionMixin on SpinifyBase, SpinifyCommandMixin {
       name: config.client.name,
       version: config.client.version,
     );
+  }
+
+  void _setStateFromConnectionResult(SpinifyConnectResult reply) {
+    final url = state.url;
+    if (url == null) throw StateError('Invalid state');
+    final now = DateTime.now();
+    final SpinifyConnectResult(:expires, :ttl, :ping) = reply;
+    final bool expBool;
+    final DateTime? ttlDT;
+    if (expires == true && ttl != null && ttl > 0) {
+      expBool = true;
+      ttlDT = now.add(Duration(seconds: ttl));
+    } else if (expires != true && ttl == null) {
+      expBool = false;
+      ttlDT = null;
+    } else {
+      expBool = false;
+      ttlDT = null;
+      assert(false, 'Connection expires is invalid');
+    }
+    Duration? pingInterval;
+    if (ping != null && ping > 0) {
+      pingInterval = Duration(seconds: ping);
+    } else if (ping == null) {
+      pingInterval = null;
+    } else {
+      assert(false, 'Ping interval is invalid');
+    }
+    _setState(SpinifyState$Connected(
+      url: url,
+      timestamp: now,
+      client: reply.client,
+      version: reply.version,
+      expires: expBool,
+      ttl: ttlDT,
+      node: reply.node,
+      pingInterval: pingInterval,
+      sendPong: reply.pong,
+      session: reply.session,
+      data: reply.data,
+    ));
   }
 
   @override
@@ -320,6 +356,58 @@ base mixin SpinifyConnectionMixin on SpinifyBase, SpinifyCommandMixin {
     await _transport?.disconnect(
         SpinifyDisconnectedCode.disconnectCalled, 'Client closing');
     _transport = null;
+    await super._onClose();
+  }
+}
+
+/// Base mixin for Spinify client ping-pong management.
+base mixin SpinifyPingPongMixin
+    on SpinifyBase, SpinifyStateMixin, SpinifyConnectionMixin {
+  @protected
+  @nonVirtual
+  Timer? _pingTimer;
+
+  /// Stop keepalive timer.
+  @protected
+  @nonVirtual
+  void _tearDownPingTimer() => _pingTimer?.cancel();
+
+  /// Start or restart keepalive timer,
+  /// you should restart it after each received ping message.
+  /// Or connection will be closed by timeout.
+  @protected
+  @nonVirtual
+  void _restartPingTimer() {
+    _tearDownPingTimer();
+    assert(!_isClosed, 'Client is closed');
+    assert(state.isConnected, 'Invalid state');
+    if (state case SpinifyState$Connected(:Duration pingInterval)) {
+      _pingTimer = Timer(
+        pingInterval + config.serverPingDelay,
+        () => disconnect(
+          SpinifyConnectingCode.noPing,
+          'No ping from server',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<void> _onConnect(String url) async {
+    _tearDownPingTimer();
+    await super._onConnect(url);
+    _restartPingTimer();
+  }
+
+  @override
+  Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
+    _tearDownPingTimer();
+    await super._onDisconnect(arg);
+  }
+
+  @override
+  Future<void> _onClose() async {
+    _tearDownPingTimer();
     await super._onClose();
   }
 }
@@ -418,16 +506,17 @@ base mixin SpinifyMetricsMixin on SpinifyBase {
 /// {@category Client}
 final class Spinify extends SpinifyBase
     with
+        SpinifyStateMixin,
         SpinifyCommandMixin,
         SpinifyConnectionMixin,
+        SpinifyPingPongMixin,
         SpinifyClientSubscriptionMixin,
         SpinifyServerSubscriptionMixin,
         SpinifyPublicationsMixin,
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
         SpinifyRPCMixin,
-        SpinifyMetricsMixin,
-        SpinifyStateMixin {
+        SpinifyMetricsMixin {
   /// {@macro spinify}
   Spinify({SpinifyConfig? config, super.createTransport})
       : super(config: config ?? SpinifyConfig.byDefault());

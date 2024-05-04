@@ -55,10 +55,10 @@ sealed class SpinifyState extends _$SpinifyStateBase {
   /// {@macro state}
   factory SpinifyState.connected({
     required String url,
+    required bool expires,
     DateTime? timestamp,
     String? client,
     String? version,
-    bool? expires,
     DateTime? ttl,
     Duration? pingInterval,
     bool? sendPong,
@@ -100,7 +100,7 @@ sealed class SpinifyState extends _$SpinifyStateBase {
             version: json['version']?.toString(),
             expires: switch (json['expires']) {
               bool expires => expires,
-              _ => null,
+              _ => false,
             },
             ttl: switch (json['ttl']) {
               int ttl => DateTime.fromMicrosecondsSinceEpoch(ttl),
@@ -264,11 +264,11 @@ final class SpinifyState$Connected extends SpinifyState {
   /// {@macro state}
   SpinifyState$Connected({
     required this.url,
+    required this.expires,
     DateTime? timestamp,
     this.client,
     this.version,
     this.ttl,
-    this.expires,
     this.pingInterval,
     this.sendPong,
     this.session,
@@ -289,7 +289,7 @@ final class SpinifyState$Connected extends SpinifyState {
   final String? version;
 
   /// Whether a server will expire connection at some point
-  final bool? expires;
+  final bool expires;
 
   /// Time when connection will be expired
   final DateTime? ttl;
@@ -338,7 +338,7 @@ final class SpinifyState$Connected extends SpinifyState {
         ...super.toJson(),
         if (client != null) 'client': client,
         if (version != null) 'version': version,
-        if (expires != null) 'expires': expires,
+        'expires': expires,
         if (ttl != null) 'ttl': ttl?.microsecondsSinceEpoch,
         if (pingInterval != null) 'pingInterval': pingInterval?.inSeconds,
         if (sendPong != null) 'sendPong': sendPong,

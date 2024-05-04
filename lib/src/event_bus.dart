@@ -150,26 +150,33 @@ final class SpinifyEventBus$Bucket$QueueImpl
     subs.remove(callback);
   }
 
-  _SpinifyEventBus$Task? _getNext() {
-    if (_priority.isNotEmpty) return _priority.removeFirst();
-    if (_events.isNotEmpty) return _events.removeFirst();
-    return null;
-  }
-
   bool _processing = false;
   Future<void> _processTasks() async {
     if (_processing) return;
     _processing = true;
     //dev.Timeline.instantSync('$_debugLabel _processEvents() start');
     //log.fine('$_debugLabel start processing events');
+
+    _SpinifyEventBus$Task? getNext() {
+      if (_priority.isNotEmpty) return _priority.removeFirst();
+      if (_events.isNotEmpty) return _events.removeFirst();
+      return null;
+    }
+
+    Future<void> notifySubscribers(String event, Object? data) async {
+      final subs = _subscribers[event];
+      if (subs != null) for (final sub in subs) await sub(data);
+    }
+
     while (true) {
-      var task = _getNext();
+      var task = getNext();
       if (task == null) break;
       final event = task.event;
       try {
         // Notify subscribers
-        final subs = _subscribers[event];
-        if (subs != null) for (final sub in subs) await sub(task.data);
+        //await notifySubscribers('$event:begin', task.data);
+        await notifySubscribers(event, task.data);
+        //await notifySubscribers('$event:end', task.data);
         task.completer.complete();
         //dev.Timeline.instantSync('$_debugLabel $event');
         log.fine('$_debugLabel $event');

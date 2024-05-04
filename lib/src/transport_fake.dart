@@ -34,7 +34,10 @@ class SpinifyTransportFake implements ISpinifyTransport {
   Future<void> _connect(String url) async {
     if (_isConnected) return;
     await _sleep();
-    _timer = Timer.periodic(const Duration(seconds: 25), (timer) {});
+    _timer = Timer.periodic(const Duration(seconds: 20), (timer) {
+      if (!_isConnected) timer.cancel();
+      _response((now) => SpinifyPingResult(id: 0, timestamp: now));
+    });
   }
 
   @override
@@ -45,7 +48,20 @@ class SpinifyTransportFake implements ISpinifyTransport {
       case SpinifyPingRequest(:int id):
         _response((now) => SpinifyPingResult(id: id, timestamp: now));
       case SpinifyConnectRequest(:int id):
-        _response((now) => SpinifyConnectResult(id: id, timestamp: now));
+        _response((now) => SpinifyConnectResult(
+              id: id,
+              timestamp: now,
+              client: 'fake',
+              version: '0.0.1',
+              expires: false,
+              ttl: null,
+              data: null,
+              subs: null,
+              ping: 25,
+              pong: false,
+              session: 'fake',
+              node: 'fake',
+            ));
       case SpinifySubscribeRequest(:int id):
         _response((now) => SpinifySubscribeResult(id: id, timestamp: now));
       case SpinifyUnsubscribeRequest(:int id):

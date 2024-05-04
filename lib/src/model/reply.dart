@@ -54,10 +54,50 @@ final class SpinifyConnectResult extends SpinifyReply {
   const SpinifyConnectResult({
     required super.id,
     required super.timestamp,
+    required this.client,
+    required this.version,
+    required this.expires,
+    required this.ttl,
+    required this.data,
+    required this.subs,
+    required this.ping,
+    required this.pong,
+    required this.session,
+    required this.node,
   });
 
   @override
   String get type => 'ConnectResult';
+
+  /// Client
+  final String? client;
+
+  /// Version
+  final String? version;
+
+  /// Expires
+  final bool? expires;
+
+  /// TTL
+  final int? ttl;
+
+  /// Data
+  final List<int>? data;
+
+  /// Subs
+  final Map<String, SpinifySubscribeResult>? subs;
+
+  /// Ping
+  final int? ping;
+
+  /// Pong
+  final bool? pong;
+
+  /// Session
+  final String? session;
+
+  /// Node
+  final String? node;
 }
 
 /// {@macro reply}
