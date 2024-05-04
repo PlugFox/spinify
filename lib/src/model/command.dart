@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:meta/meta.dart';
 
 /// {@template command}
@@ -52,10 +54,30 @@ final class SpinifyConnectRequest extends SpinifyCommand {
   const SpinifyConnectRequest({
     required super.id,
     required super.timestamp,
+    required this.token,
+    required this.data,
+    required this.subs,
+    required this.name,
+    required this.version,
   });
 
   @override
   String get type => 'ConnectRequest';
+
+  /// Token to authenticate.
+  final String? token;
+
+  /// Data to send.
+  final List<int>? data;
+
+  /// Subscriptions to subscribe.
+  final Map<String, SpinifySubscribeRequest>? subs;
+
+  /// Name of client.
+  final String name;
+
+  /// Version of client.
+  final String version;
 }
 
 /// {@macro command}
@@ -64,10 +86,51 @@ final class SpinifySubscribeRequest extends SpinifyCommand {
   const SpinifySubscribeRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
+    required this.token,
+    required this.recover,
+    required this.epoch,
+    required this.offset,
+    required this.data,
+    required this.positioned,
+    required this.recoverable,
+    required this.joinLeave,
   });
 
   @override
   String get type => 'SubscribeRequest';
+
+  /// Channel to subscribe.
+  final String channel;
+
+  /// Subscription token and callback to get
+  /// subscription token upon expiration
+  final String? token;
+
+  /// Option to ask server to make subscription recoverable
+  final bool? recover;
+
+  /// Epoch to start subscription from
+  final String? epoch;
+
+  /// Offset to start subscription from
+  final int? offset;
+
+  /// Subscription data
+  /// (attached to every subscribe/resubscribe request)
+  final Uint8List? data;
+
+  /// Option to ask server to make subscription positioned
+  /// (if not forced by a server)
+  final bool? positioned;
+
+  /// Option to ask server to make subscription recoverable
+  /// (if not forced by a server)
+  final bool? recoverable;
+
+  /// Option to ask server to push Join/Leave messages
+  /// (if not forced by a server)
+  final bool? joinLeave;
 }
 
 /// {@macro command}

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import '../../src.old/subscription/subscription.dart';
 import 'config.dart';
 import 'history.dart';
 import 'metrics.dart';
@@ -11,6 +10,7 @@ import 'state.dart';
 import 'states_stream.dart';
 import 'stream_position.dart';
 import 'subscription_config.dart';
+import 'subscription_interface.dart';
 
 /// Spinify client interface.
 abstract interface class ISpinify
@@ -39,7 +39,7 @@ abstract interface class ISpinify
 
   /// Ready resolves when client successfully connected.
   /// Throws exceptions if called not in connecting or connected state.
-  FutureOr<void> ready();
+  Future<void> ready();
 
   /// Disconnect from the server.
   Future<void> disconnect([

@@ -74,13 +74,16 @@ abstract interface class ISpinifyEventBus$Bucket {
   abstract final ISpinify? client;
 
   /// Push an event to the client
-  Future<void> pushEvent(String event, [Object? data]);
+  Future<void> push(Enum event, [Object? data]);
+
+  /// Push an event to the client with priority
+  Future<void> pushPriority(Enum event, [Object? data]);
 
   /// Subscribe to an event
-  void subscribe(String event, Future<void> Function(Object? data) callback);
+  void subscribe(Enum event, Future<void> Function(Object? data) callback);
 
   /// Unsubscribe from an event
-  void unsubscribe(String event, Future<void> Function() callback);
+  void unsubscribe(Enum event, Future<void> Function() callback);
 
   /// Dispose the bucket
   /// Do not use it directly
@@ -110,29 +113,47 @@ final class SpinifyEventBus$Bucket$QueueImpl
       <String, List<Future<void> Function(Object?)>>{};
 
   /// The tasks queue, mutex of the events
-  final Queue<_SpinifyEventBus$Task> _queue = Queue<_SpinifyEventBus$Task>();
+  final Queue<_SpinifyEventBus$Task> _events = Queue<_SpinifyEventBus$Task>();
+
+  /// The priority queue, mutex of the events
+  final Queue<_SpinifyEventBus$Task> _priority = Queue<_SpinifyEventBus$Task>();
 
   @override
-  Future<void> pushEvent(String event, [Object? data]) async {
+  Future<void> push(Enum event, [Object? data]) async {
     final completer = Completer<void>.sync();
-    _queue.add(_SpinifyEventBus$Task(completer, event, data));
-    log.fine('$_debugLabel Pushing event $event');
+    _events.add(_SpinifyEventBus$Task(completer, event.name, data));
+    log.fine('$_debugLabel pushing event $event');
     if (!_processing) scheduleMicrotask(_processTasks);
     return completer.future;
   }
 
   @override
-  void subscribe(String event, Future<void> Function(Object? data) callback) {
+  Future<void> pushPriority(Enum event, [Object? data]) {
+    final completer = Completer<void>.sync();
+    _priority.add(_SpinifyEventBus$Task(completer, event.name, data));
+    log.fine('$_debugLabel pushing priority event $event');
+    if (!_processing) scheduleMicrotask(_processTasks);
+    return completer.future;
+  }
+
+  @override
+  void subscribe(Enum event, Future<void> Function(Object? data) callback) {
     _subscribers
-        .putIfAbsent(event, () => <Future<void> Function(Object?)>[])
+        .putIfAbsent(event.name, () => <Future<void> Function(Object?)>[])
         .add(callback);
   }
 
   @override
-  void unsubscribe(String event, Future<void> Function() callback) {
-    final subs = _subscribers[event];
+  void unsubscribe(Enum event, Future<void> Function() callback) {
+    final subs = _subscribers[event.name];
     if (subs == null) return;
     subs.remove(callback);
+  }
+
+  _SpinifyEventBus$Task? _getNext() {
+    if (_priority.isNotEmpty) return _priority.removeFirst();
+    if (_events.isNotEmpty) return _events.removeFirst();
+    return null;
   }
 
   bool _processing = false;
@@ -140,9 +161,10 @@ final class SpinifyEventBus$Bucket$QueueImpl
     if (_processing) return;
     _processing = true;
     //dev.Timeline.instantSync('$_debugLabel _processEvents() start');
-    log.fine('$_debugLabel start processing events');
-    while (_queue.isNotEmpty) {
-      var task = _queue.removeFirst();
+    //log.fine('$_debugLabel start processing events');
+    while (true) {
+      var task = _getNext();
+      if (task == null) break;
       final event = task.event;
       try {
         // Notify subscribers
@@ -159,7 +181,7 @@ final class SpinifyEventBus$Bucket$QueueImpl
       }
     }
     _processing = false;
-    log.fine('$_debugLabel end processing events');
+    //log.fine('$_debugLabel end processing events');
     //dev.Timeline.instantSync('$_debugLabel _processEvents() end');
   }
 
@@ -167,86 +189,7 @@ final class SpinifyEventBus$Bucket$QueueImpl
   void dispose() {
     _subscribers.clear();
     final error = StateError('$_debugLabel client closed');
-    for (final task in _queue) task.completer.completeError(error);
-    _queue.clear();
+    for (final task in _events) task.completer.completeError(error);
+    _events.clear();
   }
 }
-
-/*
-/// SpinifyEventBus$Bucket$StreamControllerImpl class
-final class SpinifyEventBus$Bucket$StreamControllerImpl
-    implements ISpinifyEventBus$Bucket {
-  /// Create a new SpinifyEventBus$Bucket$StreamControllerImpl
-  SpinifyEventBus$Bucket$StreamControllerImpl(ISpinify client,
-      {String? debugLabel})
-      : _clientWR = WeakReference<ISpinify>(client),
-        _debugLabel = debugLabel ?? '[Spinify#${client.id}]' {
-    _subscription = _controller.stream.asyncMap(_processTask).listen((_) {});
-  }
-
-  final String _debugLabel;
-
-  /// The client weak reference
-  final WeakReference<ISpinify> _clientWR;
-
-  @override
-  ISpinify? get client => _clientWR.target;
-
-  /// The subscribers of the events
-  final Map<String, List<Future<void> Function(Object?)>> _subscribers =
-      <String, List<Future<void> Function(Object?)>>{};
-
-  /// The tasks queue, mutex of the events
-  final StreamController<_SpinifyEventBus$Task> _controller =
-      StreamController<_SpinifyEventBus$Task>(sync: true);
-
-  late final StreamSubscription<void> _subscription;
-
-  @override
-  Future<void> pushEvent(String event, [Object? data]) async {
-    final completer = Completer<void>.sync();
-    _controller.add(_SpinifyEventBus$Task(completer, event, data));
-    log.fine('$_debugLabel Pushing event $event');
-    return completer.future;
-  }
-
-  @override
-  void subscribe(String event, Future<void> Function(Object? data) callback) {
-    _subscribers
-        .putIfAbsent(event, () => <Future<void> Function(Object?)>[])
-        .add(callback);
-  }
-
-  @override
-  void unsubscribe(String event, Future<void> Function() callback) {
-    final subs = _subscribers[event];
-    if (subs == null) return;
-    subs.remove(callback);
-  }
-
-  Future<void> _processTask(_SpinifyEventBus$Task task) async {
-    final event = task.event;
-    try {
-      // Notify subscribers
-      final subs = _subscribers[event];
-      if (subs != null) for (final sub in subs) await sub(task.data);
-      task.completer.complete();
-      //dev.Timeline.instantSync('$_debugLabel $event');
-      log.fine('$_debugLabel $event');
-    } on Object catch (error, stackTrace) {
-      final reason = '$_debugLabel $event error';
-      //dev.Timeline.instantSync(reason);
-      log.warning(error, stackTrace, reason);
-      task.completer.completeError(error, stackTrace);
-    }
-  }
-
-  @override
-  void dispose() {
-    _subscribers.clear();
-    _subscription.cancel();
-    //final error = StateError('$_debugLabel client closed');
-    //for (final task in _queue) task.completer.completeError(error);
-  }
-}
- */

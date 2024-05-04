@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
-import '../src.old/subscription/subscription.dart';
+import '../spinify.dart';
 import 'event_bus.dart';
+import 'model/codes.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/event_bus_events.dart';
@@ -18,6 +19,7 @@ import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
+import 'model/subscription_interface.dart';
 import 'model/transport_interface.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
@@ -25,74 +27,83 @@ import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'transport_ws_pb_vm.dart';
 
+/// Subscriptions to the callbacks from the Event Bus.
 abstract base class SpinifyCallbacks {
-  static Future<void> Function(Object?) _castCallback<T>(
-      Future<void> Function(T data) fn) {
-    Future<void> skip(_) async {}
-    return (data) {
-      if (data is T) return fn(data);
-      assert(false, 'Unexpected data type: $data');
-      return skip(data);
-    };
-  }
-
   @mustCallSuper
   void _initCallbacks(ISpinifyEventBus$Bucket bucket) {
-    void subscribeVoid(String event, Future<void> Function() callback) {
-      bucket.subscribe(event, (_) => callback());
-    }
+    Future<void> Function(Object?) castCallback<T>(
+            Future<void> Function(T data) fn) =>
+        (data) {
+          if (data is T) return fn(data);
+          assert(false,
+              'Unexpected data type: "${data.runtimeType}" instead of "$T"');
+          return Future<void>.value();
+        };
 
-    void subscribeValue<T>(
-        String event, Future<void> Function(T data) callback) {
-      bucket.subscribe(event, _castCallback(_onConnecting));
-    }
+    void subVoid(Enum event, Future<void> Function() callback) =>
+        bucket.subscribe(event, (_) => callback());
 
-    subscribeVoid(ClientEvents.init, _onInit);
-    subscribeVoid(ClientEvents.close, _onClose);
-    subscribeValue(ClientEvents.connecting, _onConnecting);
-    subscribeValue(ClientEvents.connected, _onConnected);
-    subscribeValue(ClientEvents.disconnected, _onDisconnected);
-    subscribeValue(ClientEvents.stateChanged, _onStateChanged);
-    subscribeValue(ClientEvents.command, _onCommand);
-    subscribeValue(ClientEvents.reply, _onReply);
+    void subValue<T>(Enum event, Future<void> Function(T data) callback) =>
+        bucket.subscribe(event, castCallback(callback));
 
-    bucket.pushEvent(ClientEvents.init);
+    subVoid(ClientEvent.init, _onInit);
+    subValue(ClientEvent.connect, _onConnect);
+    subValue(ClientEvent.disconnect, _onDisconnect);
+    subValue(ClientEvent.command, _onCommand);
+    subVoid(ClientEvent.close, _onClose);
+
+    bucket.push(ClientEvent.init);
   }
 
+  /// On complete client initialization (from constructor).
   @mustCallSuper
   Future<void> _onInit() async {}
 
+  /// On connect to the server.
   @mustCallSuper
-  Future<void> _onClose() async {}
+  Future<void> _onConnect(String url) async {}
 
+  /// On disconnect from the server.
   @mustCallSuper
-  Future<void> _onConnecting(SpinifyState$Connecting state) async {}
+  Future<void> _onDisconnect(({int? code, String? reason}) arg) async {}
 
-  @mustCallSuper
-  Future<void> _onConnected(SpinifyState$Connected state) async {}
-
-  @mustCallSuper
-  Future<void> _onDisconnected(SpinifyState$Disconnected state) async {}
-
-  @mustCallSuper
-  Future<void> _onStateChanged(SpinifyState state) async {}
-
+  /// On command received.
+  /// [command] - received command.
+  ///
+  /// Called on:
+  /// - [connect]
+  /// - [subscribe]
+  /// - [unsubscribe]
+  /// - [publish]
+  /// - [presence]
+  /// - [presenceStats]
+  /// - [history]
+  /// - [ping]
+  /// - [send]
+  /// - [rpc]
+  /// - [refresh]
+  /// - [subRefresh]
   @mustCallSuper
   Future<void> _onCommand(SpinifyCommand command) async {}
 
+  /// On reply received.
   @mustCallSuper
   Future<void> _onReply(SpinifyReply reply) async {}
+
+  /// On close client.
+  @mustCallSuper
+  Future<void> _onClose() async {}
 }
 
 /// Base class for Spinify client.
 abstract base class SpinifyBase extends SpinifyCallbacks implements ISpinify {
   /// Create a new Spinify client.
-  SpinifyBase(this.config, {CreateSpinifyTransport? createTransport})
+  SpinifyBase({required this.config, CreateSpinifyTransport? createTransport})
       : id = _idCounter++,
         _createTransport = createTransport ?? $create$WS$PB$Transport {
     _bucket = SpinifyEventBus.instance.registerClient(this);
     _initCallbacks(_bucket);
-    _bucket.pushEvent(ClientEvents.init);
+    _bucket.push(ClientEvent.init);
   }
 
   /// Unique client ID counter for Spinify clients.
@@ -100,6 +111,10 @@ abstract base class SpinifyBase extends SpinifyCallbacks implements ISpinify {
 
   @override
   final int id;
+
+  /// Counter for command messages.
+  int _commandId = 1;
+  int _getNextCommandId() => _commandId++;
 
   @override
   bool get isClosed => _isClosed;
@@ -113,9 +128,17 @@ abstract base class SpinifyBase extends SpinifyCallbacks implements ISpinify {
   /// Event Bus Bucket for client events and event subscriptions.
   late final ISpinifyEventBus$Bucket _bucket;
   final CreateSpinifyTransport _createTransport;
+  ISpinifyTransport? _transport;
+
+  @override
+  Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
+    await super._onDisconnect(arg);
+    assert(_transport == null, 'Transport is not disconnected');
+  }
 
   @override
   Future<void> _onClose() async {
+    assert(_transport == null, 'Transport is not closed');
     await super._onClose();
     _isClosed = true;
     SpinifyEventBus.instance.unregisterClient(this);
@@ -123,10 +146,7 @@ abstract base class SpinifyBase extends SpinifyCallbacks implements ISpinify {
 
   @override
   @mustCallSuper
-  Future<void> close() async {
-    if (_isClosed) return;
-    await _bucket.pushEvent(ClientEvents.close);
-  }
+  Future<void> close() => _bucket.push(ClientEvent.close);
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
@@ -156,67 +176,151 @@ base mixin SpinifyStateMixin on SpinifyBase {
       StreamController<SpinifyState>.broadcast();
 
   @nonVirtual
-  Future<void> _changeState(SpinifyState state) {
-    _statesController.add(_state = state);
-    return _bucket.pushEvent(ClientEvents.stateChanged, state);
+  void _changeState(SpinifyState state) =>
+      _statesController.add(_state = state);
+
+  @override
+  Future<void> _onConnect(String url) async {
+    _changeState(SpinifyState$Connecting(
+      url: url,
+      timestamp: DateTime.now(),
+    ));
+    await super._onConnect(url);
+    _changeState(SpinifyState$Connected(
+      url: url,
+      timestamp: DateTime.now(),
+    ));
   }
 
   @override
-  Future<void> _onConnecting(SpinifyState$Connecting state) async {
-    await super._onConnecting(state);
-    await _changeState(state);
+  Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
+    await super._onDisconnect(arg);
+    _changeState(SpinifyState$Disconnected(
+      closeCode: arg.code,
+      closeReason: arg.reason,
+      timestamp: DateTime.now(),
+    ));
   }
 
   @override
-  Future<void> _onConnected(SpinifyState$Connected state) async {
-    await super._onConnected(state);
-    await _changeState(state);
+  Future<void> _onClose() async {
+    await super._onClose();
+    _changeState(SpinifyState$Closed(timestamp: DateTime.now()));
+  }
+}
+
+/// Base mixin for Spinify command sending.
+base mixin SpinifyCommandMixin on SpinifyBase {
+  @override
+  Future<void> send(List<int> data) async {
+    //await ready();
+    //await _sendMessageAsync(SpinifyMes);
+  }
+
+  final Map<int, Completer<SpinifyReply>> _replies =
+      <int, Completer<SpinifyReply>>{};
+
+  Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
+    final completer = _replies[command.id] = Completer<T>();
+    await _sendMessageAsync(command);
+    return completer.future;
+  }
+
+  Future<void> _sendMessageAsync(SpinifyCommand command) async {
+    assert(command.id > 0, 'Command ID is not set');
+    assert(_transport != null, 'Transport is not connected');
+    await _transport?.send(command);
   }
 
   @override
-  Future<void> _onDisconnected(SpinifyState$Disconnected state) async {
-    await super._onDisconnected(state);
-    await _changeState(state);
-  }
-
-  @override
-  @mustCallSuper
-  Future<void> close() async {
-    await super.close();
-    await _changeState(SpinifyState$Closed());
+  Future<void> _onReply(SpinifyReply reply) async {
+    _replies.remove(reply.id)?.complete(reply);
+    await super._onReply(reply);
   }
 }
 
 /// Base mixin for Spinify client connection management (connect & disconnect).
-base mixin SpinifyConnectionMixin on SpinifyBase {
+base mixin SpinifyConnectionMixin on SpinifyBase, SpinifyCommandMixin {
+  Completer<void>? _readyCompleter;
+
   @override
-  Future<void> connect(String url) {
-    throw UnimplementedError();
+  Future<void> connect(String url) => _bucket.push(ClientEvent.connect, url);
+
+  @override
+  Future<void> _onConnect(String url) async {
+    await super._onConnect(url);
+    try {
+      // Disconnect previous transport if exists.
+      _transport
+          ?.disconnect(SpinifyConnectingCode.connectCalled, 'Reconnecting')
+          .ignore();
+
+      // Create new transport.
+      _transport = await _createTransport(url, config.headers)
+        ..onReply = _onReply;
+
+      // Prepare connect request.
+      final request = await _prepareConnectRequest();
+
+      final reply = await _sendCommand(request);
+
+      //final now = DateTime.now();
+      //final expires = result.hasExpires() && result.expires && result.hasTtl();
+
+      // Notify ready.
+      _readyCompleter?.complete();
+      _readyCompleter = null;
+    } on Object catch (error, stackTrace) {
+      _transport
+          ?.disconnect(
+              SpinifyConnectingCode.transportClosed, 'Failed to connect')
+          .ignore();
+      _transport = null;
+      _readyCompleter?.completeError(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<SpinifyConnectRequest> _prepareConnectRequest() async {
+    final token = await config.getToken?.call();
+    assert(token == null || token.length > 5, 'Spinify JWT is too short');
+    final payload = await config.getPayload?.call();
+    return SpinifyConnectRequest(
+      id: _getNextCommandId(),
+      timestamp: DateTime.now(),
+      token: token,
+      data: payload,
+      // TODO(plugfox): Implement subscriptions.
+      subs: const <String, SpinifySubscribeRequest>{},
+      name: config.client.name,
+      version: config.client.version,
+    );
   }
 
   @override
-  FutureOr<void> ready() {
-    throw UnimplementedError();
+  Future<void> ready() async {
+    if (state.isConnected) return;
+    return (_readyCompleter ??= Completer<void>()).future;
   }
 
   @override
   Future<void> disconnect(
-      [int code = 0, String reason = 'Disconnect called']) async {
-    // ...
+          [int code = 0, String reason = 'Disconnect called']) =>
+      _bucket.push(ClientEvent.disconnect, (code: code, reason: reason));
+
+  @override
+  Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
+    await _transport?.disconnect(arg.code, arg.reason);
+    _transport = null;
+    await super._onDisconnect(arg);
   }
 
   @override
-  Future<void> close() async {
-    await disconnect();
-    await super.close();
-  }
-}
-
-/// Base mixin for Spinify client message sending.
-base mixin SpinifySendMixin on SpinifyBase {
-  @override
-  Future<void> send(List<int> data) {
-    throw UnimplementedError();
+  Future<void> _onClose() async {
+    await _transport?.disconnect(
+        SpinifyDisconnectedCode.disconnectCalled, 'Client closing');
+    _transport = null;
+    await super._onClose();
   }
 }
 
@@ -314,24 +418,32 @@ base mixin SpinifyMetricsMixin on SpinifyBase {
 /// {@category Client}
 final class Spinify extends SpinifyBase
     with
-        SpinifyStateMixin,
+        SpinifyCommandMixin,
         SpinifyConnectionMixin,
-        SpinifySendMixin,
         SpinifyClientSubscriptionMixin,
         SpinifyServerSubscriptionMixin,
         SpinifyPublicationsMixin,
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
         SpinifyRPCMixin,
-        SpinifyMetricsMixin {
+        SpinifyMetricsMixin,
+        SpinifyStateMixin {
   /// {@macro spinify}
-  Spinify([SpinifyConfig? config]) : super(config ?? SpinifyConfig.byDefault());
+  Spinify({SpinifyConfig? config, super.createTransport})
+      : super(config: config ?? SpinifyConfig.byDefault());
 
   /// Create client and connect.
   ///
   /// {@macro spinify}
-  factory Spinify.connect(String url, [SpinifyConfig? config]) =>
-      Spinify(config)..connect(url);
+  factory Spinify.connect(
+    String url, {
+    SpinifyConfig? config,
+    CreateSpinifyTransport? createTransport,
+  }) =>
+      Spinify(
+        config: config,
+        createTransport: createTransport,
+      )..connect(url);
 
   @override
   SpinifyPushesStream get stream => throw UnimplementedError();

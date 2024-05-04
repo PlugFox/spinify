@@ -8,6 +8,8 @@ void main() => Future<void>(() async {
       await SpinifyEventBus$Benchmark().report();
     });
 
+enum _BenchmarkEvent { fake }
+
 class SpinifyEventBus$Benchmark extends AsyncBenchmarkBase {
   SpinifyEventBus$Benchmark() : super(r'SpinifyEventBus$Benchmark');
 
@@ -22,13 +24,13 @@ class SpinifyEventBus$Benchmark extends AsyncBenchmarkBase {
     await super.setup();
     _client = Spinify();
     _bucket = SpinifyEventBus.instance.getBucket(_client);
-    _bucket.subscribe('benchmark_fake', (_) async => _received++);
+    _bucket.subscribe(_BenchmarkEvent.fake, (_) async => _received++);
   }
 
   @override
   Future<void> run() async {
     _pushed++;
-    await _bucket.pushEvent('benchmark_fake');
+    await _bucket.push(_BenchmarkEvent.fake);
   }
 
   @override

@@ -22,5 +22,5 @@ abstract interface class ISpinifyTransport {
 
   /// Disconnect from the server.
   /// Client if not needed anymore.
-  Future<void> disconnect(int code, String reason);
+  Future<void> disconnect([int? code, String? reason]);
 }
