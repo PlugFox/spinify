@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
+
+import 'stream_position.dart';
 
 /// Token used for subscription.
 /// {@category Subscription}
@@ -82,7 +83,7 @@ class SpinifySubscriptionConfig {
 
   /// Start Subscription [since] known Stream Position
   /// (i.e. attempt recovery on first subscribe)
-  final ({fixnum.Int64 offset, String epoch})? since;
+  final SpinifyStreamPosition? since;
 
   /// Ask server to make subscription [positioned] (if not forced by a server)
   final bool positioned;

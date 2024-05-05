@@ -256,7 +256,19 @@ base mixin SpinifyConnectionMixin
       final request = await _prepareConnectRequest();
 
       final reply = await _sendCommand<SpinifyConnectResult>(request);
-      _setStateFromConnectionResult(reply);
+      _setState(SpinifyState$Connected(
+        url: url,
+        timestamp: DateTime.now(),
+        client: reply.client,
+        version: reply.version,
+        expires: reply.expires,
+        ttl: reply.ttl,
+        node: reply.node,
+        pingInterval: reply.pingInterval,
+        sendPong: reply.sendPong,
+        session: reply.session,
+        data: reply.data,
+      ));
 
       // Notify ready.
       _readyCompleter?.complete();
@@ -290,47 +302,6 @@ base mixin SpinifyConnectionMixin
       name: config.client.name,
       version: config.client.version,
     );
-  }
-
-  void _setStateFromConnectionResult(SpinifyConnectResult reply) {
-    final url = state.url;
-    if (url == null) throw StateError('Invalid state');
-    final now = DateTime.now();
-    final SpinifyConnectResult(:expires, :ttl, :ping) = reply;
-    final bool expBool;
-    final DateTime? ttlDT;
-    if (expires == true && ttl != null && ttl > 0) {
-      expBool = true;
-      ttlDT = now.add(Duration(seconds: ttl));
-    } else if (expires != true && ttl == null) {
-      expBool = false;
-      ttlDT = null;
-    } else {
-      expBool = false;
-      ttlDT = null;
-      assert(false, 'Connection expires is invalid');
-    }
-    Duration? pingInterval;
-    if (ping != null && ping > 0) {
-      pingInterval = Duration(seconds: ping);
-    } else if (ping == null) {
-      pingInterval = null;
-    } else {
-      assert(false, 'Ping interval is invalid');
-    }
-    _setState(SpinifyState$Connected(
-      url: url,
-      timestamp: now,
-      client: reply.client,
-      version: reply.version,
-      expires: expBool,
-      ttl: ttlDT,
-      node: reply.node,
-      pingInterval: pingInterval,
-      sendPong: reply.pong,
-      session: reply.session,
-      data: reply.data,
-    ));
   }
 
   @override

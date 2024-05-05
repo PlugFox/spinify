@@ -1,6 +1,8 @@
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
+import 'stream_position.dart';
+
 /// {@template subscription_state}
 /// Subscription has 3 states:
 ///
@@ -26,7 +28,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
     required int code,
     required String reason,
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
+    SpinifyStreamPosition? since,
     bool recoverable,
   }) = SpinifySubscriptionState$Unsubscribed;
 
@@ -34,7 +36,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
   /// {@macro subscription_state}
   factory SpinifySubscriptionState.subscribing({
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
+    SpinifyStreamPosition? since,
     bool recoverable,
   }) = SpinifySubscriptionState$Subscribing;
 
@@ -42,7 +44,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
   /// {@macro subscription_state}
   factory SpinifySubscriptionState.subscribed({
     DateTime? timestamp,
-    ({fixnum.Int64 offset, String epoch})? since,
+    SpinifyStreamPosition? since,
     bool recoverable,
     DateTime? ttl,
   }) = SpinifySubscriptionState$Subscribed;
@@ -243,7 +245,7 @@ abstract base class _$SpinifySubscriptionStateBase {
   final DateTime timestamp;
 
   /// Stream Position
-  final ({fixnum.Int64 offset, String epoch})? since;
+  final SpinifyStreamPosition? since;
 
   /// Whether channel is recoverable.
   final bool recoverable;

@@ -1,11 +1,12 @@
 import 'package:meta/meta.dart';
-import 'publication.dart';
+
+import 'channel_push.dart';
 import 'stream_position.dart';
 
 /// {@template history}
-/// History
+/// History result.
 /// {@endtemplate}
-/// {@category Entity}
+/// {@category Reply}
 @immutable
 final class SpinifyHistory {
   /// {@macro history}

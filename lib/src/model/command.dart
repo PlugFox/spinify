@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 
+import 'package:fixnum/fixnum.dart';
 import 'package:meta/meta.dart';
+
+import 'stream_position.dart';
 
 /// {@template command}
 /// Command sent from a client to a server.
@@ -114,7 +117,7 @@ final class SpinifySubscribeRequest extends SpinifyCommand {
   final String? epoch;
 
   /// Offset to start subscription from
-  final int? offset;
+  final Int64? offset;
 
   /// Subscription data
   /// (attached to every subscribe/resubscribe request)
@@ -139,10 +142,14 @@ final class SpinifyUnsubscribeRequest extends SpinifyCommand {
   const SpinifyUnsubscribeRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
   });
 
   @override
   String get type => 'UnsubscribeRequest';
+
+  /// Channel to unsubscribe.
+  final String channel;
 }
 
 /// {@macro command}
@@ -151,10 +158,18 @@ final class SpinifyPublishRequest extends SpinifyCommand {
   const SpinifyPublishRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
+    required this.data,
   });
 
   @override
   String get type => 'PublishRequest';
+
+  /// Channel to publish.
+  final String channel;
+
+  /// Data to publish.
+  final Uint8List data;
 }
 
 /// {@macro command}
@@ -163,10 +178,14 @@ final class SpinifyPresenceRequest extends SpinifyCommand {
   const SpinifyPresenceRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
   });
 
   @override
   String get type => 'PresenceRequest';
+
+  /// Channel to get presence.
+  final String channel;
 }
 
 /// {@macro command}
@@ -175,10 +194,14 @@ final class SpinifyPresenceStatsRequest extends SpinifyCommand {
   const SpinifyPresenceStatsRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
   });
 
   @override
   String get type => 'PresenceStatsRequest';
+
+  /// Channel to get presence stats.
+  final String channel;
 }
 
 /// {@macro command}
@@ -187,10 +210,26 @@ final class SpinifyHistoryRequest extends SpinifyCommand {
   const SpinifyHistoryRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
+    required this.limit,
+    required this.since,
+    required this.reverse,
   });
 
   @override
   String get type => 'HistoryRequest';
+
+  /// Channel to get history.
+  final String? channel;
+
+  /// Limit of history.
+  final int? limit;
+
+  /// Since
+  final SpinifyStreamPosition? since;
+
+  /// Reverse
+  final bool? reverse;
 }
 
 /// {@macro command}
@@ -211,10 +250,14 @@ final class SpinifySendRequest extends SpinifyCommand {
   const SpinifySendRequest({
     required super.id,
     required super.timestamp,
+    required this.data,
   });
 
   @override
   String get type => 'SendRequest';
+
+  /// Data to send.
+  final List<int> data;
 }
 
 /// {@macro command}
@@ -223,10 +266,18 @@ final class SpinifyRPCRequest extends SpinifyCommand {
   const SpinifyRPCRequest({
     required super.id,
     required super.timestamp,
+    required this.data,
+    required this.method,
   });
 
   @override
   String get type => 'RPCRequest';
+
+  /// Data to send.
+  final List<int> data;
+
+  /// Method to call.
+  final String method;
 }
 
 /// {@macro command}
@@ -235,10 +286,14 @@ final class SpinifyRefreshRequest extends SpinifyCommand {
   const SpinifyRefreshRequest({
     required super.id,
     required super.timestamp,
+    required this.token,
   });
 
   @override
   String get type => 'RefreshRequest';
+
+  /// Token to refresh.
+  final String token;
 }
 
 /// {@macro command}
@@ -247,8 +302,16 @@ final class SpinifySubRefreshRequest extends SpinifyCommand {
   const SpinifySubRefreshRequest({
     required super.id,
     required super.timestamp,
+    required this.channel,
+    required this.token,
   });
 
   @override
   String get type => 'SubRefreshRequest';
+
+  /// Channel to refresh.
+  final String channel;
+
+  /// Token to refresh.
+  final String token;
 }

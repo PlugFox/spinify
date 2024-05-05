@@ -14,7 +14,7 @@ library pubspec;
 
   MIT License
 
-  Copyright (c) 2023 Plague Fox
+  Copyright (c) 2024 Plague Fox
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -93,13 +93,13 @@ sealed class Pubspec {
   static const PubspecVersion version = (
     /// Non-canonical string representation of the version as provided
     /// in the pubspec.yaml file.
-    representation: r'0.0.1-pre.6',
+    representation: r'0.0.1-pre.7',
 
     /// Returns a 'canonicalized' representation
     /// of the application version.
     /// This represents the version string in accordance with
     /// Semantic Versioning (SemVer) standards.
-    canonical: r'0.0.1-pre.6',
+    canonical: r'0.0.1-pre.7',
 
     /// MAJOR version when you make incompatible API changes.
     /// The major version number: 1 in "1.2.3".
@@ -115,7 +115,7 @@ sealed class Pubspec {
     patch: 1,
 
     /// The pre-release identifier: "foo" in "1.2.3-foo".
-    preRelease: <String>[r'pre', r'6'],
+    preRelease: <String>[r'pre', r'7'],
 
     /// The build identifier: "foo" in "1.2.3+foo".
     build: <String>[],
@@ -123,14 +123,14 @@ sealed class Pubspec {
 
   /// Build date and time (UTC)
   static final DateTime timestamp = DateTime.utc(
-    2023,
-    8,
+    2024,
+    5,
     4,
-    8,
-    56,
-    57,
-    323,
-    753,
+    22,
+    21,
+    6,
+    924,
+    885,
   );
 
   /// Name
@@ -358,7 +358,7 @@ sealed class Pubspec {
 
   /// Environment
   static const Map<String, String> environment = <String, String>{
-    'sdk': '>=3.0.0 <4.0.0',
+    'sdk': '>=3.3.0 <4.0.0',
   };
 
   /// Platforms
@@ -427,7 +427,7 @@ sealed class Pubspec {
   static const Map<String, Object> dependencies = <String, Object>{
     'meta': r'^1.9.1',
     'ws': r'^1.0.0-pre.6',
-    'protobuf': r'^3.0.0',
+    'protobuf': r'^3.1.0',
     'crypto': r'^3.0.3',
     'fixnum': r'^1.1.0',
     'stack_trace': r'^1.11.0',
@@ -437,8 +437,9 @@ sealed class Pubspec {
   static const Map<String, Object> devDependencies = <String, Object>{
     'build_runner': r'^2.4.6',
     'pubspec_generator': r'^4.0.0',
-    'lints': r'^2.0.1',
-    'test': r'^1.24.2',
+    'benchmark_harness': r'^2.2.2',
+    'lints': r'^3.0.0',
+    'test': r'^1.24.4',
   };
 
   /// Dependency overrides

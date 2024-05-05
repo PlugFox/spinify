@@ -1,5 +1,9 @@
 import 'package:meta/meta.dart';
 
+import 'channel_push.dart';
+import 'client_info.dart';
+import 'stream_position.dart';
+
 /// {@template reply}
 /// Reply sent from a server to a client.
 ///
@@ -48,6 +52,29 @@ sealed class SpinifyReply implements Comparable<SpinifyReply> {
   String toString() => '$type{id: $id}';
 }
 
+/// Push can be sent to a client as part of Reply in case of bidirectional
+/// transport or without additional wrapping in case of unidirectional
+/// transports. ProtocolVersion2 uses channel and one of the possible concrete
+/// push messages.
+///
+/// {@macro reply}
+final class SpinifyPush extends SpinifyReply {
+  /// {@macro reply}
+  const SpinifyPush({
+    required super.timestamp,
+    required this.event,
+  }) : super(id: 0);
+
+  @override
+  String get type => 'Push';
+
+  /// Channel push event
+  String get channel => event.channel;
+
+  /// Channel push event
+  final SpinifyChannelEvent event;
+}
+
 /// {@macro reply}
 final class SpinifyConnectResult extends SpinifyReply {
   /// {@macro reply}
@@ -60,8 +87,8 @@ final class SpinifyConnectResult extends SpinifyReply {
     required this.ttl,
     required this.data,
     required this.subs,
-    required this.ping,
-    required this.pong,
+    required this.pingInterval,
+    required this.sendPong,
     required this.session,
     required this.node,
   });
@@ -69,34 +96,37 @@ final class SpinifyConnectResult extends SpinifyReply {
   @override
   String get type => 'ConnectResult';
 
-  /// Client
-  final String? client;
+  /// Unique client connection ID server issued to this connection
+  final String client;
 
-  /// Version
-  final String? version;
+  /// Server version
+  final String version;
 
   /// Expires
-  final bool? expires;
+  final bool expires;
 
   /// TTL
-  final int? ttl;
+  final DateTime? ttl;
 
-  /// Data
+  /// Payload
   final List<int>? data;
 
   /// Subs
   final Map<String, SpinifySubscribeResult>? subs;
 
-  /// Ping
-  final int? ping;
+  /// Client must periodically (once in 25 secs, configurable) send
+  /// ping messages to server. If pong has not beed received in 5 secs
+  /// (configurable) then client must disconnect from server
+  /// and try to reconnect with backoff strategy.
+  final Duration? pingInterval;
 
-  /// Pong
-  final bool? pong;
+  /// Whether to send asynchronous message when pong received.
+  final bool? sendPong;
 
-  /// Session
+  /// Session ID.
   final String? session;
 
-  /// Node
+  /// Server node ID.
   final String? node;
 }
 
@@ -106,10 +136,60 @@ final class SpinifySubscribeResult extends SpinifyReply {
   const SpinifySubscribeResult({
     required super.id,
     required super.timestamp,
+    required this.expires,
+    required this.ttl,
+    required this.recoverable,
+    required this.publications,
+    required this.recovered,
+    required this.since,
+    required this.positioned,
+    required this.data,
+    required this.wasRecovering,
   });
 
   @override
   String get type => 'SubscribeResult';
+
+  /*
+    bool expires = 1;
+    uint32 ttl = 2;
+    bool recoverable = 3;
+    reserved 4, 5;
+    string epoch = 6;
+    repeated Publication publications = 7;
+    bool recovered = 8;
+    uint64 offset = 9;
+    bool positioned = 10;
+    bytes data = 11;
+    bool was_recovering = 12;
+  */
+
+  /// Expires
+  final bool expires;
+
+  /// TTL
+  final DateTime? ttl;
+
+  /// Recoverable
+  final bool recoverable;
+
+  /// Publications
+  final List<SpinifyPublication> publications;
+
+  /// Recovered
+  final bool recovered;
+
+  /// Stream position
+  final SpinifyStreamPosition since;
+
+  /// Positioned
+  final bool positioned;
+
+  /// Data
+  final List<int>? data;
+
+  /// Was recovering
+  final bool wasRecovering;
 }
 
 /// {@macro reply}
@@ -142,10 +222,15 @@ final class SpinifyPresenceResult extends SpinifyReply {
   const SpinifyPresenceResult({
     required super.id,
     required super.timestamp,
+    required this.presence,
   });
 
   @override
   String get type => 'PresenceResult';
+
+  /// Presence
+  /// { Channel : ClientInfo }
+  final Map<String, SpinifyClientInfo> presence;
 }
 
 /// {@macro reply}
@@ -154,10 +239,18 @@ final class SpinifyPresenceStatsResult extends SpinifyReply {
   const SpinifyPresenceStatsResult({
     required super.id,
     required super.timestamp,
+    required this.numClients,
+    required this.numUsers,
   });
 
   @override
   String get type => 'PresenceStatsResult';
+
+  /// Number of clients
+  final int numClients;
+
+  /// Number of users
+  final int numUsers;
 }
 
 /// {@macro reply}
@@ -166,10 +259,14 @@ final class SpinifyHistoryResult extends SpinifyReply {
   const SpinifyHistoryResult({
     required super.id,
     required super.timestamp,
+    required this.since,
   });
 
   @override
   String get type => 'HistoryResult';
+
+  /// Offset
+  final SpinifyStreamPosition since;
 }
 
 /// {@macro reply}
@@ -190,10 +287,14 @@ final class SpinifyRPCResult extends SpinifyReply {
   const SpinifyRPCResult({
     required super.id,
     required super.timestamp,
+    required this.data,
   });
 
   @override
   String get type => 'RPCResult';
+
+  /// Payload
+  final List<int> data;
 }
 
 /// {@macro reply}
@@ -202,10 +303,26 @@ final class SpinifyRefreshResult extends SpinifyReply {
   const SpinifyRefreshResult({
     required super.id,
     required super.timestamp,
+    required this.client,
+    required this.version,
+    required this.expires,
+    required this.ttl,
   });
 
   @override
   String get type => 'RefreshResult';
+
+  /// Unique client connection ID server issued to this connection
+  final String client;
+
+  /// Server version
+  final String version;
+
+  /// Expires
+  final bool expires;
+
+  /// TTL
+  final DateTime? ttl;
 }
 
 /// {@macro reply}
@@ -229,8 +346,20 @@ final class SpinifyError extends SpinifyReply {
   const SpinifyError({
     required super.id,
     required super.timestamp,
+    required this.code,
+    required this.message,
+    required this.temporary,
   });
 
   @override
   String get type => 'Error';
+
+  /// Error code.
+  final int code;
+
+  /// Error message.
+  final String message;
+
+  /// Is error temporary.
+  final bool temporary;
 }

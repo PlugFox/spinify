@@ -47,6 +47,10 @@ pana: check
 
 generate: get
 	@dart pub global activate protoc_plugin
-	@protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
+	@protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 	@dart run build_runner build --delete-conflicting-outputs
-	@dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
+	@dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/protobuf/
+
+gen: generate
+
+codegen: generate
