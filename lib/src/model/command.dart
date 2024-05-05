@@ -5,6 +5,12 @@ import 'package:meta/meta.dart';
 
 import 'stream_position.dart';
 
+/// Command builder.
+typedef SpinifyCommandBuilder = SpinifyCommand Function(
+  int id,
+  DateTime timestamp,
+);
+
 /// {@template command}
 /// Command sent from a client to a server.
 ///

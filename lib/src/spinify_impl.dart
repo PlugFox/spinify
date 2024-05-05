@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_types_on_closure_parameters
+
 import 'dart:async';
 
 import 'package:meta/meta.dart';
@@ -81,7 +83,7 @@ abstract base class SpinifyCallbacks {
   /// - [refresh]
   /// - [subRefresh]
   @mustCallSuper
-  Future<void> _onCommand(SpinifyCommand command) async {}
+  Future<void> _onCommand(SpinifyCommandBuilder builder) async {}
 
   /// On reply received.
   @mustCallSuper
@@ -203,22 +205,37 @@ base mixin SpinifyStateMixin on SpinifyBase {
 
 /// Base mixin for Spinify command sending.
 base mixin SpinifyCommandMixin on SpinifyBase {
-  @override
-  Future<void> send(List<int> data) async {
-    //await ready();
-    //await _sendMessageAsync(SpinifyMes);
-  }
-
   final Map<int, Completer<SpinifyReply>> _replies =
       <int, Completer<SpinifyReply>>{};
 
+  @override
+  Future<void> send(List<int> data) => _bucket.push(
+      ClientEvent.command,
+      (int id, DateTime timestamp) => SpinifySendRequest(
+            id: id,
+            timestamp: timestamp,
+            data: data,
+          ));
+
+  @override
+  Future<void> _onCommand(SpinifyCommandBuilder builder) async {
+    await super._onCommand(builder);
+    final command = builder(_getNextCommandId(), DateTime.now());
+    switch (command) {
+      case SpinifySendRequest send:
+        await _sendCommandAsync(send);
+      default:
+        await _sendCommand(command);
+    }
+  }
+
   Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
     final completer = _replies[command.id] = Completer<T>();
-    await _sendMessageAsync(command);
+    await _sendCommandAsync(command);
     return completer.future;
   }
 
-  Future<void> _sendMessageAsync(SpinifyCommand command) async {
+  Future<void> _sendCommandAsync(SpinifyCommand command) async {
     assert(command.id > 0, 'Command ID is not set');
     assert(_transport != null, 'Transport is not connected');
     await _transport?.send(command);

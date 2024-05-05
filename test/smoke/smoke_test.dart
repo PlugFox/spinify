@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
@@ -8,6 +10,7 @@ void main() {
       final client = Spinify();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
+      await client.send(utf8.encode('Hello, Spinify!'));
       await client.disconnect();
       expect(client.state, isA<SpinifyState$Disconnected>());
       await client.close();
