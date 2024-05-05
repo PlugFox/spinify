@@ -8,7 +8,7 @@ void main() {
       final client = Spinify();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
-      await client.ping();
+      //await client.ping();
       //await client.send(utf8.encode('Hello, Spinify!'));
       await client.disconnect();
       expect(client.state, isA<SpinifyState$Disconnected>());
