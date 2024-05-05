@@ -19,6 +19,9 @@ publish: generate
 
 deploy: publish
 
+centrifugo-it:
+	@docker run -it --rm --ulimit nofile=65536:65536 -p 8000:8000 --name centrifugo -v $(PWD)/config.json:/centrifugo/config.json centrifugo/centrifugo:latest centrifugo --client_insecure --admin --admin_insecure --log_level=debug -c config.json
+
 centrifugo-up:
 	@docker run -d --rm --ulimit nofile=65536:65536 -p 8000:8000 --name centrifugo centrifugo/centrifugo:latest centrifugo --client_insecure --admin --admin_insecure --log_level=debug
 

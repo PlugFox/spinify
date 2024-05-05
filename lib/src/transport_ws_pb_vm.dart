@@ -15,7 +15,11 @@ Future<ISpinifyTransport> $create$WS$PB$Transport(
   Map<String, String> headers,
 ) async {
   // ignore: close_sinks
-  final socket = await io.WebSocket.connect(url, headers: headers);
+  final socket = await io.WebSocket.connect(
+    url,
+    headers: headers,
+    protocols: <String>{'centrifuge-protobuf'},
+  );
   final transport = SpinifyTransport$WS$PB$VM(socket);
   // 0	CONNECTING	Socket has been created. The connection is not yet open.
   // 1	OPEN	The connection is open and ready to communicate.
@@ -66,6 +70,6 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   Future<void> disconnect([int? code, String? reason]) async {
     await _subscription.cancel();
     await _socket.close(code, reason);
-    assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
+    //assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
   }
 }

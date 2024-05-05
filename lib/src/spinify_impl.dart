@@ -229,6 +229,14 @@ base mixin SpinifyCommandMixin on SpinifyBase {
     _replies.remove(reply.id)?.complete(reply);
     await super._onReply(reply);
   }
+
+  @override
+  Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
+    for (final completer in _replies.values) {
+      completer.completeError(StateError('Client is disconnected'));
+    }
+    await super._onDisconnect(arg);
+  }
 }
 
 /// Base mixin for Spinify client connection management (connect & disconnect).
@@ -244,9 +252,7 @@ base mixin SpinifyConnectionMixin
     await super._onConnect(url);
     try {
       // Disconnect previous transport if exists.
-      _transport
-          ?.disconnect(SpinifyConnectingCode.connectCalled, 'Reconnecting')
-          .ignore();
+      _transport?.disconnect(1000, 'Reconnecting').ignore();
 
       // Create new transport.
       _transport = await _createTransport(url, config.headers)
@@ -274,15 +280,10 @@ base mixin SpinifyConnectionMixin
       _readyCompleter?.complete();
       _readyCompleter = null;
     } on Object catch (error, stackTrace) {
-      _transport
-          ?.disconnect(
-              SpinifyConnectingCode.transportClosed, 'Failed to connect')
-          .ignore();
-      _transport = null;
-      _setState(SpinifyState$Disconnected(
-          closeCode: SpinifyConnectingCode.connectCalled,
-          closeReason: 'Failed to connect',
-          timestamp: DateTime.now()));
+      await _onDisconnect((
+        code: SpinifyConnectingCode.transportClosed,
+        reason: 'Failed to connect'
+      )).catchError((_) {});
       _readyCompleter?.completeError(error, stackTrace);
       rethrow;
     }
@@ -317,15 +318,14 @@ base mixin SpinifyConnectionMixin
 
   @override
   Future<void> _onDisconnect(({int? code, String? reason}) arg) async {
-    await _transport?.disconnect(arg.code, arg.reason);
+    await _transport?.disconnect(1000, arg.reason);
     _transport = null;
     await super._onDisconnect(arg);
   }
 
   @override
   Future<void> _onClose() async {
-    await _transport?.disconnect(
-        SpinifyDisconnectedCode.disconnectCalled, 'Client closing');
+    await _transport?.disconnect(1000, 'Client closing');
     _transport = null;
     await super._onClose();
   }
