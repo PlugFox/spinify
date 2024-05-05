@@ -230,9 +230,16 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   }
 
   Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
-    final completer = _replies[command.id] = Completer<T>();
-    await _sendCommandAsync(command);
-    return completer.future;
+    try {
+      final completer = _replies[command.id] = Completer<T>();
+      await _sendCommandAsync(command);
+      return await completer.future.timeout(config.timeout);
+    } on Object catch (error, stackTrace) {
+      final completer = _replies.remove(command.id);
+      if (completer != null && !completer.isCompleted)
+        completer.completeError(error, stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
@@ -273,7 +280,11 @@ base mixin SpinifyConnectionMixin
 
       // Create new transport.
       _transport = await _createTransport(url, config.headers)
-        ..onReply = _onReply;
+        ..onReply = _onReply
+        ..onDisconnect = () => _onDisconnect((
+              code: SpinifyConnectingCode.transportClosed,
+              reason: 'Transport closed',
+            )).ignore();
 
       // Prepare connect request.
       final request = await _prepareConnectRequest();
@@ -355,6 +366,14 @@ base mixin SpinifyPingPongMixin
   @nonVirtual
   Timer? _pingTimer;
 
+  @override
+  Future<void> ping() => _bucket.push(
+      ClientEvent.command,
+      (int id, DateTime timestamp) => SpinifyPingRequest(
+            id: id,
+            timestamp: timestamp,
+          ));
+
   /// Stop keepalive timer.
   @protected
   @nonVirtual
@@ -369,13 +388,18 @@ base mixin SpinifyPingPongMixin
     _tearDownPingTimer();
     assert(!_isClosed, 'Client is closed');
     assert(state.isConnected, 'Invalid state');
-    if (state case SpinifyState$Connected(:Duration pingInterval)) {
+    if (state case SpinifyState$Connected(:Duration? pingInterval)
+        when pingInterval != null && pingInterval > Duration.zero) {
       _pingTimer = Timer(
         pingInterval + config.serverPingDelay,
-        () => disconnect(
-          SpinifyConnectingCode.noPing,
-          'No ping from server',
-        ),
+        () {
+          // Reconnect if no pong received.
+          if (state case SpinifyState$Connected(:String url)) connect(url);
+          /* disconnect(
+            SpinifyConnectingCode.noPing,
+            'No ping from server',
+          ); */
+        },
       );
     }
   }

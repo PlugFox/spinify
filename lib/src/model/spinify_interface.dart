@@ -1,3 +1,5 @@
+// ignore_for_file: one_member_abstracts
+
 import 'dart:async';
 
 import 'config.dart';
@@ -23,7 +25,8 @@ abstract interface class ISpinify
         ISpinifyPresenceOwner,
         ISpinifyHistoryOwner,
         ISpinifyRemoteProcedureCall,
-        ISpinifyMetricsOwner {
+        ISpinifyMetricsOwner,
+        ISpinifyPing {
   /// Unique client identifier.
   abstract final int id;
 
@@ -63,14 +66,12 @@ abstract interface class ISpinifyStateOwner {
 }
 
 /// Spinify send publication interface.
-// ignore: one_member_abstracts
 abstract interface class ISpinifyPublicationSender {
   /// Publish data to specific subscription channel
   Future<void> publish(String channel, List<int> data);
 }
 
 /// Spinify send asynchronous message interface.
-// ignore: one_member_abstracts
 abstract interface class ISpinifyAsyncMessageSender {
   /// Send asynchronous message to a server. This method makes sense
   /// only when using Centrifuge library for Go on a server side. In Centrifugo
@@ -132,7 +133,6 @@ abstract interface class ISpinifyPresenceOwner {
 }
 
 /// Spinify history owner interface.
-// ignore: one_member_abstracts
 abstract interface class ISpinifyHistoryOwner {
   /// Fetch publication history inside a channel.
   /// Only for channels where history is enabled.
@@ -145,7 +145,6 @@ abstract interface class ISpinifyHistoryOwner {
 }
 
 /// Spinify remote procedure call interface.
-// ignore: one_member_abstracts
 abstract interface class ISpinifyRemoteProcedureCall {
   /// Send arbitrary RPC and wait for response.
   Future<List<int>> rpc(String method, List<int> data);
@@ -155,4 +154,10 @@ abstract interface class ISpinifyRemoteProcedureCall {
 abstract interface class ISpinifyMetricsOwner {
   /// Get metrics of Spinify client.
   SpinifyMetrics get metrics;
+}
+
+/// Spinify ping interface.
+abstract interface class ISpinifyPing {
+  /// Send ping to server.
+  Future<void> ping();
 }

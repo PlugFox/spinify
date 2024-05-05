@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_setters_without_getters
-
 import 'dart:async';
 
 import 'package:fixnum/fixnum.dart';
@@ -120,18 +118,25 @@ class SpinifyTransportFake implements ISpinifyTransport {
         Duration(milliseconds: _delay),
         () {
           if (!_isConnected) return;
-          _handler?.call(reply(DateTime.now()));
+          _onReply?.call(reply(DateTime.now()));
         },
       );
 
   @override
-  set onReply(void Function(SpinifyReply reply) handler) => _handler = handler;
-  void Function(SpinifyReply reply)? _handler;
+  // ignore: avoid_setters_without_getters
+  set onReply(void Function(SpinifyReply reply) handler) => _onReply = handler;
+  void Function(SpinifyReply reply)? _onReply;
+
+  @override
+  // ignore: avoid_setters_without_getters
+  set onDisconnect(void Function() handler) => _onDisconnect = handler;
+  void Function()? _onDisconnect;
 
   @override
   Future<void> disconnect([int? code, String? reason]) async {
     if (!_isConnected) return;
     await _sleep();
+    _onDisconnect?.call();
     _timer?.cancel();
     _timer = null;
   }

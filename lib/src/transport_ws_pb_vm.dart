@@ -36,17 +36,26 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
     _subscription = _socket.listen(
       _onData,
       cancelOnError: false,
+      onDone: () {
+        assert(_onDisconnect != null, 'Disconnect handler is not set');
+        _onDisconnect?.call();
+      },
     );
   }
 
   final io.WebSocket _socket;
   late final StreamSubscription<dynamic> _subscription;
 
-  void Function(SpinifyReply reply)? _handler;
+  void Function(SpinifyReply reply)? _onReply;
 
   @override
   // ignore: avoid_setters_without_getters
-  set onReply(void Function(SpinifyReply reply) handler) => _handler = handler;
+  set onReply(void Function(SpinifyReply reply) handler) => _onReply = handler;
+
+  @override
+  // ignore: avoid_setters_without_getters
+  set onDisconnect(void Function() handler) => _onDisconnect = handler;
+  void Function()? _onDisconnect;
 
   void _onData(Object? bytes) {
     const decoder = ProtobufReplyDecoder();
@@ -55,8 +64,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       return;
     }
     final reply = decoder.convert(bytes);
-    assert(_handler != null, 'Handler is not set');
-    _handler?.call(reply);
+    assert(_onReply != null, 'Reply handler is not set');
+    _onReply?.call(reply);
   }
 
   @override

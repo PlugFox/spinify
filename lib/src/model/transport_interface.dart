@@ -20,6 +20,10 @@ abstract interface class ISpinifyTransport {
   // ignore: avoid_setters_without_getters
   set onReply(void Function(SpinifyReply reply) handler);
 
+  /// Set handler for connection close event.
+  // ignore: avoid_setters_without_getters
+  set onDisconnect(void Function() handler);
+
   /// Disconnect from the server.
   /// Client if not needed anymore.
   Future<void> disconnect([int? code, String? reason]);
