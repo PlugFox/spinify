@@ -126,6 +126,9 @@ sealed class SpinifyState extends _$SpinifyStateBase {
           ),
         _ => throw FormatException('Unknown state: $json'),
       };
+
+  @override
+  String toString() => 'SpinifyState\$$type{}';
 }
 
 /// Disconnected
@@ -147,7 +150,7 @@ final class SpinifyState$Disconnected extends SpinifyState {
   }) : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'disconnected';
+  String get type => 'Disconnected';
 
   @override
   String? get url => null;
@@ -196,9 +199,6 @@ final class SpinifyState$Disconnected extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Disconnected &&
           other.timestamp.isAtSameMomentAs(timestamp));
-
-  @override
-  String toString() => r'SpinifyState$Disconnected{}';
 }
 
 /// Connecting
@@ -214,7 +214,7 @@ final class SpinifyState$Connecting extends SpinifyState {
       : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'connecting';
+  String get type => 'Connecting';
 
   @override
   final String url;
@@ -248,9 +248,6 @@ final class SpinifyState$Connecting extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Connecting &&
           other.timestamp.isAtSameMomentAs(timestamp));
-
-  @override
-  String toString() => r'SpinifyState$Connecting{}';
 }
 
 /// Connected
@@ -277,7 +274,7 @@ final class SpinifyState$Connected extends SpinifyState {
   }) : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'connected';
+  String get type => 'Connected';
 
   @override
   final String url;
@@ -355,9 +352,6 @@ final class SpinifyState$Connected extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Connected &&
           other.timestamp.isAtSameMomentAs(timestamp));
-
-  @override
-  String toString() => r'SpinifyState$Connected{}';
 }
 
 /// Permanently closed
@@ -373,7 +367,7 @@ final class SpinifyState$Closed extends SpinifyState {
       : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'closed';
+  String get type => 'Closed';
 
   @override
   String? get url => null;
@@ -407,9 +401,6 @@ final class SpinifyState$Closed extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Closed &&
           other.timestamp.isAtSameMomentAs(timestamp));
-
-  @override
-  String toString() => r'SpinifyState$Closed{}';
 }
 
 /// Pattern matching for [SpinifyState].
