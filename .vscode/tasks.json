@@ -4,7 +4,9 @@
     {
       "label": "Dependencies",
       "type": "shell",
-      "command": ["dart pub get"],
+      "command": [
+        "dart pub get"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -14,8 +16,12 @@
     {
       "label": "Get protoc plugin",
       "type": "shell",
-      "command": ["dart pub global activate protoc_plugin"],
-      "dependsOn": ["Dependencies"],
+      "command": [
+        "dart pub global activate protoc_plugin"
+      ],
+      "dependsOn": [
+        "Dependencies"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -30,7 +36,9 @@
         "--proto_path=lib/src/transport/protobuf",
         "--dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto"
       ],
-      "dependsOn": ["Get protoc plugin"],
+      "dependsOn": [
+        "Get protoc plugin"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -40,8 +48,12 @@
     {
       "label": "Codegenerate",
       "type": "shell",
-      "command": ["dart run build_runner build --delete-conflicting-outputs"],
-      "dependsOn": ["Dependencies"],
+      "command": [
+        "dart run build_runner build --delete-conflicting-outputs"
+      ],
+      "dependsOn": [
+        "Dependencies"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -151,7 +163,10 @@
       "label": "Stop Centrifugo Server",
       "type": "shell",
       "command": "docker",
-      "args": ["stop", "centrifugo"],
+      "args": [
+        "stop",
+        "centrifugo"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -177,6 +192,28 @@
         "gentoken",
         "--user=dart",
         "--ttl=604800"
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Run echo server",
+      "type": "shell",
+      "command": "go",
+      "detail": "Running echo server",
+      "options": {
+        "cwd": "${workspaceFolder}/tool/echo",
+      },
+      "args": [
+        "run",
+        "main.go"
       ],
       "group": {
         "kind": "none",

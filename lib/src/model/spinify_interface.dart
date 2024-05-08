@@ -25,8 +25,7 @@ abstract interface class ISpinify
         ISpinifyPresenceOwner,
         ISpinifyHistoryOwner,
         ISpinifyRemoteProcedureCall,
-        ISpinifyMetricsOwner,
-        ISpinifyPing {
+        ISpinifyMetricsOwner {
   /// Unique client identifier.
   abstract final int id;
 
@@ -156,8 +155,10 @@ abstract interface class ISpinifyMetricsOwner {
   SpinifyMetrics get metrics;
 }
 
+/*
 /// Spinify ping interface.
 abstract interface class ISpinifyPing {
   /// Send ping to server.
   Future<void> ping();
 }
+ */

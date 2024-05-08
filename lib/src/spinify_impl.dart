@@ -366,13 +366,13 @@ base mixin SpinifyPingPongMixin
   @nonVirtual
   Timer? _pingTimer;
 
-  @override
+  /* @override
   Future<void> ping() => _bucket.push(
       ClientEvent.command,
       (int id, DateTime timestamp) => SpinifyPingRequest(
             id: id,
             timestamp: timestamp,
-          ));
+          )); */
 
   /// Stop keepalive timer.
   @protected
