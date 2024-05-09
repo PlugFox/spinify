@@ -8,6 +8,7 @@ import (
 	log "log"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"time"
 
@@ -48,12 +49,12 @@ func waitExitSignal(n *centrifuge.Node, s *http.Server, sigCh chan os.Signal) {
 	<-done
 }
 
-const exampleChannel = "public:index"
+var channels = []string{"public:index", "chat:index", "notification:index"}
 
 // Check whether channel is allowed for subscribing. In real case permission
 // check will probably be more complex than in this example.
 func channelSubscribeAllowed(channel string) bool {
-	return channel == exampleChannel
+	return slices.Contains(channels, channel)
 }
 
 // authMiddleware is a middleware function that adds credentials to the request context before passing it to the next handler.

@@ -79,4 +79,11 @@ coverage/
 /test/.test_coverage.dart
 
 # Centifuge
+centrifugo-config.json
 config.json
+
+# Golang
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
