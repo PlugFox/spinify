@@ -4,9 +4,9 @@ import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Smoke test', () {
+  group('Connection', () {
     const url = 'ws://localhost:8000/connection/websocket';
-    test('Connection', () async {
+    test('Connect_and_disconnect', () async {
       final client = Spinify();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());

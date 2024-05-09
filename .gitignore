@@ -73,6 +73,7 @@ app.*.map.json
 log.pana.json
 
 # Test
+coverage/
 .coverage/
 /test/**/*.json
 /test/.test_coverage.dart

@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
+	"flag"
 	log "log"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"io"
@@ -14,23 +17,25 @@ import (
 	"github.com/centrifugal/centrifuge"
 )
 
+var port = flag.Int("port", 8000, "Port to bind app to")
+
 // waitExitSignal waits for the SIGINT or SIGTERM signal to shutdown the centrifuge node.
 // It creates a channel to receive signals and a channel to indicate when the shutdown is complete.
 // Then it notifies the channel for SIGINT and SIGTERM signals and starts a goroutine to wait for the signal.
 // Once the signal is received, it shuts down the centrifuge node and indicates that the shutdown is complete.
-func waitExitSignal(n *centrifuge.Node) {
-	// Create a channel to receive signals.
-	sigCh := make(chan os.Signal, 1)
+func waitExitSignal(n *centrifuge.Node, s *http.Server, sigCh chan os.Signal) {
 	// Create a channel to indicate when the shutdown is complete.
 	done := make(chan bool, 1)
 	// Notify the channel for SIGINT and SIGTERM signals.
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	// Start a goroutine to wait for the signal.
 	go func() {
+		// Wait for the signal.
 		<-sigCh
-		// Shutdown the centrifuge node.
-		_ = n.Shutdown(context.Background())
-		// Indicate that the shutdown is complete.
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = n.Shutdown(ctx)
+		_ = s.Shutdown(ctx)
 		done <- true
 	}()
 	// Wait for the shutdown to complete.
@@ -126,7 +131,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 		})
 
 		client.OnDisconnect(func(e centrifuge.DisconnectEvent) {
-			log.Printf("user %s disconnected, disconnect: %s", client.UserID(), e.Disconnect)
+			log.Printf("[user %s] disconnected, disconnect: %s", client.UserID(), e.Disconnect)
 		})
 	})
 
@@ -151,22 +156,54 @@ func main() {
 		os.Exit(1)
 	}
 
+	mux := http.DefaultServeMux
+
 	// Serve Websocket connections using WebsocketHandler.
-	wsHandler := centrifuge.NewWebsocketHandler(node, centrifuge.WebsocketConfig{})
-	http.Handle("/connection/websocket", authMiddleware(wsHandler))
+	websocketHandler := centrifuge.NewWebsocketHandler(node, centrifuge.WebsocketConfig{
+		ReadBufferSize:     1024,
+		UseWriteBufferPool: true,
+	})
+	mux.Handle("/connection/websocket", authMiddleware(websocketHandler))
 
-	// The second route is for serving index.html file.
-	//http.Handle("/", http.FileServer(http.Dir("./")))
+	//mux.Handle("/metrics", promhttp.Handler())
+	//mux.Handle("/", http.FileServer(http.Dir("./")))
 
-	log.Printf("Starting server, http://localhost:8000/connection/websocket")
-	if err := http.ListenAndServe(":8000", nil); err != nil {
-		log.Fatal(err)
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	// Create a channel to shutdown the server.
+	sigCh := make(chan os.Signal, 1)
+
+	// Shutdown the node when /exit endpoint is hit.
+	mux.HandleFunc("/exit", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+		// Close after 1 sec to let response go to client.
+		time.AfterFunc(time.Second, func() {
+			sigCh <- syscall.SIGTERM // Close server.
+		})
+	})
+
+	server := &http.Server{
+		Handler:      mux,
+		Addr:         ":" + strconv.Itoa(*port),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
-	log.Printf("Service started")
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+			os.Exit(1)
+		}
+	}()
+
+	log.Printf("Server is running, http://localhost:8000/connection/websocket")
 
 	// Wait for an exit signal before shutting down the node and exiting.
-	waitExitSignal(node)
+	waitExitSignal(node, server, sigCh)
 
 	log.Printf("Server stopped")
 	os.Exit(0)

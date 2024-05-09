@@ -1,4 +1,14 @@
-.PHONY: format get outdated test publish deploy centrifugo-up centrifugo-down coverage analyze check pana generate
+.PHONY: format get outdated test publish deploy echo-up echo-down coverage analyze check pana generate
+
+ifeq ($(OS),Windows_NT)
+    RM = del /Q
+    MKDIR = mkdir
+    PWD = $(shell $(PWD))
+else
+    RM = rm -f
+    MKDIR = mkdir -p
+    PWD = pwd
+endif
 
 format:
 	@echo "Formatting the code"
@@ -12,23 +22,18 @@ outdated:
 	@dart pub outdated --show-all --dev-dependencies --dependency-overrides --transitive --no-prereleases
 
 test: get
-	@dart test --debug --coverage=.coverage --platform chrome,vm
+	@dart test --debug --coverage=coverage --platform chrome,vm test/unit_test.dart
 
 publish: generate
 	@yes | dart pub publish
 
 deploy: publish
 
-# http://localhost:8000
-# https://centrifugal.dev/docs/server/console_commands
-centrifugo:
-	@docker run -it --rm --ulimit nofile=65536:65536 -p 8000:8000 --name centrifugo -v $(PWD)/centrifugo-config.json:/centrifugo/config.json centrifugo/centrifugo:latest centrifugo --client_insecure --admin --admin_insecure --log_level=debug -c config.json
+echo-up:
+	@dart run tool/echo_up.dart
 
-centrifugo-up:
-	@docker run -d --rm --ulimit nofile=65536:65536 -p 8000:8000 --name centrifugo -v $(PWD)/centrifugo-config.json:/centrifugo/config.json centrifugo/centrifugo:latest centrifugo --client_insecure --admin --admin_insecure --log_level=debug
-
-centrifugo-down:
-	@docker stop centrifugo
+echo-down:
+	@dart run tool/echo_down.dart
 
 coverage: get
 	@dart test --concurrency=6 --platform vm --coverage=coverage test/
