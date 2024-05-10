@@ -140,7 +140,7 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared"
       }
     },
     {
@@ -159,7 +159,7 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared"
       }
     },
     {
@@ -186,7 +186,7 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared"
       }
     },
     {
@@ -210,7 +210,7 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "never",
-        "panel": "dedicated"
+        "panel": "shared"
       }
     },
     {
@@ -232,6 +232,30 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "never",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "go:run:echo",
+      "detail": "Start echo server with Go",
+      "options": {
+        "cwd": "${workspaceFolder}/tool/echo",
+        "env": {}
+      },
+      "type": "shell",
+      "command": "go",
+      "args": [
+        "run",
+        "echo.go"
+      ],
+      "isBackground": true,
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
         "panel": "dedicated"
       }
     }
