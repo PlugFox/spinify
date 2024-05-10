@@ -17,5 +17,17 @@ void main() {
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
     });
+
+    test('Connect_and_refresh', () async {
+      final client = Spinify();
+      await client.connect(url);
+      expect(client.state, isA<SpinifyState$Connected>());
+      //await client.ping();
+      await Future<void>.delayed(const Duration(seconds: 360));
+      await client.disconnect();
+      expect(client.state, isA<SpinifyState$Disconnected>());
+      await client.close();
+      expect(client.state, isA<SpinifyState$Closed>());
+    });
   });
 }

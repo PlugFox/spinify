@@ -134,11 +134,8 @@ final class ProtobufReplyDecoder extends Converter<List<int>, SpinifyReply> {
     //}
     if (reply.hasPush()) {
       return _decodePush(reply.push);
-    } else if (reply.hasPing()) {
-      return SpinifyPingResult(
-        id: reply.id,
-        timestamp: DateTime.now(),
-      );
+    } else if (reply.hasId() && reply.id > 0) {
+      return _decodeReply(reply);
     } else if (reply.hasError()) {
       final error = reply.error;
       return SpinifyError(
@@ -148,9 +145,8 @@ final class ProtobufReplyDecoder extends Converter<List<int>, SpinifyReply> {
         message: error.message,
         temporary: error.temporary,
       );
-    } else if (reply.hasId() && reply.id > 0) {
-      return _decodeReply(reply);
     } else {
+      // TODO(plugfox): Implement ping reply
       throw UnimplementedError('Unsupported reply type');
     }
   }
