@@ -194,8 +194,10 @@
       "type": "shell",
       "command": "dart",
       "detail": "Start echo server",
+      "isBackground": false,
       "options": {
         "cwd": "${workspaceFolder}/tool",
+        "env": {}
       },
       "args": [
         "run",
@@ -207,7 +209,7 @@
       },
       "problemMatcher": [],
       "presentation": {
-        "reveal": "always",
+        "reveal": "never",
         "panel": "dedicated"
       }
     },
@@ -229,7 +231,7 @@
       },
       "problemMatcher": [],
       "presentation": {
-        "reveal": "always",
+        "reveal": "never",
         "panel": "dedicated"
       }
     }

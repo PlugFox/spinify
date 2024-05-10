@@ -33,7 +33,7 @@ Future<bool> _ping() => io.HttpClient()
     ))
     .then<io.HttpClientResponse>((request) => request.close())
     .timeout(const Duration(seconds: 15))
-    .then((response) => response.statusCode == 200)
+    .then<bool>((response) => response.statusCode == 200)
     .onError((error, stackTrace) => false);
 
 Future<void> _startServer() async {
@@ -74,13 +74,18 @@ Future<void> _startServer() async {
         process = await io.Process.start(
           executable,
           arguments,
-          mode: io.ProcessStartMode.normal,
+          mode: io.ProcessStartMode.detachedWithStdio,
           runInShell: false,
           workingDirectory: workingDirectory,
+          environment: <String, String>{},
+          includeParentEnvironment: true,
         );
-        process.stdout.listen(controller.add);
-        process.stderr.listen(controller.add);
-        await process.exitCode;
+        void add(List<int> data) => controller.add(data);
+        final completer = Completer<void>();
+        process.stdout.listen(add, onDone: completer.complete);
+        process.stderr.listen(add);
+        return await completer.future;
+        //await process.exitCode;
       } finally {
         for (final sub in subs) sub.cancel().ignore();
         controller.close().ignore();
@@ -98,11 +103,18 @@ Future<void> _startServer() async {
 
   result = await execToString('go version');
   if (result.isNotEmpty && result.startsWith('go version')) {
-    final done = await exec('go run echo.go')
+    var command = 'go run echo.go';
+    /* if (io.Platform.isWindows) {
+      command = 'start /b $command > nul 2>&1';
+    } else {
+      command = 'nohup $command > /dev/null 2>&1 &';
+    } */
+    final done = await exec(command)
         .firstWhere((line) => line.contains('server is running'))
         .timeout(const Duration(seconds: 15))
         .onError((_, __) => '')
         .then<bool>((v) => v.isNotEmpty);
+    await Future<void>.delayed(const Duration(seconds: 10));
     if (done) return;
     throw Exception('Failed to start go server');
   }
