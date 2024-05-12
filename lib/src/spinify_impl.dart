@@ -141,7 +141,12 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   @override
   Future<void> _onReply(SpinifyReply reply) async {
-    if (reply.id case int id when id > 0) _replies.remove(id)?.complete(reply);
+    assert(reply.id > -1, 'Reply ID should be greater or equal to 0');
+    if (reply.id case int id when id > 0) {
+      final completer = _replies.remove(id);
+      assert(completer != null, 'Reply completer not found');
+      completer?.complete(reply);
+    }
     await super._onReply(reply);
   }
 
