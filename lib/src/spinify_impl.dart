@@ -120,7 +120,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       assert(command.id > -1, 'Command ID should be greater or equal to 0');
       assert(_replies[command.id] == null, 'Command ID should be unique');
       assert(_transport != null, 'Transport is not connected');
-      assert(state.isConnected, 'State is not connected');
+      assert(!state.isClosed, 'State is closed');
       final completer = _replies[command.id] = Completer<T>();
       await _sendCommandAsync(command);
       return await completer.future.timeout(config.timeout);
@@ -135,7 +135,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
     assert(command.id > -1, 'Command ID should be greater or equal to 0');
     assert(_transport != null, 'Transport is not connected');
-    assert(state.isConnected, 'State is not connected');
+    assert(!state.isClosed, 'State is closed');
     await _transport?.send(command);
   }
 
@@ -166,9 +166,11 @@ base mixin SpinifyConnectionMixin
 
   @override
   Future<void> connect(String url) async {
+    if (state.url == url) return;
+    final completer = _readyCompleter ??= Completer<void>();
+    await disconnect();
     try {
-      // Disconnect previous transport if exists.
-      _transport?.disconnect(1000, 'Reconnecting').ignore();
+      _setState(SpinifyState$Connecting(url: url));
 
       // Create new transport.
       _transport = await _createTransport(url, config.headers)
@@ -181,7 +183,6 @@ base mixin SpinifyConnectionMixin
       final reply = await _sendCommand<SpinifyConnectResult>(request);
       _setState(SpinifyState$Connected(
         url: url,
-        timestamp: DateTime.now(),
         client: reply.client,
         version: reply.version,
         expires: reply.expires,
@@ -194,10 +195,11 @@ base mixin SpinifyConnectionMixin
       ));
 
       // Notify ready.
-      _readyCompleter?.complete();
+      if (!completer.isCompleted) completer.complete();
       _readyCompleter = null;
     } on Object catch (error, stackTrace) {
-      _readyCompleter?.completeError(error, stackTrace);
+      if (!completer.isCompleted) completer.completeError(error, stackTrace);
+      _readyCompleter = null;
       rethrow;
     }
   }
