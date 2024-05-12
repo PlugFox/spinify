@@ -40,11 +40,8 @@ sealed class SpinifyState extends _$SpinifyStateBase {
 
   /// Disconnected state
   /// {@macro state}
-  factory SpinifyState.disconnected({
-    DateTime? timestamp,
-    int? closeCode,
-    String? closeReason,
-  }) = SpinifyState$Disconnected;
+  factory SpinifyState.disconnected({DateTime? timestamp}) =
+      SpinifyState$Disconnected;
 
   /// Connecting
   /// {@macro state}
@@ -80,14 +77,6 @@ sealed class SpinifyState extends _$SpinifyStateBase {
       )) {
         ('disconnected', int timestamp, _) => SpinifyState.disconnected(
             timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
-            closeCode: switch (json['closeCode']) {
-              int closeCode => closeCode,
-              _ => null,
-            },
-            closeReason: switch (json['closeReason']) {
-              String closeReason => closeReason,
-              _ => null,
-            },
           ),
         ('connecting', int timestamp, String url) => SpinifyState.connecting(
             url: url,
@@ -145,8 +134,6 @@ final class SpinifyState$Disconnected extends SpinifyState {
   /// {@macro state}
   SpinifyState$Disconnected({
     DateTime? timestamp,
-    this.closeCode,
-    this.closeReason,
   }) : super(timestamp ?? DateTime.now());
 
   @override
@@ -154,14 +141,6 @@ final class SpinifyState$Disconnected extends SpinifyState {
 
   @override
   String? get url => null;
-
-  /// The close code set when the WebSocket connection is closed.
-  /// If there is no close code available this property will be null.
-  final int? closeCode;
-
-  /// The close reason set when the WebSocket connection is closed.
-  /// If there is no close reason available this property will be null.
-  final String? closeReason;
 
   @override
   bool get isDisconnected => true;
@@ -185,14 +164,12 @@ final class SpinifyState$Disconnected extends SpinifyState {
       disconnected(this);
 
   @override
-  Map<String, Object?> toJson() => {
+  Map<String, Object?> toJson() => <String, Object?>{
         ...super.toJson(),
-        if (closeCode != null) 'closeCode': closeCode,
-        if (closeReason != null) 'closeReason': closeReason,
       };
 
   @override
-  int get hashCode => 0;
+  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 0;
 
   @override
   bool operator ==(Object other) =>
@@ -241,7 +218,7 @@ final class SpinifyState$Connecting extends SpinifyState {
       connecting(this);
 
   @override
-  int get hashCode => 1;
+  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 1;
 
   @override
   bool operator ==(Object other) =>
@@ -345,7 +322,7 @@ final class SpinifyState$Connected extends SpinifyState {
       };
 
   @override
-  int get hashCode => 2;
+  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 2;
 
   @override
   bool operator ==(Object other) =>
@@ -394,7 +371,7 @@ final class SpinifyState$Closed extends SpinifyState {
       closed(this);
 
   @override
-  int get hashCode => 3;
+  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 3;
 
   @override
   bool operator ==(Object other) =>

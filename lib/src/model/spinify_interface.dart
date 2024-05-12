@@ -26,9 +26,6 @@ abstract interface class ISpinify
         ISpinifyHistoryOwner,
         ISpinifyRemoteProcedureCall,
         ISpinifyMetricsOwner {
-  /// Unique client identifier.
-  abstract final int id;
-
   /// Spinify configuration.
   abstract final SpinifyConfig config;
 
@@ -44,10 +41,7 @@ abstract interface class ISpinify
   Future<void> ready();
 
   /// Disconnect from the server.
-  Future<void> disconnect([
-    int code = 0,
-    String reason = 'Disconnect called',
-  ]);
+  Future<void> disconnect();
 
   /// Client if not needed anymore.
   /// Permanent close connection to the server and

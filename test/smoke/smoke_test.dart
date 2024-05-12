@@ -6,6 +6,7 @@ import 'package:test/test.dart';
 void main() {
   group('Connection', () {
     const url = 'ws://localhost:8000/connection/websocket';
+
     test('Connect_and_disconnect', () async {
       final client = Spinify();
       await client.connect(url);

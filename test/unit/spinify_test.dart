@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('Spinify', () {
     Spinify createFakeClient() =>
-        Spinify(createTransport: $createFakeSpinifyTransport);
+        Spinify(/* createTransport: $createFakeSpinifyTransport */);
 
     test('Create_and_close_client', () async {
       final client = createFakeClient();
