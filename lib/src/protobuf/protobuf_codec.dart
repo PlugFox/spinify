@@ -2,7 +2,6 @@
 import 'dart:convert';
 
 import 'package:meta/meta.dart';
-import 'package:protobuf/protobuf.dart' as pb;
 
 import '../model/channel_push.dart';
 import '../model/client_info.dart';
@@ -11,14 +10,35 @@ import '../model/reply.dart';
 import '../model/stream_position.dart';
 import 'client.pb.dart' as pb;
 
-/// SpinifyCommand --> List<int> encoder.
+/// SpinifyCommand --> Protobuf Command encoder.
 final class ProtobufCommandEncoder
-    extends Converter<SpinifyCommand, List<int>> {
+    extends Converter<SpinifyCommand, pb.Command> {
   /// SpinifyCommand --> List<int> encoder.
-  const ProtobufCommandEncoder();
+  const ProtobufCommandEncoder([this.logger]);
+
+  /// Logger function to use for logging.
+  /// If not specified, the logger will be disabled.
+  /// The logger function is called with the following arguments:
+  /// - [level] - the log verbose level 0..6
+  ///  * 0 - debug
+  ///  * 1 - transport
+  ///  * 2 - config
+  ///  * 3 - info
+  ///  * 4 - warning
+  ///  * 5 - error
+  ///  * 6 - critical
+  /// - [event] - the log event, unique type of log event
+  /// - [message] - the log message
+  /// - [context] - the log context data
+  final void Function(
+    int level,
+    String event,
+    String message,
+    Map<String, Object?> context,
+  )? logger;
 
   @override
-  List<int> convert(SpinifyCommand input) {
+  pb.Command convert(SpinifyCommand input) {
     final cmd = pb.Command(id: input.id);
     switch (input) {
       case SpinifySendRequest send:
@@ -109,36 +129,64 @@ final class ProtobufCommandEncoder
           token: subRefresh.token,
         );
     }
-    assert(() {
+    /* assert(() {
       print('Command > ${cmd.toProto3Json()}');
       return true;
-    }());
+    }()); */
+
     /* final buffer = pb.CodedBufferWriter();
     pb.writeToCodedBufferWriter(buffer);
     return buffer.toBuffer(); */
-    final commandData = cmd.writeToBuffer();
+
+    /* final commandData = cmd.writeToBuffer();
     final length = commandData.lengthInBytes;
     final writer = pb.CodedBufferWriter()
       ..writeInt32NoTag(length); //..writeRawBytes(commandData);
-    return writer.toBuffer() + commandData;
+    return writer.toBuffer() + commandData; */
+
+    return cmd;
   }
 }
 
-/// List<int> --> SpinifyReply decoder.
-final class ProtobufReplyDecoder extends Converter<List<int>, SpinifyReply> {
+/// Protobuf Reply --> SpinifyReply decoder.
+final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
   /// List<int> --> SpinifyCommand decoder.
-  const ProtobufReplyDecoder();
+  const ProtobufReplyDecoder([this.logger]);
+
+  /// Logger function to use for logging.
+  /// If not specified, the logger will be disabled.
+  /// The logger function is called with the following arguments:
+  /// - [level] - the log verbose level 0..6
+  ///  * 0 - debug
+  ///  * 1 - transport
+  ///  * 2 - config
+  ///  * 3 - info
+  ///  * 4 - warning
+  ///  * 5 - error
+  ///  * 6 - critical
+  /// - [event] - the log event, unique type of log event
+  /// - [message] - the log message
+  /// - [context] - the log context data
+  final void Function(
+    int level,
+    String event,
+    String message,
+    Map<String, Object?> context,
+  )? logger;
 
   @override
-  SpinifyReply convert(List<int> input) {
-    final reader = pb.CodedBufferReader(input);
+  SpinifyReply convert(pb.Reply input) {
+    //final reader = pb.CodedBufferReader(input);
     //while (!reader.isAtEnd()) {
-    final reply = pb.Reply();
-    reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
-    assert(() {
+    //final reply = pb.Reply();
+    //reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
+    final reply = input;
+
+    /* assert(() {
       print('Reply < ${reply.toProto3Json()}');
       return true;
-    }());
+    }()); */
+
     if (reply.hasPush()) {
       return _decodePush(reply.push);
     } else if (reply.hasId() && reply.id > 0) {
@@ -158,7 +206,7 @@ final class ProtobufReplyDecoder extends Converter<List<int>, SpinifyReply> {
       );
     }
     //}
-    assert(reader.isAtEnd(), 'Data is not fully consumed');
+    //assert(reader.isAtEnd(), 'Data is not fully consumed');
   }
 
   /*

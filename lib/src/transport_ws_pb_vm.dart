@@ -1,26 +1,30 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:meta/meta.dart';
+import 'package:protobuf/protobuf.dart' as pb;
 
 import 'model/command.dart';
+import 'model/config.dart';
 import 'model/reply.dart';
 import 'model/transport_interface.dart';
+import 'protobuf/client.pb.dart' as pb;
 import 'protobuf/protobuf_codec.dart';
 
 /// Create a WebSocket Protocol Buffers transport.
 @internal
 Future<ISpinifyTransport> $create$WS$PB$Transport(
   String url,
-  Map<String, String> headers,
+  SpinifyConfig config,
 ) async {
   // ignore: close_sinks
   final socket = await io.WebSocket.connect(
     url,
-    headers: headers,
+    headers: config.headers,
     protocols: <String>{'centrifuge-protobuf'},
   );
-  final transport = SpinifyTransport$WS$PB$VM(socket);
+  final transport = SpinifyTransport$WS$PB$VM(socket, config);
   // 0	CONNECTING	Socket has been created. The connection is not yet open.
   // 1	OPEN	The connection is open and ready to communicate.
   // 2	CLOSING	The connection is in the process of closing.
@@ -32,7 +36,15 @@ Future<ISpinifyTransport> $create$WS$PB$Transport(
 /// Create a WebSocket Protocol Buffers transport.
 @internal
 final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
-  SpinifyTransport$WS$PB$VM(this._socket) {
+  SpinifyTransport$WS$PB$VM(this._socket, this._config)
+      : _encoder = switch (_config.logger) {
+          null => const ProtobufCommandEncoder(),
+          _ => ProtobufCommandEncoder(_config.logger),
+        },
+        _decoder = switch (_config.logger) {
+          null => const ProtobufReplyDecoder(),
+          _ => ProtobufReplyDecoder(_config.logger),
+        } {
     _subscription = _socket.listen(
       _onData,
       cancelOnError: false,
@@ -44,6 +56,9 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   }
 
   final io.WebSocket _socket;
+  final SpinifyConfig _config;
+  final Converter<SpinifyCommand, pb.Command> _encoder;
+  final Converter<pb.Reply, SpinifyReply> _decoder;
   late final StreamSubscription<dynamic> _subscription;
 
   void Function(SpinifyReply reply)? _onReply;
@@ -58,21 +73,88 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   void Function()? _onDisconnect;
 
   void _onData(Object? bytes) {
-    const decoder = ProtobufReplyDecoder();
     if (bytes is! List<int> || bytes.isEmpty) {
       assert(false, 'Data is not byte array');
       return;
     }
-    final reply = decoder.convert(bytes);
     assert(_onReply != null, 'Reply handler is not set');
-    _onReply?.call(reply);
+    final reader = pb.CodedBufferReader(bytes);
+    while (!reader.isAtEnd()) {
+      try {
+        final message = pb.Reply();
+        reader.readMessage(message, pb.ExtensionRegistry.EMPTY);
+        final reply = _decoder.convert(message);
+        _onReply?.call(reply);
+        _config.logger?.call(
+          1,
+          'receive_reply',
+          'Reply ${reply.type}{id: ${reply.id}} received',
+          <String, Object?>{
+            'protocol': 'protobuf',
+            'transport': 'websocket',
+            'bytes': bytes,
+            'length': bytes.length,
+            'reply': reply,
+            'protobuf': message,
+          },
+        );
+      } on Object catch (error, stackTrace) {
+        _config.logger?.call(
+          5,
+          'receive_reply_error',
+          'Error reading reply message',
+          <String, Object?>{
+            'protocol': 'protobuf',
+            'transport': 'websocket',
+            'bytes': bytes,
+            'error': error,
+            'stackTrace': stackTrace,
+          },
+        );
+        assert(false, 'Error reading message: $error');
+        continue;
+      }
+    }
   }
 
   @override
   Future<void> send(SpinifyCommand command) async {
-    const encoder = ProtobufCommandEncoder();
-    final bytes = encoder.convert(command);
-    _socket.add(bytes);
+    try {
+      final message = _encoder.convert(command);
+      final commandData = message.writeToBuffer();
+      final length = commandData.lengthInBytes;
+      final writer = pb.CodedBufferWriter()
+        ..writeInt32NoTag(length); //..writeRawBytes(commandData);
+      final bytes = writer.toBuffer() + commandData;
+      _socket.add(bytes);
+      _config.logger?.call(
+        1,
+        'send_command',
+        'Command ${command.type}{id: ${command.id}} sent',
+        <String, Object?>{
+          'protocol': 'protobuf',
+          'transport': 'websocket',
+          'command': command,
+          'protobuf': message,
+          'length': bytes.length,
+          'bytes': bytes,
+        },
+      );
+    } on Object catch (error, stackTrace) {
+      _config.logger?.call(
+        5,
+        'send_command_error',
+        'Error sending command ${command.type}{id: ${command.id}}',
+        <String, Object?>{
+          'protocol': 'protobuf',
+          'transport': 'websocket',
+          'command': command,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      rethrow;
+    }
   }
 
   @override

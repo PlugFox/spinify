@@ -1,4 +1,5 @@
 import 'command.dart';
+import 'config.dart';
 import 'reply.dart';
 
 /// Create a Spinify transport
@@ -7,8 +8,8 @@ typedef CreateSpinifyTransport = Future<ISpinifyTransport> Function(
   /// URL for the connection
   String url,
 
-  /// Additional headers for the connection (optional)
-  Map<String, String> headers,
+  /// Spinify client configuration
+  SpinifyConfig config,
 );
 
 /// Spinify transport interface.

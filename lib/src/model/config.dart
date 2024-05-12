@@ -54,6 +54,7 @@ final class SpinifyConfig {
     this.timeout = const Duration(seconds: 15),
     this.serverPingDelay = const Duration(seconds: 8),
     Map<String, String>? headers,
+    this.logger,
   })  : headers = Map<String, String>.unmodifiable(
             headers ?? const <String, String>{}),
         client = client ??
@@ -111,6 +112,27 @@ final class SpinifyConfig {
   /// Maximum time to wait for the connection to be established.
   /// If not specified, the timeout will be 15 seconds.
   final Duration timeout;
+
+  /// Logger function to use for logging.
+  /// If not specified, the logger will be disabled.
+  /// The logger function is called with the following arguments:
+  /// - [level] - the log verbose level 0..6
+  ///  * 0 - debug
+  ///  * 1 - transport
+  ///  * 2 - config
+  ///  * 3 - info
+  ///  * 4 - warning
+  ///  * 5 - error
+  ///  * 6 - critical
+  /// - [event] - the log event, unique type of log event
+  /// - [message] - the log message
+  /// - [context] - the log context data
+  final void Function(
+    int level,
+    String event,
+    String message,
+    Map<String, Object?> context,
+  )? logger;
 
   @override
   String toString() => 'SpinifyConfig{}';

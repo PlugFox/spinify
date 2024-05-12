@@ -6,7 +6,10 @@ analyzer:
     - "build/**"
     # Codegen
     - "lib/**.g.dart"
-    - "lib/src/protobuf/*"
+    - "lib/src/protobuf/client.pb.dart"
+    - "lib/src/protobuf/client.pbenum.dart"
+    - "lib/src/protobuf/client.pbjson.dart"
+    - "lib/src/protobuf/client.pbserver.dart"
     - "lib/src/model/pubspec.yaml.g.dart"
     - "lib/src.old/transport/protobuf/*"
     - "lib/src.old/transport/pubspec.yaml.g.dart"

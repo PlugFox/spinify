@@ -292,7 +292,8 @@ final class SpinifyRefreshRequest extends SpinifyCommand {
   String get type => 'RefreshRequest';
 
   /// Token to refresh.
-  final String? token;
+  /// Token should not be null or empty string.
+  final String token;
 }
 
 /// {@macro command}
