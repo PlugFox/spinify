@@ -164,6 +164,10 @@ base mixin SpinifyConnectionMixin
     on SpinifyBase, SpinifyCommandMixin, SpinifyStateMixin {
   Completer<void>? _readyCompleter;
 
+  @protected
+  @nonVirtual
+  Timer? _refreshTimer;
+
   @override
   Future<void> connect(String url) async {
     if (state.url == url) return;
@@ -178,7 +182,22 @@ base mixin SpinifyConnectionMixin
         ..onDisconnect = () => _onDisconnect().ignore();
 
       // Prepare connect request.
-      final request = await _prepareConnectRequest();
+      final SpinifyConnectRequest request;
+      {
+        final token = await config.getToken?.call();
+        assert(token == null || token.length > 5, 'Spinify JWT is too short');
+        final payload = await config.getPayload?.call();
+        request = SpinifyConnectRequest(
+          id: _getNextCommandId(),
+          timestamp: DateTime.now(),
+          token: token,
+          data: payload,
+          // TODO(plugfox): Implement subscriptions.
+          subs: const <String, SpinifySubscribeRequest>{},
+          name: config.client.name,
+          version: config.client.version,
+        );
+      }
 
       final reply = await _sendCommand<SpinifyConnectResult>(request);
       _setState(SpinifyState$Connected(
@@ -194,6 +213,8 @@ base mixin SpinifyConnectionMixin
         data: reply.data,
       ));
 
+      _setUpRefreshConnection();
+
       // Notify ready.
       if (!completer.isCompleted) completer.complete();
       _readyCompleter = null;
@@ -204,20 +225,50 @@ base mixin SpinifyConnectionMixin
     }
   }
 
-  Future<SpinifyConnectRequest> _prepareConnectRequest() async {
-    final token = await config.getToken?.call();
-    assert(token == null || token.length > 5, 'Spinify JWT is too short');
-    final payload = await config.getPayload?.call();
-    return SpinifyConnectRequest(
-      id: _getNextCommandId(),
-      timestamp: DateTime.now(),
-      token: token,
-      data: payload,
-      // TODO(plugfox): Implement subscriptions.
-      subs: const <String, SpinifySubscribeRequest>{},
-      name: config.client.name,
-      version: config.client.version,
-    );
+  void _setUpRefreshConnection() {
+    _refreshTimer?.cancel();
+    if (state
+        case SpinifyState$Connected(
+          :String url,
+          :bool expires,
+          :DateTime? ttl,
+          :String? node,
+          :Duration? pingInterval,
+          :bool? sendPong,
+          :String? session,
+          :List<int>? data,
+        ) when expires && ttl != null) {
+      final duration = ttl.difference(DateTime.now()) - config.timeout;
+      if (duration < Duration.zero) {
+        assert(false, 'Token TTL is too short');
+        return;
+      }
+      _refreshTimer = Timer(duration, () async {
+        if (!state.isConnected) return;
+        final token = await config.getToken?.call();
+        assert(token == null || token.length > 5, 'Spinify JWT is too short');
+        if (token == null) return;
+        final request = SpinifyRefreshRequest(
+          id: _getNextCommandId(),
+          timestamp: DateTime.now(),
+          token: token,
+        );
+        final reply = await _sendCommand<SpinifyRefreshResult>(request);
+        _setState(SpinifyState$Connected(
+          url: url,
+          client: reply.client,
+          version: reply.version,
+          expires: reply.expires,
+          ttl: reply.ttl,
+          node: node,
+          pingInterval: pingInterval,
+          sendPong: sendPong,
+          session: session,
+          data: data,
+        ));
+        _setUpRefreshConnection();
+      });
+    }
   }
 
   @override
@@ -235,6 +286,7 @@ base mixin SpinifyConnectionMixin
 
   @override
   Future<void> _onDisconnect() async {
+    _refreshTimer?.cancel();
     _transport = null;
     await super._onDisconnect();
   }

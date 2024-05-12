@@ -120,7 +120,7 @@ final class SpinifyConnectResult extends SpinifyReply {
   /// Expires
   final bool expires;
 
-  /// TTL
+  /// TTL (Time to live)
   final DateTime? ttl;
 
   /// Payload

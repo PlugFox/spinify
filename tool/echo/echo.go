@@ -91,7 +91,8 @@ func Centrifuge() (*centrifuge.Node, error) {
 	node.OnConnecting(func(ctx context.Context, e centrifuge.ConnectEvent) (centrifuge.ConnectReply, error) {
 		cred, _ := centrifuge.GetCredentials(ctx)
 		return centrifuge.ConnectReply{
-			Data: []byte(`{}`),
+			Data:              []byte(`{}`),
+			ClientSideRefresh: false,
 			// Subscribe to a personal server-side channel.
 			Subscriptions: map[string]centrifuge.SubscribeOptions{
 				"#" + cred.UserID: {
@@ -129,12 +130,16 @@ func Centrifuge() (*centrifuge.Node, error) {
 		}()
 
 		client.OnRefresh(func(e centrifuge.RefreshEvent, cb centrifuge.RefreshCallback) {
-			log.Printf("[user %s] connection is going to expire, refreshing", client.UserID())
-			// Prolong connection lifetime with that server side callback.
-			// Without notification to client.
-			cb(centrifuge.RefreshReply{
-				ExpireAt: time.Now().Unix() + 25,
-			}, nil)
+			// Prolong connection lifetime from client-side refresh.
+			/* if e.ClientSideRefresh {
+				log.Printf("[user %s] refresh connection from client with token '%s'", client.UserID(), e.Token)
+				cb(centrifuge.RefreshReply{ExpireAt: time.Now().Unix() + 25}, nil)
+			} else {
+				log.Printf("[user %s] connection is going to expire", client.UserID())
+			} */
+
+			log.Printf("[user %s] refresh connection", client.UserID())
+			cb(centrifuge.RefreshReply{ExpireAt: time.Now().Unix() + 25}, nil)
 		})
 
 		client.OnSubscribe(func(e centrifuge.SubscribeEvent, cb centrifuge.SubscribeCallback) {
