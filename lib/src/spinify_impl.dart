@@ -117,6 +117,10 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
     try {
+      assert(command.id > -1, 'Command ID should be greater or equal to 0');
+      assert(_replies[command.id] == null, 'Command ID should be unique');
+      assert(_transport != null, 'Transport is not connected');
+      assert(state.isConnected, 'State is not connected');
       final completer = _replies[command.id] = Completer<T>();
       await _sendCommandAsync(command);
       return await completer.future.timeout(config.timeout);
@@ -131,6 +135,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
     assert(command.id > -1, 'Command ID should be greater or equal to 0');
     assert(_transport != null, 'Transport is not connected');
+    assert(state.isConnected, 'State is not connected');
     await _transport?.send(command);
   }
 
