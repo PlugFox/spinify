@@ -130,6 +130,8 @@ func Centrifuge() (*centrifuge.Node, error) {
 
 		client.OnRefresh(func(e centrifuge.RefreshEvent, cb centrifuge.RefreshCallback) {
 			log.Printf("[user %s] connection is going to expire, refreshing", client.UserID())
+			// Prolong connection lifetime with that server side callback.
+			// Without notification to client.
 			cb(centrifuge.RefreshReply{
 				ExpireAt: time.Now().Unix() + 25,
 			}, nil)
