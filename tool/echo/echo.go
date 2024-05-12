@@ -65,7 +65,7 @@ func authMiddleware(h http.Handler) http.Handler {
 		ctx := r.Context()
 		newCtx := centrifuge.SetCredentials(ctx, &centrifuge.Credentials{
 			UserID:   "42",
-			ExpireAt: time.Now().Unix() + 10,
+			ExpireAt: time.Now().Unix() + 25,
 			Info:     []byte(`{"name": "Test User"}`),
 		})
 		r = r.WithContext(newCtx)
