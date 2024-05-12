@@ -52,6 +52,21 @@ sealed class SpinifyReply implements Comparable<SpinifyReply> {
   String toString() => '$type{id: $id}';
 }
 
+/// Server ping message. Server will send this message to client periodically
+/// to check if client is still connected.
+///
+/// Client must respond with async `SpinifyPingRequest{id: 0}` command message.
+/// {@macro reply}
+final class SpinifyServerPing extends SpinifyReply {
+  /// {@macro reply}
+  const SpinifyServerPing({
+    required super.timestamp,
+  }) : super(id: 0);
+
+  @override
+  String get type => 'ServerPing';
+}
+
 /// Push can be sent to a client as part of Reply in case of bidirectional
 /// transport or without additional wrapping in case of unidirectional
 /// transports. ProtocolVersion2 uses channel and one of the possible concrete

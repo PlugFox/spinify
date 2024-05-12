@@ -28,6 +28,6 @@ void main() {
       expect(client.state, isA<SpinifyState$Disconnected>());
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
-    });
+    }, timeout: const Timeout(Duration(minutes: 7)));
   });
 }

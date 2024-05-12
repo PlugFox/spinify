@@ -109,6 +109,10 @@ final class ProtobufCommandEncoder
           token: subRefresh.token,
         );
     }
+    assert(() {
+      print('Command > ${cmd.toProto3Json()}');
+      return true;
+    }());
     /* final buffer = pb.CodedBufferWriter();
     pb.writeToCodedBufferWriter(buffer);
     return buffer.toBuffer(); */
@@ -131,7 +135,10 @@ final class ProtobufReplyDecoder extends Converter<List<int>, SpinifyReply> {
     //while (!reader.isAtEnd()) {
     final reply = pb.Reply();
     reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
-    //}
+    assert(() {
+      print('Reply < ${reply.toProto3Json()}');
+      return true;
+    }());
     if (reply.hasPush()) {
       return _decodePush(reply.push);
     } else if (reply.hasId() && reply.id > 0) {
@@ -146,9 +153,12 @@ final class ProtobufReplyDecoder extends Converter<List<int>, SpinifyReply> {
         temporary: error.temporary,
       );
     } else {
-      // TODO(plugfox): Implement ping reply
-      throw UnimplementedError('Unsupported reply type');
+      return SpinifyServerPing(
+        timestamp: DateTime.now(),
+      );
     }
+    //}
+    assert(reader.isAtEnd(), 'Data is not fully consumed');
   }
 
   /*

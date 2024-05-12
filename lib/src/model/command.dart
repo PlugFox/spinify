@@ -242,9 +242,8 @@ final class SpinifyHistoryRequest extends SpinifyCommand {
 final class SpinifyPingRequest extends SpinifyCommand {
   /// {@macro command}
   const SpinifyPingRequest({
-    required super.id,
     required super.timestamp,
-  });
+  }) : super(id: 0);
 
   @override
   String get type => 'PingRequest';

@@ -243,14 +243,14 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   }
 
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
-    assert(command.id > 0, 'Command ID is not set');
+    assert(command.id > -1, 'Command ID should be greater or equal to 0');
     assert(_transport != null, 'Transport is not connected');
     await _transport?.send(command);
   }
 
   @override
   Future<void> _onReply(SpinifyReply reply) async {
-    _replies.remove(reply.id)?.complete(reply);
+    if (reply.id case int id when id > 0) _replies.remove(id)?.complete(reply);
     await super._onReply(reply);
   }
 
@@ -409,6 +409,15 @@ base mixin SpinifyPingPongMixin
     _tearDownPingTimer();
     await super._onConnect(url);
     _restartPingTimer();
+  }
+
+  @override
+  Future<void> _onReply(SpinifyReply reply) async {
+    if (reply is SpinifyServerPing) {
+      await _sendCommandAsync(SpinifyPingRequest(timestamp: DateTime.now()));
+      _restartPingTimer();
+    }
+    await super._onReply(reply);
   }
 
   @override

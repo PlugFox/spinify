@@ -115,7 +115,8 @@ func Centrifuge() (*centrifuge.Node, error) {
 				select {
 				case <-client.Context().Done():
 					return
-				case <-time.After(5 * time.Second):
+				case <-time.After(60 * time.Second):
+					// Periodically send message to client.
 					err := client.Send([]byte(`{"time": "` + strconv.FormatInt(time.Now().Unix(), 10) + `"}`))
 					if err != nil {
 						if err == io.EOF {
@@ -130,7 +131,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 		client.OnRefresh(func(e centrifuge.RefreshEvent, cb centrifuge.RefreshCallback) {
 			log.Printf("[user %s] connection is going to expire, refreshing", client.UserID())
 			cb(centrifuge.RefreshReply{
-				ExpireAt: time.Now().Unix() + 10,
+				ExpireAt: time.Now().Unix() + 25,
 			}, nil)
 		})
 
@@ -235,7 +236,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 				log.Printf("error publishing to personal channel: %s", err)
 			}
 			i++
-			time.Sleep(5000 * time.Millisecond)
+			time.Sleep(1 * time.Minute)
 		}
 	}()
 
@@ -252,7 +253,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 				log.Printf("error publishing to channel: %s", err)
 			}
 			i++
-			time.Sleep(10000 * time.Millisecond)
+			time.Sleep(1 * time.Minute)
 		}
 	}()
 
