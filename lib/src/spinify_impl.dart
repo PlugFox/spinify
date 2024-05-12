@@ -162,6 +162,10 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 /// Base mixin for Spinify client connection management (connect & disconnect).
 base mixin SpinifyConnectionMixin
     on SpinifyBase, SpinifyCommandMixin, SpinifyStateMixin {
+  /// Last connected URL.
+  /// Used for reconnecting after connection lost.
+  /// If null, then client is not connected or interractively disconnected.
+  String? _reconnectUrl;
   Completer<void>? _readyCompleter;
 
   @protected
@@ -175,6 +179,7 @@ base mixin SpinifyConnectionMixin
     await disconnect();
     try {
       _setState(SpinifyState$Connecting(url: url));
+      _reconnectUrl = url;
 
       // Create new transport.
       _transport = await _createTransport(url, config.headers)
@@ -279,6 +284,7 @@ base mixin SpinifyConnectionMixin
 
   @override
   Future<void> disconnect() async {
+    _reconnectUrl = null;
     if (state.isDisconnected) return Future.value();
     await _transport?.disconnect(1000, 'Client disconnecting');
     await _onDisconnect();
