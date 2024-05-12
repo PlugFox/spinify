@@ -87,7 +87,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         _onReply?.call(reply);
         _config.logger?.call(
           1,
-          'receive_reply',
+          'transport_on_reply',
           'Reply ${reply.type}{id: ${reply.id}} received',
           <String, Object?>{
             'protocol': 'protobuf',
@@ -101,7 +101,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       } on Object catch (error, stackTrace) {
         _config.logger?.call(
           5,
-          'receive_reply_error',
+          'transport_on_reply_error',
           'Error reading reply message',
           <String, Object?>{
             'protocol': 'protobuf',
@@ -129,7 +129,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       _socket.add(bytes);
       _config.logger?.call(
         1,
-        'send_command',
+        'transport_send',
         'Command ${command.type}{id: ${command.id}} sent',
         <String, Object?>{
           'protocol': 'protobuf',
@@ -143,7 +143,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
     } on Object catch (error, stackTrace) {
       _config.logger?.call(
         5,
-        'send_command_error',
+        'transport_send_error',
         'Error sending command ${command.type}{id: ${command.id}}',
         <String, Object?>{
           'protocol': 'protobuf',
