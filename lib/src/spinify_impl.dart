@@ -14,8 +14,8 @@ import 'model/spinify_interface.dart';
 import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
+import 'model/subscription.dart';
 import 'model/subscription_config.dart';
-import 'model/subscription_interface.dart';
 import 'model/transport_interface.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist

@@ -11,8 +11,8 @@ import 'pushes_stream.dart';
 import 'state.dart';
 import 'states_stream.dart';
 import 'stream_position.dart';
+import 'subscription.dart';
 import 'subscription_config.dart';
-import 'subscription_interface.dart';
 
 /// Spinify client interface.
 abstract interface class ISpinify
