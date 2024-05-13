@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 
 import 'channel_push.dart';
 import 'client_info.dart';
+import 'command.dart';
 import 'stream_position.dart';
 
 /// {@template reply}
@@ -30,6 +31,9 @@ sealed class SpinifyReply implements Comparable<SpinifyReply> {
   /// Reply type.
   abstract final String type;
 
+  /// Result of a command.
+  abstract final bool isResult;
+
   @override
   int compareTo(SpinifyReply other) =>
       switch (timestamp.compareTo(other.timestamp)) {
@@ -52,6 +56,12 @@ sealed class SpinifyReply implements Comparable<SpinifyReply> {
   String toString() => '$type{id: $id}';
 }
 
+/// Reply result of a command.
+base mixin SpinifyReplyResult<T extends SpinifyCommand> on SpinifyReply {
+  @override
+  bool get isResult => true;
+}
+
 /// Server ping message. Server will send this message to client periodically
 /// to check if client is still connected.
 ///
@@ -65,6 +75,9 @@ final class SpinifyServerPing extends SpinifyReply {
 
   @override
   String get type => 'ServerPing';
+
+  @override
+  bool get isResult => false;
 }
 
 /// Push can be sent to a client as part of Reply in case of bidirectional
@@ -83,6 +96,9 @@ final class SpinifyPush extends SpinifyReply {
   @override
   String get type => 'Push';
 
+  @override
+  bool get isResult => false;
+
   /// Channel push event
   String get channel => event.channel;
 
@@ -91,7 +107,8 @@ final class SpinifyPush extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyConnectResult extends SpinifyReply {
+final class SpinifyConnectResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyConnectRequest> {
   /// {@macro reply}
   const SpinifyConnectResult({
     required super.id,
@@ -146,7 +163,8 @@ final class SpinifyConnectResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifySubscribeResult extends SpinifyReply {
+final class SpinifySubscribeResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifySubscribeRequest> {
   /// {@macro reply}
   const SpinifySubscribeResult({
     required super.id,
@@ -208,7 +226,8 @@ final class SpinifySubscribeResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyUnsubscribeResult extends SpinifyReply {
+final class SpinifyUnsubscribeResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyUnsubscribeRequest> {
   /// {@macro reply}
   const SpinifyUnsubscribeResult({
     required super.id,
@@ -220,7 +239,8 @@ final class SpinifyUnsubscribeResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyPublishResult extends SpinifyReply {
+final class SpinifyPublishResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyPublishRequest> {
   /// {@macro reply}
   const SpinifyPublishResult({
     required super.id,
@@ -232,7 +252,8 @@ final class SpinifyPublishResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyPresenceResult extends SpinifyReply {
+final class SpinifyPresenceResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyPresenceRequest> {
   /// {@macro reply}
   const SpinifyPresenceResult({
     required super.id,
@@ -249,7 +270,8 @@ final class SpinifyPresenceResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyPresenceStatsResult extends SpinifyReply {
+final class SpinifyPresenceStatsResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyPresenceStatsRequest> {
   /// {@macro reply}
   const SpinifyPresenceStatsResult({
     required super.id,
@@ -269,7 +291,8 @@ final class SpinifyPresenceStatsResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyHistoryResult extends SpinifyReply {
+final class SpinifyHistoryResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyHistoryRequest> {
   /// {@macro reply}
   const SpinifyHistoryResult({
     required super.id,
@@ -285,7 +308,8 @@ final class SpinifyHistoryResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyPingResult extends SpinifyReply {
+final class SpinifyPingResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyPingRequest> {
   /// {@macro reply}
   const SpinifyPingResult({
     required super.id,
@@ -297,7 +321,8 @@ final class SpinifyPingResult extends SpinifyReply {
 }
 
 /// {@macro reply}
-final class SpinifyRPCResult extends SpinifyReply {
+final class SpinifyRPCResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyRPCRequest> {
   /// {@macro reply}
   const SpinifyRPCResult({
     required super.id,
@@ -312,8 +337,11 @@ final class SpinifyRPCResult extends SpinifyReply {
   final List<int> data;
 }
 
+/// Result of connection refresh
+///
 /// {@macro reply}
-final class SpinifyRefreshResult extends SpinifyReply {
+final class SpinifyRefreshResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifyRefreshRequest> {
   /// {@macro reply}
   const SpinifyRefreshResult({
     required super.id,
@@ -333,30 +361,42 @@ final class SpinifyRefreshResult extends SpinifyReply {
   /// Server version
   final String version;
 
-  /// Expires
+  /// Whether a server will expire connection at some point
   final bool expires;
 
-  /// TTL
+  /// Time when connection will be expired
   final DateTime? ttl;
 }
 
+/// Result of subscription refresh
+///
 /// {@macro reply}
-final class SpinifySubRefreshResult extends SpinifyReply {
+final class SpinifySubRefreshResult extends SpinifyReply
+    with SpinifyReplyResult<SpinifySubRefreshRequest> {
   /// {@macro reply}
   const SpinifySubRefreshResult({
     required super.id,
     required super.timestamp,
+    required this.expires,
+    required this.ttl,
   });
 
   @override
   String get type => 'SubRefreshResult';
+
+  /// Whether a server will expire subscription at some point
+  final bool expires;
+
+  /// Time when subscription will be expired
+  final DateTime? ttl;
 }
 
-/// Error can only be set in replies to commands. For pushes it will have zero
-/// value.
+/// Error can only be set in replies to commands.
+/// For pushes it will have zero value.
 ///
 /// {@macro reply}
-final class SpinifyError extends SpinifyReply {
+final class SpinifyError extends SpinifyReply
+    with SpinifyReplyResult<SpinifyCommand> {
   /// {@macro reply}
   const SpinifyError({
     required super.id,

@@ -46,69 +46,112 @@ class SpinifyTransportFake implements ISpinifyTransport {
     await _sleep();
     switch (command) {
       case SpinifyPingRequest(:int id):
-        _response((now) => SpinifyPingResult(id: id, timestamp: now));
+        _response(
+          (now) => SpinifyPingResult(
+            id: id,
+            timestamp: now,
+          ),
+        );
       case SpinifyConnectRequest(:int id):
-        _response((now) => SpinifyConnectResult(
-              id: id,
-              timestamp: now,
-              client: 'fake',
-              version: '0.0.1',
-              expires: false,
-              ttl: null,
-              data: null,
-              subs: null,
-              pingInterval: const Duration(seconds: 25),
-              sendPong: false,
-              session: 'fake',
-              node: 'fake',
-            ));
+        _response(
+          (now) => SpinifyConnectResult(
+            id: id,
+            timestamp: now,
+            client: 'fake',
+            version: '0.0.1',
+            expires: false,
+            ttl: null,
+            data: null,
+            subs: null,
+            pingInterval: const Duration(seconds: 25),
+            sendPong: false,
+            session: 'fake',
+            node: 'fake',
+          ),
+        );
       case SpinifySubscribeRequest(:int id):
-        _response((now) => SpinifySubscribeResult(
-              id: id,
-              timestamp: now,
-              data: null,
-              expires: false,
-              ttl: null,
-              positioned: false,
-              publications: const [],
-              recoverable: false,
-              recovered: false,
-              since: (epoch: '...', offset: Int64.ZERO),
-              wasRecovering: false,
-            ));
+        _response(
+          (now) => SpinifySubscribeResult(
+            id: id,
+            timestamp: now,
+            data: null,
+            expires: false,
+            ttl: null,
+            positioned: false,
+            publications: const [],
+            recoverable: false,
+            recovered: false,
+            since: (epoch: '...', offset: Int64.ZERO),
+            wasRecovering: false,
+          ),
+        );
       case SpinifyUnsubscribeRequest(:int id):
-        _response((now) => SpinifyUnsubscribeResult(id: id, timestamp: now));
+        _response(
+          (now) => SpinifyUnsubscribeResult(
+            id: id,
+            timestamp: now,
+          ),
+        );
       case SpinifyPublishRequest(:int id):
-        _response((now) => SpinifyPublishResult(id: id, timestamp: now));
+        _response(
+          (now) => SpinifyPublishResult(
+            id: id,
+            timestamp: now,
+          ),
+        );
       case SpinifyPresenceRequest(:int id):
-        _response((now) => SpinifyPresenceResult(
-              id: id,
-              timestamp: now,
-              presence: const {},
-            ));
+        _response(
+          (now) => SpinifyPresenceResult(
+            id: id,
+            timestamp: now,
+            presence: const {},
+          ),
+        );
       case SpinifyPresenceStatsRequest(:int id):
-        _response((now) => SpinifyPresenceStatsResult(
-            id: id, timestamp: now, numClients: 0, numUsers: 0));
+        _response(
+          (now) => SpinifyPresenceStatsResult(
+            id: id,
+            timestamp: now,
+            numClients: 0,
+            numUsers: 0,
+          ),
+        );
       case SpinifyHistoryRequest(:int id):
-        _response((now) => SpinifyHistoryResult(
-              id: id,
-              timestamp: now,
-              since: (epoch: '...', offset: Int64.ZERO),
-            ));
+        _response(
+          (now) => SpinifyHistoryResult(
+            id: id,
+            timestamp: now,
+            since: (epoch: '...', offset: Int64.ZERO),
+          ),
+        );
       case SpinifyRPCRequest(:int id):
         _response(
-            (now) => SpinifyRPCResult(id: id, timestamp: now, data: const []));
+          (now) => SpinifyRPCResult(
+            id: id,
+            timestamp: now,
+            data: const [],
+          ),
+        );
       case SpinifyRefreshRequest(:int id):
-        _response((now) => SpinifyRefreshResult(
-              id: id,
-              timestamp: now,
-              client: 'fake',
-              version: '0.0.1',
-              expires: false,
-              ttl: null,
-            ));
+        _response(
+          (now) => SpinifyRefreshResult(
+            id: id,
+            timestamp: now,
+            client: 'fake',
+            version: '0.0.1',
+            expires: false,
+            ttl: null,
+          ),
+        );
       case SpinifySubRefreshRequest(:int id):
-        _response((now) => SpinifySubRefreshResult(id: id, timestamp: now));
+        _response(
+          (now) => SpinifySubRefreshResult(
+            id: id,
+            timestamp: now,
+            expires: false,
+            ttl: null,
+          ),
+        );
       case SpinifySendRequest():
       // Asynchronously send a message to the server
     }

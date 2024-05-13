@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
+import 'model/channel_push.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/history.dart';
 import 'model/metrics.dart';
-import 'model/presence.dart';
 import 'model/presence_stats.dart';
 import 'model/pushes_stream.dart';
 import 'model/reply.dart';

@@ -2,10 +2,10 @@
 
 import 'dart:async';
 
+import 'channel_push.dart';
 import 'config.dart';
 import 'history.dart';
 import 'metrics.dart';
-import 'presence.dart';
 import 'presence_stats.dart';
 import 'pushes_stream.dart';
 import 'state.dart';

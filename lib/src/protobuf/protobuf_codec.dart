@@ -528,9 +528,26 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         version: refresh.version,
       );
     } else if (reply.hasSubRefresh()) {
+      final refresh = reply.subRefresh;
+      final pb.SubRefreshResult(:expires, :ttl) = refresh;
+      final bool expBool;
+      final DateTime? ttlDT;
+      if (expires == true && ttl > 0) {
+        expBool = true;
+        ttlDT = now.add(Duration(seconds: ttl));
+      } else if (expires != true) {
+        expBool = false;
+        ttlDT = null;
+      } else {
+        expBool = false;
+        ttlDT = null;
+        assert(false, 'Connection refresh is invalid');
+      }
       return SpinifySubRefreshResult(
         id: id,
         timestamp: now,
+        expires: expBool,
+        ttl: ttlDT,
       );
     } else {
       throw UnimplementedError('Unsupported reply type');

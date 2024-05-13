@@ -109,6 +109,9 @@ sealed class SpinifyPresence extends SpinifyChannelEvent {
 
   /// Whether this is a leave event
   abstract final bool isLeave;
+
+  /// Publications
+  //abstract final Map<String, SpinifyClientInfo> clients;
 }
 
 /// Join event
