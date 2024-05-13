@@ -42,7 +42,7 @@ abstract base class SpinifyBase implements ISpinify {
   @nonVirtual
   final SpinifyConfig config;
 
-  late final CreateSpinifyTransport _createTransport;
+  late final SpinifyTransportBuilder _createTransport;
   ISpinifyTransport? _transport;
 
   /// Client initialization (from constructor).
@@ -50,7 +50,7 @@ abstract base class SpinifyBase implements ISpinify {
   void _init() {
     _createTransport = $create$WS$PB$Transport;
     config.logger?.call(
-      3,
+      const SpinifyLogLevel.info(),
       'init',
       'Spinify client initialized',
       <String, Object?>{
@@ -66,7 +66,7 @@ abstract base class SpinifyBase implements ISpinify {
   @mustCallSuper
   Future<void> _onReply(SpinifyReply reply) async {
     config.logger?.call(
-      0,
+      const SpinifyLogLevel.debug(),
       'reply',
       'Reply ${reply.type}{id: ${reply.id}} received',
       <String, Object?>{
@@ -79,7 +79,7 @@ abstract base class SpinifyBase implements ISpinify {
   @mustCallSuper
   Future<void> _onDisconnected() async {
     config.logger?.call(
-      2,
+      const SpinifyLogLevel.config(),
       'disconnected',
       'Disconnected',
       <String, Object?>{
@@ -91,7 +91,7 @@ abstract base class SpinifyBase implements ISpinify {
   @override
   Future<void> close() async {
     config.logger?.call(
-      3,
+      const SpinifyLogLevel.info(),
       'closed',
       'Closed',
       <String, Object?>{
@@ -120,7 +120,7 @@ base mixin SpinifyStateMixin on SpinifyBase {
     final previous = _state;
     _statesController.add(_state = state);
     config.logger?.call(
-      2,
+      const SpinifyLogLevel.config(),
       'state_changed',
       'State changed from $previous to $state',
       <String, Object?>{
@@ -164,7 +164,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
     config.logger?.call(
-      0,
+      const SpinifyLogLevel.debug(),
       'send_command_begin',
       'Command ${command.type}{id: ${command.id}} sent begin',
       <String, Object?>{
@@ -181,7 +181,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       await _transport?.send(command); // await _sendCommandAsync(command);
       final result = await completer.future.timeout(config.timeout);
       config.logger?.call(
-        2,
+        const SpinifyLogLevel.config(),
         'send_command_success',
         'Command ${command.type}{id: ${command.id}} sent successfully',
         <String, Object?>{
@@ -195,7 +195,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       if (tuple != null && !tuple.completer.isCompleted) {
         tuple.completer.completeError(error, stackTrace);
         config.logger?.call(
-          4,
+          const SpinifyLogLevel.warning(),
           'send_command_error',
           'Error sending command ${command.type}{id: ${command.id}}',
           <String, Object?>{
@@ -211,7 +211,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
     config.logger?.call(
-      0,
+      const SpinifyLogLevel.debug(),
       'send_command_async_begin',
       'Comand ${command.type}{id: ${command.id}} sent async begin',
       <String, Object?>{
@@ -224,7 +224,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       assert(!state.isClosed, 'State is closed');
       await _transport?.send(command);
       config.logger?.call(
-        2,
+        const SpinifyLogLevel.config(),
         'send_command_async_success',
         'Command sent ${command.type}{id: ${command.id}} async successfully',
         <String, Object?>{
@@ -233,7 +233,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       );
     } on Object catch (error, stackTrace) {
       config.logger?.call(
-        4,
+        const SpinifyLogLevel.warning(),
         'send_command_async_error',
         'Error sending command ${command.type}{id: ${command.id}} async',
         <String, Object?>{
@@ -267,7 +267,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   @override
   Future<void> _onDisconnected() async {
     config.logger?.call(
-      2,
+      const SpinifyLogLevel.config(),
       'disconnected',
       'Disconnected from server',
       <String, Object?>{},
@@ -278,7 +278,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       if (tuple.completer.isCompleted) continue;
       tuple.completer.completeError(error);
       config.logger?.call(
-        4,
+        const SpinifyLogLevel.warning(),
         'disconnected_reply_error',
         'Reply for command ${tuple.command.type}{id: ${tuple.command.id}} '
             'error on disconnect',
@@ -362,7 +362,7 @@ base mixin SpinifyConnectionMixin
       await _onConnected();
 
       config.logger?.call(
-        2,
+        const SpinifyLogLevel.config(),
         'connected',
         'Connected to server with $url successfully',
         <String, Object?>{
@@ -375,7 +375,7 @@ base mixin SpinifyConnectionMixin
       if (!completer.isCompleted) completer.completeError(error, stackTrace);
       _readyCompleter = null;
       config.logger?.call(
-        5,
+        const SpinifyLogLevel.error(),
         'connect_error',
         'Error connecting to server $url',
         <String, Object?>{
@@ -404,7 +404,7 @@ base mixin SpinifyConnectionMixin
       final duration = ttl.difference(DateTime.now()) - config.timeout;
       if (duration < Duration.zero) {
         config.logger?.call(
-          4,
+          const SpinifyLogLevel.warning(),
           'refresh_connection_cancelled',
           'Spinify token TTL is too short for refresh connection',
           <String, Object?>{
@@ -422,7 +422,7 @@ base mixin SpinifyConnectionMixin
         if (token == null || token.isEmpty) {
           assert(token == null || token.length > 5, 'Spinify JWT is too short');
           config.logger?.call(
-            4,
+            const SpinifyLogLevel.warning(),
             'refresh_connection_cancelled',
             'Spinify JWT is empty or too short for refresh connection',
             <String, Object?>{
@@ -442,7 +442,7 @@ base mixin SpinifyConnectionMixin
           result = await _sendCommand<SpinifyRefreshResult>(request);
         } on Object catch (error, stackTrace) {
           config.logger?.call(
-            5,
+            const SpinifyLogLevel.error(),
             'refresh_connection_error',
             'Error refreshing connection',
             <String, Object?>{
@@ -468,7 +468,7 @@ base mixin SpinifyConnectionMixin
         ));
         _setUpRefreshConnection();
         config.logger?.call(
-          2,
+          const SpinifyLogLevel.config(),
           'refresh_connection_success',
           'Successfully refreshed connection to $url',
           <String, Object?>{
@@ -545,7 +545,7 @@ base mixin SpinifyPingPongMixin
           // Reconnect if no pong received.
           if (state case SpinifyState$Connected(:String url)) {
             config.logger?.call(
-              4,
+              const SpinifyLogLevel.warning(),
               'no_pong_reconnect',
               'No pong from server - reconnecting',
               <String, Object?>{
@@ -578,7 +578,7 @@ base mixin SpinifyPingPongMixin
       final command = SpinifyPingRequest(timestamp: DateTime.now());
       await _sendCommandAsync(command);
       config.logger?.call(
-        0,
+        const SpinifyLogLevel.debug(),
         'server_ping_received',
         'Ping from server received, pong sent',
         <String, Object?>{

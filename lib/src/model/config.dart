@@ -28,6 +28,121 @@ typedef SpinifyTokenCallback = FutureOr<SpinifyToken?> Function();
 /// {@category Entity}
 typedef SpinifyConnectionPayloadCallback = FutureOr<List<int>?> Function();
 
+/// Log level for logger
+extension type const SpinifyLogLevel._(int level) {
+  /// Log level: debug
+  @literal
+  const SpinifyLogLevel.debug() : level = 0;
+
+  /// Log level: transport
+  @literal
+  const SpinifyLogLevel.transport() : level = 1;
+
+  /// Log level: config
+  @literal
+  const SpinifyLogLevel.config() : level = 2;
+
+  /// Log level: info
+  @literal
+  const SpinifyLogLevel.info() : level = 3;
+
+  /// Log level: warning
+  @literal
+  const SpinifyLogLevel.warning() : level = 4;
+
+  /// Log level: error
+  @literal
+  const SpinifyLogLevel.error() : level = 5;
+
+  /// Log level: critical
+  @literal
+  const SpinifyLogLevel.critical() : level = 6;
+
+  /// Pattern matching on log level
+  T map<T>({
+    required T Function() debug,
+    required T Function() transport,
+    required T Function() config,
+    required T Function() info,
+    required T Function() warning,
+    required T Function() error,
+    required T Function() critical,
+  }) =>
+      switch (level) {
+        0 => debug(),
+        1 => transport(),
+        2 => config(),
+        3 => info(),
+        4 => warning(),
+        5 => error(),
+        6 => critical(),
+        _ => throw AssertionError('Unknown log level: $level'),
+      };
+
+  /// Pattern matching on log level
+  T maybeMap<T>({
+    required T Function() orElse,
+    T Function()? debug,
+    T Function()? transport,
+    T Function()? config,
+    T Function()? info,
+    T Function()? warning,
+    T Function()? error,
+    T Function()? critical,
+  }) =>
+      map<T>(
+        debug: debug ?? orElse,
+        transport: transport ?? orElse,
+        config: config ?? orElse,
+        info: info ?? orElse,
+        warning: warning ?? orElse,
+        error: error ?? orElse,
+        critical: critical ?? orElse,
+      );
+
+  /// Pattern matching on log level
+  T? mapOrNull<T>({
+    T Function()? debug,
+    T Function()? transport,
+    T Function()? config,
+    T Function()? info,
+    T Function()? warning,
+    T Function()? error,
+    T Function()? critical,
+  }) =>
+      maybeMap<T?>(
+        orElse: () => null,
+        debug: debug,
+        transport: transport,
+        config: config,
+        info: info,
+        warning: warning,
+        error: error,
+        critical: critical,
+      );
+}
+
+/// Logger function to use for logging.
+/// If not specified, the logger will be disabled.
+/// The logger function is called with the following arguments:
+/// - [level] - the log verbose level 0..6
+///  * 0 - debug
+///  * 1 - transport
+///  * 2 - config
+///  * 3 - info
+///  * 4 - warning
+///  * 5 - error
+///  * 6 - critical
+/// - [event] - the log event, unique type of log event
+/// - [message] - the log message
+/// - [context] - the log context data
+typedef SpinifyLogger = void Function(
+  SpinifyLogLevel level,
+  String event,
+  String message,
+  Map<String, Object?> context,
+);
+
 /// {@template spinify_config}
 /// Spinify client common options.
 ///
@@ -127,12 +242,7 @@ final class SpinifyConfig {
   /// - [event] - the log event, unique type of log event
   /// - [message] - the log message
   /// - [context] - the log context data
-  final void Function(
-    int level,
-    String event,
-    String message,
-    Map<String, Object?> context,
-  )? logger;
+  final SpinifyLogger? logger;
 
   @override
   String toString() => 'SpinifyConfig{}';

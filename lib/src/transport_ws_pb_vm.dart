@@ -36,14 +36,15 @@ Future<ISpinifyTransport> $create$WS$PB$Transport(
 /// Create a WebSocket Protocol Buffers transport.
 @internal
 final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
-  SpinifyTransport$WS$PB$VM(this._socket, this._config)
-      : _encoder = switch (_config.logger) {
+  SpinifyTransport$WS$PB$VM(this._socket, SpinifyConfig config)
+      : _logger = config.logger,
+        _encoder = switch (config.logger) {
           null => const ProtobufCommandEncoder(),
-          _ => ProtobufCommandEncoder(_config.logger),
+          _ => ProtobufCommandEncoder(config.logger),
         },
-        _decoder = switch (_config.logger) {
+        _decoder = switch (config.logger) {
           null => const ProtobufReplyDecoder(),
-          _ => ProtobufReplyDecoder(_config.logger),
+          _ => ProtobufReplyDecoder(config.logger),
         } {
     _subscription = _socket.listen(
       _onData,
@@ -56,9 +57,9 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   }
 
   final io.WebSocket _socket;
-  final SpinifyConfig _config;
   final Converter<SpinifyCommand, pb.Command> _encoder;
   final Converter<pb.Reply, SpinifyReply> _decoder;
+  final SpinifyLogger? _logger;
   late final StreamSubscription<dynamic> _subscription;
 
   void Function(SpinifyReply reply)? _onReply;
@@ -85,8 +86,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         reader.readMessage(message, pb.ExtensionRegistry.EMPTY);
         final reply = _decoder.convert(message);
         _onReply?.call(reply);
-        _config.logger?.call(
-          1,
+        _logger?.call(
+          const SpinifyLogLevel.transport(),
           'transport_on_reply',
           'Reply ${reply.type}{id: ${reply.id}} received',
           <String, Object?>{
@@ -99,8 +100,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
           },
         );
       } on Object catch (error, stackTrace) {
-        _config.logger?.call(
-          5,
+        _logger?.call(
+          const SpinifyLogLevel.error(),
           'transport_on_reply_error',
           'Error reading reply message',
           <String, Object?>{
@@ -127,8 +128,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         ..writeInt32NoTag(length); //..writeRawBytes(commandData);
       final bytes = writer.toBuffer() + commandData;
       _socket.add(bytes);
-      _config.logger?.call(
-        1,
+      _logger?.call(
+        const SpinifyLogLevel.transport(),
         'transport_send',
         'Command ${command.type}{id: ${command.id}} sent',
         <String, Object?>{
@@ -141,8 +142,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         },
       );
     } on Object catch (error, stackTrace) {
-      _config.logger?.call(
-        5,
+      _logger?.call(
+        const SpinifyLogLevel.error(),
         'transport_send_error',
         'Error sending command ${command.type}{id: ${command.id}}',
         <String, Object?>{

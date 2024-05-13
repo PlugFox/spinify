@@ -4,7 +4,7 @@ import 'reply.dart';
 
 /// Create a Spinify transport
 /// (e.g. WebSocket or gRPC with JSON or Protocol Buffers).
-typedef CreateSpinifyTransport = Future<ISpinifyTransport> Function(
+typedef SpinifyTransportBuilder = Future<ISpinifyTransport> Function(
   /// URL for the connection
   String url,
 

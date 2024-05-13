@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import '../model/channel_push.dart';
 import '../model/client_info.dart';
 import '../model/command.dart';
+import '../model/config.dart';
 import '../model/reply.dart';
 import '../model/stream_position.dart';
 import 'client.pb.dart' as pb;
@@ -30,12 +31,7 @@ final class ProtobufCommandEncoder
   /// - [event] - the log event, unique type of log event
   /// - [message] - the log message
   /// - [context] - the log context data
-  final void Function(
-    int level,
-    String event,
-    String message,
-    Map<String, Object?> context,
-  )? logger;
+  final SpinifyLogger? logger;
 
   @override
   pb.Command convert(SpinifyCommand input) {
@@ -167,12 +163,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
   /// - [event] - the log event, unique type of log event
   /// - [message] - the log message
   /// - [context] - the log context data
-  final void Function(
-    int level,
-    String event,
-    String message,
-    Map<String, Object?> context,
-  )? logger;
+  final SpinifyLogger? logger;
 
   @override
   SpinifyReply convert(pb.Reply input) {
