@@ -22,6 +22,7 @@ import 'transport_ws_pb_stub.dart'
     if (dart.library.html) 'transport_ws_pb_js.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'transport_ws_pb_vm.dart';
+import 'util/backoff.dart';
 
 /// Base class for Spinify client.
 abstract base class SpinifyBase implements ISpinify {
@@ -128,11 +129,6 @@ base mixin SpinifyStateMixin on SpinifyBase {
         'state': state,
       },
     );
-  }
-
-  @override
-  Future<void> _onConnected() async {
-    await super._onConnected();
   }
 
   @override
@@ -300,6 +296,8 @@ base mixin SpinifyConnectionMixin
   /// Used for reconnecting after connection lost.
   /// If null, then client is not connected or interractively disconnected.
   String? _reconnectUrl;
+  Timer? _reconnectTimer;
+  int? _reconnectAttempt;
   Completer<void>? _readyCompleter;
 
   @protected
@@ -385,6 +383,7 @@ base mixin SpinifyConnectionMixin
           'stackTrace': stackTrace,
         },
       );
+      _setUpReconnectTimer();
       rethrow;
     }
   }
@@ -482,6 +481,74 @@ base mixin SpinifyConnectionMixin
   }
 
   @override
+  Future<void> _onConnected() async {
+    await super._onConnected();
+    _tearDownReconnectTimer();
+  }
+
+  void _setUpReconnectTimer() {
+    _reconnectTimer?.cancel();
+    final lastUrl = _reconnectUrl;
+    if (lastUrl == null) return;
+    final attempt = _reconnectAttempt ?? 0;
+    final delay = Backoff.nextDelay(
+      attempt,
+      config.connectionRetryInterval.min.inMilliseconds,
+      config.connectionRetryInterval.max.inMilliseconds,
+    );
+    _reconnectAttempt = attempt + 1;
+    if (delay <= Duration.zero) {
+      if (!state.isDisconnected) return;
+      config.logger?.call(
+        const SpinifyLogLevel.config(),
+        'reconnect_attempt',
+        'Reconnecting to $lastUrl immediately.',
+        {
+          'url': lastUrl,
+          'delay': delay,
+        },
+      );
+      Future<void>.sync(() => connect(lastUrl)).ignore();
+      return;
+    }
+    config.logger?.call(
+      const SpinifyLogLevel.debug(),
+      'reconnect_delayed',
+      'Setting up reconnect timer to $lastUrl '
+          'after ${delay.inMilliseconds} ms.',
+      {
+        'url': lastUrl,
+        'delay': delay,
+      },
+    );
+    /* _nextReconnectionAttempt = DateTime.now().add(delay); */
+    _reconnectTimer = Timer(
+      delay,
+      () {
+        //_nextReconnectionAttempt = null;
+        if (!state.isDisconnected) return;
+        config.logger?.call(
+          const SpinifyLogLevel.config(),
+          'reconnect_attempt',
+          'Reconnecting to $lastUrl after ${delay.inMilliseconds} ms.',
+          {
+            'url': lastUrl,
+            'delay': delay,
+          },
+        );
+        Future<void>.sync(() => connect(lastUrl)).ignore();
+      },
+    );
+    //connect(_reconnectUrl!);
+  }
+
+  void _tearDownReconnectTimer() {
+    _reconnectAttempt = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+  }
+
+  @override
   Future<void> ready() async {
     if (state.isConnected) return;
     return (_readyCompleter ??= Completer<void>()).future;
@@ -490,8 +557,7 @@ base mixin SpinifyConnectionMixin
   @override
   Future<void> disconnect() async {
     _reconnectUrl = null;
-    // TODO(plugfox): tear down reconnect timer
-    // tearDownReconnectTimer();
+    _tearDownReconnectTimer();
     if (state.isDisconnected) return Future.value();
     await _transport?.disconnect(1000, 'Client disconnecting');
     await _onDisconnected();
@@ -501,7 +567,8 @@ base mixin SpinifyConnectionMixin
   Future<void> _onDisconnected() async {
     _refreshTimer?.cancel();
     _transport = null;
-    // TODO(plugfox): setup reconnect if reconnectUrl is not null
+    // Reconnect if that callback called not from disconnect method.
+    if (_reconnectUrl != null) _setUpReconnectTimer();
     await super._onDisconnected();
   }
 
