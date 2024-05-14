@@ -6,7 +6,7 @@ export 'src/model/command.dart';
 export 'src/model/config.dart';
 export 'src/model/history.dart';
 export 'src/model/jwt.dart';
-export 'src/model/metrics.dart';
+export 'src/model/metric.dart' show SpinifyMetrics;
 export 'src/model/presence_stats.dart';
 export 'src/model/pushes_stream.dart';
 export 'src/model/reply.dart';

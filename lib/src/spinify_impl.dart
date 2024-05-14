@@ -6,7 +6,7 @@ import 'model/channel_push.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/history.dart';
-import 'model/metrics.dart';
+import 'model/metric.dart';
 import 'model/presence_stats.dart';
 import 'model/pushes_stream.dart';
 import 'model/reply.dart';
@@ -32,8 +32,7 @@ abstract base class SpinifyBase implements ISpinify {
   }
 
   /// Counter for command messages.
-  int _commandId = 1;
-  int _getNextCommandId() => _commandId++;
+  int _getNextCommandId() => _metrics.commandId++;
 
   @override
   bool get isClosed => state.isClosed;
@@ -45,6 +44,8 @@ abstract base class SpinifyBase implements ISpinify {
 
   late final SpinifyTransportBuilder _createTransport;
   ISpinifyTransport? _transport;
+
+  final SpinifyMetrics$Mutable _metrics = SpinifyMetrics$Mutable();
 
   /// Client initialization (from constructor).
   @mustCallSuper
@@ -105,8 +106,7 @@ abstract base class SpinifyBase implements ISpinify {
 /// Base mixin for Spinify client state management.
 base mixin SpinifyStateMixin on SpinifyBase {
   @override
-  SpinifyState get state => _state;
-  SpinifyState _state = SpinifyState$Disconnected();
+  SpinifyState get state => _metrics.state;
 
   @override
   late final SpinifyStatesStream states =
@@ -118,8 +118,8 @@ base mixin SpinifyStateMixin on SpinifyBase {
 
   @nonVirtual
   void _setState(SpinifyState state) {
-    final previous = _state;
-    _statesController.add(_state = state);
+    final previous = metrics.state;
+    _statesController.add(_metrics.state = state);
     config.logger?.call(
       const SpinifyLogLevel.config(),
       'state_changed',
@@ -244,7 +244,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   @override
   Future<void> _onReply(SpinifyReply reply) async {
     assert(
-        reply.id >= 0 && reply.id <= _commandId,
+        reply.id >= 0 && reply.id <= metrics.commandId,
         'Reply ID should be greater or equal to 0 '
         'and less or equal than command ID');
     if (reply.id case int id when id > 0) {
@@ -295,12 +295,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 /// Base mixin for Spinify client connection management (connect & disconnect).
 base mixin SpinifyConnectionMixin
     on SpinifyBase, SpinifyCommandMixin, SpinifyStateMixin {
-  /// Last connected URL.
-  /// Used for reconnecting after connection lost.
-  /// If null, then client is not connected or interractively disconnected.
-  String? _reconnectUrl;
   Timer? _reconnectTimer;
-  int? _reconnectAttempt;
   Completer<void>? _readyCompleter;
 
   @protected
@@ -315,8 +310,7 @@ base mixin SpinifyConnectionMixin
       await disconnect();
     } on Object {/* ignore */}
     try {
-      _setState(SpinifyState$Connecting(url: url));
-      _reconnectUrl = url;
+      _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
 
       // Create new transport.
       _transport = await _createTransport(url, config)
@@ -487,19 +481,21 @@ base mixin SpinifyConnectionMixin
   Future<void> _onConnected() async {
     await super._onConnected();
     _tearDownReconnectTimer();
+    _metrics.lastConnectAt = DateTime.now();
+    _metrics.connects++;
   }
 
   void _setUpReconnectTimer() {
     _reconnectTimer?.cancel();
-    final lastUrl = _reconnectUrl;
+    final lastUrl = _metrics.reconnectUrl;
     if (lastUrl == null) return;
-    final attempt = _reconnectAttempt ?? 0;
+    final attempt = _metrics.reconnectAttempts ?? 0;
     final delay = Backoff.nextDelay(
       attempt,
       config.connectionRetryInterval.min.inMilliseconds,
       config.connectionRetryInterval.max.inMilliseconds,
     );
-    _reconnectAttempt = attempt + 1;
+    _metrics.reconnectAttempts = attempt + 1;
     if (delay <= Duration.zero) {
       if (!state.isDisconnected) return;
       config.logger?.call(
@@ -524,7 +520,7 @@ base mixin SpinifyConnectionMixin
         'delay': delay,
       },
     );
-    /* _nextReconnectionAttempt = DateTime.now().add(delay); */
+    _metrics.nextReconnectAt = DateTime.now().add(delay);
     _reconnectTimer = Timer(
       delay,
       () {
@@ -546,7 +542,9 @@ base mixin SpinifyConnectionMixin
   }
 
   void _tearDownReconnectTimer() {
-    _reconnectAttempt = null;
+    _metrics
+      ..reconnectAttempts = null
+      ..nextReconnectAt = null;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
   }
@@ -559,7 +557,7 @@ base mixin SpinifyConnectionMixin
 
   @override
   Future<void> disconnect() async {
-    _reconnectUrl = null;
+    _metrics.reconnectUrl = null;
     _tearDownReconnectTimer();
     if (state.isDisconnected) return Future.value();
     await _transport?.disconnect(1000, 'Client disconnecting');
@@ -571,7 +569,9 @@ base mixin SpinifyConnectionMixin
     _refreshTimer?.cancel();
     _transport = null;
     // Reconnect if that callback called not from disconnect method.
-    if (_reconnectUrl != null) _setUpReconnectTimer();
+    if (_metrics.reconnectUrl != null) _setUpReconnectTimer();
+    _metrics.lastDisconnectAt = DateTime.now();
+    _metrics.disconnects++;
     await super._onDisconnected();
   }
 
@@ -743,7 +743,7 @@ base mixin SpinifyRPCMixin on SpinifyBase {
 /// Base mixin for Spinify client metrics management.
 base mixin SpinifyMetricsMixin on SpinifyBase {
   @override
-  SpinifyMetrics get metrics => throw UnimplementedError();
+  SpinifyMetrics get metrics => _metrics.freeze();
 }
 
 /// {@template spinify}
