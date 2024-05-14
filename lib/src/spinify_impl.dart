@@ -243,7 +243,10 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   @override
   Future<void> _onReply(SpinifyReply reply) async {
-    assert(reply.id > -1, 'Reply ID should be greater or equal to 0');
+    assert(
+        reply.id >= 0 && reply.id <= _commandId,
+        'Reply ID should be greater or equal to 0 '
+        'and less or equal than command ID');
     if (reply.id case int id when id > 0) {
       final completer = _replies.remove(id)?.completer;
       assert(
