@@ -498,6 +498,7 @@ base mixin SpinifyConnectionMixin
   Future<void> _onDisconnected() async {
     _refreshTimer?.cancel();
     _transport = null;
+    // TODO(plugfox): reconnect
     await super._onDisconnected();
   }
 

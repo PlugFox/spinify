@@ -29,7 +29,7 @@ typedef SpinifyTokenCallback = FutureOr<SpinifyToken?> Function();
 typedef SpinifyConnectionPayloadCallback = FutureOr<List<int>?> Function();
 
 /// Log level for logger
-extension type const SpinifyLogLevel._(int level) {
+extension type const SpinifyLogLevel._(int level) implements int {
   /// Log level: debug
   @literal
   const SpinifyLogLevel.debug() : level = 0;
