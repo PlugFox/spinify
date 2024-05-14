@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
-import 'package:spinify/spinify.old.dart';
+import 'package:spinify/spinify.dart';
 import 'package:spinifyapp/src/feature/authentication/model/sign_in_data.dart';
 import 'package:spinifyapp/src/feature/authentication/model/user.dart';
 

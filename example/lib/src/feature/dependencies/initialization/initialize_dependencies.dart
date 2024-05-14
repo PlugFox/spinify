@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:l/l.dart';
 import 'package:meta/meta.dart';
 import 'package:platform_info/platform_info.dart';
-import 'package:spinify/spinify.old.dart';
+import 'package:spinify/spinify.dart';
 import 'package:spinifyapp/src/common/constant/config.dart';
 import 'package:spinifyapp/src/common/constant/pubspec.yaml.g.dart';
 import 'package:spinifyapp/src/common/controller/controller.dart';
@@ -108,7 +108,7 @@ mixin InitializeDependencies {
           (dependencies) =>
               dependencies.chatRepository = ChatRepositorySpinifyImpl(
                 spinify: Spinify(
-                  SpinifyConfig(
+                  config: SpinifyConfig(
                     getToken: dependencies.authenticationRepository.getToken,
                   ),
                 ),
