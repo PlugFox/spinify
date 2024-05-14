@@ -247,10 +247,9 @@ final class SpinifyPingRequest extends SpinifyCommand {
 final class SpinifySendRequest extends SpinifyCommand {
   /// {@macro command}
   const SpinifySendRequest({
-    required super.id,
     required super.timestamp,
     required this.data,
-  });
+  }) : super(id: 0);
 
   @override
   String get type => 'SendRequest';

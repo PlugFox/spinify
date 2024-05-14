@@ -157,7 +157,6 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   @override
   Future<void> send(List<int> data) => _sendCommandAsync(SpinifySendRequest(
-        id: _getNextCommandId(),
         timestamp: DateTime.now(),
         data: data,
       ));
@@ -311,7 +310,9 @@ base mixin SpinifyConnectionMixin
   Future<void> connect(String url) async {
     if (state.url == url) return;
     final completer = _readyCompleter ??= Completer<void>();
-    await disconnect();
+    try {
+      await disconnect();
+    } on Object {/* ignore */}
     try {
       _setState(SpinifyState$Connecting(url: url));
       _reconnectUrl = url;
@@ -489,6 +490,8 @@ base mixin SpinifyConnectionMixin
   @override
   Future<void> disconnect() async {
     _reconnectUrl = null;
+    // TODO(plugfox): tear down reconnect timer
+    // tearDownReconnectTimer();
     if (state.isDisconnected) return Future.value();
     await _transport?.disconnect(1000, 'Client disconnecting');
     await _onDisconnected();
@@ -498,7 +501,7 @@ base mixin SpinifyConnectionMixin
   Future<void> _onDisconnected() async {
     _refreshTimer?.cancel();
     _transport = null;
-    // TODO(plugfox): reconnect
+    // TODO(plugfox): setup reconnect if reconnectUrl is not null
     await super._onDisconnected();
   }
 
