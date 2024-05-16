@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'model/channel_push.dart';
 import 'model/command.dart';
 import 'model/config.dart';
+import 'model/constant.dart';
 import 'model/history.dart';
 import 'model/metric.dart';
 import 'model/presence_stats.dart';
@@ -32,7 +33,10 @@ abstract base class SpinifyBase implements ISpinify {
   }
 
   /// Counter for command messages.
-  int _getNextCommandId() => _metrics.commandId++;
+  int _getNextCommandId() {
+    if (_metrics.commandId == kMaxInt) _metrics.commandId = 1;
+    return _metrics.commandId++;
+  }
 
   @override
   bool get isClosed => state.isClosed;
