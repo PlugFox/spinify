@@ -205,5 +205,6 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
   @override
   BigInt messagesSent = BigInt.zero;
 
+  /// Freezes the metrics.
   SpinifyMetrics$Immutable freeze() => const SpinifyMetrics$Immutable();
 }
