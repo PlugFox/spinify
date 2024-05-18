@@ -1,17 +1,36 @@
+// ignore_for_file: avoid_setters_without_getters
+
 import 'dart:async';
 
 import 'package:fixnum/fixnum.dart';
 
 import 'model/command.dart';
+import 'model/config.dart';
+import 'model/metric.dart';
 import 'model/reply.dart';
 import 'model/transport_interface.dart';
 
 /// Create a fake Spinify transport.
-Future<ISpinifyTransport> $createFakeSpinifyTransport(
-  String url,
-  Map<String, String> headers,
-) async {
-  final transport = SpinifyTransportFake();
+Future<ISpinifyTransport> $createFakeSpinifyTransport({
+  /// URL for the connection
+  required String url,
+
+  /// Spinify client configuration
+  required SpinifyConfig config,
+
+  /// Metrics
+  required SpinifyMetrics$Mutable metrics,
+
+  /// Callback for reply messages
+  required void Function(SpinifyReply reply) onReply,
+
+  /// Callback for disconnect event
+  required void Function() onDisconnect,
+}) async {
+  final transport = SpinifyTransportFake()
+    ..metrics = metrics
+    ..onReply = onReply
+    ..onDisconnect = onDisconnect;
   await transport._connect(url);
   return transport;
 }
@@ -165,13 +184,14 @@ class SpinifyTransportFake implements ISpinifyTransport {
         },
       );
 
-  @override
-  // ignore: avoid_setters_without_getters
+  /// Metrics
+  late SpinifyMetrics$Mutable metrics;
+
+  /// Callback for reply messages
   set onReply(void Function(SpinifyReply reply) handler) => _onReply = handler;
   void Function(SpinifyReply reply)? _onReply;
 
-  @override
-  // ignore: avoid_setters_without_getters
+  /// Callback for disconnect event
   set onDisconnect(void Function() handler) => _onDisconnect = handler;
   void Function()? _onDisconnect;
 

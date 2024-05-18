@@ -317,9 +317,15 @@ base mixin SpinifyConnectionMixin
       _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
 
       // Create new transport.
-      _transport = await _createTransport(url, config)
-        ..onReply = _onReply
-        ..onDisconnect = () => _onDisconnected().ignore();
+      _transport = await _createTransport(
+        url: url,
+        config: config,
+        metrics: _metrics,
+        onReply: _onReply,
+        onDisconnect: _onDisconnected,
+      );
+      //  ..onReply = _onReply
+      //  ..onDisconnect = () => _onDisconnected().ignore();
 
       // Prepare connect request.
       final SpinifyConnectRequest request;

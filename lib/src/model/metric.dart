@@ -40,13 +40,19 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// The current state of the client.
   abstract final SpinifyState state;
 
+  /// The total number of bytes sent.
+  abstract final BigInt bytesSent;
+
+  /// The total number of bytes received.
+  abstract final BigInt bytesReceived;
+
+  /// The total number of messages sent.
+  abstract final BigInt messagesSent;
+
+  /// The total number of messages received.
+  abstract final BigInt messagesReceived;
+
   /*
-  /// The total number of messages & size of bytes sent.
-  final ({BigInt count, BigInt size}) transferred;
-
-  /// The total number of messages & size of bytes received.
-  final ({BigInt count, BigInt size}) received;
-
   /// The number of subscriptions.
   final ({
     SpinifySubscriptionCount client,
@@ -97,9 +103,10 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   String toString() => 'SpinifyMetrics{}';
 }
 
-@internal
+/// {@macro metrics}
 @immutable
 final class SpinifyMetrics$Immutable extends SpinifyMetrics {
+  /// {@macro metrics}
   const SpinifyMetrics$Immutable();
 
   @override
@@ -134,10 +141,23 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
 
   @override
   DateTime? get lastDisconnectAt => throw UnimplementedError();
+
+  @override
+  BigInt get bytesReceived => throw UnimplementedError();
+
+  @override
+  BigInt get bytesSent => throw UnimplementedError();
+
+  @override
+  BigInt get messagesReceived => throw UnimplementedError();
+
+  @override
+  BigInt get messagesSent => throw UnimplementedError();
 }
 
-@internal
+/// {@macro metrics}
 final class SpinifyMetrics$Mutable extends SpinifyMetrics {
+  /// {@macro metrics}
   SpinifyMetrics$Mutable();
 
   @override
@@ -172,6 +192,18 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
 
   @override
   DateTime? lastDisconnectAt;
+
+  @override
+  BigInt bytesReceived = BigInt.zero;
+
+  @override
+  BigInt bytesSent = BigInt.zero;
+
+  @override
+  BigInt messagesReceived = BigInt.zero;
+
+  @override
+  BigInt messagesSent = BigInt.zero;
 
   SpinifyMetrics$Immutable freeze() => const SpinifyMetrics$Immutable();
 }
