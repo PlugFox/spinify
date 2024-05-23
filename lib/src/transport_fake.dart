@@ -150,12 +150,15 @@ class SpinifyTransportFake implements ISpinifyTransport {
             since: (epoch: '...', offset: Int64.ZERO),
           ),
         );
-      case SpinifyRPCRequest(:int id, :List<int> data):
+      case SpinifyRPCRequest(:int id, :String method, :List<int> data):
         _response(
           (now) => SpinifyRPCResult(
             id: id,
             timestamp: now,
-            data: data,
+            data: switch (method) {
+              'echo' => data,
+              _ => throw ArgumentError('Unknown method: $method'),
+            },
           ),
         );
       case SpinifyRefreshRequest(:int id):
