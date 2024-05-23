@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_setters_without_getters
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:fixnum/fixnum.dart';
@@ -69,6 +70,9 @@ class SpinifyTransportFake implements ISpinifyTransport {
   @override
   Future<void> send(SpinifyCommand command) async {
     if (!_isConnected) throw StateError('Not connected');
+    metrics
+      ..bytesSent += BigInt.one
+      ..messagesSent += BigInt.one;
     await _sleep();
     switch (command) {
       case SpinifyPingRequest(:int id):
@@ -156,6 +160,8 @@ class SpinifyTransportFake implements ISpinifyTransport {
             id: id,
             timestamp: now,
             data: switch (method) {
+              'getCurrentYear' =>
+                utf8.encode('{"year": ${DateTime.now().year}}'),
               'echo' => data,
               _ => throw ArgumentError('Unknown method: $method'),
             },
@@ -190,6 +196,9 @@ class SpinifyTransportFake implements ISpinifyTransport {
         Duration(milliseconds: delay),
         () {
           if (!_isConnected) return;
+          metrics
+            ..bytesReceived += BigInt.one
+            ..messagesReceived += BigInt.one;
           _onReply?.call(reply(DateTime.now())).ignore();
         },
       );

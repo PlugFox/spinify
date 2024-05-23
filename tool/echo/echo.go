@@ -196,8 +196,13 @@ func Centrifuge() (*centrifuge.Node, error) {
 			log.Printf("[user %s] sent RPC, data: %s, method: %s", client.UserID(), string(e.Data), e.Method)
 			switch e.Method {
 			case "getCurrentYear":
-				cb(centrifuge.RPCReply{Data: []byte(`{"year": "2020"}`)}, nil)
+				// Return current year.
+				cb(centrifuge.RPCReply{Data: []byte(`{"year": ` + strconv.Itoa(time.Now().Year()) + `}`)}, nil)
+			case "echo":
+				// Return back input data.
+				cb(centrifuge.RPCReply{Data: e.Data}, nil)
 			default:
+				// Method not found.
 				cb(centrifuge.RPCReply{}, centrifuge.ErrorMethodNotFound)
 			}
 		})

@@ -107,52 +107,68 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
 @immutable
 final class SpinifyMetrics$Immutable extends SpinifyMetrics {
   /// {@macro metrics}
-  const SpinifyMetrics$Immutable();
+  const SpinifyMetrics$Immutable({
+    required this.timestamp,
+    required this.initializedAt,
+    required this.commandId,
+    required this.state,
+    required this.connects,
+    required this.lastConnectAt,
+    required this.reconnectUrl,
+    required this.reconnectAttempts,
+    required this.nextReconnectAt,
+    required this.disconnects,
+    required this.lastDisconnectAt,
+    required this.bytesReceived,
+    required this.bytesSent,
+    required this.messagesReceived,
+    required this.messagesSent,
+  });
 
   @override
-  DateTime get timestamp => throw UnimplementedError();
+  final DateTime timestamp;
 
   @override
-  DateTime get initializedAt => throw UnimplementedError();
+  final DateTime initializedAt;
 
   @override
-  int get commandId => throw UnimplementedError();
+  final int commandId;
 
   @override
-  SpinifyState get state => throw UnimplementedError();
+  final SpinifyState state;
 
   @override
-  int get connects => throw UnimplementedError();
+  final int connects;
 
   @override
-  DateTime? get lastConnectAt => throw UnimplementedError();
+  final DateTime? lastConnectAt;
 
   @override
-  String? get reconnectUrl => throw UnimplementedError();
+  final String? reconnectUrl;
 
   @override
-  int? get reconnectAttempts => throw UnimplementedError();
+  final int? reconnectAttempts;
 
   @override
-  DateTime? get nextReconnectAt => throw UnimplementedError();
+  final DateTime? nextReconnectAt;
 
   @override
-  int get disconnects => throw UnimplementedError();
+  final int disconnects;
 
   @override
-  DateTime? get lastDisconnectAt => throw UnimplementedError();
+  final DateTime? lastDisconnectAt;
 
   @override
-  BigInt get bytesReceived => throw UnimplementedError();
+  final BigInt bytesReceived;
 
   @override
-  BigInt get bytesSent => throw UnimplementedError();
+  final BigInt bytesSent;
 
   @override
-  BigInt get messagesReceived => throw UnimplementedError();
+  final BigInt messagesReceived;
 
   @override
-  BigInt get messagesSent => throw UnimplementedError();
+  final BigInt messagesSent;
 }
 
 /// {@macro metrics}
@@ -206,5 +222,21 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
   BigInt messagesSent = BigInt.zero;
 
   /// Freezes the metrics.
-  SpinifyMetrics$Immutable freeze() => const SpinifyMetrics$Immutable();
+  SpinifyMetrics$Immutable freeze() => SpinifyMetrics$Immutable(
+        timestamp: timestamp,
+        initializedAt: initializedAt,
+        commandId: commandId,
+        state: state,
+        connects: connects,
+        lastConnectAt: lastConnectAt,
+        reconnectUrl: reconnectUrl,
+        reconnectAttempts: reconnectAttempts,
+        nextReconnectAt: nextReconnectAt,
+        disconnects: disconnects,
+        lastDisconnectAt: lastDisconnectAt,
+        bytesReceived: bytesReceived,
+        bytesSent: bytesSent,
+        messagesReceived: messagesReceived,
+        messagesSent: messagesSent,
+      );
 }

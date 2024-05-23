@@ -98,7 +98,7 @@ void main() {
             }));
 
     test(
-        'rpc_request',
+        'Rpc_requests',
         () => fakeAsync((async) {
               final client = createFakeClient()
                 ..connect('ws://localhost:8000/connection/websocket');
@@ -132,9 +132,131 @@ void main() {
 
               async.elapse(client.config.timeout);
               expect(client.state, isA<SpinifyState$Connected>());
+              client.disconnect();
+              async.elapse(client.config.timeout);
+              expect(client.state, isA<SpinifyState$Disconnected>());
+              client.connect('ws://localhost:8000/connection/websocket');
+              async.elapse(client.config.timeout);
+              expect(client.state, isA<SpinifyState$Connected>());
+
+              // Another request
+              expect(
+                client.rpc('getCurrentYear', <int>[]),
+                completion(isA<List<int>>().having(
+                  (data) => jsonDecode(utf8.decode(data))['year'],
+                  'year',
+                  DateTime.now().year,
+                )),
+              );
+              async.elapse(client.config.timeout);
+
+              expect(client.state, isA<SpinifyState$Connected>());
               client.close();
               async.elapse(client.config.timeout);
               expect(client.state, isA<SpinifyState$Closed>());
+            }));
+
+    test(
+        'Metrics',
+        () => fakeAsync((async) {
+              final client = createFakeClient();
+              expect(() => client.metrics, returnsNormally);
+              expect(
+                  client.metrics,
+                  allOf([
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.state.isConnected,
+                      'isConnected',
+                      isFalse,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.state,
+                      'state',
+                      equals(client.state),
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.connects,
+                      'connects',
+                      0,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.disconnects,
+                      'disconnects',
+                      0,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.messagesReceived,
+                      'messagesReceived',
+                      equals(BigInt.zero),
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.messagesSent,
+                      'messagesSent',
+                      equals(BigInt.zero),
+                    ),
+                  ]));
+              client.connect('ws://localhost:8000/connection/websocket');
+              async.elapse(client.config.timeout);
+              expect(
+                  client.metrics,
+                  allOf([
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.state.isConnected,
+                      'isConnected',
+                      isTrue,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.state,
+                      'state',
+                      equals(client.state),
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.connects,
+                      'connects',
+                      1,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.disconnects,
+                      'disconnects',
+                      0,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.messagesReceived,
+                      'messagesReceived',
+                      greaterThan(BigInt.zero),
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.messagesSent,
+                      'messagesSent',
+                      greaterThan(BigInt.zero),
+                    ),
+                  ]));
+              client.close();
+              async.elapse(client.config.timeout);
+              expect(
+                  client.metrics,
+                  allOf([
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.state.isConnected,
+                      'isConnected',
+                      isFalse,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.state,
+                      'state',
+                      equals(client.state),
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.connects,
+                      'connects',
+                      1,
+                    ),
+                    isA<SpinifyMetrics$Immutable>().having(
+                      (m) => m.disconnects,
+                      'disconnects',
+                      1,
+                    ),
+                  ]));
             }));
   });
 }
