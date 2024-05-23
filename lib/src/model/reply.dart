@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'channel_push.dart';
+import 'channel_event.dart';
 import 'client_info.dart';
 import 'command.dart';
 import 'stream_position.dart';

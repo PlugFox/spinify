@@ -27,6 +27,98 @@ sealed class SpinifyChannelEvent implements Comparable<SpinifyChannelEvent> {
   /// Push type.
   abstract final String type;
 
+  /// Map this event to a value of type [T].
+  T map<T>({
+    required T Function(SpinifyPublication event) publication,
+    required T Function(SpinifyPresence event) presence,
+    required T Function(SpinifyUnsubscribe event) unsubscribe,
+    required T Function(SpinifyMessage event) message,
+    required T Function(SpinifySubscribe event) subscribe,
+    required T Function(SpinifyConnect event) connect,
+    required T Function(SpinifyDisconnect event) disconnect,
+    required T Function(SpinifyRefresh event) refresh,
+  }) =>
+      switch (this) {
+        SpinifyPublication event => publication(event),
+        SpinifyPresence event => presence(event),
+        SpinifyUnsubscribe event => unsubscribe(event),
+        SpinifyMessage event => message(event),
+        SpinifySubscribe event => subscribe(event),
+        SpinifyConnect event => connect(event),
+        SpinifyDisconnect event => disconnect(event),
+        SpinifyRefresh event => refresh(event),
+      };
+
+  /// Map this event to a value of type [T].
+  T maybeMap<T>({
+    required T Function(SpinifyChannelEvent event) orElse,
+    T Function(SpinifyPublication event)? publication,
+    T Function(SpinifyPresence event)? presence,
+    T Function(SpinifyUnsubscribe event)? unsubscribe,
+    T Function(SpinifyMessage event)? message,
+    T Function(SpinifySubscribe event)? subscribe,
+    T Function(SpinifyConnect event)? connect,
+    T Function(SpinifyDisconnect event)? disconnect,
+    T Function(SpinifyRefresh event)? refresh,
+  }) =>
+      map<T>(
+        publication: (event) => publication?.call(event) ?? orElse(event),
+        presence: (event) => presence?.call(event) ?? orElse(event),
+        unsubscribe: (event) => unsubscribe?.call(event) ?? orElse(event),
+        message: (event) => message?.call(event) ?? orElse(event),
+        subscribe: (event) => subscribe?.call(event) ?? orElse(event),
+        connect: (event) => connect?.call(event) ?? orElse(event),
+        disconnect: (event) => disconnect?.call(event) ?? orElse(event),
+        refresh: (event) => refresh?.call(event) ?? orElse(event),
+      );
+
+  /// Map this event to a value of type [T] or return `null`.
+  T? mapOrNull<T>({
+    T Function(SpinifyPublication event)? publication,
+    T Function(SpinifyPresence event)? presence,
+    T Function(SpinifyUnsubscribe event)? unsubscribe,
+    T Function(SpinifyMessage event)? message,
+    T Function(SpinifySubscribe event)? subscribe,
+    T Function(SpinifyConnect event)? connect,
+    T Function(SpinifyDisconnect event)? disconnect,
+    T Function(SpinifyRefresh event)? refresh,
+  }) =>
+      maybeMap<T?>(
+        orElse: (event) => null,
+        publication: publication,
+        presence: presence,
+        unsubscribe: unsubscribe,
+        message: message,
+        subscribe: subscribe,
+        connect: connect,
+        disconnect: disconnect,
+        refresh: refresh,
+      );
+
+  /// Whether this is a publication event
+  abstract final bool isPublication;
+
+  /// Whether this is a presence event
+  abstract final bool isPresence;
+
+  /// Whether this is an unsubscribe event
+  abstract final bool isUnsubscribe;
+
+  /// Whether this is a message event
+  abstract final bool isMessage;
+
+  /// Whether this is a subscribe event
+  abstract final bool isSubscribe;
+
+  /// Whether this is a connect event
+  abstract final bool isConnect;
+
+  /// Whether this is a disconnect event
+  abstract final bool isDisconnect;
+
+  /// Whether this is a refresh event
+  abstract final bool isRefresh;
+
   @override
   int compareTo(SpinifyChannelEvent other) =>
       timestamp.compareTo(other.timestamp);
@@ -67,6 +159,30 @@ final class SpinifyPublication extends SpinifyChannelEvent {
 
   /// Optional tags, this is a map with string keys and string values
   final Map<String, String>? tags;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => true;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => false;
 }
 
 /// {@template channel_presence}
@@ -112,6 +228,30 @@ sealed class SpinifyPresence extends SpinifyChannelEvent {
 
   /// Publications
   //abstract final Map<String, SpinifyClientInfo> clients;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => true;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => false;
 }
 
 /// Join event
@@ -185,6 +325,30 @@ final class SpinifyUnsubscribe extends SpinifyChannelEvent {
 
   /// Reason of unsubscribe.
   final String reason;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => true;
 }
 
 /// {@template message}
@@ -206,6 +370,30 @@ final class SpinifyMessage extends SpinifyChannelEvent {
 
   /// Payload of message.
   final List<int> data;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => true;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => false;
 }
 
 /// {@template subscribe}
@@ -239,6 +427,30 @@ final class SpinifySubscribe extends SpinifyChannelEvent {
 
   /// Data attached to subscription.
   final List<int> data;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => true;
+
+  @override
+  bool get isUnsubscribe => false;
 }
 
 /// {@template connect}
@@ -295,6 +507,30 @@ final class SpinifyConnect extends SpinifyChannelEvent {
 
   /// Payload of connected push.
   final List<int> data;
+
+  @override
+  bool get isConnect => true;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => false;
 }
 
 /// {@template disconnect}
@@ -324,6 +560,30 @@ final class SpinifyDisconnect extends SpinifyChannelEvent {
 
   /// Reconnect flag.
   final bool reconnect;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => true;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => false;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => false;
 }
 
 /// {@template refresh}
@@ -349,4 +609,28 @@ final class SpinifyRefresh extends SpinifyChannelEvent {
 
   /// Time when connection will be expired
   final DateTime? ttl;
+
+  @override
+  bool get isConnect => false;
+
+  @override
+  bool get isDisconnect => false;
+
+  @override
+  bool get isMessage => false;
+
+  @override
+  bool get isPresence => false;
+
+  @override
+  bool get isPublication => false;
+
+  @override
+  bool get isRefresh => true;
+
+  @override
+  bool get isSubscribe => false;
+
+  @override
+  bool get isUnsubscribe => false;
 }

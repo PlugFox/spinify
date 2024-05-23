@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart';
 
-import '../model/channel_push.dart';
+import '../model/channel_event.dart';
 import '../model/client_info.dart';
 import '../model/command.dart';
 import '../model/config.dart';

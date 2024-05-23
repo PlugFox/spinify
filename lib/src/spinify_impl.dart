@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
-import 'model/channel_push.dart';
+import 'model/channel_event.dart';
+import 'model/channel_events.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/constant.dart';
 import 'model/history.dart';
 import 'model/metric.dart';
 import 'model/presence_stats.dart';
-import 'model/pushes_stream.dart';
 import 'model/reply.dart';
 import 'model/spinify_interface.dart';
 import 'model/state.dart';
@@ -251,17 +251,19 @@ base mixin SpinifyCommandMixin on SpinifyBase {
         reply.id >= 0 && reply.id <= _metrics.commandId,
         'Reply ID should be greater or equal to 0 '
         'and less or equal than command ID');
-    if (reply.id case int id when id > 0) {
-      final completer = _replies.remove(id)?.completer;
-      assert(
-        completer != null,
-        'Reply completer not found',
-      );
-      assert(
-        completer?.isCompleted == false,
-        'Reply completer already completed',
-      );
-      completer?.complete(reply);
+    if (reply.isResult) {
+      if (reply.id case int id when id > 0) {
+        final completer = _replies.remove(id)?.completer;
+        assert(
+          completer != null,
+          'Reply completer not found',
+        );
+        assert(
+          completer?.isCompleted == false,
+          'Reply completer already completed',
+        );
+        completer?.complete(reply);
+      }
     }
     await super._onReply(reply);
   }
@@ -658,7 +660,7 @@ base mixin SpinifyPingPongMixin
 
   @override
   Future<void> _onReply(SpinifyReply reply) async {
-    if (reply is SpinifyServerPing) {
+    if (!reply.isResult && reply is SpinifyServerPing) {
       final command = SpinifyPingRequest(timestamp: DateTime.now());
       await _sendCommandAsync(command);
       config.logger?.call(
@@ -688,8 +690,15 @@ base mixin SpinifyPingPongMixin
   }
 }
 
-/// Base mixin for Spinify client subscription management.
-base mixin SpinifyClientSubscriptionMixin on SpinifyBase {
+/// Base mixin for Spinify subscription management.
+base mixin SpinifySubscriptionMixin on SpinifyBase {
+  final StreamController<SpinifyChannelEvent> _pushesController =
+      StreamController<SpinifyChannelEvent>.broadcast();
+
+  @override
+  late final ChannelEvents<SpinifyChannelEvent> stream =
+      ChannelEvents<SpinifyChannelEvent>(_pushesController.stream);
+
   @override
   ({
     Map<String, SpinifyClientSubscription> client,
@@ -708,10 +717,30 @@ base mixin SpinifyClientSubscriptionMixin on SpinifyBase {
   @override
   Future<void> removeSubscription(SpinifyClientSubscription subscription) =>
       throw UnimplementedError();
-}
 
-/// Base mixin for Spinify server subscription management.
-base mixin SpinifyServerSubscriptionMixin on SpinifyBase {}
+  @override
+  Future<void> _onReply(SpinifyReply reply) async {
+    await super._onReply(reply);
+    if (!reply.isResult && reply is SpinifyPush) {
+      _pushesController.add(reply.event);
+      config.logger?.call(
+        const SpinifyLogLevel.debug(),
+        'push_received',
+        'Push received',
+        <String, Object?>{
+          'push': reply,
+          'event': reply.event,
+        },
+      );
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await super.close();
+    await _pushesController.close();
+  }
+}
 
 /// Base mixin for Spinify client publications management.
 base mixin SpinifyPublicationsMixin on SpinifyBase {
@@ -754,7 +783,7 @@ base mixin SpinifyRPCMixin on SpinifyBase, SpinifyCommandMixin {
           method: method,
           data: data,
         ),
-      ).then((reply) => reply.data);
+      ).then<List<int>>((reply) => reply.data);
 }
 
 /// Base mixin for Spinify client metrics management.
@@ -789,8 +818,7 @@ final class Spinify extends SpinifyBase
         SpinifyCommandMixin,
         SpinifyConnectionMixin,
         SpinifyPingPongMixin,
-        SpinifyClientSubscriptionMixin,
-        SpinifyServerSubscriptionMixin,
+        SpinifySubscriptionMixin,
         SpinifyPublicationsMixin,
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
@@ -805,7 +833,4 @@ final class Spinify extends SpinifyBase
   /// {@macro spinify}
   factory Spinify.connect(String url, {SpinifyConfig? config}) =>
       Spinify(config: config)..connect(url);
-
-  @override
-  SpinifyPushesStream get stream => throw UnimplementedError();
 }

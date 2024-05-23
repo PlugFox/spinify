@@ -2,12 +2,12 @@
 
 import 'dart:async';
 
-import 'channel_push.dart';
+import 'channel_event.dart';
+import 'channel_events.dart';
 import 'config.dart';
 import 'history.dart';
 import 'metric.dart';
 import 'presence_stats.dart';
-import 'pushes_stream.dart';
 import 'state.dart';
 import 'states_stream.dart';
 import 'stream_position.dart';
@@ -75,7 +75,7 @@ abstract interface class ISpinifyAsyncMessageSender {
 /// Spinify event receiver interface.
 abstract interface class ISpinifyEventReceiver {
   /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final SpinifyPushesStream stream;
+  abstract final ChannelEvents<SpinifyChannelEvent> stream;
 }
 
 /// Spinify client subscriptions manager interface.

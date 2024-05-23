@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'channel_push.dart';
+import 'channel_event.dart';
+import 'channel_events.dart';
 import 'history.dart';
 import 'presence_stats.dart';
-import 'pushes_stream.dart';
 import 'stream_position.dart';
 import 'subscription_state.dart';
 import 'subscription_states_stream.dart';
@@ -50,7 +50,7 @@ sealed class SpinifySubscription {
   abstract final SpinifySubscriptionStateStream states;
 
   /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final SpinifyPushesStream stream;
+  abstract final ChannelEvents<SpinifyChannelEvent> stream;
 
   /// Await for subscription to be ready.
   /// Ready resolves when subscription successfully subscribed.
