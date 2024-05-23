@@ -5,35 +5,38 @@ import 'dart:async';
 import 'package:fixnum/fixnum.dart';
 
 import 'model/command.dart';
-import 'model/config.dart';
 import 'model/metric.dart';
 import 'model/reply.dart';
 import 'model/transport_interface.dart';
 
 /// Create a fake Spinify transport.
-Future<ISpinifyTransport> $createFakeSpinifyTransport({
-  /// URL for the connection
-  required String url,
+SpinifyTransportBuilder $createFakeSpinifyTransport([
+  void Function(ISpinifyTransport transport)? out,
+]) =>
+    ({
+      /// URL for the connection
+      required url,
 
-  /// Spinify client configuration
-  required SpinifyConfig config,
+      /// Spinify client configuration
+      required config,
 
-  /// Metrics
-  required SpinifyMetrics$Mutable metrics,
+      /// Metrics
+      required metrics,
 
-  /// Callback for reply messages
-  required void Function(SpinifyReply reply) onReply,
+      /// Callback for reply messages
+      required Future<void> Function(SpinifyReply reply) onReply,
 
-  /// Callback for disconnect event
-  required void Function() onDisconnect,
-}) async {
-  final transport = SpinifyTransportFake()
-    ..metrics = metrics
-    ..onReply = onReply
-    ..onDisconnect = onDisconnect;
-  await transport._connect(url);
-  return transport;
-}
+      /// Callback for disconnect event
+      required Future<void> Function() onDisconnect,
+    }) async {
+      final transport = SpinifyTransportFake()
+        ..metrics = metrics
+        ..onReply = onReply
+        ..onDisconnect = onDisconnect;
+      await transport._connect(url);
+      out?.call(transport);
+      return transport;
+    };
 
 /// Spinify fake transport
 class SpinifyTransportFake implements ISpinifyTransport {
@@ -180,7 +183,7 @@ class SpinifyTransportFake implements ISpinifyTransport {
         Duration(milliseconds: _delay),
         () {
           if (!_isConnected) return;
-          _onReply?.call(reply(DateTime.now()));
+          _onReply?.call(reply(DateTime.now())).ignore();
         },
       );
 
@@ -188,18 +191,19 @@ class SpinifyTransportFake implements ISpinifyTransport {
   late SpinifyMetrics$Mutable metrics;
 
   /// Callback for reply messages
-  set onReply(void Function(SpinifyReply reply) handler) => _onReply = handler;
-  void Function(SpinifyReply reply)? _onReply;
+  set onReply(Future<void> Function(SpinifyReply reply) handler) =>
+      _onReply = handler;
+  Future<void> Function(SpinifyReply reply)? _onReply;
 
   /// Callback for disconnect event
-  set onDisconnect(void Function() handler) => _onDisconnect = handler;
-  void Function()? _onDisconnect;
+  set onDisconnect(Future<void> Function() handler) => _onDisconnect = handler;
+  Future<void> Function()? _onDisconnect;
 
   @override
   Future<void> disconnect([int? code, String? reason]) async {
     if (!_isConnected) return;
     await _sleep();
-    _onDisconnect?.call();
+    await _onDisconnect?.call();
     _timer?.cancel();
     _timer = null;
   }

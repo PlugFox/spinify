@@ -16,10 +16,10 @@ typedef SpinifyTransportBuilder = Future<ISpinifyTransport> Function({
   required SpinifyMetrics$Mutable metrics,
 
   /// Callback for reply messages
-  required void Function(SpinifyReply reply) onReply,
+  required Future<void> Function(SpinifyReply reply) onReply,
 
   /// Callback for disconnect event
-  required void Function() onDisconnect,
+  required Future<void> Function() onDisconnect,
 });
 
 /// Spinify transport interface.

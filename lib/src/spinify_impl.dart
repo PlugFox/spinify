@@ -311,7 +311,7 @@ base mixin SpinifyConnectionMixin
     if (state.url == url) return;
     final completer = _readyCompleter ??= Completer<void>();
     try {
-      await disconnect();
+      if (state.isConnected || state.isConnecting) await disconnect();
     } on Object {/* ignore */}
     try {
       _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));

@@ -1,11 +1,15 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Spinify', () {
-    Spinify createFakeClient() => Spinify(
+    Spinify createFakeClient([
+      void Function(ISpinifyTransport transport)? out,
+    ]) =>
+        Spinify(
           config: SpinifyConfig(
-            transportBuilder: $createFakeSpinifyTransport,
+            transportBuilder: $createFakeSpinifyTransport(out),
           ),
         );
 
@@ -58,5 +62,37 @@ void main() {
             isA<SpinifyState$Closed>()
           ]));
     });
+
+    test(
+        'Reconnect_after_disconnected_transport',
+        () => fakeAsync((async) {
+              ISpinifyTransport? transport;
+              final client = createFakeClient((t) => transport = t)
+                ..connect('ws://localhost:8000/connection/websocket');
+              expect(client.state, isA<SpinifyState$Connecting>());
+              async.elapse(client.config.timeout);
+              expect(client.state, isA<SpinifyState$Connected>());
+              expect(transport, isNotNull);
+              expect(transport, isA<SpinifyTransportFake>());
+              transport!.disconnect();
+              async.elapse(const Duration(milliseconds: 50));
+              expect(client.state, isA<SpinifyState$Disconnected>());
+              async.elapse(Duration(
+                  milliseconds: client
+                          .config.connectionRetryInterval.min.inMilliseconds ~/
+                      2));
+              expect(client.state, isA<SpinifyState$Disconnected>());
+              async.elapse(client.config.connectionRetryInterval.max);
+              expect(client.state, isA<SpinifyState$Connected>());
+              client.close();
+              expectLater(
+                  client.states,
+                  emitsInOrder([
+                    isA<SpinifyState$Disconnected>(),
+                    isA<SpinifyState$Closed>()
+                  ]));
+              async.elapse(client.config.connectionRetryInterval.max);
+              expect(client.state, isA<SpinifyState$Closed>());
+            }));
   });
 }
