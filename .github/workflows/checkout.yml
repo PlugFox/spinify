@@ -82,5 +82,5 @@ jobs:
       - name: 📥 Upload coverage to Codecov
         timeout-minutes: 1
         uses: codecov/codecov-action@v3
-        #with:
-        #  token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
