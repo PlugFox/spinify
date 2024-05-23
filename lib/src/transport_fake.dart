@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_setters_without_getters
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:fixnum/fixnum.dart';
 
@@ -43,12 +44,15 @@ class SpinifyTransportFake implements ISpinifyTransport {
   /// Create a fake transport.
   SpinifyTransportFake({
     // Delay in milliseconds
-    int delay = 10,
-  }) : _delay = delay;
+    this.delay = 10,
+  }) : _random = math.Random();
 
-  final int _delay;
+  /// Delay in milliseconds in the fake transport to simulate network latency.
+  int delay;
+  final math.Random _random;
 
-  Future<void> _sleep() => Future<void>.delayed(Duration(milliseconds: _delay));
+  Future<void> _sleep() => Future<void>.delayed(
+      Duration(milliseconds: _random.nextInt(delay ~/ 2) + delay ~/ 2));
 
   bool get _isConnected => _timer != null;
   Timer? _timer;
@@ -146,12 +150,12 @@ class SpinifyTransportFake implements ISpinifyTransport {
             since: (epoch: '...', offset: Int64.ZERO),
           ),
         );
-      case SpinifyRPCRequest(:int id):
+      case SpinifyRPCRequest(:int id, :List<int> data):
         _response(
           (now) => SpinifyRPCResult(
             id: id,
             timestamp: now,
-            data: const [],
+            data: data,
           ),
         );
       case SpinifyRefreshRequest(:int id):
@@ -180,7 +184,7 @@ class SpinifyTransportFake implements ISpinifyTransport {
   }
 
   void _response(SpinifyReply Function(DateTime now) reply) => Timer(
-        Duration(milliseconds: _delay),
+        Duration(milliseconds: delay),
         () {
           if (!_isConnected) return;
           _onReply?.call(reply(DateTime.now())).ignore();

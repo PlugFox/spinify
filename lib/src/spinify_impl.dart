@@ -744,10 +744,17 @@ base mixin SpinifyHistoryMixin on SpinifyBase {
 }
 
 /// Base mixin for Spinify client RPC management.
-base mixin SpinifyRPCMixin on SpinifyBase {
+base mixin SpinifyRPCMixin on SpinifyBase, SpinifyCommandMixin {
   @override
   Future<List<int>> rpc(String method, List<int> data) =>
-      throw UnimplementedError();
+      _sendCommand<SpinifyRPCResult>(
+        SpinifyRPCRequest(
+          id: _getNextCommandId(),
+          timestamp: DateTime.now(),
+          method: method,
+          data: data,
+        ),
+      ).then((reply) => reply.data);
 }
 
 /// Base mixin for Spinify client metrics management.

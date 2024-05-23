@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
@@ -92,6 +94,46 @@ void main() {
                     isA<SpinifyState$Closed>()
                   ]));
               async.elapse(client.config.connectionRetryInterval.max);
+              expect(client.state, isA<SpinifyState$Closed>());
+            }));
+
+    test(
+        'rpc_request',
+        () => fakeAsync((async) {
+              final client = createFakeClient()
+                ..connect('ws://localhost:8000/connection/websocket');
+              expect(client.state, isA<SpinifyState$Connecting>());
+              async.elapse(client.config.timeout);
+              expect(client.state, isA<SpinifyState$Connected>());
+
+              // Send a request
+              expect(
+                client.rpc('echo', utf8.encode('Hello, World!')),
+                completion(isA<List<int>>().having(
+                  (data) => utf8.decode(data),
+                  'data',
+                  equals('Hello, World!'),
+                )),
+              );
+              async.elapse(client.config.timeout);
+              expect(client.state, isA<SpinifyState$Connected>());
+
+              // Send 100 requests
+              for (var i = 0; i < 100; i++) {
+                expect(
+                  client.rpc('echo', utf8.encode(i.toString())),
+                  completion(isA<List<int>>().having(
+                    (data) => utf8.decode(data),
+                    'data',
+                    equals(i.toString()),
+                  )),
+                );
+              }
+
+              async.elapse(client.config.timeout);
+              expect(client.state, isA<SpinifyState$Connected>());
+              client.close();
+              async.elapse(client.config.timeout);
               expect(client.state, isA<SpinifyState$Closed>());
             }));
   });
