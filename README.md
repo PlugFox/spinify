@@ -7,7 +7,7 @@
 [![Linter](https://img.shields.io/badge/style-linter-40c4ff.svg)](https://pub.dev/packages/linter)
 [![GitHub stars](https://img.shields.io/github/stars/plugfox/spinify?style=social)](https://github.com/plugfox/spinify/)
 
-Websocket client for [Centrifugo server](https://github.com/centrifugal/centrifugo) and [Centrifuge library](https://github.com/centrifugal/centrifuge) based on [ws library](https://pub.dev/packages/ws).
+Websocket client for [Centrifugo server](https://github.com/centrifugal/centrifugo) and [Centrifuge library](https://github.com/centrifugal/centrifuge).
 
 ## Installation
 
@@ -31,10 +31,10 @@ Connection related features
 - ✅ Async pushes
 - ✅ Ping-pong
 - ✅ Connection token refresh
-- ✅ Server-side subscriptions
-- ✅ Presence information
-- ✅ Presence stats
-- ✅ History information
+- ❌ Server-side subscriptions
+- ❌ Presence information
+- ❌ Presence stats
+- ❌ History information
 - ✅ Send custom RPC commands
 - ❌ Handle disconnect advice from the server
 - ❌ Batching API
@@ -42,18 +42,18 @@ Connection related features
 
 ### Client-side features
 
-- ✅ Subscribe to a channel
+- ❌ Subscribe to a channel
 - ✅ Protobuf transport
-- ✅ Setting subscription options
+- ❌ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
-- ✅ Subscription state changes
-- ✅ Subscription command-reply
-- ✅ Subscription async pushes
-- ✅ Subscription token refresh
-- ✅ Handle unsubscribe advice from the server
-- ✅ Manage subscription registry
-- ✅ Publish data into a channel
-- ✅ Enqueue methods
+- ❌ Subscription state changes
+- ❌ Subscription command-reply
+- ❌ Subscription async pushes
+- ❌ Subscription token refresh
+- ❌ Handle unsubscribe advice from the server
+- ❌ Manage subscription registry
+- ❌ Publish data into a channel
+- ❌ Enqueue methods
 - ✅ Set observer for hooking events & errors
 - ✅ Metrics
 - ❌ Optimistic subscriptions
@@ -86,7 +86,7 @@ Refer to the [Changelog](https://github.com/PlugFox/spinify/blob/master/CHANGELO
 
 ## Maintainers
 
-- [Matiunin Mikhail aka Plague Fox](https://plugfox.dev)
+- [Mike Matiunin aka Plague Fox](https://plugfox.dev)
 
 ## Funding
 
