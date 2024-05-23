@@ -3,11 +3,12 @@ import 'package:meta/meta.dart';
 /// {@template client_info}
 /// Client information.
 /// {@endtemplate}
-/// {@category Entity}
+/// {@category Reply}
+/// {@subCategory Channel}
 @immutable
 final class SpinifyClientInfo {
   /// {@macro client_info}
-  const SpinifyClientInfo({
+  SpinifyClientInfo({
     required this.user,
     required this.client,
     required this.connectionInfo,
@@ -27,12 +28,12 @@ final class SpinifyClientInfo {
   final List<int>? channelInfo;
 
   @override
-  int get hashCode => Object.hashAll([
-        user,
-        client,
-        connectionInfo,
-        channelInfo,
-      ]);
+  late final int hashCode = Object.hashAll([
+    user,
+    client,
+    connectionInfo,
+    channelInfo,
+  ]);
 
   @override
   bool operator ==(Object other) =>
@@ -44,10 +45,8 @@ final class SpinifyClientInfo {
           channelInfo == other.channelInfo;
 
   @override
-  String toString() => 'SpinifyClientInfo{'
+  String toString() => 'ClientInfo{'
       'user: $user, '
-      'client: $client, '
-      'connectionInfo: ${connectionInfo == null ? 'null' : 'bytes'}, '
-      'channelInfo: ${channelInfo == null ? 'null' : 'bytes'}'
+      'client: $client'
       '}';
 }

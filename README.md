@@ -59,6 +59,7 @@ Connection related features
 - ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
 - ❌ JSON transport
+- ❌ DevTools extension
 
 ## Example
 

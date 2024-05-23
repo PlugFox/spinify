@@ -1,11 +1,8 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-import 'package:spinify/src/model/channel_presence.dart';
-import 'package:spinify/src/model/channel_push.dart';
-import 'package:spinify/src/model/event.dart';
-import 'package:spinify/src/model/message.dart';
-import 'package:spinify/src/model/publication.dart';
+
+import 'channel_push.dart';
 
 /// Stream of received pushes from Centrifugo server for a channel.
 /// {@category Event}
@@ -14,10 +11,10 @@ import 'package:spinify/src/model/publication.dart';
 /// {@subCategory Push}
 /// {@subCategory Channel}
 @immutable
-final class SpinifyPushesStream extends StreamView<SpinifyChannelPush> {
+final class SpinifyPushesStream extends StreamView<SpinifyChannelEvent> {
   /// Stream of received events.
   const SpinifyPushesStream({
-    required Stream<SpinifyChannelPush> pushes,
+    required Stream<SpinifyChannelEvent> pushes,
     required this.publications,
     required this.messages,
     required this.presenceEvents,
@@ -32,7 +29,7 @@ final class SpinifyPushesStream extends StreamView<SpinifyChannelPush> {
   final Stream<SpinifyMessage> messages;
 
   /// Stream of presence (join & leave) events.
-  final Stream<SpinifyChannelPresence> presenceEvents;
+  final Stream<SpinifyPresence> presenceEvents;
 
   /// Join events
   final Stream<SpinifyJoin> joinEvents;
@@ -41,8 +38,8 @@ final class SpinifyPushesStream extends StreamView<SpinifyChannelPush> {
   final Stream<SpinifyLeave> leaveEvents;
 
   /// Filtered stream of data of [SpinifyEvent].
-  Stream<T> whereType<T extends SpinifyChannelPush>() =>
-      transform<T>(StreamTransformer<SpinifyChannelPush, T>.fromHandlers(
+  Stream<T> whereType<T extends SpinifyChannelEvent>() =>
+      transform<T>(StreamTransformer<SpinifyChannelEvent, T>.fromHandlers(
         handleData: (data, sink) => switch (data) {
           T valid => sink.add(valid),
           _ => null,

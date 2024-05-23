@@ -1,4 +1,14 @@
-.PHONY: format get outdated test publish deploy centrifugo-up centrifugo-down coverage analyze check pana generate
+.PHONY: format get outdated test publish deploy echo-up echo-down coverage analyze check pana generate
+
+ifeq ($(OS),Windows_NT)
+    RM = del /Q
+    MKDIR = mkdir
+    PWD = $(shell $(PWD))
+else
+    RM = rm -f
+    MKDIR = mkdir -p
+    PWD = pwd
+endif
 
 format:
 	@echo "Formatting the code"
@@ -12,22 +22,28 @@ outdated:
 	@dart pub outdated --show-all --dev-dependencies --dependency-overrides --transitive --no-prereleases
 
 test: get
-	@dart test --debug --coverage=.coverage --platform chrome,vm
+	@dart test --debug --coverage=coverage --platform chrome,vm test/unit_test.dart
 
 publish: generate
 	@yes | dart pub publish
 
 deploy: publish
 
-centrifugo-up:
-	@docker run -d --rm --ulimit nofile=65536:65536 -p 8000:8000 --name centrifugo centrifugo/centrifugo:latest centrifugo --client_insecure --admin --admin_insecure --log_level=debug
+echo-up:
+	@dart run tool/echo_up.dart
 
-centrifugo-down:
-	@docker stop centrifugo
+echo-down:
+	@dart run tool/echo_down.dart
 
 coverage: get
-	@dart test --concurrency=6 --platform vm --coverage=coverage test/
-	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=.packages --report-on=lib
+	@dart pub global activate coverage
+	@dart pub global run coverage:test_with_coverage -fb -o coverage -- \
+		--platform vm --compiler=kernel --coverage=coverage \
+		--reporter=expanded --file-reporter=json:coverage/tests.json \
+		--timeout=30s --concurrency=12 --color \
+			test/unit_test.dart
+#	@dart test --concurrency=6 --platform vm --coverage=coverage test/
+#	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 #	@mv coverage/lcov.info coverage/lcov.base.info
 #	@lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/**.freezed.dart" "lib/**.g.dart"
 #	@mv coverage/lcov.base.info coverage/lcov.info
@@ -47,6 +63,10 @@ pana: check
 
 generate: get
 	@dart pub global activate protoc_plugin
-	@protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
+	@protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 	@dart run build_runner build --delete-conflicting-outputs
-	@dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
+	@dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/protobuf/
+
+gen: generate
+
+codegen: generate

@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Example (lcl)",
+      "name": "[Flutter] Example (Local)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
@@ -14,10 +14,12 @@
       "console": "debugConsole",
       "runTestsOnDevice": false,
       "toolArgs": [],
-      "args": ["--dart-define-from-file=config/local.json"]
+      "args": [
+        "--dart-define-from-file=config/local.json"
+      ]
     },
     {
-      "name": "Example (dev)",
+      "name": "[Flutter] Example (Development)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
@@ -29,7 +31,125 @@
       "console": "debugConsole",
       "runTestsOnDevice": false,
       "toolArgs": [],
-      "args": ["--dart-define-from-file=config/development.json"]
+      "args": [
+        "--dart-define-from-file=config/development.json"
+      ]
+    },
+    // https://pub.dev/packages/test
+    // dart test test/unit_test.dart --color --platform=vm
+    {
+      "name": "[Dart] Unit test (VM)",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/unit_test.dart",
+      "env": {
+        "ENVIRONMENT": "test"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "templateFor": "test",
+      "toolArgs": [
+        "--color",
+        "--debug",
+        "--platform=vm",
+        "--compiler=kernel",
+        "--coverage=coverage",
+        "--reporter=expanded",
+        "--file-reporter=json:coverage/tests.json",
+        "--timeout=30s",
+        "--concurrency=12"
+        /* "--name=handles failed connection attempts" */
+      ],
+      "args": []
+    },
+    // dart test test/unit_test.dart --color --platform=chrome
+    {
+      "name": "[Dart] Unit Test (dart2js)",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/unit_test.dart",
+      "env": {
+        "ENVIRONMENT": "test"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "templateFor": "test",
+      "toolArgs": [
+        "--color",
+        "--debug",
+        "--platform=chrome",
+        "--compiler=dart2js",
+        "--coverage=coverage",
+        "--reporter=expanded",
+        "--file-reporter=json:coverage/tests.json",
+        "--timeout=30s",
+        "--concurrency=12",
+        /* "--name=can send binary data" */
+      ],
+      "args": []
+    },
+    {
+      "name": "[Dart] Unit Test (dart2wasm)",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/unit_test.dart",
+      "env": {
+        "ENVIRONMENT": "test"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "templateFor": "test",
+      "toolArgs": [
+        "--color",
+        "--debug",
+        "--platform=chrome",
+        "--compiler=dart2wasm",
+        "--coverage=coverage",
+        "--reporter=expanded",
+        "--file-reporter=json:coverage/tests.json",
+        "--timeout=30s",
+        "--concurrency=12",
+        /* "--name=can send binary data" */
+      ],
+      "args": []
+    },
+    // dart test test/smoke_test.dart --color --platform=vm
+    {
+      "name": "[Dart] Smoke Test (VM)",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/smoke_test.dart",
+      "env": {
+        "ENVIRONMENT": "test"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "templateFor": "test",
+      "toolArgs": [
+        "--color",
+        "--debug",
+        "--coverage=coverage",
+        "--reporter=expanded",
+        "--platform=vm", // chrome
+        "--file-reporter=json:coverage/tests.json",
+        "--timeout=30s",
+        "--concurrency=12"
+      ],
+      "args": [],
+      "preLaunchTask": "echo-server:start",
+      "postDebugTask": "echo-server:stop"
+    },
+    // dart run server/bin/server.dart
+    {
+      "name": "[Go] Echo Server",
+      "request": "launch",
+      "type": "go",
+      "program": "tool/echo/echo.go",
+      "cwd": "${workspaceFolder}/tool/echo",
+      "env": {
+        "ENVIRONMENT": "WebSocket Server"
+      },
+      "console": "internalConsole"
     }
   ]
 }

@@ -6,8 +6,13 @@ analyzer:
     - "build/**"
     # Codegen
     - "lib/**.g.dart"
-    - "lib/src/transport/protobuf/*"
-    - "lib/src/transport/pubspec.yaml.g.dart"
+    - "lib/src/protobuf/client.pb.dart"
+    - "lib/src/protobuf/client.pbenum.dart"
+    - "lib/src/protobuf/client.pbjson.dart"
+    - "lib/src/protobuf/client.pbserver.dart"
+    - "lib/src/model/pubspec.yaml.g.dart"
+    - "lib/src.old/transport/protobuf/*"
+    - "lib/src.old/transport/pubspec.yaml.g.dart"
     # Tests
     - "test/**.mocks.dart"
     - ".test_coverage.dart"
@@ -36,7 +41,7 @@ analyzer:
     empty_catches: warning
 
     # Error
-    always_use_package_imports: error
+    prefer_relative_imports: error
     avoid_relative_lib_imports: error
     avoid_slow_async_io: error
     avoid_types_as_parameter_names: error
@@ -50,12 +55,12 @@ linter:
     lines_longer_than_80_chars: true
 
     # Enabling rules
-    always_use_package_imports: true
+    prefer_relative_imports: true
     avoid_relative_lib_imports: true
 
     # Disable rules
     sort_pub_dependencies: false
-    prefer_relative_imports: false
+    always_use_package_imports: false
     prefer_final_locals: false
     avoid_escaping_inner_quotes: false
     curly_braces_in_flow_control_structures: false

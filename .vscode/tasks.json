@@ -2,9 +2,11 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Dependencies",
+      "label": "dart:dependencies",
       "type": "shell",
-      "command": ["dart pub get"],
+      "command": [
+        "dart pub get"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -12,10 +14,13 @@
       "problemMatcher": []
     },
     {
-      "label": "Get protoc plugin",
+      "label": "dart:get-protoc-plugin",
+      "detail": "Get protoc plugin",
       "type": "shell",
-      "command": ["dart pub global activate protoc_plugin"],
-      "dependsOn": ["Dependencies"],
+      "command": [
+        "dart pub global activate protoc_plugin"
+      ],
+      "dependsOn": [],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -23,36 +28,16 @@
       "problemMatcher": []
     },
     {
-      "label": "Generate protobuf",
+      "label": "dart:generate-protobuf",
+      "detail": "Generate protobuf files",
       "type": "shell",
       "command": [
         "protoc",
         "--proto_path=lib/src/transport/protobuf",
         "--dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto"
       ],
-      "dependsOn": ["Get protoc plugin"],
-      "group": {
-        "kind": "none",
-        "isDefault": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Codegenerate",
-      "type": "shell",
-      "command": ["dart run build_runner build --delete-conflicting-outputs"],
-      "dependsOn": ["Dependencies"],
-      "group": {
-        "kind": "none",
-        "isDefault": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Format",
-      "type": "shell",
-      "command": [
-        "dart format --fix -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/"
+      "dependsOn": [
+        "dart:get-protoc-plugin"
       ],
       "group": {
         "kind": "none",
@@ -61,18 +46,15 @@
       "problemMatcher": []
     },
     {
-      "label": "Prepare example",
+      "label": "dart:codegenerate",
+      "detail": "Generate code for the project",
       "type": "shell",
-      "options": {
-        "cwd": "${workspaceFolder}/example"
-      },
       "command": [
-        "dart pub global activate intl_utils",
-        "dart pub global run intl_utils:generate",
-        "fvm flutter pub get",
-        /* "&& fvm flutter gen-l10n --arb-dir lib/src/common/localization --output-dir lib/src/common/localization/generated --template-arb-file intl_en.arb", */
-        "&& fvm flutter pub run build_runner build --delete-conflicting-outputs",
-        "&& dart format --fix -l 80 ."
+        "dart run build_runner build --delete-conflicting-outputs"
+      ],
+      "dependsOn": [
+        "dart:dependencies",
+        "dart:generate-protobuf"
       ],
       "group": {
         "kind": "none",
@@ -81,7 +63,21 @@
       "problemMatcher": []
     },
     {
-      "label": "Start Centrifugo Server",
+      "label": "dart:format",
+      "detail": "Format all files in the project",
+      "type": "shell",
+      "command": [
+        "dart format --fix -l 80 lib test tool example"
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "centrifugo:start",
+      "detail": "Start centrifugo server",
       "type": "shell",
       "windows": {
         "command": "docker",
@@ -144,14 +140,18 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared"
       }
     },
     {
-      "label": "Stop Centrifugo Server",
+      "label": "centrifugo:stop",
+      "detail": "Stop centrifugo server",
       "type": "shell",
       "command": "docker",
-      "args": ["stop", "centrifugo"],
+      "args": [
+        "stop",
+        "centrifugo"
+      ],
       "group": {
         "kind": "none",
         "isDefault": true
@@ -159,11 +159,12 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared"
       }
     },
     {
-      "label": "Generate new user token",
+      "label": "centrifugo:gentoken",
+      "detail": "Generate new user token for centrifugo server",
       "type": "shell",
       "command": "docker",
       "args": [
@@ -178,6 +179,76 @@
         "--user=dart",
         "--ttl=604800"
       ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "echo-server:start",
+      "type": "shell",
+      "command": "dart",
+      "detail": "Start echo server",
+      "isBackground": false,
+      "options": {
+        "cwd": "${workspaceFolder}/tool",
+        "env": {}
+      },
+      "args": [
+        "run",
+        "echo_up.dart"
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "echo-server:stop",
+      "type": "shell",
+      "command": "dart",
+      "detail": "Stop echo server",
+      "options": {
+        "cwd": "${workspaceFolder}/tool",
+      },
+      "args": [
+        "run",
+        "echo_down.dart"
+      ],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "go:run:echo",
+      "detail": "Start echo server with Go",
+      "options": {
+        "cwd": "${workspaceFolder}/tool/echo",
+        "env": {}
+      },
+      "type": "shell",
+      "command": "go",
+      "args": [
+        "run",
+        "echo.go"
+      ],
+      "isBackground": true,
       "group": {
         "kind": "none",
         "isDefault": true

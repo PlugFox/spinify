@@ -73,9 +73,17 @@ app.*.map.json
 log.pana.json
 
 # Test
+coverage/
 .coverage/
 /test/**/*.json
 /test/.test_coverage.dart
 
 # Centifuge
+centrifugo-config.json
 config.json
+
+# Golang
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
