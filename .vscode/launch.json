@@ -51,9 +51,10 @@
       "toolArgs": [
         "--color",
         "--debug",
+        "--platform=vm",
+        "--compiler=kernel",
         "--coverage=coverage",
         "--reporter=expanded",
-        "--platform=vm", // chrome
         "--file-reporter=json:coverage/tests.json",
         "--timeout=30s",
         "--concurrency=12"
@@ -76,10 +77,10 @@
       "toolArgs": [
         "--color",
         "--debug",
-        "--coverage=coverage",
-        "--reporter=expanded",
         "--platform=chrome",
         "--compiler=dart2js",
+        "--coverage=coverage",
+        "--reporter=expanded",
         "--file-reporter=json:coverage/tests.json",
         "--timeout=30s",
         "--concurrency=12",
@@ -101,10 +102,10 @@
       "toolArgs": [
         "--color",
         "--debug",
-        "--coverage=coverage",
-        "--reporter=expanded",
         "--platform=chrome",
         "--compiler=dart2wasm",
+        "--coverage=coverage",
+        "--reporter=expanded",
         "--file-reporter=json:coverage/tests.json",
         "--timeout=30s",
         "--concurrency=12",

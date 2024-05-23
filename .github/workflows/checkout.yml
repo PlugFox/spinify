@@ -68,11 +68,14 @@ jobs:
         timeout-minutes: 1
         run: dart analyze --fatal-infos --fatal-warnings lib/
 
-      #- name: 🧪 Run tests
-      #  timeout-minutes: 2
-      #  run: |
+      - name: 🧪 Run tests
+        timeout-minutes: 2
+        run: |
+          dart test --concurrency=6 --platform vm --compiler=kernel \
+            --coverage=coverage --reporter=github --timeout=2x --fail-fast \
+            test/unit_test.dart
       #    dart run coverage:test_with_coverage -fb -o coverage -- \
-      #      --concurrency=6 --platform vm --coverage=./coverage --reporter=expanded test/ws_test.dart
+      #      --concurrency=6 --platform vm --coverage=./coverage --reporter=expanded test/unit_test.dart
 
       #- name: 📥 Upload coverage to Codecov
       #  timeout-minutes: 1
