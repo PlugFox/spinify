@@ -36,8 +36,14 @@ echo-down:
 	@dart run tool/echo_down.dart
 
 coverage: get
-	@dart test --concurrency=6 --platform vm --coverage=coverage test/
-	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+	@dart pub global activate coverage
+	@dart pub global run coverage:test_with_coverage -fb -o coverage -- \
+		--platform vm --compiler=kernel --coverage=coverage \
+		--reporter=expanded --file-reporter=json:coverage/tests.json \
+		--timeout=30s --concurrency=12 --color \
+			test/unit_test.dart
+#	@dart test --concurrency=6 --platform vm --coverage=coverage test/
+#	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 #	@mv coverage/lcov.info coverage/lcov.base.info
 #	@lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/**.freezed.dart" "lib/**.g.dart"
 #	@mv coverage/lcov.base.info coverage/lcov.info

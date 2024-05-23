@@ -71,14 +71,15 @@ jobs:
       - name: 🧪 Run tests
         timeout-minutes: 2
         run: |
-          dart test --concurrency=6 --platform vm --compiler=kernel \
-            --coverage=coverage --reporter=github --timeout=2x --fail-fast \
-            test/unit_test.dart
-      #    dart run coverage:test_with_coverage -fb -o coverage -- \
-      #      --concurrency=6 --platform vm --coverage=./coverage --reporter=expanded test/unit_test.dart
+          dart pub global activate coverage
+          dart pub global run coverage:test_with_coverage -fb -o coverage -- \
+            --platform vm --compiler=kernel --coverage=coverage \
+            --reporter=github --file-reporter=json:coverage/tests.json \
+            --timeout=30s --concurrency=12 --color \
+              test/unit_test.dart
 
-      #- name: 📥 Upload coverage to Codecov
-      #  timeout-minutes: 1
-      #  uses: codecov/codecov-action@v3
+      - name: 📥 Upload coverage to Codecov
+        timeout-minutes: 1
+        uses: codecov/codecov-action@v3
       #  with:
       #    token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
