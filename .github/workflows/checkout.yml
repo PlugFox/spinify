@@ -53,12 +53,13 @@ jobs:
           key: ${{ runner.os }}-spinify-${{ env.cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
       - name: 🗄️ Export pub cache directory
-        run: export PUB_CACHE=$PWD/.pub_cache/
+        run: |
+          export PUB_CACHE=$PWD/.pub_cache/
+          export PATH="$PATH":"$HOME/.pub-cache/bin"
 
       - name: 👷 Install Dependencies
         timeout-minutes: 1
-        run: |
-          dart pub get --no-example
+        run: dart pub get --no-example
 
       - name: 🔎 Check format
         timeout-minutes: 1
