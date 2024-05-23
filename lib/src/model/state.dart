@@ -356,10 +356,10 @@ final class SpinifyState$Closed extends SpinifyState {
   bool get isConnecting => false;
 
   @override
-  bool get isConnected => true;
+  bool get isConnected => false;
 
   @override
-  bool get isClosed => false;
+  bool get isClosed => true;
 
   @override
   R map<R>({

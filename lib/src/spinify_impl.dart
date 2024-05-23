@@ -54,7 +54,7 @@ abstract base class SpinifyBase implements ISpinify {
   /// Client initialization (from constructor).
   @mustCallSuper
   void _init() {
-    _createTransport = $create$WS$PB$Transport;
+    _createTransport = config.transportBuilder ?? $create$WS$PB$Transport;
     config.logger?.call(
       const SpinifyLogLevel.info(),
       'init',
@@ -122,7 +122,7 @@ base mixin SpinifyStateMixin on SpinifyBase {
 
   @nonVirtual
   void _setState(SpinifyState state) {
-    final previous = metrics.state;
+    final previous = _metrics.state;
     _statesController.add(_metrics.state = state);
     config.logger?.call(
       const SpinifyLogLevel.config(),
@@ -248,7 +248,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   @override
   Future<void> _onReply(SpinifyReply reply) async {
     assert(
-        reply.id >= 0 && reply.id <= metrics.commandId,
+        reply.id >= 0 && reply.id <= _metrics.commandId,
         'Reply ID should be greater or equal to 0 '
         'and less or equal than command ID');
     if (reply.id case int id when id > 0) {

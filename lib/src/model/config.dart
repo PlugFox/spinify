@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 
 import 'pubspec.yaml.g.dart';
+import 'transport_interface.dart';
 
 /// Token used for authentication
 ///
@@ -170,6 +171,7 @@ final class SpinifyConfig {
     this.serverPingDelay = const Duration(seconds: 8),
     Map<String, String>? headers,
     this.logger,
+    this.transportBuilder,
   })  : headers = Map<String, String>.unmodifiable(
             headers ?? const <String, String>{}),
         client = client ??
@@ -243,6 +245,9 @@ final class SpinifyConfig {
   /// - [message] - the log message
   /// - [context] - the log context data
   final SpinifyLogger? logger;
+
+  /// Callback to build Spinify transport.
+  final SpinifyTransportBuilder? transportBuilder;
 
   @override
   String toString() => 'SpinifyConfig{}';
