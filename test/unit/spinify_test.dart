@@ -118,8 +118,8 @@ void main() {
               async.elapse(client.config.timeout);
               expect(client.state, isA<SpinifyState$Connected>());
 
-              // Send 100 requests
-              for (var i = 0; i < 100; i++) {
+              // Send 1000 requests
+              for (var i = 0; i < 1000; i++) {
                 expect(
                   client.rpc('echo', utf8.encode(i.toString())),
                   completion(isA<List<int>>().having(
