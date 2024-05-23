@@ -62,8 +62,8 @@ final class ChatRepositorySpinifyImpl implements IChatRepository {
       decoder = const PlainMessageDecoder();
     }
 
-    return _spinify.stream.publications
-        .where((event) => event.channel == channel)
+    return _spinify.stream
+        .publication(channel: channel)
         .map<List<int>>((event) => event.data)
         .map<Message>(decoder.convert)
         .handleError(ignoreErrors);
