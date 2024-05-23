@@ -20,7 +20,7 @@ import 'model/subscription_config.dart';
 import 'model/transport_interface.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
-    if (dart.library.html) 'transport_ws_pb_js.dart'
+    if (dart.library.js_util) 'transport_ws_pb_js.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'transport_ws_pb_vm.dart';
 import 'util/backoff.dart';

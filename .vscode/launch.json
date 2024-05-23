@@ -63,7 +63,7 @@
     },
     // dart test test/unit_test.dart --color --platform=chrome
     {
-      "name": "[Dart] Unit Test (Browser)",
+      "name": "[Dart] Unit Test (dart2js)",
       "request": "launch",
       "type": "dart",
       "program": "test/unit_test.dart",
@@ -79,9 +79,35 @@
         "--coverage=coverage",
         "--reporter=expanded",
         "--platform=chrome",
+        "--compiler=dart2js",
         "--file-reporter=json:coverage/tests.json",
         "--timeout=30s",
-        "--concurrency=12"
+        "--concurrency=12",
+        /* "--name=can send binary data" */
+      ],
+      "args": []
+    },
+    {
+      "name": "[Dart] Unit Test (dart2wasm)",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/unit_test.dart",
+      "env": {
+        "ENVIRONMENT": "test"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "templateFor": "test",
+      "toolArgs": [
+        "--color",
+        "--debug",
+        "--coverage=coverage",
+        "--reporter=expanded",
+        "--platform=chrome",
+        "--compiler=dart2wasm",
+        "--file-reporter=json:coverage/tests.json",
+        "--timeout=30s",
+        "--concurrency=12",
         /* "--name=can send binary data" */
       ],
       "args": []

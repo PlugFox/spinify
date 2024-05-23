@@ -13,7 +13,7 @@ import 'package:spinifyapp/src/feature/authentication/data/authentication_reposi
 import 'package:spinifyapp/src/feature/chat/data/chat_repository.dart';
 import 'package:spinifyapp/src/feature/dependencies/initialization/platform/initialization_vm.dart'
     // ignore: uri_does_not_exist
-    if (dart.library.html) 'package:spinifyapp/src/feature/dependencies/initialization/platform/initialization_js.dart';
+    if (dart.library.js_util) 'package:spinifyapp/src/feature/dependencies/initialization/platform/initialization_js.dart';
 import 'package:spinifyapp/src/feature/dependencies/model/app_metadata.dart';
 import 'package:spinifyapp/src/feature/dependencies/model/dependencies.dart';
 

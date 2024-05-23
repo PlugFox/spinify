@@ -7,7 +7,7 @@ import 'package:l/l.dart';
 import 'package:spinifyapp/src/common/localization/localization.dart';
 import 'package:spinifyapp/src/common/util/platform/error_util_vm.dart'
     // ignore: uri_does_not_exist
-    if (dart.library.html) 'package:spinifyapp/src/common/util/platform/error_util_js.dart';
+    if (dart.library.js_util) 'package:spinifyapp/src/common/util/platform/error_util_js.dart';
 
 /// Error util.
 sealed class ErrorUtil {
