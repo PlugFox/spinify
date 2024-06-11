@@ -387,8 +387,6 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         ),
         stackTrace,
       );
-    } finally {
-      subFromRegistry?.close().ignore();
     }
   }
 
