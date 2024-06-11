@@ -37,14 +37,16 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     return target;
   }
 
-  final StreamController<SpinifyChannelEvent> _stateController =
-      StreamController<SpinifyChannelEvent>.broadcast();
+  SpinifySubscriptionState _state =
+      SpinifySubscriptionState.unsubscribed(code: 0, reason: 'initial state');
+  final StreamController<SpinifySubscriptionState> _stateController =
+      StreamController<SpinifySubscriptionState>.broadcast();
 
   final StreamController<SpinifyChannelEvent> _eventController =
       StreamController<SpinifyChannelEvent>.broadcast();
 
   @override
-  SpinifySubscriptionState get state => throw UnimplementedError();
+  SpinifySubscriptionState get state => _state;
 
   @override
   SpinifySubscriptionStateStream get states => throw UnimplementedError();
@@ -57,6 +59,11 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   void onEvent(SpinifyChannelEvent event) {
     _eventController.add(event);
     // TODO(plugfox): update since position
+  }
+
+  @mustCallSuper
+  void setState(SpinifySubscriptionState state) {
+    _stateController.add(_state = state);
   }
 
   @mustCallSuper
