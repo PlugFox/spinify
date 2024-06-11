@@ -49,7 +49,7 @@ func waitExitSignal(n *centrifuge.Node, s *http.Server, sigCh chan os.Signal) {
 	<-done
 }
 
-var channels = []string{"public:index", "chat:index", "notification:index"}
+var channels = []string{"public:index", "chat:index"}
 
 // Check whether channel is allowed for subscribing. In real case permission
 // check will probably be more complex than in this example.
@@ -97,9 +97,15 @@ func Centrifuge() (*centrifuge.Node, error) {
 			Subscriptions: map[string]centrifuge.SubscribeOptions{
 				"#" + cred.UserID: {
 					EnableRecovery: true,
-					EmitPresence:   true,
-					EmitJoinLeave:  true,
-					PushJoinLeave:  true,
+					EmitPresence:   false,
+					EmitJoinLeave:  false,
+					PushJoinLeave:  false,
+				},
+				"notification:index": {
+					EnableRecovery: true,
+					EmitPresence:   false,
+					EmitJoinLeave:  false,
+					PushJoinLeave:  false,
 				},
 			},
 		}, nil

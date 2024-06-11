@@ -21,8 +21,8 @@ Future<void> _desktopInitialization() async {
     center: true,
     backgroundColor:
         PlatformDispatcher.instance.platformBrightness == Brightness.dark
-            ? ThemeData.dark().colorScheme.background
-            : ThemeData.light().colorScheme.background,
+            ? ThemeData.dark().colorScheme.surface
+            : ThemeData.light().colorScheme.surface,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden,
     /* alwaysOnTop: true, */

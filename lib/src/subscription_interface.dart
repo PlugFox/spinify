@@ -1,12 +1,13 @@
 import 'dart:async';
 
-import 'channel_event.dart';
-import 'channel_events.dart';
-import 'history.dart';
-import 'presence_stats.dart';
-import 'stream_position.dart';
-import 'subscription_state.dart';
-import 'subscription_states_stream.dart';
+import 'model/channel_event.dart';
+import 'model/channel_events.dart';
+import 'model/history.dart';
+import 'model/presence_stats.dart';
+import 'model/stream_position.dart';
+import 'model/subscription_config.dart';
+import 'model/subscription_state.dart';
+import 'model/subscription_states_stream.dart';
 
 /// {@template subscription}
 /// Spinify subscription interface.
@@ -36,7 +37,7 @@ import 'subscription_states_stream.dart';
 /// - For server-side subscriptions see [SpinifyServerSubscription].
 /// {@endtemplate}
 /// {@category Subscription}
-sealed class SpinifySubscription {
+abstract interface class SpinifySubscription {
   /// Channel name.
   abstract final String channel;
 
@@ -129,7 +130,11 @@ sealed class SpinifySubscription {
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@subCategory Client-side}
-abstract class SpinifyClientSubscription extends SpinifySubscription {
+abstract interface class SpinifyClientSubscription
+    implements SpinifySubscription {
+  /// Subscription configuration.
+  abstract final SpinifySubscriptionConfig config;
+
   /// Start subscribing to a channel
   Future<void> subscribe();
 
@@ -154,4 +159,5 @@ abstract class SpinifyClientSubscription extends SpinifySubscription {
 /// {@endtemplate}
 /// {@category Subscription}
 /// {@subCategory Server-side}
-abstract class SpinifyServerSubscription extends SpinifySubscription {}
+abstract interface class SpinifyServerSubscription
+    implements SpinifySubscription {}
