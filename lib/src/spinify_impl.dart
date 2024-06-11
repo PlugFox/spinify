@@ -320,8 +320,8 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       <String, SpinifyClientSubscriptionImpl>{};
 
   /// Registry of server subscriptions.
-  final Map<String, SpinifyServerSubscription> _serverSubscriptionRegistry =
-      <String, SpinifyServerSubscription>{};
+  final Map<String, SpinifyServerSubscriptionImpl> _serverSubscriptionRegistry =
+      <String, SpinifyServerSubscriptionImpl>{};
 
   @override
   SpinifyClientSubscription? getSubscription(String channel) =>
@@ -387,6 +387,8 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         ),
         stackTrace,
       );
+    } finally {
+      subFromRegistry?.close();
     }
   }
 
@@ -396,6 +398,9 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     if (reply is SpinifyPush) {
       // Add push to the stream.
       _pushesController.add(reply.event);
+      final sub = _clientSubscriptionRegistry[reply.event.channel] ??
+          _serverSubscriptionRegistry[reply.event.channel];
+      sub?.onEvent(reply.event);
       config.logger?.call(
         const SpinifyLogLevel.debug(),
         'push_received',
@@ -431,7 +436,11 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
   @override
   Future<void> close() async {
     await super.close();
-    await _pushesController.close();
+    for (final sub in _clientSubscriptionRegistry.values) sub.close();
+    for (final sub in _serverSubscriptionRegistry.values) sub.close();
+    _clientSubscriptionRegistry.clear();
+    _serverSubscriptionRegistry.clear();
+    _pushesController.close().ignore();
   }
 }
 
