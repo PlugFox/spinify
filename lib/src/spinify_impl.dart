@@ -401,21 +401,13 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       final sub = _clientSubscriptionRegistry[reply.event.channel] ??
           _serverSubscriptionRegistry[reply.event.channel];
       sub?.onEvent(reply.event);
-      config.logger?.call(
-        const SpinifyLogLevel.debug(),
-        'push_received',
-        'Push received',
-        <String, Object?>{
-          'push': reply,
-          'event': reply.event,
-        },
-      );
     } else if (reply is SpinifyConnectResult) {
       // Update subscriptions state.
-      final entries = reply.subs?.entries;
+      //final entries = reply.subs?.entries;
       // TODO(plugfox): implement subscription state update
       /* for (final entry in entries) {
-        final MapEntry<String, SpinifySubscribeResult>(key: channel, value: sub) = entry;
+        final MapEntry<String, SpinifySubscribeResult>(key: channel, value: sub)
+          = entry;
         final subState = reply.subs[channel];
         if (subState != null) {
           sub.state = subState;

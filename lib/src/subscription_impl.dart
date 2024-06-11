@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
+import 'model/config.dart';
 import 'model/exception.dart';
 import 'model/history.dart';
 import 'model/presence_stats.dart';
@@ -37,6 +38,8 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     return target;
   }
 
+  SpinifyLogger? get _logger => _client.config.logger;
+
   SpinifySubscriptionState _state =
       SpinifySubscriptionState.unsubscribed(code: 0, reason: 'initial state');
   final StreamController<SpinifySubscriptionState> _stateController =
@@ -49,7 +52,8 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   SpinifySubscriptionState get state => _state;
 
   @override
-  SpinifySubscriptionStates get states => throw UnimplementedError();
+  SpinifySubscriptionStates get states =>
+      SpinifySubscriptionStates(_stateController.stream);
 
   @override
   SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
@@ -59,11 +63,32 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   void onEvent(SpinifyChannelEvent event) {
     _eventController.add(event);
     // TODO(plugfox): update since position
+
+    _logger?.call(
+      const SpinifyLogLevel.debug(),
+      'channel_event_received',
+      'Channel event received',
+      <String, Object?>{
+        'channel': channel,
+        'subscription': this,
+        'event': event,
+      },
+    );
   }
 
   @mustCallSuper
   void setState(SpinifySubscriptionState state) {
     _stateController.add(_state = state);
+    _logger?.call(
+      const SpinifyLogLevel.debug(),
+      'subscription_state_changed',
+      'Subscription state changed',
+      <String, Object?>{
+        'channel': channel,
+        'subscription': this,
+        'state': _state,
+      },
+    );
   }
 
   @mustCallSuper
