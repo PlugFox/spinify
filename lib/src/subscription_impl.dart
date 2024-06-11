@@ -10,7 +10,7 @@ import 'model/presence_stats.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/subscription_state.dart';
-import 'model/subscription_states_stream.dart';
+import 'model/subscription_states.dart';
 import 'spinify_interface.dart';
 import 'subscription_interface.dart';
 
@@ -49,11 +49,11 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   SpinifySubscriptionState get state => _state;
 
   @override
-  SpinifySubscriptionStateStream get states => throw UnimplementedError();
+  SpinifySubscriptionStates get states => throw UnimplementedError();
 
   @override
-  ChannelEvents<SpinifyChannelEvent> get stream =>
-      ChannelEvents(_eventController.stream);
+  SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
+      SpinifyChannelEvents(_eventController.stream);
 
   @mustCallSuper
   void onEvent(SpinifyChannelEvent event) {
@@ -144,16 +144,8 @@ final class SpinifyServerSubscriptionImpl extends SpinifySubscriptionBase
   @override
   SpinifyStreamPosition? get since => throw UnimplementedError();
 
-  // TODO(plugfox): set from client
   @override
-  SpinifySubscriptionState get state => throw UnimplementedError();
-
-  // TODO(plugfox): get from client
-  @override
-  SpinifySubscriptionStateStream get states => throw UnimplementedError();
-
-  @override
-  ChannelEvents<SpinifyChannelEvent> get stream =>
+  SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
       _client.stream.filter(channel: channel);
 
   @override

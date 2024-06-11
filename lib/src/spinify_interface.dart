@@ -75,7 +75,7 @@ abstract interface class ISpinifyAsyncMessageSender {
 /// Spinify event receiver interface.
 abstract interface class ISpinifyEventReceiver {
   /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final ChannelEvents<SpinifyChannelEvent> stream;
+  abstract final SpinifyChannelEvents<SpinifyChannelEvent> stream;
 }
 
 /// Spinify client subscriptions manager interface.

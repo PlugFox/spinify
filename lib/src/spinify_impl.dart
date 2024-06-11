@@ -306,8 +306,8 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       StreamController<SpinifyChannelEvent>.broadcast();
 
   @override
-  late final ChannelEvents<SpinifyChannelEvent> stream =
-      ChannelEvents<SpinifyChannelEvent>(_pushesController.stream);
+  late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
+      SpinifyChannelEvents<SpinifyChannelEvent>(_pushesController.stream);
 
   @override
   ({

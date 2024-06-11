@@ -17,7 +17,7 @@ export 'src/model/states_stream.dart';
 export 'src/model/stream_position.dart';
 export 'src/model/subscription_config.dart';
 export 'src/model/subscription_state.dart';
-export 'src/model/subscription_states_stream.dart';
+export 'src/model/subscription_states.dart';
 export 'src/model/transport_interface.dart';
 export 'src/spinify_impl.dart' show Spinify;
 export 'src/spinify_interface.dart';

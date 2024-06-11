@@ -7,7 +7,7 @@ import 'model/presence_stats.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/subscription_state.dart';
-import 'model/subscription_states_stream.dart';
+import 'model/subscription_states.dart';
 
 /// {@template subscription}
 /// Spinify subscription interface.
@@ -48,10 +48,10 @@ abstract interface class SpinifySubscription {
   abstract final SpinifyStreamPosition? since;
 
   /// Stream of subscription states.
-  abstract final SpinifySubscriptionStateStream states;
+  abstract final SpinifySubscriptionStates states;
 
   /// Stream of received pushes from Centrifugo server for a channel.
-  abstract final ChannelEvents<SpinifyChannelEvent> stream;
+  abstract final SpinifyChannelEvents<SpinifyChannelEvent> stream;
 
   /// Await for subscription to be ready.
   /// Ready resolves when subscription successfully subscribed.
