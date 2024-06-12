@@ -2,34 +2,68 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "dart:dependencies",
+      "label": "dart:pub:get",
+      "detail": "Get dependencies for the project",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "cloud-download"
+      },
+      "dependsOn": [],
       "type": "shell",
-      "command": [
-        "dart pub get"
-      ],
+      "command": "dart pub get",
+      "args": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+      }
     },
     {
       "label": "dart:get-protoc-plugin",
       "detail": "Get protoc plugin",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "cloud-download"
+      },
       "type": "shell",
-      "command": [
-        "dart pub global activate protoc_plugin"
-      ],
+      "command": "dart pub global activate protoc_plugin",
       "dependsOn": [],
+      "args": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+      }
     },
     {
       "label": "dart:generate-protobuf",
       "detail": "Generate protobuf files",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "code"
+      },
       "type": "shell",
       "command": [
         "protoc",
@@ -39,45 +73,124 @@
       "dependsOn": [
         "dart:get-protoc-plugin"
       ],
+      "args": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+      }
     },
     {
-      "label": "dart:codegenerate",
+      "label": "dart:build_runner:all",
       "detail": "Generate code for the project",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "code"
+      },
       "type": "shell",
       "command": [
-        "dart run build_runner build --delete-conflicting-outputs"
+        "dart run build_runner build --delete-conflicting-outputs",
+        "&& dart format --fix -l 80 lib test tool example"
       ],
       "dependsOn": [
         "dart:dependencies",
         "dart:generate-protobuf"
       ],
+      "args": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+      }
     },
     {
-      "label": "dart:format",
-      "detail": "Format all files in the project",
+      "label": "dart:build_runner:dir",
+      "detail": "Generate code for the directory",
       "type": "shell",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "code"
+      },
       "command": [
-        "dart format --fix -l 80 lib test tool example"
+        "dart run build_runner build --build-filter '${fileDirname}/*.dart'",
+        "&& dart format --fix -l 80 '${fileDirname}'"
       ],
       "group": {
         "kind": "none",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "dependsOn": [
+        "dart:pub:get"
+      ],
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+      }
+    },
+    {
+      "label": "dart:format",
+      "detail": "Format all files in the project",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "lightbulb-autofix"
+      },
+      "type": "shell",
+      "command": [
+        "dart format --fix -l 80 lib test tool example"
+      ],
+      "dependsOn": [],
+      "args": [],
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+      }
     },
     {
       "label": "centrifugo:start",
       "detail": "Start centrifugo server",
+      "icon": {
+        "color": "terminal.ansiBlue",
+        "id": "server"
+      },
       "type": "shell",
       "windows": {
         "command": "docker",
@@ -133,38 +246,63 @@
           "--log_level=debug"
         ]
       },
+      "dependsOn": [],
+      "args": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
       "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
       "presentation": {
-        "reveal": "always",
-        "panel": "shared"
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
       }
     },
     {
       "label": "centrifugo:stop",
       "detail": "Stop centrifugo server",
+      "icon": {
+        "color": "terminal.ansiRed",
+        "id": "server"
+      },
       "type": "shell",
       "command": "docker",
       "args": [
         "stop",
         "centrifugo"
       ],
+      "dependsOn": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
       "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
       "presentation": {
-        "reveal": "always",
-        "panel": "shared"
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
       }
     },
     {
       "label": "centrifugo:gentoken",
       "detail": "Generate new user token for centrifugo server",
+      "icon": {
+        "color": "terminal.ansiCyan",
+        "id": "key"
+      },
       "type": "shell",
       "command": "docker",
       "args": [
@@ -179,21 +317,33 @@
         "--user=dart",
         "--ttl=604800"
       ],
+      "dependsOn": [],
       "group": {
         "kind": "none",
         "isDefault": true
       },
       "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": false,
       "presentation": {
-        "reveal": "always",
-        "panel": "shared"
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
       }
     },
     {
       "label": "echo-server:start",
+      "detail": "Start echo server",
+      "icon": {
+        "color": "terminal.ansiBlue",
+        "id": "server"
+      },
       "type": "shell",
       "command": "dart",
-      "detail": "Start echo server",
       "isBackground": false,
       "options": {
         "cwd": "${workspaceFolder}/tool",
@@ -209,18 +359,26 @@
       },
       "problemMatcher": [],
       "presentation": {
-        "reveal": "never",
-        "panel": "shared"
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
       }
     },
     {
       "label": "echo-server:stop",
+      "detail": "Stop echo server",
+      "icon": {
+        "color": "terminal.ansiRed",
+        "id": "server"
+      },
       "type": "shell",
       "command": "dart",
-      "detail": "Stop echo server",
       "options": {
         "cwd": "${workspaceFolder}/tool",
       },
+      "dependsOn": [],
       "args": [
         "run",
         "echo_down.dart"
@@ -230,14 +388,22 @@
         "isDefault": true
       },
       "problemMatcher": [],
+      "isBackground": false,
       "presentation": {
-        "reveal": "never",
-        "panel": "shared"
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
       }
     },
     {
       "label": "go:run:echo",
       "detail": "Start echo server with Go",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "server"
+      },
       "options": {
         "cwd": "${workspaceFolder}/tool/echo",
         "env": {}
@@ -256,8 +422,11 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "dedicated",
+        "focus": true,
+        "clear": true,
+        "group": "echo"
       }
-    }
+    },
   ]
 }
