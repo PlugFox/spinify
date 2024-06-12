@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:meta/meta.dart';
 
@@ -16,6 +17,7 @@ import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
+import 'model/subscription_state.dart';
 import 'model/transport_interface.dart';
 import 'spinify_interface.dart';
 import 'subscription_impl.dart';
@@ -302,18 +304,23 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
 /// Base mixin for Spinify subscription management.
 base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
-  final StreamController<SpinifyChannelEvent> _pushesController =
+  final StreamController<SpinifyChannelEvent> _eventController =
       StreamController<SpinifyChannelEvent>.broadcast();
 
   @override
   late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
-      SpinifyChannelEvents<SpinifyChannelEvent>(_pushesController.stream);
+      SpinifyChannelEvents<SpinifyChannelEvent>(_eventController.stream);
 
   @override
   ({
     Map<String, SpinifyClientSubscription> client,
     Map<String, SpinifyServerSubscription> server
-  }) get subscriptions => throw UnimplementedError();
+  }) get subscriptions => (
+        client: UnmodifiableMapView<String, SpinifyClientSubscription>(
+            _clientSubscriptionRegistry),
+        server: UnmodifiableMapView<String, SpinifyServerSubscription>(
+            _serverSubscriptionRegistry),
+      );
 
   /// Registry of client subscriptions.
   final Map<String, SpinifyClientSubscriptionImpl> _clientSubscriptionRegistry =
@@ -397,31 +404,45 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     await super._onReply(reply);
     if (reply is SpinifyPush) {
       // Add push to the stream.
-      _pushesController.add(reply.event);
+      _eventController.add(reply.event);
       final sub = _clientSubscriptionRegistry[reply.event.channel] ??
           _serverSubscriptionRegistry[reply.event.channel];
       sub?.onEvent(reply.event);
     } else if (reply is SpinifyConnectResult) {
-      // Update subscriptions state.
-      //final entries = reply.subs?.entries;
-      // TODO(plugfox): implement subscription state update
-      /* for (final entry in entries) {
-        final MapEntry<String, SpinifySubscribeResult>(key: channel, value: sub)
-          = entry;
-        final subState = reply.subs[channel];
-        if (subState != null) {
-          sub.state = subState;
-          config.logger?.call(
-            const SpinifyLogLevel.debug(),
-            'subscription_state_updated',
-            'Subscription state updated',
-            <String, Object?>{
-              'subscription': sub,
-              'state': subState,
-            },
-          );
+      // Update server subscriptions.
+      final newServerSubs = reply.subs ?? <String, SpinifySubscribeResult>{};
+      for (final entry in newServerSubs.entries) {
+        final MapEntry<String, SpinifySubscribeResult>(
+          key: channel,
+          value: value
+        ) = entry;
+        final sub = _serverSubscriptionRegistry.putIfAbsent(
+            channel,
+            () => SpinifyServerSubscriptionImpl(
+                  client: this,
+                  channel: channel,
+                  recoverable: value.recoverable,
+                  epoch: value.since.epoch,
+                  offset: value.since.offset,
+                ))
+          ..recoverable = value.recoverable
+          ..epoch = value.since.epoch
+          ..offset = value.since.offset
+          ..setState(SpinifySubscriptionState.subscribed());
+        // Notify about new publications.
+        for (final publication in value.publications) {
+          _eventController.add(publication);
+          sub.onEvent(publication);
         }
-      } */
+      }
+      final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();
+      for (final key in currentServerSubs) {
+        if (newServerSubs.containsKey(key)) continue;
+        _serverSubscriptionRegistry
+            .remove(key)
+            ?.setState(SpinifySubscriptionState.unsubscribed());
+      }
+      // TODO(plugfox): Resubscribe client subscriptions on connect
     }
   }
 
@@ -432,7 +453,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     for (final sub in _serverSubscriptionRegistry.values) sub.close();
     _clientSubscriptionRegistry.clear();
     _serverSubscriptionRegistry.clear();
-    _pushesController.close().ignore();
+    _eventController.close().ignore();
   }
 }
 
@@ -490,9 +511,9 @@ base mixin SpinifyConnectionMixin
                 id: id,
                 timestamp: now,
                 channel: sub.channel,
-                recover: sub.state.recoverable,
-                epoch: sub.state.since?.epoch,
-                offset: sub.state.since?.offset,
+                recover: sub.recoverable,
+                epoch: sub.epoch,
+                offset: sub.offset,
                 token: null,
                 data: null,
                 positioned: null,

@@ -61,7 +61,10 @@ class SpinifySubscriptionConfig {
     this.recoverable = false,
     this.joinLeave = false,
     this.timeout = const Duration(seconds: 15),
-  });
+  }) : assert(
+            (recoverable == false && since == null) ||
+                (recoverable == true && since != null),
+            'recoverable and since must be set together');
 
   /// Create a default config
   ///

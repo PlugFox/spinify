@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:fixnum/fixnum.dart' as fixnum;
+
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
 import 'model/history.dart';
@@ -44,8 +46,14 @@ abstract interface class SpinifySubscription {
   /// Current subscription state.
   abstract final SpinifySubscriptionState state;
 
+  /// Whether subscription is recoverable using epoch and offset.
+  abstract final bool recoverable;
+
+  /// Epoch of last successfully received message.
+  abstract final String epoch;
+
   /// Offset of last successfully received message.
-  abstract final SpinifyStreamPosition? since;
+  abstract final fixnum.Int64 offset;
 
   /// Stream of subscription states.
   abstract final SpinifySubscriptionStates states;

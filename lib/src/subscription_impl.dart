@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
 import 'model/channel_event.dart';
@@ -20,6 +21,9 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   SpinifySubscriptionBase({
     required ISpinify client,
     required this.channel,
+    required this.recoverable,
+    required this.epoch,
+    required this.offset,
   }) : _clientWR = WeakReference<ISpinify>(client);
 
   @override
@@ -40,13 +44,22 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
 
   SpinifyLogger? get _logger => _client.config.logger;
 
-  SpinifySubscriptionState _state =
-      SpinifySubscriptionState.unsubscribed(code: 0, reason: 'initial state');
+  SpinifySubscriptionState _state = SpinifySubscriptionState.unsubscribed();
+
   final StreamController<SpinifySubscriptionState> _stateController =
       StreamController<SpinifySubscriptionState>.broadcast();
 
   final StreamController<SpinifyChannelEvent> _eventController =
       StreamController<SpinifyChannelEvent>.broadcast();
+
+  @override
+  bool recoverable;
+
+  @override
+  String epoch;
+
+  @override
+  fixnum.Int64 offset;
 
   @override
   SpinifySubscriptionState get state => _state;
@@ -62,8 +75,10 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   @mustCallSuper
   void onEvent(SpinifyChannelEvent event) {
     _eventController.add(event);
-    // TODO(plugfox): update since position
-
+    if (event is SpinifyPublication && recoverable) {
+      if (event.offset case fixnum.Int64 newOffset when newOffset > 0)
+        offset = newOffset;
+    }
     _logger?.call(
       const SpinifyLogLevel.debug(),
       'channel_event_received',
@@ -78,6 +93,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
 
   @mustCallSuper
   void setState(SpinifySubscriptionState state) {
+    if (_state == state) return;
     _stateController.add(_state = state);
     _logger?.call(
       const SpinifyLogLevel.debug(),
@@ -105,14 +121,14 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     required super.client,
     required super.channel,
     required this.config,
-  });
+  }) : super(
+          recoverable: config.recoverable,
+          epoch: config.since?.epoch ?? '',
+          offset: config.since?.offset ?? fixnum.Int64(0),
+        );
 
   @override
   final SpinifySubscriptionConfig config;
-
-  // TODO(plugfox): set from client
-  @override
-  SpinifyStreamPosition? get since => throw UnimplementedError();
 
   @override
   Future<SpinifyHistory> history({
@@ -163,11 +179,10 @@ final class SpinifyServerSubscriptionImpl extends SpinifySubscriptionBase
   SpinifyServerSubscriptionImpl({
     required super.client,
     required super.channel,
+    required super.recoverable,
+    required super.epoch,
+    required super.offset,
   });
-
-  // TODO(plugfox): set from client
-  @override
-  SpinifyStreamPosition? get since => throw UnimplementedError();
 
   @override
   SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
