@@ -438,9 +438,9 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();
       for (final key in currentServerSubs) {
         if (newServerSubs.containsKey(key)) continue;
-        _serverSubscriptionRegistry
-            .remove(key)
-            ?.setState(SpinifySubscriptionState.unsubscribed());
+        _serverSubscriptionRegistry.remove(key)
+          ?..setState(SpinifySubscriptionState.unsubscribed())
+          ..close();
       }
       // TODO(plugfox): Resubscribe client subscriptions on connect
     }
@@ -449,8 +449,15 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
   @override
   Future<void> close() async {
     await super.close();
-    for (final sub in _clientSubscriptionRegistry.values) sub.close();
-    for (final sub in _serverSubscriptionRegistry.values) sub.close();
+    final unsubscribed = SpinifySubscriptionState.unsubscribed();
+    for (final sub in _clientSubscriptionRegistry.values)
+      sub
+        ..setState(unsubscribed)
+        ..close();
+    for (final sub in _serverSubscriptionRegistry.values)
+      sub
+        ..setState(unsubscribed)
+        ..close();
     _clientSubscriptionRegistry.clear();
     _serverSubscriptionRegistry.clear();
     _eventController.close().ignore();

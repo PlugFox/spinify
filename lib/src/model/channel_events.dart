@@ -42,7 +42,7 @@ extension type SpinifyChannelEvents<T extends SpinifyChannelEvent>(
   SpinifyChannelEvents<SpinifyRefresh> refresh({String? channel}) =>
       filter<SpinifyRefresh>(channel: channel);
 
-  /// Filtered stream of data of [SpinifyChannelEvent].
+  /// Filtered stream of [SpinifyChannelEvent].
   SpinifyChannelEvents<S> filter<S extends SpinifyChannelEvent>(
           {String? channel}) =>
       SpinifyChannelEvents<S>(transform<S>(StreamTransformer<T, S>.fromHandlers(

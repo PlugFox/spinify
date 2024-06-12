@@ -111,6 +111,8 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   void close() {
     _stateController.close().ignore();
     _eventController.close().ignore();
+    assert(_state.isUnsubscribed,
+        'Subscription "$channel" is not unsubscribed before closing');
   }
 }
 

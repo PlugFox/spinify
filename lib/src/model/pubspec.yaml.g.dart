@@ -124,13 +124,13 @@ sealed class Pubspec {
   /// Build date and time (UTC)
   static final DateTime timestamp = DateTime.utc(
     2024,
-    5,
-    4,
-    22,
-    21,
     6,
-    924,
-    885,
+    12,
+    9,
+    42,
+    10,
+    506,
+    936,
   );
 
   /// Name
@@ -440,6 +440,13 @@ sealed class Pubspec {
     'benchmark_harness': r'^2.2.2',
     'lints': r'^3.0.0',
     'test': r'^1.24.4',
+    'fake_async': r'^1.3.1',
+    'mockito': <String, Object>{
+      'git': <String, Object>{
+        'url': r'https://github.com/dart-lang/mockito.git',
+        'ref': r'master',
+      },
+    },
   };
 
   /// Dependency overrides
