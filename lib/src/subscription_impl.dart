@@ -79,10 +79,6 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
       'Subscription "$channel" received event for another channel',
     );
     _eventController.add(event);
-    if (event is SpinifyPublication && recoverable) {
-      if (event.offset case fixnum.Int64 newOffset when newOffset > 0)
-        offset = newOffset;
-    }
     _logger?.call(
       const SpinifyLogLevel.debug(),
       'subscription_event_received',

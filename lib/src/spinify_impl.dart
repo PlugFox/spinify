@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
 import 'model/channel_event.dart';
@@ -406,23 +407,56 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       // Add push to the stream.
       final event = reply.event;
       _eventController.add(event);
-      final sub = _clientSubscriptionRegistry[event.channel] ??
-          _serverSubscriptionRegistry[event.channel];
-      sub?.onEvent(event);
-      if (sub == null) {
-        assert(
-          false,
-          'Subscription not found for event ${event.channel}',
-        );
-        config.logger?.call(
-          const SpinifyLogLevel.warning(),
-          'subscription_not_found_error',
-          'Subscription ${event.channel} not found for event',
-          <String, Object?>{
-            'channel': event.channel,
-            'event': event,
-          },
-        );
+      if (event is SpinifySubscribe) {
+        // Add server subscription to the registry.
+        _serverSubscriptionRegistry.putIfAbsent(
+            event.channel,
+            () => SpinifyServerSubscriptionImpl(
+                  client: this,
+                  channel: event.channel,
+                  recoverable: event.recoverable,
+                  epoch: event.since.epoch,
+                  offset: event.since.offset,
+                ))
+          ..recoverable = event.recoverable
+          ..epoch = event.since.epoch
+          ..offset = event.since.offset
+          ..onEvent(event)
+          ..setState(SpinifySubscriptionState.subscribed());
+      } else if (event is SpinifyUnsubscribe) {
+        // Remove server subscription from the registry.
+        _serverSubscriptionRegistry.remove(event.channel)
+          ?..onEvent(event)
+          ..setState(SpinifySubscriptionState.unsubscribed());
+        _clientSubscriptionRegistry[event.channel]
+          ?..onEvent(event)
+          ..setState(SpinifySubscriptionState.unsubscribed());
+        // TODO(plugfox): Resubscribe client subscriptions on unsubscribe
+        // if unsubscribe.code >= 2500
+      } else {
+        // Notify subscription about new event.
+        final sub = _serverSubscriptionRegistry[event.channel] ??
+            _clientSubscriptionRegistry[event.channel];
+        sub?.onEvent(event);
+        if (sub == null) {
+          assert(
+            false,
+            'Subscription not found for event ${event.channel}',
+          );
+          config.logger?.call(
+            const SpinifyLogLevel.warning(),
+            'subscription_not_found_error',
+            'Subscription ${event.channel} not found for event',
+            <String, Object?>{
+              'channel': event.channel,
+              'event': event,
+            },
+          );
+        } else if (event is SpinifyPublication && sub.recoverable) {
+          // Update subscription offset on publication.
+          if (event.offset case fixnum.Int64 newOffset when newOffset > 0)
+            sub.offset = newOffset;
+        }
       }
     } else if (reply is SpinifyConnectResult) {
       // Update server subscriptions.
@@ -466,6 +500,10 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           }
           _eventController.add(publication);
           sub.onEvent(publication);
+          // Update subscription offset on publication.
+          if (sub.recoverable) if (publication.offset
+              case fixnum.Int64 newOffset when newOffset > 0)
+            sub.offset = newOffset;
         }
       }
       final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();
@@ -475,6 +513,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ?..setState(SpinifySubscriptionState.unsubscribed())
           ..close();
       }
+
       // TODO(plugfox): Resubscribe client subscriptions on connect
     }
   }
