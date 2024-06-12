@@ -126,11 +126,11 @@ sealed class Pubspec {
     2024,
     6,
     12,
-    9,
-    42,
     10,
-    506,
-    936,
+    6,
+    30,
+    233,
+    60,
   );
 
   /// Name
@@ -441,12 +441,6 @@ sealed class Pubspec {
     'lints': r'^3.0.0',
     'test': r'^1.24.4',
     'fake_async': r'^1.3.1',
-    'mockito': <String, Object>{
-      'git': <String, Object>{
-        'url': r'https://github.com/dart-lang/mockito.git',
-        'ref': r'master',
-      },
-    },
   };
 
   /// Dependency overrides
