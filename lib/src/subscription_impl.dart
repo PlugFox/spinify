@@ -81,8 +81,8 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     }
     _logger?.call(
       const SpinifyLogLevel.debug(),
-      'channel_event_received',
-      'Channel event received',
+      'subscription_event_received',
+      'Subscription "$channel" received ${event.type} event',
       <String, Object?>{
         'channel': channel,
         'subscription': this,
@@ -96,9 +96,9 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     if (_state == state) return;
     _stateController.add(_state = state);
     _logger?.call(
-      const SpinifyLogLevel.debug(),
+      const SpinifyLogLevel.config(),
       'subscription_state_changed',
-      'Subscription state changed',
+      'Subscription "$channel" state changed to ${state.type}',
       <String, Object?>{
         'channel': channel,
         'subscription': this,
