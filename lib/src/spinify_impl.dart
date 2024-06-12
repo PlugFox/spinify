@@ -404,10 +404,26 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     await super._onReply(reply);
     if (reply is SpinifyPush) {
       // Add push to the stream.
-      _eventController.add(reply.event);
-      final sub = _clientSubscriptionRegistry[reply.event.channel] ??
-          _serverSubscriptionRegistry[reply.event.channel];
-      sub?.onEvent(reply.event);
+      final event = reply.event;
+      _eventController.add(event);
+      final sub = _clientSubscriptionRegistry[event.channel] ??
+          _serverSubscriptionRegistry[event.channel];
+      sub?.onEvent(event);
+      if (sub == null) {
+        assert(
+          false,
+          'Subscription not found for event ${event.channel}',
+        );
+        config.logger?.call(
+          const SpinifyLogLevel.warning(),
+          'subscription_not_found_error',
+          'Subscription ${event.channel} not found for event',
+          <String, Object?>{
+            'channel': event.channel,
+            'event': event,
+          },
+        );
+      }
     } else if (reply is SpinifyConnectResult) {
       // Update server subscriptions.
       final newServerSubs = reply.subs ?? <String, SpinifySubscribeResult>{};
