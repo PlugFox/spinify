@@ -127,10 +127,10 @@ sealed class Pubspec {
     6,
     12,
     10,
-    6,
-    30,
-    233,
-    60,
+    22,
+    54,
+    467,
+    344,
   );
 
   /// Name
@@ -441,6 +441,7 @@ sealed class Pubspec {
     'lints': r'^3.0.0',
     'test': r'^1.24.4',
     'fake_async': r'^1.3.1',
+    'mockito': r'^5.4.4',
   };
 
   /// Dependency overrides

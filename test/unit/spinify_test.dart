@@ -7,11 +7,11 @@ import 'package:test/test.dart';
 void main() {
   group('Spinify', () {
     Spinify createFakeClient([
-      void Function(ISpinifyTransport transport)? out,
+      void Function(ISpinifyTransport? transport)? out,
     ]) =>
         Spinify(
           config: SpinifyConfig(
-            transportBuilder: $createFakeSpinifyTransport(out),
+            transportBuilder: $createFakeSpinifyTransport(out: out),
           ),
         );
 

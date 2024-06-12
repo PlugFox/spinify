@@ -74,6 +74,10 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
 
   @mustCallSuper
   void onEvent(SpinifyChannelEvent event) {
+    assert(
+      event.channel == channel,
+      'Subscription "$channel" received event for another channel',
+    );
     _eventController.add(event);
     if (event is SpinifyPublication && recoverable) {
       if (event.offset case fixnum.Int64 newOffset when newOffset > 0)
@@ -126,7 +130,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   }) : super(
           recoverable: config.recoverable,
           epoch: config.since?.epoch ?? '',
-          offset: config.since?.offset ?? fixnum.Int64(0),
+          offset: config.since?.offset ?? fixnum.Int64.ZERO,
         );
 
   @override

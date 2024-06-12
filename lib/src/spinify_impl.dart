@@ -430,7 +430,24 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..offset = value.since.offset
           ..setState(SpinifySubscriptionState.subscribed());
         // Notify about new publications.
-        for (final publication in value.publications) {
+        for (var publication in value.publications) {
+          // If publication has wrong channel, fix it.
+          // Thats a workaround because we do not have channel
+          // in the publication in this server SpinifyConnectResult reply.
+          if (publication.channel != channel) {
+            assert(
+              publication.channel.isEmpty,
+              'Publication contains wrong channel',
+            );
+            publication = SpinifyPublication(
+              channel: channel,
+              data: publication.data,
+              info: publication.info,
+              timestamp: publication.timestamp,
+              tags: publication.tags,
+              offset: publication.offset,
+            );
+          }
           _eventController.add(publication);
           sub.onEvent(publication);
         }

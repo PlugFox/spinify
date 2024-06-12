@@ -12,9 +12,10 @@ import 'model/reply.dart';
 import 'model/transport_interface.dart';
 
 /// Create a fake Spinify transport.
-SpinifyTransportBuilder $createFakeSpinifyTransport([
-  void Function(ISpinifyTransport transport)? out,
-]) =>
+SpinifyTransportBuilder $createFakeSpinifyTransport({
+  SpinifyReply? Function(SpinifyCommand command)? overrideCommand,
+  void Function(ISpinifyTransport? transport)? out,
+}) =>
     ({
       /// URL for the connection
       required url,
@@ -31,10 +32,15 @@ SpinifyTransportBuilder $createFakeSpinifyTransport([
       /// Callback for disconnect event
       required Future<void> Function() onDisconnect,
     }) async {
-      final transport = SpinifyTransportFake()
+      final transport = SpinifyTransportFake(
+        overrideCommand: overrideCommand,
+      )
         ..metrics = metrics
         ..onReply = onReply
-        ..onDisconnect = onDisconnect;
+        ..onDisconnect = () {
+          out?.call(null);
+          return onDisconnect();
+        };
       await transport._connect(url);
       out?.call(transport);
       return transport;
@@ -46,7 +52,11 @@ class SpinifyTransportFake implements ISpinifyTransport {
   SpinifyTransportFake({
     // Delay in milliseconds
     this.delay = 10,
-  }) : _random = math.Random();
+    SpinifyReply? Function(SpinifyCommand command)? overrideCommand,
+  })  : _random = math.Random(),
+        _overrideCommand = overrideCommand;
+
+  final SpinifyReply? Function(SpinifyCommand command)? _overrideCommand;
 
   /// Delay in milliseconds in the fake transport to simulate network latency.
   int delay;
@@ -74,6 +84,11 @@ class SpinifyTransportFake implements ISpinifyTransport {
       ..bytesSent += BigInt.one
       ..messagesSent += BigInt.one;
     await _sleep();
+    if (_overrideCommand != null) {
+      final reply = _overrideCommand.call(command);
+      if (reply != null) _onReply?.call(reply).ignore();
+      return;
+    }
     switch (command) {
       case SpinifyPingRequest(:int id):
         _response(
@@ -92,7 +107,21 @@ class SpinifyTransportFake implements ISpinifyTransport {
             expires: false,
             ttl: null,
             data: null,
-            subs: null,
+            subs: <String, SpinifySubscribeResult>{
+              'notification:index': SpinifySubscribeResult(
+                id: id,
+                timestamp: now,
+                data: null,
+                expires: false,
+                ttl: null,
+                positioned: false,
+                publications: const [],
+                recoverable: false,
+                recovered: false,
+                since: (epoch: '...', offset: Int64.ZERO),
+                wasRecovering: false,
+              ),
+            },
             pingInterval: const Duration(seconds: 25),
             sendPong: false,
             session: 'fake',
