@@ -7,7 +7,7 @@ import 'subscription_state.dart';
 /// {@category Client}
 /// {@category Subscription}
 extension type SpinifySubscriptionStates<T extends SpinifySubscriptionState>(
-    Stream<T> stream) implements Stream<T> {
+    Stream<T> _) implements Stream<T> {
   /// Unsubscribed
   SpinifySubscriptionStates<SpinifySubscriptionState$Unsubscribed> unsubscribed(
           {String? channel}) =>

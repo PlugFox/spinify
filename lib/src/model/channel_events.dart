@@ -8,8 +8,8 @@ import 'channel_event.dart';
 /// {@category Subscription}
 /// {@subCategory Push}
 /// {@subCategory Channel}
-extension type SpinifyChannelEvents<T extends SpinifyChannelEvent>(
-    Stream<T> stream) implements Stream<T> {
+extension type SpinifyChannelEvents<T extends SpinifyChannelEvent>(Stream<T> _)
+    implements Stream<T> {
   /// Stream of publication events.
   SpinifyChannelEvents<SpinifyPublication> publication({String? channel}) =>
       filter<SpinifyPublication>(channel: channel);
