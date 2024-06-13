@@ -188,24 +188,30 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
           :int closeCode,
           :String? closeReason,
         ) when closeCode > 0) {
-      code = closeCode;
-      reason = closeReason;
-      reconnect = switch (code) {
-        < 3500 => true,
-        >= 5000 => true,
-        >= 4000 && < 4500 => true,
-        _ => false,
-      };
-      if (code < 3000) {
-        if (code == 1009) {
+      switch (closeCode) {
+        case 1009:
           code = 3; // disconnectCodeMessageSizeLimit;
           reason = 'message size limit exceeded';
-        } else {
+          reconnect = true;
+        case < 3000:
           // We expose codes defined by Centrifuge protocol,
           // hiding details about transport-specific error codes.
           // We may have extra optional transportCode field in the future.
           code = 1; // connectingCodeTransportClosed;
-        }
+          reason = closeReason;
+          reconnect = true;
+        case >= 4000 && < 4500:
+          code = closeCode;
+          reason = closeReason;
+          reconnect = true;
+        case >= 5000:
+          code = closeCode;
+          reason = closeReason;
+          reconnect = true;
+        default:
+          code = closeCode;
+          reason = closeReason;
+          reconnect = false;
       }
     }
     code ??= 1; // connectingCodeTransportClosed
