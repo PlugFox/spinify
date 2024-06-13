@@ -36,8 +36,6 @@ dependencies:
 - ✅ History information
 - ✅ Send custom RPC commands
 - ❌ Handle disconnect advice from the server
-- ❌ Batching API
-- ❌ Bidirectional WebSocket emulation
 - ❌ Channel subscription
 - ❌ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
@@ -51,13 +49,16 @@ dependencies:
 - ✅ Metrics
 - ❌ Web transport via extension type
 - ❌ WASM compatibility
-- ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
 - ❌ JSON codec support
 - ❌ Flutter package
 - ❌ DevTools extension
 - ❌ Middleware support
 - ❌ 95% test coverage
+- ❌ Batching API
+- ❌ Bidirectional WebSocket emulation
+- ❌ Optimistic subscriptions
+- ❌ Delta compression
 
 ## Example
 
