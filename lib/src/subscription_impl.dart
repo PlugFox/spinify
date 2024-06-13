@@ -190,14 +190,18 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   @override
   Future<void> subscribe() {
     throw UnimplementedError();
+    // TODO(plugfox): implement subscribe, add resubscribe timer
   }
 
   @override
   Future<void> unsubscribe([
     int code = 0,
     String reason = 'unsubscribe called',
-  ]) {
+  ]) async {
+    if (_state.isUnsubscribed) return Future.value();
+    //await ready().timeout(_client.config.timeout);
     throw UnimplementedError();
+    // TODO(plugfox): implement unsubscribe, remove resubscribe timer
   }
 }
 

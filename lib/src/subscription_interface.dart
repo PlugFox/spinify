@@ -143,10 +143,10 @@ abstract interface class SpinifyClientSubscription
   /// Subscription configuration.
   abstract final SpinifySubscriptionConfig config;
 
-  /// Start subscribing to a channel
+  /// Start subscribing to a channel interactively.
   Future<void> subscribe();
 
-  /// Unsubscribe from a channel
+  /// Unsubscribe from a channel interactively.
   Future<void> unsubscribe([
     int code = 0,
     String reason = 'unsubscribe called',
