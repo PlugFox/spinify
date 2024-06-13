@@ -408,7 +408,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       final event = reply.event;
       _eventController.add(event);
       if (event is SpinifySubscribe) {
-        // Add server subscription to the registry.
+        // Add server subscription to the registry on subscribe event.
         _serverSubscriptionRegistry.putIfAbsent(
             event.channel,
             () => SpinifyServerSubscriptionImpl(
@@ -424,10 +424,11 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..onEvent(event)
           ..setState(SpinifySubscriptionState.subscribed());
       } else if (event is SpinifyUnsubscribe) {
-        // Remove server subscription from the registry.
+        // Remove server subscription from the registry on unsubscribe event.
         _serverSubscriptionRegistry.remove(event.channel)
           ?..onEvent(event)
           ..setState(SpinifySubscriptionState.unsubscribed());
+        // Unsubscribe client subscription on unsubscribe event.
         _clientSubscriptionRegistry[event.channel]
           ?..onEvent(event)
           ..setState(SpinifySubscriptionState.unsubscribed());
