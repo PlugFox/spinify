@@ -23,7 +23,7 @@ dependencies:
 Connection related features
 
 - ✅ Connect to a server
-- ✅ Setting client options
+- ✅ Setting client configuration
 - ✅ Automatic reconnect with backoff algorithm
 - ✅ Client state changes
 - ✅ Protobuf transport
@@ -48,16 +48,19 @@ Connection related features
 - ✅ Subscription async pushes
 - ❌ Subscription token refresh
 - ❌ Handle unsubscribe advice from the server
-- ❌ Manage subscription registry
+- ✅ Manage subscription registry
 - ✅ Publish data into a channel
 - ✅ Set observer for hooking events & errors
 - ✅ Metrics
+- ❌ Web transport via extension type
+- ❌ WASM compatibility
 - ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
 - ❌ JSON transport
 - ❌ Flutter package
 - ❌ DevTools extension
 - ❌ Middleware support
+- ❌ 95% test coverage
 
 ## Example
 
