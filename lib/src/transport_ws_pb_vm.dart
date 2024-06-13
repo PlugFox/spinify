@@ -222,6 +222,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         ),
       ),
     );
+    _onDisconnect.call();
     _logger?.call(
       const SpinifyLogLevel.transport(),
       'transport_disconnect',
@@ -234,7 +235,6 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         'reconnect': reconnect,
       },
     );
-    _onDisconnect.call();
   }
 
   @override
