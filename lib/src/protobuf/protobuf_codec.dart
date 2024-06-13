@@ -219,9 +219,9 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       event = SpinifyPublication(
         timestamp: DateTime.now(),
         channel: channel,
-        data: push.pub.data,
+        data: push.pub.hasData() ? push.pub.data : const <int>[],
         info: _decodeClientInfo(push.pub.info),
-        offset: push.pub.offset,
+        offset: push.pub.hasOffset() ? push.pub.offset : null,
         tags: push.pub.tags,
       );
     } else if (push.hasJoin()) {
@@ -254,7 +254,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         timestamp: DateTime.now(),
         channel: channel,
         recoverable: push.subscribe.recoverable,
-        data: push.subscribe.data,
+        data: push.subscribe.hasData() ? push.subscribe.data : null,
         positioned: push.subscribe.positioned,
         since: (
           offset: push.subscribe.offset,
@@ -289,7 +289,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         version: push.connect.version,
         expires: expBool,
         ttl: ttlDT,
-        data: push.connect.data,
+        data: push.connect.hasData() ? push.connect.data : null,
         node: push.connect.node,
         pingInterval: pingInterval,
         sendPong: push.connect.pong == true,
@@ -390,7 +390,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
               // have the "channel" field - I should fill it in manually
               // by copying the channel from the SubscribeRequest
               channel: '',
-              data: pub.data,
+              data: pub.hasData() ? pub.data : const <int>[],
               info: _decodeClientInfo(pub.info),
               offset: pub.offset,
               tags: pub.tags,
@@ -435,7 +435,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         version: connect.version,
         expires: expBool,
         ttl: ttlDT,
-        data: connect.data,
+        data: connect.hasData() ? connect.data : null,
         subs: switch (connect.subs) {
           Map<String, pb.SubscribeResult> map when map.isNotEmpty =>
             <String, SpinifySubscribeResult>{
@@ -494,7 +494,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
               // have the "channel" field - I should fill it in manually
               // by copying the channel from the SubscribeRequest
               channel: '',
-              data: pub.data,
+              data: pub.hasData() ? pub.data : const <int>[],
               info: _decodeClientInfo(pub.info),
               offset: pub.offset,
               tags: pub.tags,
@@ -506,7 +506,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       return SpinifyRPCResult(
         id: id,
         timestamp: now,
-        data: rpc.data,
+        data: rpc.hasData() ? rpc.data : const <int>[],
       );
     } else if (reply.hasRefresh()) {
       final refresh = reply.refresh;

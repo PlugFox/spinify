@@ -31,6 +31,7 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
   /// Subscribed
   /// {@macro subscription_state}
   factory SpinifySubscriptionState.subscribed({
+    required List<int>? data,
     DateTime? timestamp,
   }) = SpinifySubscriptionState$Subscribed;
 }
@@ -142,8 +143,12 @@ final class SpinifySubscriptionState$Subscribed
     extends SpinifySubscriptionState {
   /// {@macro subscription_state}
   SpinifySubscriptionState$Subscribed({
+    required this.data,
     DateTime? timestamp,
   }) : super(timestamp: timestamp ?? DateTime.now());
+
+  /// Data
+  final List<int>? data;
 
   @override
   String get type => 'subscribed';

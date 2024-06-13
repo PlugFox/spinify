@@ -439,7 +439,7 @@ final class SpinifySubscribe extends SpinifyChannelEvent {
   final bool positioned;
 
   /// Data attached to subscription.
-  final List<int> data;
+  final List<int>? data;
 
   @override
   bool get isConnect => false;
@@ -519,7 +519,7 @@ final class SpinifyConnect extends SpinifyChannelEvent {
   final String? node;
 
   /// Payload of connected push.
-  final List<int> data;
+  final List<int>? data;
 
   @override
   bool get isConnect => true;

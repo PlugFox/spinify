@@ -432,7 +432,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..epoch = event.since.epoch
           ..offset = event.since.offset
           ..onEvent(event)
-          ..setState(SpinifySubscriptionState.subscribed());
+          ..setState(SpinifySubscriptionState.subscribed(data: event.data));
       } else if (event is SpinifyUnsubscribe) {
         // Remove server subscription from the registry on unsubscribe event.
         _serverSubscriptionRegistry.remove(event.channel)
@@ -492,7 +492,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..recoverable = value.recoverable
           ..epoch = value.since.epoch
           ..offset = value.since.offset
-          ..setState(SpinifySubscriptionState.subscribed());
+          ..setState(SpinifySubscriptionState.subscribed(data: value.data));
         // Notify about new publications.
         for (var publication in value.publications) {
           // If publication has wrong channel, fix it.
