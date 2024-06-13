@@ -46,7 +46,9 @@ dependencies:
 - ✅ Manage subscription registry
 - ✅ Publish data into a channel
 - ✅ Set observer for hooking events & errors
-- ✅ Metrics
+- ✅ Metrics and stats
+- ✅ Package errors
+- ✅ Meta information about the library
 - ❌ Web transport via extension type
 - ❌ WASM compatibility
 - ❌ Run in separate isolate
