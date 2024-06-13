@@ -20,8 +20,6 @@ dependencies:
 
 ## Features and Roadmap
 
-Connection related features
-
 - ✅ Connect to a server
 - ✅ Setting client configuration
 - ✅ Automatic reconnect with backoff algorithm

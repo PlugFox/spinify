@@ -31,7 +31,7 @@ abstract interface class ISpinify
 
   /// Ready resolves when client successfully connected.
   /// Throws exceptions if called not in connecting or connected state.
-  FutureOr<void> ready();
+  Future<void> ready();
 
   /// Disconnect from the server.
   Future<void> disconnect([

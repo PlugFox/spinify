@@ -408,7 +408,7 @@ base mixin SpinifyConnectionMixin
   }
 
   @override
-  FutureOr<void> ready() async {
+  Future<void> ready() async {
     try {
       switch (state) {
         case SpinifyState$Disconnected _:
@@ -767,7 +767,7 @@ base mixin SpinifyQueueMixin on SpinifyBase {
       _eventQueue.push<void>('publish', () => super.publish(channel, data));
 
   /* @override
-  FutureOr<void> ready() => _eventQueue.push<void>('ready', super.ready); */
+  Future<void> ready() => _eventQueue.push<void>('ready', super.ready); */
 
   @override
   Future<SpinifyPresence> presence(String channel) =>

@@ -14,7 +14,7 @@ final class SpinifyEventQueue {
   bool _isClosed = false;
 
   /// Push it at the end of the queue.
-  Future<T> push<T>(String id, FutureOr<T> Function() fn) {
+  Future<T> push<T>(String id, Future<T> Function() fn) {
     final task = SpinifyTask<T>(id, fn);
     _queue.add(task);
     _exec();
@@ -24,7 +24,7 @@ final class SpinifyEventQueue {
   /// Mark the queue as closed.
   /// The queue will be processed until it's empty.
   /// But all new and current events will be rejected with [WSClientClosed].
-  FutureOr<void> close() async {
+  Future<void> close() async {
     _isClosed = true;
     await _processing;
   }
@@ -64,7 +64,7 @@ final class SpinifyEventQueue {
 /// Task for the [SpinifyEventQueue].
 class SpinifyTask<T> {
   /// Create a new instance of [SpinifyTask].
-  SpinifyTask(this.id, FutureOr<T> Function() fn)
+  SpinifyTask(this.id, Future<T> Function() fn)
       : _fn = fn,
         _completer = Completer<T>();
 
@@ -73,13 +73,13 @@ class SpinifyTask<T> {
   /// Unique identifier for the task.
   final String id;
 
-  final FutureOr<T> Function() _fn;
+  final Future<T> Function() _fn;
 
   /// Future of the task.
   Future<T> get future => _completer.future;
 
   /// Execute the task.
-  FutureOr<T> call() async {
+  Future<T> call() async {
     final result = await _fn();
     if (!_completer.isCompleted) {
       _completer.complete(result);

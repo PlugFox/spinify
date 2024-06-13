@@ -310,7 +310,7 @@ base mixin SpinifyClientSubscriptionSubscribeMixin
 
   /// Await for subscription to be ready.
   @override
-  FutureOr<void> ready() async {
+  Future<void> ready() async {
     try {
       switch (state) {
         case SpinifySubscriptionState$Unsubscribed _:

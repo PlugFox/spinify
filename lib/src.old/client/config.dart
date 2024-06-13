@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+
 import '../model/pubspec.yaml.g.dart';
 
 /// Token used for authentication
@@ -17,7 +18,7 @@ typedef SpinifyToken = String;
 ///
 /// {@category Client}
 /// {@category Entity}
-typedef SpinifyTokenCallback = FutureOr<SpinifyToken?> Function();
+typedef SpinifyTokenCallback = Future<SpinifyToken?> Function();
 
 /// Callback to get initial connection payload data.
 ///
@@ -25,7 +26,7 @@ typedef SpinifyTokenCallback = FutureOr<SpinifyToken?> Function();
 ///
 /// {@category Client}
 /// {@category Entity}
-typedef SpinifyConnectionPayloadCallback = FutureOr<List<int>?> Function();
+typedef SpinifyConnectionPayloadCallback = Future<List<int>?> Function();
 
 /// {@template spinify_config}
 /// Spinify client common options.

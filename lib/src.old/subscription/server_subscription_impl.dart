@@ -254,7 +254,7 @@ base mixin SpinifyServerSubscriptionReadyMixin
     on SpinifyServerSubscriptionBase, SpinifyServerSubscriptionErrorsMixin {
   /// Await for subscription to be ready.
   @override
-  FutureOr<void> ready() async {
+  Future<void> ready() async {
     try {
       switch (state) {
         case SpinifySubscriptionState$Unsubscribed _:
@@ -409,7 +409,7 @@ base mixin SpinifyServerSubscriptionQueueMixin
   final SpinifyEventQueue _eventQueue = SpinifyEventQueue();
 
   @override
-  FutureOr<void> ready() => _eventQueue.push<void>(
+  Future<void> ready() => _eventQueue.push<void>(
         'ready',
         super.ready,
       );
