@@ -43,7 +43,6 @@ dependencies:
 - ✅ Automatic resubscribe with backoff algorithm
 - ✅ Subscription state changes
 - ✅ Subscription command-reply
-- ✅ Subscription async pushes
 - ❌ Subscription token refresh
 - ❌ Handle unsubscribe advice from the server
 - ✅ Manage subscription registry
@@ -54,7 +53,7 @@ dependencies:
 - ❌ WASM compatibility
 - ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
-- ❌ JSON transport
+- ❌ JSON codec support
 - ❌ Flutter package
 - ❌ DevTools extension
 - ❌ Middleware support
