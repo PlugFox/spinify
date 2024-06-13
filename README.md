@@ -26,6 +26,7 @@ Connection related features
 - ✅ Setting client options
 - ✅ Automatic reconnect with backoff algorithm
 - ✅ Client state changes
+- ✅ Protobuf transport
 - ✅ Command-reply
 - ✅ Command timeouts
 - ✅ Async pushes
@@ -39,11 +40,7 @@ Connection related features
 - ❌ Handle disconnect advice from the server
 - ❌ Batching API
 - ❌ Bidirectional WebSocket emulation
-
-### Client-side features
-
-- ❌ Subscribe to a channel
-- ✅ Protobuf transport
+- ❌ Channel subscription
 - ❌ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
 - ✅ Subscription state changes
@@ -58,7 +55,9 @@ Connection related features
 - ❌ Optimistic subscriptions
 - ❌ Run in separate isolate
 - ❌ JSON transport
+- ❌ Flutter package
 - ❌ DevTools extension
+- ❌ Middleware support
 
 ## Example
 
