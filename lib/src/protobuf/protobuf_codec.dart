@@ -296,12 +296,17 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         session: push.connect.session,
       );
     } else if (push.hasDisconnect()) {
+      final code = push.disconnect.code;
       event = SpinifyDisconnect(
         timestamp: DateTime.now(),
-        reason: push.disconnect.reason,
+        reason: push.disconnect.hasReason()
+            ? push.disconnect.reason
+            : 'Server disconnecting',
         channel: channel,
-        code: push.disconnect.code,
-        reconnect: push.disconnect.reconnect,
+        code: code,
+        reconnect: push.disconnect.hasReconnect()
+            ? push.disconnect.reconnect
+            : code < 3500 || code >= 5000 || (code >= 4000 && code < 4500),
       );
     } else if (push.hasRefresh()) {
       final pb.Refresh(:expires, :ttl) = push.refresh;

@@ -207,6 +207,17 @@ func Centrifuge() (*centrifuge.Node, error) {
 			case "echo":
 				// Return back input data.
 				cb(centrifuge.RPCReply{Data: e.Data}, nil)
+			case "disconnect":
+				// Disconnect user
+				cb(centrifuge.RPCReply{}, nil)
+				if string(e.Data) == "reconnect" {
+					client.Disconnect(centrifuge.Disconnect{
+						Code:   3001,
+						Reason: "disconnect with reconnection",
+					})
+				} else {
+					client.Disconnect(centrifuge.DisconnectForceNoReconnect)
+				}
 			default:
 				// Method not found.
 				cb(centrifuge.RPCReply{}, centrifuge.ErrorMethodNotFound)

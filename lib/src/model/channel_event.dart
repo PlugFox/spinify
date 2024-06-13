@@ -566,6 +566,24 @@ final class SpinifyDisconnect extends SpinifyChannelEvent {
   String get type => 'Disconnect';
 
   /// Code of disconnect.
+  /// Codes have some rules which should be followed by a client
+  /// connector implementation.
+  /// These rules described below.
+  ///
+  /// Codes in range 0-2999 should not be used by a Centrifuge library user.
+  /// Those are reserved for the client-side and transport specific needs.
+  /// Codes in range >=5000 should not be used also.
+  /// Those are reserved by Centrifuge.
+  ///
+  /// Client should reconnect upon receiving code in range
+  /// 3000-3499, 4000-4499, >=5000.
+  /// For codes <3000 reconnect behavior can be adjusted for specific transport.
+  ///
+  /// Codes in range 3500-3999 and 4500-4999 are application terminal codes,
+  /// no automatic reconnect should be made by a client implementation.
+  ///
+  /// Library users supposed to use codes in range 4000-4999 for creating custom
+  /// disconnects.
   final int code;
 
   /// Reason of disconnect.

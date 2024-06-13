@@ -118,16 +118,16 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
 
   @override
   Future<void> ready() async {
+    if (_client.isClosed)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Client is closed',
+      );
     if (_state.isSubscribed) return;
     if (_stateController.isClosed)
       throw SpinifySubscriptionException(
         channel: channel,
         message: 'Subscription is closed permanently',
-      );
-    if (!_state.isSubscribing)
-      throw SpinifySubscriptionException(
-        channel: channel,
-        message: 'Subscription is not in subscribing state',
       );
     final state = await _stateController.stream
         .firstWhere((state) => !state.isSubscribing);

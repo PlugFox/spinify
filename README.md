@@ -35,7 +35,7 @@ dependencies:
 - ✅ Presence stats
 - ✅ History information
 - ✅ Send custom RPC commands
-- ❌ Handle disconnect advice from the server
+- ✅ Handle disconnect advice from the server
 - ❌ Channel subscription
 - ❌ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm

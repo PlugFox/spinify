@@ -417,6 +417,14 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       // Add push to the stream.
       final event = reply.event;
       _eventController.add(event);
+      config.logger?.call(
+        const SpinifyLogLevel.debug(),
+        'push_received',
+        'Push ${event.type} received',
+        <String, Object?>{
+          'event': event,
+        },
+      );
       if (event is SpinifySubscribe) {
         // Add server subscription to the registry on subscribe event.
         _serverSubscriptionRegistry.putIfAbsent(
@@ -447,7 +455,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       } else if (event is SpinifyMessage && event.channel.isEmpty) {
         // Notify about new message from the server (without channel).
         _eventController.add(event);
-      } else {
+      } else if (event.channel.isNotEmpty) {
         // Notify subscription about new event.
         final sub = _serverSubscriptionRegistry[event.channel] ??
             _clientSubscriptionRegistry[event.channel];
@@ -834,19 +842,16 @@ base mixin SpinifyConnectionMixin
       throw const SpinifyConnectionException(
         message: 'Connection is closed permanently',
       );
-    if (!state.isConnecting)
-      throw const SpinifyConnectionException(
-        message: 'Is not connecting to the server',
-      );
     return (_readyCompleter ??= Completer<void>()).future;
   }
 
   @override
   Future<void> disconnect() async {
+    // Disable reconnect because we are disconnecting manually/intentionally.
     _metrics.reconnectUrl = null;
     _tearDownReconnectTimer();
     if (state.isDisconnected) return Future.value();
-    await _transport?.disconnect(1000, 'Client disconnecting');
+    await _transport?.disconnect(1000, 'disconnected by client');
     await _onDisconnected();
   }
 
@@ -856,9 +861,29 @@ base mixin SpinifyConnectionMixin
     _transport = null;
     // Reconnect if that callback called not from disconnect method.
     if (_metrics.reconnectUrl != null) _setUpReconnectTimer();
-    _metrics.lastDisconnectAt = DateTime.now();
-    _metrics.disconnects++;
+    if (state.isConnected || state.isConnecting) {
+      _metrics.lastDisconnectAt = DateTime.now();
+      _metrics.disconnects++;
+    }
     await super._onDisconnected();
+  }
+
+  @override
+  Future<void> _onReply(SpinifyReply reply) async {
+    await super._onReply(reply);
+    if (reply
+        case SpinifyPush(
+          event: SpinifyDisconnect(:String reason, :bool reconnect)
+        )) {
+      if (reconnect) {
+        // Disconnect client temporarily.
+        await _transport?.disconnect(1000, reason);
+        await _onDisconnected();
+      } else {
+        // Disconnect client permanently.
+        await disconnect();
+      }
+    }
   }
 
   @override
@@ -1043,13 +1068,13 @@ base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyCommandMixin {
 /// Base mixin for Spinify client RPC management.
 base mixin SpinifyRPCMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<List<int>> rpc(String method, List<int> data) => _doOnReady(
+  Future<List<int>> rpc(String method, [List<int>? data]) => _doOnReady(
         () => _sendCommand<SpinifyRPCResult>(
           SpinifyRPCRequest(
             id: _getNextCommandId(),
             timestamp: DateTime.now(),
             method: method,
-            data: data,
+            data: data ?? const <int>[],
           ),
         ).then<List<int>>((reply) => reply.data),
       );

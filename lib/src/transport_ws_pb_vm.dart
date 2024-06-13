@@ -5,11 +5,7 @@ import 'dart:io' as io;
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
-import 'model/command.dart';
-import 'model/config.dart';
-import 'model/metric.dart';
-import 'model/reply.dart';
-import 'model/transport_interface.dart';
+import '../spinify.dart';
 import 'protobuf/client.pb.dart' as pb;
 import 'protobuf/protobuf_codec.dart';
 
@@ -73,7 +69,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
     _subscription = _socket.listen(
       _onData,
       cancelOnError: false,
-      onDone: _onDisconnect.call,
+      onDone: _onDone,
     );
   }
 
@@ -180,6 +176,65 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       );
       rethrow;
     }
+  }
+
+  void _onDone() {
+    final timestamp = DateTime.now();
+    int? code;
+    String? reason;
+    var reconnect = true;
+    if (_socket
+        case io.WebSocket(
+          :int closeCode,
+          :String? closeReason,
+        ) when closeCode > 0) {
+      code = closeCode;
+      reason = closeReason;
+      reconnect = switch (code) {
+        < 3500 => true,
+        >= 5000 => true,
+        >= 4000 && < 4500 => true,
+        _ => false,
+      };
+      if (code < 3000) {
+        if (code == 1009) {
+          code = 3; // disconnectCodeMessageSizeLimit;
+          reason = 'message size limit exceeded';
+        } else {
+          // We expose codes defined by Centrifuge protocol,
+          // hiding details about transport-specific error codes.
+          // We may have extra optional transportCode field in the future.
+          code = 1; // connectingCodeTransportClosed;
+        }
+      }
+    }
+    code ??= 1; // connectingCodeTransportClosed
+    reason ??= 'transport closed';
+    _onReply.call(
+      SpinifyPush(
+        timestamp: timestamp,
+        event: SpinifyDisconnect(
+          channel: '',
+          timestamp: timestamp,
+          code: code,
+          reason: reason,
+          reconnect: reconnect,
+        ),
+      ),
+    );
+    _logger?.call(
+      const SpinifyLogLevel.transport(),
+      'transport_disconnect',
+      'Transport disconnected '
+          '${reconnect ? 'temporarily' : 'permanently'} '
+          'with reason: $reason',
+      <String, Object?>{
+        'code': code,
+        'reason': reason,
+        'reconnect': reconnect,
+      },
+    );
+    _onDisconnect.call();
   }
 
   @override
