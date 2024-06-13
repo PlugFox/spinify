@@ -34,6 +34,9 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
     required List<int>? data,
     DateTime? timestamp,
   }) = SpinifySubscriptionState$Subscribed;
+
+  @override
+  String toString() => type;
 }
 
 /// Unsubscribed state
@@ -79,10 +82,9 @@ final class SpinifySubscriptionState$Unsubscribed
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is SpinifySubscriptionState$Unsubscribed;
-
-  @override
-  String toString() => r'SpinifySubscriptionState$Unsubscribed{}';
+      identical(this, other) ||
+      other is SpinifySubscriptionState$Unsubscribed &&
+          other.timestamp.isAtSameMomentAs(timestamp);
 }
 
 /// Subscribing state
@@ -128,10 +130,9 @@ final class SpinifySubscriptionState$Subscribing
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is SpinifySubscriptionState$Subscribing;
-
-  @override
-  String toString() => r'SpinifySubscriptionState$Subscribing{}';
+      identical(this, other) ||
+      other is SpinifySubscriptionState$Subscribing &&
+          other.timestamp.isAtSameMomentAs(timestamp);
 }
 
 /// Subscribed state
@@ -147,7 +148,7 @@ final class SpinifySubscriptionState$Subscribed
     DateTime? timestamp,
   }) : super(timestamp: timestamp ?? DateTime.now());
 
-  /// Data
+  /// Data attached to current subscription.
   final List<int>? data;
 
   @override
@@ -181,10 +182,9 @@ final class SpinifySubscriptionState$Subscribed
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is SpinifySubscriptionState$Subscribed;
-
-  @override
-  String toString() => r'SpinifySubscriptionState$Subscribed{}';
+      identical(this, other) ||
+      other is SpinifySubscriptionState$Subscribed &&
+          other.timestamp.isAtSameMomentAs(timestamp);
 }
 
 /// Pattern matching for [SpinifySubscriptionState].

@@ -117,7 +117,7 @@ sealed class SpinifyState extends _$SpinifyStateBase {
       };
 
   @override
-  String toString() => 'SpinifyState\$$type{}';
+  String toString() => type;
 }
 
 /// Disconnected
@@ -137,7 +137,7 @@ final class SpinifyState$Disconnected extends SpinifyState {
   }) : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Disconnected';
+  String get type => 'disconnected';
 
   @override
   String? get url => null;
@@ -191,7 +191,7 @@ final class SpinifyState$Connecting extends SpinifyState {
       : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Connecting';
+  String get type => 'connecting';
 
   @override
   final String url;
@@ -251,7 +251,7 @@ final class SpinifyState$Connected extends SpinifyState {
   }) : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Connected';
+  String get type => 'connected';
 
   @override
   final String url;
@@ -344,7 +344,7 @@ final class SpinifyState$Closed extends SpinifyState {
       : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Closed';
+  String get type => 'closed';
 
   @override
   String? get url => null;
