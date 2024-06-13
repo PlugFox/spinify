@@ -431,9 +431,6 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
                   epoch: event.since.epoch,
                   offset: event.since.offset,
                 ))
-          ..recoverable = event.recoverable
-          ..epoch = event.since.epoch
-          ..offset = event.since.offset
           ..onEvent(event)
           ..setState(SpinifySubscriptionState.subscribed(data: event.data));
       } else if (event is SpinifyUnsubscribe) {
@@ -489,9 +486,6 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
                   epoch: value.since.epoch,
                   offset: value.since.offset,
                 ))
-          ..recoverable = value.recoverable
-          ..epoch = value.since.epoch
-          ..offset = value.since.offset
           ..setState(SpinifySubscriptionState.subscribed(data: value.data));
         // Notify about new publications.
         for (var publication in value.publications) {
