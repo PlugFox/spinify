@@ -114,7 +114,7 @@ final class SpinifyState$Disconnected extends SpinifyState {
       disconnected(this);
 
   @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 0;
+  int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -163,7 +163,7 @@ final class SpinifyState$Connecting extends SpinifyState {
       connecting(this);
 
   @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 1;
+  int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -253,7 +253,7 @@ final class SpinifyState$Connected extends SpinifyState {
       connected(this);
 
   @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 2;
+  int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -302,7 +302,7 @@ final class SpinifyState$Closed extends SpinifyState {
       closed(this);
 
   @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 3;
+  int get hashCode => 3 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>

@@ -78,7 +78,7 @@ final class SpinifySubscriptionState$Unsubscribed
       unsubscribed(this);
 
   @override
-  int get hashCode => Object.hash(0, timestamp);
+  int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -126,7 +126,7 @@ final class SpinifySubscriptionState$Subscribing
       subscribing(this);
 
   @override
-  int get hashCode => Object.hash(1, timestamp);
+  int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -178,7 +178,7 @@ final class SpinifySubscriptionState$Subscribed
       subscribed(this);
 
   @override
-  int get hashCode => Object.hash(2, timestamp);
+  int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
