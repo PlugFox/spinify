@@ -46,14 +46,13 @@ Connection related features
 - ✅ Protobuf transport
 - ❌ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
-- ❌ Subscription state changes
-- ❌ Subscription command-reply
-- ❌ Subscription async pushes
+- ✅ Subscription state changes
+- ✅ Subscription command-reply
+- ✅ Subscription async pushes
 - ❌ Subscription token refresh
 - ❌ Handle unsubscribe advice from the server
 - ❌ Manage subscription registry
-- ❌ Publish data into a channel
-- ❌ Enqueue methods
+- ✅ Publish data into a channel
 - ✅ Set observer for hooking events & errors
 - ✅ Metrics
 - ❌ Optimistic subscriptions
