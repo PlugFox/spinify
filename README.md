@@ -31,10 +31,10 @@ Connection related features
 - ✅ Async pushes
 - ✅ Ping-pong
 - ✅ Connection token refresh
-- ❌ Server-side subscriptions
-- ❌ Presence information
-- ❌ Presence stats
-- ❌ History information
+- ✅ Server-side subscriptions
+- ✅ Presence information
+- ✅ Presence stats
+- ✅ History information
 - ✅ Send custom RPC commands
 - ❌ Handle disconnect advice from the server
 - ❌ Batching API
