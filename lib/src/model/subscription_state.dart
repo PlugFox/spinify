@@ -256,9 +256,4 @@ abstract base class _$SpinifySubscriptionStateBase {
         subscribing: subscribing ?? (_) => null,
         subscribed: subscribed ?? (_) => null,
       );
-
-  Map<String, Object?> toJson() => <String, Object?>{
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
 }
