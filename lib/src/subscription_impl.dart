@@ -114,6 +114,61 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     assert(_state.isUnsubscribed,
         'Subscription "$channel" is not unsubscribed before closing');
   }
+
+  @override
+  Future<void> ready() async {
+    if (_state.isSubscribed) return;
+    if (_stateController.isClosed)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription is closed permanently',
+      );
+    if (!_state.isSubscribing)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription is not in subscribing state',
+      );
+    final state = await _stateController.stream
+        .firstWhere((state) => !state.isSubscribing);
+    if (!state.isSubscribed)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription failed to subscribe',
+      );
+  }
+
+  @override
+  Future<SpinifyHistory> history({
+    int? limit,
+    SpinifyStreamPosition? since,
+    bool? reverse,
+  }) async {
+    await ready().timeout(_client.config.timeout);
+    return _client.history(
+      channel,
+      limit: limit,
+      since: since,
+      reverse: reverse,
+    );
+  }
+
+  @override
+  Future<SpinifyPresence> presence() async {
+    await ready().timeout(_client.config.timeout);
+    return _client.presence(channel);
+  }
+
+  @override
+  Future<SpinifyPresenceStats> presenceStats() async {
+    await ready().timeout(_client.config.timeout);
+    return _client.presenceStats(channel);
+  }
+
+  @override
+  Future<void> publish(List<int> data) async {
+    await ready().timeout(_client.config.timeout);
+    return _client.publish(channel, data);
+  }
 }
 
 @internal
@@ -131,35 +186,6 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
 
   @override
   final SpinifySubscriptionConfig config;
-
-  @override
-  Future<SpinifyHistory> history({
-    int? limit,
-    SpinifyStreamPosition? since,
-    bool? reverse,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<SpinifyPresence> presence() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<SpinifyPresenceStats> presenceStats() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> publish(List<int> data) {
-    throw UnimplementedError();
-  }
-
-  @override
-  FutureOr<void> ready() {
-    throw UnimplementedError();
-  }
 
   @override
   Future<void> subscribe() {
@@ -189,33 +215,4 @@ final class SpinifyServerSubscriptionImpl extends SpinifySubscriptionBase
   @override
   SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
       _client.stream.filter(channel: channel);
-
-  @override
-  Future<SpinifyHistory> history({
-    int? limit,
-    SpinifyStreamPosition? since,
-    bool? reverse,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<SpinifyPresence> presence() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<SpinifyPresenceStats> presenceStats() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> publish(List<int> data) {
-    throw UnimplementedError();
-  }
-
-  @override
-  FutureOr<void> ready() {
-    throw UnimplementedError();
-  }
 }

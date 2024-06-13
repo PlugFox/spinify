@@ -64,7 +64,7 @@ abstract interface class SpinifySubscription {
   /// Await for subscription to be ready.
   /// Ready resolves when subscription successfully subscribed.
   /// Throws exceptions if called not in subscribing or subscribed state.
-  FutureOr<void> ready();
+  Future<void> ready();
 
   /// Publish data to current Subscription channel
   Future<void> publish(List<int> data);

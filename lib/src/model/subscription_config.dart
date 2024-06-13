@@ -13,7 +13,7 @@ typedef SpinifySubscriptionToken = String;
 /// If method returns null then subscription will be established without token.
 /// {@category Subscription}
 /// {@category Entity}
-typedef SpinifySubscriptionTokenCallback = FutureOr<SpinifySubscriptionToken?>
+typedef SpinifySubscriptionTokenCallback = Future<SpinifySubscriptionToken?>
     Function();
 
 /// Callback to set subscription payload data.
@@ -22,7 +22,7 @@ typedef SpinifySubscriptionTokenCallback = FutureOr<SpinifySubscriptionToken?>
 
 /// {@category Subscription}
 /// {@category Entity}
-typedef SpinifySubscribePayloadCallback = FutureOr<List<int>?> Function();
+typedef SpinifySubscribePayloadCallback = Future<List<int>?> Function();
 
 /// {@template subscription_config}
 /// Subscription common options
