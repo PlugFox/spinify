@@ -89,16 +89,7 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// On disconnect from the server.
   @mustCallSuper
-  Future<void> _onDisconnected() async {
-    config.logger?.call(
-      const SpinifyLogLevel.config(),
-      'disconnected',
-      'Disconnected',
-      <String, Object?>{
-        'state': state,
-      },
-    );
-  }
+  Future<void> _onDisconnected() async {}
 
   Future<T> _doOnReady<T>(Future<T> Function() action) {
     if (state.isConnected) return action();
@@ -149,7 +140,15 @@ base mixin SpinifyStateMixin on SpinifyBase {
   @override
   Future<void> _onDisconnected() async {
     await super._onDisconnected();
-    if (!state.isDisconnected) _setState(SpinifyState$Disconnected());
+    if (!state.isDisconnected) {
+      _setState(SpinifyState$Disconnected());
+      config.logger?.call(
+        const SpinifyLogLevel.config(),
+        'disconnected',
+        'Disconnected from server',
+        <String, Object?>{},
+      );
+    }
   }
 
   @override
@@ -285,12 +284,6 @@ base mixin SpinifyCommandMixin on SpinifyBase {
 
   @override
   Future<void> _onDisconnected() async {
-    config.logger?.call(
-      const SpinifyLogLevel.config(),
-      'disconnected',
-      'Disconnected from server',
-      <String, Object?>{},
-    );
     late final error = StateError('Client is disconnected');
     late final stackTrace = StackTrace.current;
     for (final tuple in _replies.values) {

@@ -9,6 +9,10 @@ void main() {
   group('Connection', () {
     const url = 'ws://localhost:8000/connection/websocket';
 
+    void logger(SpinifyLogLevel level, String event, String message,
+            Map<String, Object?> context) =>
+        print('[$event] $message');
+
     test('Connect_and_disconnect', () async {
       final client = Spinify();
       await client.connect(url);
@@ -24,9 +28,8 @@ void main() {
     test('Connect_and_refresh', () async {
       final client = Spinify(
         config: SpinifyConfig(
-          logger: (level, event, message, context) =>
-              print('[$event] $message'),
-        ),
+            /* logger: logger, */
+            ),
       );
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
@@ -45,6 +48,7 @@ void main() {
             min: const Duration(milliseconds: 50),
             max: const Duration(milliseconds: 150),
           ),
+          logger: logger,
         ),
       );
       await client.connect(url);
@@ -80,6 +84,7 @@ void main() {
       await client.states.connecting.first;
       await client.states.connected.first;
       expect(client.state, isA<SpinifyState$Connected>());
+      await Future<void>.delayed(const Duration(milliseconds: 250));
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
     });
@@ -91,6 +96,7 @@ void main() {
             min: const Duration(milliseconds: 50),
             max: const Duration(milliseconds: 150),
           ),
+          /* logger: logger, */
         ),
       );
       await client.connect(url);
