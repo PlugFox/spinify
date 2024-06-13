@@ -55,6 +55,8 @@ dependencies:
 - ❌ DevTools extension
 - ❌ Middleware support
 - ❌ 95% test coverage
+- ❌ Benchmarks
+- ❌ Performance comparison with other libraries
 - ❌ Batching API
 - ❌ Bidirectional WebSocket emulation
 - ❌ Optimistic subscriptions
