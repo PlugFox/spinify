@@ -4,6 +4,7 @@ import 'package:fixnum/fixnum.dart' as fixnum;
 
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
+import 'model/client_info.dart';
 import 'model/history.dart';
 import 'model/presence_stats.dart';
 import 'model/stream_position.dart';
@@ -78,7 +79,7 @@ abstract interface class SpinifySubscription {
   });
 
   /// Fetch presence information inside a channel.
-  Future<SpinifyPresence> presence();
+  Future<Map<String, SpinifyClientInfo>> presence();
 
   /// Fetch presence stats information inside a channel.
   Future<SpinifyPresenceStats> presenceStats();

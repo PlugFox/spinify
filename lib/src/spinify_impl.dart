@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
+import 'model/client_info.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/constant.dart';
@@ -99,6 +100,11 @@ abstract base class SpinifyBase implements ISpinify {
     );
   }
 
+  Future<T> _doOnReady<T>(Future<T> Function() action) {
+    if (state.isConnected) return action();
+    return ready().then<T>((_) => action());
+  }
+
   @override
   Future<void> close() async {
     config.logger?.call(
@@ -161,10 +167,14 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       <int, ({SpinifyCommand command, Completer<SpinifyReply> completer})>{};
 
   @override
-  Future<void> send(List<int> data) => _sendCommandAsync(SpinifySendRequest(
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+  Future<void> send(List<int> data) => _doOnReady(
+        () => _sendCommandAsync(
+          SpinifySendRequest(
+            timestamp: DateTime.now(),
+            data: data,
+          ),
+        ),
+      );
 
   Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
     config.logger?.call(
@@ -434,6 +444,9 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..setState(SpinifySubscriptionState.unsubscribed());
         // TODO(plugfox): Resubscribe client subscriptions on unsubscribe
         // if unsubscribe.code >= 2500
+      } else if (event is SpinifyMessage && event.channel.isEmpty) {
+        // Notify about new message from the server (without channel).
+        _eventController.add(event);
       } else {
         // Notify subscription about new event.
         final sub = _serverSubscriptionRegistry[event.channel] ??
@@ -490,14 +503,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
               publication.channel.isEmpty,
               'Publication contains wrong channel',
             );
-            publication = SpinifyPublication(
-              channel: channel,
-              data: publication.data,
-              info: publication.info,
-              timestamp: publication.timestamp,
-              tags: publication.tags,
-              offset: publication.offset,
-            );
+            publication = publication.copyWith(channel: channel);
           }
           _eventController.add(publication);
           sub.onEvent(publication);
@@ -824,6 +830,14 @@ base mixin SpinifyConnectionMixin
   @override
   Future<void> ready() async {
     if (state.isConnected) return;
+    if (state.isClosed)
+      throw const SpinifyConnectionException(
+        message: 'Connection is closed permanently',
+      );
+    if (!state.isConnecting)
+      throw const SpinifyConnectionException(
+        message: 'Is not connecting to the server',
+      );
     return (_readyCompleter ??= Completer<void>()).future;
   }
 
@@ -951,25 +965,53 @@ base mixin SpinifyPingPongMixin
 }
 
 /// Base mixin for Spinify client publications management.
-base mixin SpinifyPublicationsMixin on SpinifyBase {
+base mixin SpinifyPublicationsMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<void> publish(String channel, List<int> data) =>
-      throw UnimplementedError();
+  Future<void> publish(String channel, List<int> data) => _doOnReady(
+        () => _sendCommand<SpinifyPublishResult>(
+          SpinifyPublishRequest(
+            id: _getNextCommandId(),
+            channel: channel,
+            timestamp: DateTime.now(),
+            data: data,
+          ),
+        ),
+      );
 }
 
 /// Base mixin for Spinify client presence management.
-base mixin SpinifyPresenceMixin on SpinifyBase {
+base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<SpinifyPresence> presence(String channel) =>
-      throw UnimplementedError();
+  Future<Map<String, SpinifyClientInfo>> presence(String channel) => _doOnReady(
+        () => _sendCommand<SpinifyPresenceResult>(
+          SpinifyPresenceRequest(
+            id: _getNextCommandId(),
+            channel: channel,
+            timestamp: DateTime.now(),
+          ),
+        ).then<Map<String, SpinifyClientInfo>>((reply) => reply.presence),
+      );
 
   @override
-  Future<SpinifyPresenceStats> presenceStats(String channel) =>
-      throw UnimplementedError();
+  Future<SpinifyPresenceStats> presenceStats(String channel) => _doOnReady(
+        () => _sendCommand<SpinifyPresenceStatsResult>(
+          SpinifyPresenceStatsRequest(
+            id: _getNextCommandId(),
+            channel: channel,
+            timestamp: DateTime.now(),
+          ),
+        ).then<SpinifyPresenceStats>(
+          (reply) => SpinifyPresenceStats(
+            channel: channel,
+            clients: reply.numClients,
+            users: reply.numUsers,
+          ),
+        ),
+      );
 }
 
 /// Base mixin for Spinify client history management.
-base mixin SpinifyHistoryMixin on SpinifyBase {
+base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyCommandMixin {
   @override
   Future<SpinifyHistory> history(
     String channel, {
@@ -977,21 +1019,40 @@ base mixin SpinifyHistoryMixin on SpinifyBase {
     SpinifyStreamPosition? since,
     bool? reverse,
   }) =>
-      throw UnimplementedError();
+      _doOnReady(
+        () => _sendCommand<SpinifyHistoryResult>(
+          SpinifyHistoryRequest(
+            id: _getNextCommandId(),
+            channel: channel,
+            timestamp: DateTime.now(),
+            limit: limit,
+            since: since,
+            reverse: reverse,
+          ),
+        ).then<SpinifyHistory>(
+          (reply) => SpinifyHistory(
+            publications: List<SpinifyPublication>.unmodifiable(reply
+                .publications
+                .map((pub) => pub.copyWith(channel: channel))),
+            since: reply.since,
+          ),
+        ),
+      );
 }
 
 /// Base mixin for Spinify client RPC management.
 base mixin SpinifyRPCMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<List<int>> rpc(String method, List<int> data) =>
-      _sendCommand<SpinifyRPCResult>(
-        SpinifyRPCRequest(
-          id: _getNextCommandId(),
-          timestamp: DateTime.now(),
-          method: method,
-          data: data,
-        ),
-      ).then<List<int>>((reply) => reply.data);
+  Future<List<int>> rpc(String method, List<int> data) => _doOnReady(
+        () => _sendCommand<SpinifyRPCResult>(
+          SpinifyRPCRequest(
+            id: _getNextCommandId(),
+            timestamp: DateTime.now(),
+            method: method,
+            data: data,
+          ),
+        ).then<List<int>>((reply) => reply.data),
+      );
 }
 
 /// Base mixin for Spinify client metrics management.

@@ -160,6 +160,19 @@ final class SpinifyPublication extends SpinifyChannelEvent {
   /// Optional tags, this is a map with string keys and string values
   final Map<String, String>? tags;
 
+  /// Copy this publication with a new channel.
+  SpinifyPublication copyWith({required String channel}) =>
+      channel == this.channel
+          ? this
+          : SpinifyPublication(
+              timestamp: timestamp,
+              channel: channel,
+              data: data,
+              offset: offset,
+              info: info,
+              tags: tags,
+            );
+
   @override
   bool get isConnect => false;
 

@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'package:fixnum/fixnum.dart';
 
+import 'model/channel_event.dart';
 import 'model/command.dart';
 import 'model/metric.dart';
 import 'model/reply.dart';
@@ -181,6 +182,7 @@ class SpinifyTransportFake implements ISpinifyTransport {
             id: id,
             timestamp: now,
             since: (epoch: '...', offset: Int64.ZERO),
+            publications: const <SpinifyPublication>[],
           ),
         );
       case SpinifyRPCRequest(:int id, :String method, :List<int> data):

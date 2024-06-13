@@ -386,7 +386,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
           for (final pub in sub.publications)
             SpinifyPublication(
               timestamp: now,
-              // TODO(plugfox): SpinifyPublication in SubscribeResult do not
+              // SpinifyPublication in SubscribeResult do not
               // have the "channel" field - I should fill it in manually
               // by copying the channel from the SubscribeRequest
               channel: '',
@@ -486,6 +486,20 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
           offset: history.offset,
           epoch: history.epoch,
         ),
+        publications: <SpinifyPublication>[
+          for (final pub in history.publications)
+            SpinifyPublication(
+              timestamp: now,
+              // SpinifyPublication in HistoryResult do not
+              // have the "channel" field - I should fill it in manually
+              // by copying the channel from the SubscribeRequest
+              channel: '',
+              data: pub.data,
+              info: _decodeClientInfo(pub.info),
+              offset: pub.offset,
+              tags: pub.tags,
+            ),
+        ],
       );
     } else if (reply.hasRpc()) {
       final rpc = reply.rpc;

@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
+import 'model/client_info.dart';
 import 'model/config.dart';
 import 'model/history.dart';
 import 'model/metric.dart';
@@ -119,7 +120,9 @@ abstract interface class ISpinifySubscriptionsManager {
 /// Spinify presence owner interface.
 abstract interface class ISpinifyPresenceOwner {
   /// Fetch presence information inside a channel.
-  Future<SpinifyPresence> presence(String channel);
+  /// Contains presence information - a map client IDs as keys
+  /// and client information as values.
+  Future<Map<String, SpinifyClientInfo>> presence(String channel);
 
   /// Fetch presence stats information inside a channel.
   Future<SpinifyPresenceStats> presenceStats(String channel);

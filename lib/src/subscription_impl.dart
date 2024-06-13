@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
+import 'model/client_info.dart';
 import 'model/config.dart';
 import 'model/exception.dart';
 import 'model/history.dart';
@@ -153,7 +154,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   }
 
   @override
-  Future<SpinifyPresence> presence() async {
+  Future<Map<String, SpinifyClientInfo>> presence() async {
     await ready().timeout(_client.config.timeout);
     return _client.presence(channel);
   }

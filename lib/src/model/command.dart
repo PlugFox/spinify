@@ -169,7 +169,7 @@ final class SpinifyPublishRequest extends SpinifyCommand {
   final String channel;
 
   /// Data to publish.
-  final Uint8List data;
+  final List<int> data;
 }
 
 /// {@macro command}

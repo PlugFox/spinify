@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
-    {
+    /* {
       "name": "[Flutter] Example (Local)",
       "request": "launch",
       "type": "dart",
@@ -17,8 +17,8 @@
       "args": [
         "--dart-define-from-file=config/local.json"
       ]
-    },
-    {
+    }, */
+    /* {
       "name": "[Flutter] Example (Development)",
       "request": "launch",
       "type": "dart",
@@ -34,11 +34,11 @@
       "args": [
         "--dart-define-from-file=config/development.json"
       ]
-    },
+    }, */
     // https://pub.dev/packages/test
     // dart test test/unit_test.dart --color --platform=vm
     {
-      "name": "[Dart] Unit test (VM)",
+      "name": "[Dart] Unit test (vm)",
       "request": "launch",
       "type": "dart",
       "program": "test/unit_test.dart",
@@ -115,7 +115,7 @@
     },
     // dart test test/smoke_test.dart --color --platform=vm
     {
-      "name": "[Dart] Smoke Test (VM)",
+      "name": "[Dart] Smoke Test (vm)",
       "request": "launch",
       "type": "dart",
       "program": "test/smoke_test.dart",
@@ -136,8 +136,8 @@
         "--concurrency=12"
       ],
       "args": [],
-      "preLaunchTask": "echo-server:start",
-      "postDebugTask": "echo-server:stop"
+      "preLaunchTask": "echo:start",
+      "postDebugTask": "echo:stop"
     },
     // dart run server/bin/server.dart
     {
