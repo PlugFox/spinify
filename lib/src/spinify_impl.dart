@@ -409,7 +409,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     if (reply is SpinifyPush) {
       // Add push to the stream.
       final event = reply.event;
-      _eventController.add(event);
+      _eventController.add(event); // Add event to the broadcast stream.
       config.logger?.call(
         const SpinifyLogLevel.debug(),
         'push_received',
@@ -418,7 +418,9 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           'event': event,
         },
       );
-      if (event is SpinifySubscribe) {
+      if (event.channel.isEmpty) {
+        /* ignore push without channel */
+      } else if (event is SpinifySubscribe) {
         // Add server subscription to the registry on subscribe event.
         _serverSubscriptionRegistry.putIfAbsent(
             event.channel,
@@ -445,10 +447,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..setState(SpinifySubscriptionState.unsubscribed());
         // TODO(plugfox): Resubscribe client subscriptions on unsubscribe
         // if unsubscribe.code >= 2500
-      } else if (event is SpinifyMessage && event.channel.isEmpty) {
-        // Notify about new message from the server (without channel).
-        _eventController.add(event);
-      } else if (event.channel.isNotEmpty) {
+      } else {
         // Notify subscription about new event.
         final sub = _serverSubscriptionRegistry[event.channel] ??
             _clientSubscriptionRegistry[event.channel];
