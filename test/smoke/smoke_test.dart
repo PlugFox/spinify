@@ -9,6 +9,7 @@ void main() {
   group('Connection', () {
     const url = 'ws://localhost:8000/connection/websocket';
 
+    // ignore: unused_element
     void logger(SpinifyLogLevel level, String event, String message,
             Map<String, Object?> context) =>
         print('[$event] $message');
@@ -48,7 +49,7 @@ void main() {
             min: const Duration(milliseconds: 50),
             max: const Duration(milliseconds: 150),
           ),
-          logger: logger,
+          /* logger: logger, */
         ),
       );
       await client.connect(url);
