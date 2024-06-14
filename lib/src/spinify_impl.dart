@@ -608,6 +608,11 @@ base mixin SpinifyConnectionMixin
 
       final reply = await _sendCommand<SpinifyConnectResult>(request);
 
+      if (!state.isConnecting)
+        throw const SpinifyConnectionException(
+          message: 'Connection is not in connecting state',
+        );
+
       _setState(SpinifyState$Connected(
         url: url,
         client: reply.client,

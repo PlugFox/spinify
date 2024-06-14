@@ -190,6 +190,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         ) when closeCode > 0) {
       switch (closeCode) {
         case 1009:
+          // reconnect is true by default
           code = 3; // disconnectCodeMessageSizeLimit;
           reason = 'message size limit exceeded';
           reconnect = true;
@@ -197,14 +198,34 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
           // We expose codes defined by Centrifuge protocol,
           // hiding details about transport-specific error codes.
           // We may have extra optional transportCode field in the future.
+          // reconnect is true by default
           code = 1; // connectingCodeTransportClosed;
           reason = closeReason;
           reconnect = true;
-        case >= 4000 && < 4500:
+        case >= 3000 && <= 3499:
+          // reconnect is true by default
           code = closeCode;
           reason = closeReason;
           reconnect = true;
+        case >= 3500 && <= 3999:
+          // application terminal codes
+          code = closeCode;
+          reason = closeReason ?? 'application terminal code';
+          reconnect = false;
+        case >= 4000 && <= 4499:
+          // custom disconnect codes
+          // reconnect is true by default
+          code = closeCode;
+          reason = closeReason;
+          reconnect = true;
+        case >= 4500 && <= 4999:
+          // custom disconnect codes
+          // application terminal codes
+          code = closeCode;
+          reason = closeReason ?? 'application terminal code';
+          reconnect = false;
         case >= 5000:
+          // reconnect is true by default
           code = closeCode;
           reason = closeReason;
           reconnect = true;
