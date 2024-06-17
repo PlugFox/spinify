@@ -160,6 +160,33 @@
       }
     },
     {
+      "label": "dart:build_runner:watch",
+      "detail": "Watch for changes in the project",
+      "type": "shell",
+      "icon": {
+        "color": "terminal.ansiGreen",
+        "id": "code"
+      },
+      "command": "dart run build_runner watch --build-filter \"${input:directory}/**/*.dart\"",
+      "group": {
+        "kind": "none",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "dependsOn": [
+        "dart:pub:get"
+      ],
+      "isBackground": false,
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+        "group": "dart"
+      }
+    },
+    {
       "label": "dart:format",
       "detail": "Format all files in the project",
       "icon": {
