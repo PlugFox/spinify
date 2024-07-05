@@ -3,49 +3,58 @@ import 'dart:async';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
+import 'model/annotations.dart';
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
 import 'model/client_info.dart';
+import 'model/command.dart';
 import 'model/config.dart';
 import 'model/exception.dart';
 import 'model/history.dart';
 import 'model/presence_stats.dart';
+import 'model/reply.dart';
 import 'model/state.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/subscription_state.dart';
 import 'model/subscription_states.dart';
-import 'spinify_interface.dart';
+import 'spinify_impl.dart' show SpinifySubClient;
 import 'subscription_interface.dart';
 
 @internal
 abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   SpinifySubscriptionBase({
-    required ISpinify client,
+    required SpinifySubClient client,
     required this.channel,
     required this.recoverable,
     required this.epoch,
     required this.offset,
-  }) : _clientWR = WeakReference<ISpinify>(client);
+  })  : _clientWR = WeakReference<SpinifySubClient>(client),
+        _clientConfig = client.config;
 
   @override
   final String channel;
 
   /// Spinify client weak reference.
-  final WeakReference<ISpinify> _clientWR;
-  ISpinify get _client {
+  final WeakReference<SpinifySubClient> _clientWR;
+  SpinifySubClient get _client {
     final target = _clientWR.target;
     if (target == null) {
       throw SpinifySubscriptionException(
         channel: channel,
-        message: 'Client is closed',
+        message: 'Spinify client is closed',
       );
     }
     return target;
   }
 
-  SpinifyLogger? get _logger => _client.config.logger;
+  /// Spinify client configuration.
+  final SpinifyConfig _clientConfig;
 
+  /// Spinify logger.
+  SpinifyLogger? get _logger => _clientConfig.logger;
+
+  /// Current subscription state.
   SpinifySubscriptionState _state = SpinifySubscriptionState.unsubscribed();
 
   final StreamController<SpinifySubscriptionState> _stateController =
@@ -74,6 +83,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
       SpinifyChannelEvents(_eventController.stream);
 
+  @sideEffect
   @mustCallSuper
   void onEvent(SpinifyChannelEvent event) {
     assert(
@@ -93,6 +103,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     );
   }
 
+  @internal
   @mustCallSuper
   void setState(SpinifySubscriptionState state) {
     if (_state == state) return;
@@ -110,6 +121,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   }
 
   @mustCallSuper
+  @interactive
   void close() {
     _stateController.close().ignore();
     _eventController.close().ignore();
@@ -118,6 +130,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   }
 
   @override
+  @interactive
   Future<void> ready() async {
     if (_client.isClosed)
       throw SpinifySubscriptionException(
@@ -140,37 +153,73 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   }
 
   @override
+  @interactive
   Future<SpinifyHistory> history({
     int? limit,
     SpinifyStreamPosition? since,
     bool? reverse,
-  }) async {
-    await ready().timeout(_client.config.timeout);
-    return _client.history(
-      channel,
-      limit: limit,
-      since: since,
-      reverse: reverse,
-    );
-  }
+  }) =>
+      _client
+          .sendCommand<SpinifyHistoryResult>(
+            (id) => SpinifyHistoryRequest(
+              id: id,
+              channel: channel,
+              timestamp: DateTime.now(),
+              limit: limit,
+              since: since,
+              reverse: reverse,
+            ),
+          )
+          .then<SpinifyHistory>(
+            (reply) => SpinifyHistory(
+              publications: List<SpinifyPublication>.unmodifiable(reply
+                  .publications
+                  .map((pub) => pub.copyWith(channel: channel))),
+              since: reply.since,
+            ),
+          );
 
   @override
-  Future<Map<String, SpinifyClientInfo>> presence() async {
-    await ready().timeout(_client.config.timeout);
-    return _client.presence(channel);
-  }
+  @interactive
+  Future<Map<String, SpinifyClientInfo>> presence() => _client
+      .sendCommand<SpinifyPresenceResult>(
+        (id) => SpinifyPresenceRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+        ),
+      )
+      .then<Map<String, SpinifyClientInfo>>((reply) => reply.presence);
 
   @override
-  Future<SpinifyPresenceStats> presenceStats() async {
-    await ready().timeout(_client.config.timeout);
-    return _client.presenceStats(channel);
-  }
+  @interactive
+  Future<SpinifyPresenceStats> presenceStats() => _client
+      .sendCommand<SpinifyPresenceStatsResult>(
+        (id) => SpinifyPresenceStatsRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+        ),
+      )
+      .then<SpinifyPresenceStats>(
+        (reply) => SpinifyPresenceStats(
+          channel: channel,
+          clients: reply.numClients,
+          users: reply.numUsers,
+        ),
+      );
 
   @override
-  Future<void> publish(List<int> data) async {
-    await ready().timeout(_client.config.timeout);
-    return _client.publish(channel, data);
-  }
+  @interactive
+  Future<void> publish(List<int> data) =>
+      _client.sendCommand<SpinifyPublishResult>(
+        (id) => SpinifyPublishRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
 }
 
 @internal
@@ -191,6 +240,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
 
   /// Interactively subscribes to the channel.
   @override
+  @interactive
   Future<void> subscribe() async {
     // Check if the client is connected
     switch (_client.state) {
@@ -218,11 +268,12 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   }
 
   @override
+  @interactive
   Future<void> unsubscribe([
     int code = 0,
     String reason = 'unsubscribe called',
   ]) async {
-    if (_state.isUnsubscribed) return Future.value();
+    if (_state.isUnsubscribed) return;
     //await ready().timeout(_client.config.timeout);
     throw UnimplementedError();
     // TODO(plugfox): implement unsubscribe, remove resubscribe timer
@@ -231,7 +282,52 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   /// `SubscriptionImpl{}._resubscribe()` from `centrifuge` package
   Future<void> _resubscribe() async {
     if (!_state.isUnsubscribed) return;
-    setState(SpinifySubscriptionState$Subscribing());
+    try {
+      setState(SpinifySubscriptionState$Subscribing());
+
+      final token = await config.getToken?.call();
+      if (token == null || token.isEmpty) {
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Token is empty',
+        );
+      }
+
+      // ...
+
+      //_sendCommand<SpinifySubscribeResult>(SpinifySubscribeRequest());
+
+      _logger?.call(
+        const SpinifyLogLevel.config(),
+        'subscription_resubscribe',
+        'Subscription "$channel" resubscribing',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': this,
+        },
+      );
+    } on Object catch (error, stackTrace) {
+      _logger?.call(
+        const SpinifyLogLevel.error(),
+        'subscription_resubscribe_error',
+        'Subscription "$channel" failed to resubscribe',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': this,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      if (error is SpinifySubscriptionException) rethrow;
+      Error.throwWithStackTrace(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Failed to resubscribe',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
   }
 }
 

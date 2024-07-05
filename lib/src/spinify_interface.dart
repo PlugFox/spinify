@@ -94,13 +94,21 @@ abstract interface class ISpinifySubscriptionsManager {
     bool subscribe = false,
   });
 
-  /// Get subscription to the channel
+  /// Get client or server subscription to the channel
+  /// from internal registry or null if not found.
+  SpinifySubscription? getSubscription(String channel);
+
+  /// Get client subscription to the channel
   /// from internal registry or null if not found.
   ///
   /// You need to call [SpinifyClientSubscription.subscribe]
   /// to start receiving events
   /// in the channel.
-  SpinifyClientSubscription? getSubscription(String channel);
+  SpinifyClientSubscription? getClientSubscription(String channel);
+
+  /// Get server subscription to the channel
+  /// from internal registry or null if not found.
+  SpinifyServerSubscription? getServerSubscription(String channel);
 
   /// Remove the [SpinifySubscription] from internal registry
   /// and unsubscribe from [SpinifyClientSubscription.channel].

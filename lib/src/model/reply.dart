@@ -399,10 +399,10 @@ final class SpinifySubRefreshResult extends SpinifyReply
 /// For pushes it will have zero value.
 ///
 /// {@macro reply}
-final class SpinifyError extends SpinifyReply
+final class SpinifyErrorResult extends SpinifyReply
     with SpinifyReplyResult<SpinifyCommand> {
   /// {@macro reply}
-  const SpinifyError({
+  const SpinifyErrorResult({
     required super.id,
     required super.timestamp,
     required this.code,
@@ -411,7 +411,7 @@ final class SpinifyError extends SpinifyReply
   });
 
   @override
-  String get type => 'Error';
+  String get type => 'ErrorResult';
 
   /// Error code.
   final int code;

@@ -184,7 +184,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       return _decodeReply(reply);
     } else if (reply.hasError()) {
       final error = reply.error;
-      return SpinifyError(
+      return SpinifyErrorResult(
         id: reply.hasId() ? reply.id : 0,
         timestamp: DateTime.now(),
         code: error.code,
@@ -558,6 +558,15 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         timestamp: now,
         expires: expBool,
         ttl: ttlDT,
+      );
+    } else if (reply.hasError()) {
+      final error = reply.error;
+      return SpinifyErrorResult(
+        id: id,
+        timestamp: now,
+        code: error.code,
+        message: error.message,
+        temporary: error.temporary,
       );
     } else {
       throw UnimplementedError('Unsupported reply type');

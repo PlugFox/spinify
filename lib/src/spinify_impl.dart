@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
+import 'model/annotations.dart';
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
 import 'model/client_info.dart';
@@ -260,6 +261,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   }
 
   @override
+  @sideEffect
   Future<void> _onReply(SpinifyReply reply) async {
     assert(
         reply.id >= 0 && reply.id <= _metrics.commandId,
@@ -276,7 +278,15 @@ base mixin SpinifyCommandMixin on SpinifyBase {
           completer?.isCompleted == false,
           'Reply completer already completed',
         );
-        completer?.complete(reply);
+        if (reply is SpinifyErrorResult) {
+          completer?.completeError(SpinifyReplyException(
+            replyCode: reply.code,
+            replyMessage: reply.message,
+            temporary: reply.temporary,
+          ));
+        } else {
+          completer?.complete(reply);
+        }
       }
     }
     await super._onReply(reply);
@@ -335,8 +345,17 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       <String, SpinifyServerSubscriptionImpl>{};
 
   @override
-  SpinifyClientSubscription? getSubscription(String channel) =>
+  SpinifySubscription? getSubscription(String channel) =>
+      _clientSubscriptionRegistry[channel] ??
+      _serverSubscriptionRegistry[channel];
+
+  @override
+  SpinifyClientSubscription? getClientSubscription(String channel) =>
       _clientSubscriptionRegistry[channel];
+
+  @override
+  SpinifyServerSubscription? getServerSubscription(String channel) =>
+      _serverSubscriptionRegistry[channel];
 
   @override
   SpinifyClientSubscription newSubscription(
@@ -363,7 +382,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     }
     final newSub =
         _clientSubscriptionRegistry[channel] = SpinifyClientSubscriptionImpl(
-      client: this,
+      client: SpinifySubClient(this),
       channel: channel,
       config: config ?? const SpinifySubscriptionConfig.byDefault(),
     );
@@ -431,7 +450,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         _serverSubscriptionRegistry.putIfAbsent(
             event.channel,
             () => SpinifyServerSubscriptionImpl(
-                  client: this,
+                  client: SpinifySubClient(this),
                   channel: event.channel,
                   recoverable: event.recoverable,
                   epoch: event.since.epoch,
@@ -486,7 +505,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         final sub = _serverSubscriptionRegistry.putIfAbsent(
             channel,
             () => SpinifyServerSubscriptionImpl(
-                  client: this,
+                  client: SpinifySubClient(this),
                   channel: channel,
                   recoverable: value.recoverable,
                   epoch: value.since.epoch,
@@ -992,46 +1011,39 @@ base mixin SpinifyPingPongMixin
 /// Base mixin for Spinify client publications management.
 base mixin SpinifyPublicationsMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<void> publish(String channel, List<int> data) => _doOnReady(
-        () => _sendCommand<SpinifyPublishResult>(
-          SpinifyPublishRequest(
-            id: _getNextCommandId(),
-            channel: channel,
-            timestamp: DateTime.now(),
-            data: data,
-          ),
+  Future<void> publish(String channel, List<int> data) =>
+      getSubscription(channel)?.publish(data) ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
         ),
+        StackTrace.current,
       );
 }
 
 /// Base mixin for Spinify client presence management.
 base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<Map<String, SpinifyClientInfo>> presence(String channel) => _doOnReady(
-        () => _sendCommand<SpinifyPresenceResult>(
-          SpinifyPresenceRequest(
-            id: _getNextCommandId(),
-            channel: channel,
-            timestamp: DateTime.now(),
-          ),
-        ).then<Map<String, SpinifyClientInfo>>((reply) => reply.presence),
+  Future<Map<String, SpinifyClientInfo>> presence(String channel) =>
+      getSubscription(channel)?.presence() ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
       );
 
   @override
-  Future<SpinifyPresenceStats> presenceStats(String channel) => _doOnReady(
-        () => _sendCommand<SpinifyPresenceStatsResult>(
-          SpinifyPresenceStatsRequest(
-            id: _getNextCommandId(),
-            channel: channel,
-            timestamp: DateTime.now(),
-          ),
-        ).then<SpinifyPresenceStats>(
-          (reply) => SpinifyPresenceStats(
-            channel: channel,
-            clients: reply.numClients,
-            users: reply.numUsers,
-          ),
+  Future<SpinifyPresenceStats> presenceStats(String channel) =>
+      getSubscription(channel)?.presenceStats() ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
         ),
+        StackTrace.current,
       );
 }
 
@@ -1044,24 +1056,17 @@ base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyCommandMixin {
     SpinifyStreamPosition? since,
     bool? reverse,
   }) =>
-      _doOnReady(
-        () => _sendCommand<SpinifyHistoryResult>(
-          SpinifyHistoryRequest(
-            id: _getNextCommandId(),
-            channel: channel,
-            timestamp: DateTime.now(),
-            limit: limit,
-            since: since,
-            reverse: reverse,
-          ),
-        ).then<SpinifyHistory>(
-          (reply) => SpinifyHistory(
-            publications: List<SpinifyPublication>.unmodifiable(reply
-                .publications
-                .map((pub) => pub.copyWith(channel: channel))),
-            since: reply.since,
-          ),
+      getSubscription(channel)?.history(
+        limit: limit,
+        since: since,
+        reverse: reverse,
+      ) ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
         ),
+        StackTrace.current,
       );
 }
 
@@ -1127,4 +1132,23 @@ final class Spinify extends SpinifyBase
   /// {@macro spinify}
   factory Spinify.connect(String url, {SpinifyConfig? config}) =>
       Spinify(config: config)..connect(url);
+}
+
+/// Wrapper for Spinify client subscriptions that allow to
+/// send commands through the client.
+@internal
+extension type SpinifySubClient(SpinifyCommandMixin _commandSender)
+    implements ISpinify {
+  /// Build and send command to the server.
+  @internal
+  Future<T> sendCommand<T extends SpinifyReply>(
+    SpinifyCommand Function(int nextId) builder,
+  ) =>
+      _commandSender._doOnReady(
+        () => _commandSender._sendCommand<T>(
+          builder(
+            _commandSender._getNextCommandId(),
+          ),
+        ),
+      );
 }

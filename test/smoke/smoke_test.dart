@@ -166,18 +166,52 @@ void main() {
                   ),
             ),
       );
-      final notifications = serverSubscriptions['notification:index'];
+      final notification = serverSubscriptions['notification:index'];
       expect(
-        notifications,
+        notification,
         allOf(
           isNotNull,
           isA<SpinifyServerSubscription>()
               .having((sub) => sub.state.isSubscribed, 'subscribed', isTrue),
         ),
       );
+      notification!;
+      await expectLater(
+        notification.history,
+        throwsA(
+          isA<SpinifyReplyException>()
+              .having(
+                (e) => e.replyCode,
+                'replyCode',
+                equals(108),
+              )
+              .having(
+                (e) => e.message.trim().toLowerCase(),
+                'message',
+                equals('not available'),
+              ),
+        ),
+      );
+      await expectLater(notification.presence(), completes);
+      await expectLater(
+        notification.presenceStats,
+        throwsA(
+          isA<SpinifyReplyException>()
+              .having(
+                (e) => e.replyCode,
+                'replyCode',
+                equals(108),
+              )
+              .having(
+                (e) => e.message.trim().toLowerCase(),
+                'message',
+                equals('not available'),
+              ),
+        ),
+      );
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
-      expect(notifications?.state.isUnsubscribed, isTrue);
+      expect(notification.state.isUnsubscribed, isTrue);
       expect(serverSubscriptions, isEmpty);
     });
   });
