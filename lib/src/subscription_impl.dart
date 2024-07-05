@@ -10,6 +10,7 @@ import 'model/config.dart';
 import 'model/exception.dart';
 import 'model/history.dart';
 import 'model/presence_stats.dart';
+import 'model/state.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/subscription_state.dart';
@@ -188,10 +189,36 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   @override
   final SpinifySubscriptionConfig config;
 
+  /// Interactively subscribes to the channel.
   @override
-  Future<void> subscribe() {
-    throw UnimplementedError();
-    // TODO(plugfox): implement subscribe, add resubscribe timer
+  Future<void> subscribe() async {
+    // Check if the client is connected
+    switch (_client.state) {
+      case SpinifyState$Connected _:
+        break;
+      case SpinifyState$Connecting _:
+        await _client.ready();
+      case SpinifyState$Disconnected():
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Client is not connected',
+        );
+      case SpinifyState$Closed():
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Client is closed',
+        );
+    }
+
+    // Check if the subscription is already subscribed
+    switch (state) {
+      case SpinifySubscriptionState$Subscribed _:
+        return;
+      case SpinifySubscriptionState$Subscribing _:
+        await ready();
+      case SpinifySubscriptionState$Unsubscribed _:
+        await _resubscribe();
+    }
   }
 
   @override
@@ -203,6 +230,12 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     //await ready().timeout(_client.config.timeout);
     throw UnimplementedError();
     // TODO(plugfox): implement unsubscribe, remove resubscribe timer
+  }
+
+  /// `SubscriptionImpl{}._resubscribe()` from `centrifuge` package
+  Future<void> _resubscribe() async {
+    if (!_state.isUnsubscribed) return;
+    setState(SpinifySubscriptionState$Subscribing());
   }
 }
 

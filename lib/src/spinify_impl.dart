@@ -339,8 +339,11 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       _clientSubscriptionRegistry[channel];
 
   @override
-  SpinifyClientSubscription newSubscription(String channel,
-      [SpinifySubscriptionConfig? config]) {
+  SpinifyClientSubscription newSubscription(
+    String channel, {
+    SpinifySubscriptionConfig? config,
+    bool subscribe = false,
+  }) {
     final sub = _clientSubscriptionRegistry[channel] ??
         _serverSubscriptionRegistry[channel];
     if (sub != null) {
@@ -358,11 +361,14 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         message: 'Subscription already exists',
       );
     }
-    return _clientSubscriptionRegistry[channel] = SpinifyClientSubscriptionImpl(
+    final newSub =
+        _clientSubscriptionRegistry[channel] = SpinifyClientSubscriptionImpl(
       client: this,
       channel: channel,
       config: config ?? const SpinifySubscriptionConfig.byDefault(),
     );
+    if (subscribe) newSub.subscribe();
+    return newSub;
   }
 
   @override
@@ -514,6 +520,9 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ?..setState(SpinifySubscriptionState.unsubscribed())
           ..close();
       }
+
+      // Thats a `SpinifyConnectResult` reply.
+      // We should resubscribe client subscriptions here.
 
       // TODO(plugfox): Resubscribe client subscriptions on connect
     }

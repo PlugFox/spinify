@@ -84,11 +84,15 @@ abstract interface class ISpinifySubscriptionsManager {
   /// Create new client-side subscription.
   /// `newSubscription(channel, config)` allocates a new Subscription
   /// in the registry or throws an exception if the Subscription
-  /// is already there. We will discuss common Subscription options below.
+  /// is already there.
+  /// If [config] is not provided then default config will be used.
+  /// If [subscribe] is true then the client will subscribe to the channel
+  /// immediately after creation.
   SpinifyClientSubscription newSubscription(
-    String channel, [
+    String channel, {
     SpinifySubscriptionConfig? config,
-  ]);
+    bool subscribe = false,
+  });
 
   /// Get subscription to the channel
   /// from internal registry or null if not found.
