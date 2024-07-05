@@ -195,6 +195,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     // Check if the client is connected
     switch (_client.state) {
       case SpinifyState$Connected _:
+        break;
       case SpinifyState$Connecting _:
       case SpinifyState$Disconnected _:
         await _client.ready();
