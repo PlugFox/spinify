@@ -6,9 +6,9 @@ import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('Connection', () {
-    const url = 'ws://localhost:8000/connection/websocket';
+  const url = 'ws://localhost:8000/connection/websocket';
 
+  group('Connection', () {
     // ignore: unused_element
     void logger(SpinifyLogLevel level, String event, String message,
             Map<String, Object?> context) =>
@@ -133,6 +133,52 @@ void main() {
       expect(client.state, isA<SpinifyState$Disconnected>());
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
+    });
+  });
+
+  group('Subscriptions', () {
+    test('Server_subscription', () async {
+      final client = Spinify();
+      await client.connect(url);
+      expect(client.state, isA<SpinifyState$Connected>());
+      final serverSubscriptions = client.subscriptions.server;
+      expect(
+        serverSubscriptions,
+        isA<Map<String, SpinifyServerSubscription>>()
+            .having(
+              (subs) => subs.keys,
+              'server subscriptions',
+              containsAll(<String>['notification:index']),
+            )
+            .having(
+              (subs) => subs['notification:index'],
+              'publications',
+              isA<SpinifyServerSubscription>()
+                  .having(
+                    (sub) => sub.channel,
+                    'channel',
+                    'notification:index',
+                  )
+                  .having(
+                    (sub) => sub.state,
+                    'state',
+                    isA<SpinifySubscriptionState$Subscribed>(),
+                  ),
+            ),
+      );
+      final notifications = serverSubscriptions['notification:index'];
+      expect(
+        notifications,
+        allOf(
+          isNotNull,
+          isA<SpinifyServerSubscription>()
+              .having((sub) => sub.state.isSubscribed, 'subscribed', isTrue),
+        ),
+      );
+      await client.close();
+      expect(client.state, isA<SpinifyState$Closed>());
+      expect(notifications?.state.isUnsubscribed, isTrue);
+      expect(serverSubscriptions, isEmpty);
     });
   });
 }
