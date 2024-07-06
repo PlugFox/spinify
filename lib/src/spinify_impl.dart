@@ -920,12 +920,11 @@ base mixin SpinifyPingPongMixin
   Timer? _pingTimer;
 
   /* @override
-  Future<void> ping() => _bucket.push(
-      ClientEvent.command,
-      (int id, DateTime timestamp) => SpinifyPingRequest(
-            id: id,
-            timestamp: timestamp,
-          )); */
+  Future<void> ping() => _doOnReady(
+        () => _sendCommand<SpinifyPingResult>(
+          SpinifyPingRequest(timestamp: DateTime.now()),
+        ),
+      ); */
 
   /// Stop keepalive timer.
   @protected

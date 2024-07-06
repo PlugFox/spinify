@@ -67,7 +67,7 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
 
   /// Is refresh active.
   final bool isRefreshActive;
- */
+  */
 
   /// The total number of successful connections.
   abstract final int connects;
@@ -92,6 +92,9 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
 
   /// The time of the last disconnect.
   abstract final DateTime? lastDisconnectAt;
+
+  /* /// The last ping-pong delay.
+  abstract final Duration ping; */
 
   /// Convert metrics to JSON.
   Map<String, Object?> toJson() => <String, Object?>{};
@@ -123,6 +126,7 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
     required this.bytesSent,
     required this.messagesReceived,
     required this.messagesSent,
+    //required this.ping,
   });
 
   @override
@@ -169,6 +173,9 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
 
   @override
   final BigInt messagesSent;
+
+  /* @override
+  final Duration ping; */
 }
 
 /// {@macro metrics}
@@ -221,6 +228,9 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
   @override
   BigInt messagesSent = BigInt.zero;
 
+  /* @override
+  Duration ping = Duration.zero; */
+
   /// Freezes the metrics.
   SpinifyMetrics$Immutable freeze() => SpinifyMetrics$Immutable(
         timestamp: timestamp,
@@ -238,5 +248,6 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
         bytesSent: bytesSent,
         messagesReceived: messagesReceived,
         messagesSent: messagesSent,
+        //ping: ping,
       );
 }
