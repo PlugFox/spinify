@@ -29,14 +29,14 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     required this.recoverable,
     required this.epoch,
     required this.offset,
-  })  : _clientWR = WeakReference<SpinifySubClient>(client),
+  })  : _client = client, //_clientWR = WeakReference<SpinifySubClient>(client),
         _clientConfig = client.config;
 
   @override
   final String channel;
 
   /// Spinify client weak reference.
-  final WeakReference<SpinifySubClient> _clientWR;
+  /* final WeakReference<SpinifySubClient> _clientWR;
   SpinifySubClient get _client {
     final target = _clientWR.target;
     if (target == null) {
@@ -46,7 +46,10 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
       );
     }
     return target;
-  }
+  } */
+
+  /// Spinify client
+  final SpinifySubClient _client;
 
   /// Spinify client configuration.
   final SpinifyConfig _clientConfig;
