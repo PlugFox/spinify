@@ -1178,4 +1178,17 @@ extension type SpinifySubClient(SpinifyCommandMixin _commandSender)
           ),
         ),
       );
+
+  Future<void> onPublication(SpinifyPublication publication) async {
+    // Add publication to the stream.
+    /* _commandSender._eventController.add(publication);
+    _commandSender.config.logger?.call(
+      const SpinifyLogLevel.debug(),
+      'publication_received',
+      'Publication ${publication.type} received',
+      <String, Object?>{
+        'publication': publication,
+      },
+    ); */
+  }
 }
