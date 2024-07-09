@@ -335,6 +335,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
 
       if (result.publications.isNotEmpty) {
         // TODO(plugfox): implement publications
+        // TODO(plugfox): add publications to client _eventController
       }
 
       // TODO(plugfox): tear down reconnect timer
