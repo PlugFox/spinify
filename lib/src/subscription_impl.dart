@@ -241,6 +241,9 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   @override
   final SpinifySubscriptionConfig config;
 
+  /// Whether the subscription should recover.
+  bool _recover = false;
+
   /// Interactively subscribes to the channel.
   @override
   @interactive
@@ -296,9 +299,43 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         );
       }
 
-      // ...
+      final data = await config.getPayload?.call();
 
-      //_sendCommand<SpinifySubscribeResult>(SpinifySubscribeRequest());
+      final recover =
+          _recover && offset > fixnum.Int64.ZERO && epoch.isNotEmpty;
+
+      final result = await _client.sendCommand<SpinifySubscribeResult>(
+        (id) => SpinifySubscribeRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+          token: token,
+          recoverable: recoverable,
+          recover: recover,
+          offset: recover ? offset : null,
+          epoch: recover ? epoch : null,
+          positioned: config.positioned,
+          joinLeave: config.joinLeave,
+          data: data,
+        ),
+      );
+
+      if (result.recoverable) {
+        _recover = true;
+        epoch = result.since.epoch;
+        offset = result.since.offset;
+      }
+
+      setState(SpinifySubscriptionState$Subscribed(data: result.data));
+
+      if (result.expires) {
+        // TODO(plugfox): implement resubscribe timer
+        //_setUpRefreshConnection();
+      }
+
+      if (result.publications.isNotEmpty) {
+        // TODO(plugfox): implement publications
+      }
 
       _logger?.call(
         const SpinifyLogLevel.config(),
@@ -321,11 +358,33 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
           'stackTrace': stackTrace,
         },
       );
-      if (error is SpinifySubscriptionException) rethrow;
+      void scheduleResubscribe() {
+        // TODO(plugfox): implement resubscribe timer
+        //_setUpReconnectTimer();
+      }
+      switch (error) {
+        case SpinifyErrorResult result:
+          if (result.code == 109) {
+            // Token expired error.
+            scheduleResubscribe(); // Retry resubscribe
+          } else if (result.temporary) {
+            // Temporary error.
+            scheduleResubscribe(); // Retry resubscribe
+          } else {
+            // Disable resubscribe timer
+            //moveToUnsubscribed(result.code, result.message, false);
+            setState(SpinifySubscriptionState$Unsubscribed());
+          }
+        case SpinifySubscriptionException _:
+          scheduleResubscribe(); // Some spinify exception - retry resubscribe
+          rethrow;
+        default:
+          scheduleResubscribe(); // Unknown error - retry resubscribe
+      }
       Error.throwWithStackTrace(
         SpinifySubscriptionException(
           channel: channel,
-          message: 'Failed to resubscribe',
+          message: 'Failed to resubscribe to "$channel"',
           error: error,
         ),
         stackTrace,

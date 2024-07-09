@@ -685,8 +685,36 @@ base mixin SpinifyConnectionMixin
           'stackTrace': stackTrace,
         },
       );
-      _setUpReconnectTimer();
-      rethrow;
+
+      _transport?.disconnect().ignore();
+
+      switch (error) {
+        case SpinifyErrorResult result:
+          if (result.code == 109) {
+            // Token expired error.
+            _setUpReconnectTimer(); // Retry resubscribe
+          } else if (result.temporary) {
+            // Temporary error.
+            _setUpReconnectTimer(); // Retry resubscribe
+          } else {
+            // Disable resubscribe timer
+            //moveToUnsubscribed(result.code, result.message, false);
+            _setState(SpinifyState$Disconnected());
+          }
+        case SpinifyConnectionException _:
+          _setUpReconnectTimer(); // Some spinify exception - retry resubscribe
+          rethrow;
+        default:
+          _setUpReconnectTimer(); // Unknown error - retry resubscribe
+      }
+
+      Error.throwWithStackTrace(
+        SpinifyConnectionException(
+          message: 'Error connecting to server $url',
+          error: error,
+        ),
+        stackTrace,
+      );
     }
   }
 
