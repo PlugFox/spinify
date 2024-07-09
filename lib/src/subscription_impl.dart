@@ -337,6 +337,9 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         // TODO(plugfox): implement publications
       }
 
+      // TODO(plugfox): tear down reconnect timer
+      //await _onSubscribed();
+
       _logger?.call(
         const SpinifyLogLevel.config(),
         'subscription_resubscribe',
