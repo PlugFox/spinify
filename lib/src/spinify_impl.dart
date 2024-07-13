@@ -529,9 +529,12 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           _eventController.add(publication);
           sub.onEvent(publication);
           // Update subscription offset on publication.
-          if (sub.recoverable) if (publication.offset
-              case fixnum.Int64 newOffset when newOffset > 0)
-            sub.offset = newOffset;
+          if (sub.recoverable) {
+            if (publication.offset case fixnum.Int64 newOffset
+                when newOffset > sub.offset) {
+              sub.offset = newOffset;
+            }
+          }
         }
       }
       final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();

@@ -89,6 +89,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
         'channel': channel,
         'subscription': this,
         'event': event,
+        if (event is SpinifyPublication) 'publication': event,
       },
     );
   }
@@ -314,9 +315,13 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         //_setUpRefreshConnection();
       }
 
-      if (result.publications.isNotEmpty) {
-        // TODO(plugfox): implement publications
-        // TODO(plugfox): add publications to client _eventController
+      // Handle received publications and update offset.
+      for (final pub in result.publications) {
+        _client._eventController.add(pub);
+        onEvent(pub);
+        if (pub.offset case fixnum.Int64 value when value > offset) {
+          offset = value;
+        }
       }
 
       // TODO(plugfox): tear down reconnect timer
@@ -324,8 +329,8 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
 
       _logger?.call(
         const SpinifyLogLevel.config(),
-        'subscription_resubscribe',
-        'Subscription "$channel" resubscribing',
+        'subscription_subscribed',
+        'Subscription "$channel" subscribed',
         <String, Object?>{
           'channel': channel,
           'subscription': this,
