@@ -1,43 +1,24 @@
-import 'dart:async';
-
-import 'package:fixnum/fixnum.dart' as fixnum;
-import 'package:meta/meta.dart';
-
-import 'model/annotations.dart';
-import 'model/channel_event.dart';
-import 'model/channel_events.dart';
-import 'model/client_info.dart';
-import 'model/command.dart';
-import 'model/config.dart';
-import 'model/exception.dart';
-import 'model/history.dart';
-import 'model/presence_stats.dart';
-import 'model/reply.dart';
-import 'model/state.dart';
-import 'model/stream_position.dart';
-import 'model/subscription_config.dart';
-import 'model/subscription_state.dart';
-import 'model/subscription_states.dart';
-import 'spinify_impl.dart' show SpinifySubClient;
-import 'subscription_interface.dart';
+part of 'spinify_impl.dart';
 
 @internal
 abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   SpinifySubscriptionBase({
-    required SpinifySubClient client,
+    required SpinifySubscriptionMixin client,
     required this.channel,
     required this.recoverable,
     required this.epoch,
     required this.offset,
-  })  : _client = client, //_clientWR = WeakReference<SpinifySubClient>(client),
+  })  : _clientWR = WeakReference<SpinifySubscriptionMixin>(client),
         _clientConfig = client.config;
 
   @override
   final String channel;
 
   /// Spinify client weak reference.
-  /* final WeakReference<SpinifySubClient> _clientWR;
-  SpinifySubClient get _client {
+  final WeakReference<SpinifySubscriptionMixin> _clientWR;
+
+  /// Spinify client
+  SpinifySubscriptionMixin get _client {
     final target = _clientWR.target;
     if (target == null) {
       throw SpinifySubscriptionException(
@@ -46,10 +27,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
       );
     }
     return target;
-  } */
-
-  /// Spinify client
-  final SpinifySubClient _client;
+  }
 
   /// Spinify client configuration.
   final SpinifyConfig _clientConfig;
@@ -65,6 +43,15 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
 
   final StreamController<SpinifyChannelEvent> _eventController =
       StreamController<SpinifyChannelEvent>.broadcast();
+
+  Future<T> _sendCommand<T extends SpinifyReply>(
+    SpinifyCommand Function(int nextId) builder,
+  ) =>
+      _client._doOnReady(
+        () => _client._sendCommand<T>(
+          builder(_client._getNextCommandId()),
+        ),
+      );
 
   @override
   bool recoverable;
@@ -162,49 +149,44 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     SpinifyStreamPosition? since,
     bool? reverse,
   }) =>
-      _client
-          .sendCommand<SpinifyHistoryResult>(
-            (id) => SpinifyHistoryRequest(
-              id: id,
-              channel: channel,
-              timestamp: DateTime.now(),
-              limit: limit,
-              since: since,
-              reverse: reverse,
-            ),
-          )
-          .then<SpinifyHistory>(
-            (reply) => SpinifyHistory(
-              publications: List<SpinifyPublication>.unmodifiable(reply
-                  .publications
-                  .map((pub) => pub.copyWith(channel: channel))),
-              since: reply.since,
-            ),
-          );
+      _sendCommand<SpinifyHistoryResult>(
+        (id) => SpinifyHistoryRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+          limit: limit,
+          since: since,
+          reverse: reverse,
+        ),
+      ).then<SpinifyHistory>(
+        (reply) => SpinifyHistory(
+          publications: List<SpinifyPublication>.unmodifiable(
+              reply.publications.map((pub) => pub.copyWith(channel: channel))),
+          since: reply.since,
+        ),
+      );
 
   @override
   @interactive
-  Future<Map<String, SpinifyClientInfo>> presence() => _client
-      .sendCommand<SpinifyPresenceResult>(
+  Future<Map<String, SpinifyClientInfo>> presence() =>
+      _sendCommand<SpinifyPresenceResult>(
         (id) => SpinifyPresenceRequest(
           id: id,
           channel: channel,
           timestamp: DateTime.now(),
         ),
-      )
-      .then<Map<String, SpinifyClientInfo>>((reply) => reply.presence);
+      ).then<Map<String, SpinifyClientInfo>>((reply) => reply.presence);
 
   @override
   @interactive
-  Future<SpinifyPresenceStats> presenceStats() => _client
-      .sendCommand<SpinifyPresenceStatsResult>(
+  Future<SpinifyPresenceStats> presenceStats() =>
+      _sendCommand<SpinifyPresenceStatsResult>(
         (id) => SpinifyPresenceStatsRequest(
           id: id,
           channel: channel,
           timestamp: DateTime.now(),
         ),
-      )
-      .then<SpinifyPresenceStats>(
+      ).then<SpinifyPresenceStats>(
         (reply) => SpinifyPresenceStats(
           channel: channel,
           clients: reply.numClients,
@@ -214,8 +196,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
 
   @override
   @interactive
-  Future<void> publish(List<int> data) =>
-      _client.sendCommand<SpinifyPublishResult>(
+  Future<void> publish(List<int> data) => _sendCommand<SpinifyPublishResult>(
         (id) => SpinifyPublishRequest(
           id: id,
           channel: channel,
@@ -304,7 +285,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
       final recover =
           _recover && offset > fixnum.Int64.ZERO && epoch.isNotEmpty;
 
-      final result = await _client.sendCommand<SpinifySubscribeResult>(
+      final result = await _sendCommand<SpinifySubscribeResult>(
         (id) => SpinifySubscribeRequest(
           id: id,
           channel: channel,

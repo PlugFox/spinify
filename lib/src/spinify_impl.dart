@@ -21,9 +21,9 @@ import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/subscription_state.dart';
+import 'model/subscription_states.dart';
 import 'model/transport_interface.dart';
 import 'spinify_interface.dart';
-import 'subscription_impl.dart';
 import 'subscription_interface.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
@@ -31,6 +31,8 @@ import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'transport_ws_pb_vm.dart';
 import 'util/backoff.dart';
+
+part 'subscription_impl.dart';
 
 /// Base class for Spinify client.
 abstract base class SpinifyBase implements ISpinify {
@@ -382,7 +384,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     }
     final newSub =
         _clientSubscriptionRegistry[channel] = SpinifyClientSubscriptionImpl(
-      client: SpinifySubClient(this),
+      client: this,
       channel: channel,
       config: config ?? const SpinifySubscriptionConfig.byDefault(),
     );
@@ -450,7 +452,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         _serverSubscriptionRegistry.putIfAbsent(
             event.channel,
             () => SpinifyServerSubscriptionImpl(
-                  client: SpinifySubClient(this),
+                  client: this,
                   channel: event.channel,
                   recoverable: event.recoverable,
                   epoch: event.since.epoch,
@@ -505,7 +507,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         final sub = _serverSubscriptionRegistry.putIfAbsent(
             channel,
             () => SpinifyServerSubscriptionImpl(
-                  client: SpinifySubClient(this),
+                  client: this,
                   channel: channel,
                   recoverable: value.recoverable,
                   epoch: value.since.epoch,
@@ -1159,36 +1161,4 @@ final class Spinify extends SpinifyBase
   /// {@macro spinify}
   factory Spinify.connect(String url, {SpinifyConfig? config}) =>
       Spinify(config: config)..connect(url);
-}
-
-/// Wrapper for Spinify client subscriptions that allow to
-/// send commands through the client.
-@internal
-extension type SpinifySubClient(SpinifyCommandMixin _commandSender)
-    implements ISpinify {
-  /// Build and send command to the server.
-  @internal
-  Future<T> sendCommand<T extends SpinifyReply>(
-    SpinifyCommand Function(int nextId) builder,
-  ) =>
-      _commandSender._doOnReady(
-        () => _commandSender._sendCommand<T>(
-          builder(
-            _commandSender._getNextCommandId(),
-          ),
-        ),
-      );
-
-  Future<void> onPublication(SpinifyPublication publication) async {
-    // Add publication to the stream.
-    /* _commandSender._eventController.add(publication);
-    _commandSender.config.logger?.call(
-      const SpinifyLogLevel.debug(),
-      'publication_received',
-      'Publication ${publication.type} received',
-      <String, Object?>{
-        'publication': publication,
-      },
-    ); */
-  }
 }
