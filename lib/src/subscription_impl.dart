@@ -23,7 +23,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     if (target == null) {
       throw SpinifySubscriptionException(
         channel: channel,
-        message: 'Spinify client is closed',
+        message: 'Spinify client is do not exist anymore',
       );
     }
     return target;
