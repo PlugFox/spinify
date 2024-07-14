@@ -9,7 +9,10 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     required this.epoch,
     required this.offset,
   })  : _clientWR = WeakReference<SpinifySubscriptionMixin>(client),
-        _clientConfig = client.config;
+        _clientConfig = client.config {
+    _metrics = _client._metrics.channels
+        .putIfAbsent(channel, SpinifyMetrics$Channel$Mutable.new);
+  }
 
   @override
   final String channel;
@@ -28,6 +31,9 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     }
     return target;
   }
+
+  /// Spinify channel metrics.
+  late final SpinifyMetrics$Channel$Mutable _metrics;
 
   /// Spinify client configuration.
   final SpinifyConfig _clientConfig;
@@ -261,6 +267,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     int code = 0,
     String reason = 'unsubscribe called',
   ]) async {
+    _tearDownResubscribeTimer();
     if (_state.isUnsubscribed) return;
     //await ready().timeout(_client.config.timeout);
     throw UnimplementedError();
@@ -311,7 +318,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
       setState(SpinifySubscriptionState$Subscribed(data: result.data));
 
       if (result.expires) {
-        // TODO(plugfox): implement resubscribe timer
+        // TODO(plugfox): implement refresh connection timer
         //_setUpRefreshConnection();
       }
 
@@ -324,8 +331,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         }
       }
 
-      // TODO(plugfox): tear down reconnect timer
-      //await _onSubscribed();
+      _onSubscribed();
 
       _logger?.call(
         const SpinifyLogLevel.config(),
@@ -348,28 +354,22 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
           'stackTrace': stackTrace,
         },
       );
-      void scheduleResubscribe() {
-        // TODO(plugfox): implement resubscribe timer
-        //_setUpReconnectTimer();
-      }
       switch (error) {
         case SpinifyErrorResult result:
           if (result.code == 109) {
-            // Token expired error.
-            scheduleResubscribe(); // Retry resubscribe
+            _setUpResubscribeTimer(); // Token expired error, retry resubscribe
           } else if (result.temporary) {
-            // Temporary error.
-            scheduleResubscribe(); // Retry resubscribe
+            _setUpResubscribeTimer(); // Temporary error, retry resubscribe
           } else {
             // Disable resubscribe timer
             //moveToUnsubscribed(result.code, result.message, false);
             setState(SpinifySubscriptionState$Unsubscribed());
           }
         case SpinifySubscriptionException _:
-          scheduleResubscribe(); // Some spinify exception - retry resubscribe
+          _setUpResubscribeTimer(); // Some spinify exception, retry resubscribe
           rethrow;
         default:
-          scheduleResubscribe(); // Unknown error - retry resubscribe
+          _setUpResubscribeTimer(); // Unknown error, retry resubscribe
       }
       Error.throwWithStackTrace(
         SpinifySubscriptionException(
@@ -380,6 +380,83 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         stackTrace,
       );
     }
+  }
+
+  void _onSubscribed() {
+    _tearDownResubscribeTimer();
+    _metrics.lastSubscribeAt = DateTime.now();
+    _metrics.subscribes++;
+  }
+
+  Timer? _resubscribeTimer;
+  void _setUpResubscribeTimer() {
+    _resubscribeTimer?.cancel();
+    final attempt = _metrics.resubscribeAttempts ?? 0;
+    final delay = Backoff.nextDelay(
+      attempt,
+      _client.config.connectionRetryInterval.min.inMilliseconds,
+      _client.config.connectionRetryInterval.max.inMilliseconds,
+    );
+    _metrics.resubscribeAttempts = attempt + 1;
+    if (delay <= Duration.zero) {
+      if (!state.isUnsubscribed) return;
+      _logger?.call(
+        const SpinifyLogLevel.config(),
+        'subscription_resubscribe_attempt',
+        'Resubscibing to $channel immediately.',
+        {
+          'channel': channel,
+          'delay': delay,
+          'subscription': this,
+          'attempts': attempt,
+        },
+      );
+      Future<void>.sync(subscribe).ignore();
+      return;
+    }
+    _logger?.call(
+      const SpinifyLogLevel.debug(),
+      'subscription_resubscribe_delayed',
+      'Setting up resubscribe timer for $channel '
+          'after ${delay.inMilliseconds} ms.',
+      {
+        'channel': channel,
+        'delay': delay,
+        'subscription': this,
+        'attempts': attempt,
+      },
+    );
+    _metrics.nextResubscribeAt = DateTime.now().add(delay);
+    _resubscribeTimer = Timer(delay, () {
+      if (!state.isUnsubscribed) return;
+      _logger?.call(
+        const SpinifyLogLevel.debug(),
+        'subscription_resubscribe_attempt',
+        'Resubscribing to $channel after ${delay.inMilliseconds} ms.',
+        {
+          'channel': channel,
+          'subscription': this,
+          'attempts': attempt,
+        },
+      );
+      Future<void>.sync(subscribe).ignore();
+    });
+  }
+
+  void _tearDownResubscribeTimer() {
+    _metrics
+      ..resubscribeAttempts = 0
+      ..nextResubscribeAt = null;
+    _resubscribeTimer?.cancel();
+    _resubscribeTimer = null;
+  }
+
+  void _setUpRefreshSubscriptionTimer() {
+    // TODO(plugfox): implement refresh subscription timer
+  }
+
+  void _tearDownRefreshSubscriptionTimer() {
+    // TODO(plugfox): implement refresh subscription timer
   }
 }
 

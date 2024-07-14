@@ -843,6 +843,7 @@ base mixin SpinifyConnectionMixin
         {
           'url': lastUrl,
           'delay': delay,
+          'attempt': attempt,
         },
       );
       Future<void>.sync(() => connect(lastUrl)).ignore();
@@ -856,6 +857,7 @@ base mixin SpinifyConnectionMixin
       {
         'url': lastUrl,
         'delay': delay,
+        'attempt': attempt,
       },
     );
     _metrics.nextReconnectAt = DateTime.now().add(delay);
