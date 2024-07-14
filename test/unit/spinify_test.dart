@@ -164,32 +164,32 @@ void main() {
               expect(
                   client.metrics,
                   allOf([
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state.isConnected,
                       'isConnected',
                       isFalse,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state,
                       'state',
                       equals(client.state),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.connects,
                       'connects',
                       0,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.disconnects,
                       'disconnects',
                       0,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesReceived,
                       'messagesReceived',
                       equals(BigInt.zero),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesSent,
                       'messagesSent',
                       equals(BigInt.zero),
@@ -200,32 +200,32 @@ void main() {
               expect(
                   client.metrics,
                   allOf([
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state.isConnected,
                       'isConnected',
                       isTrue,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state,
                       'state',
                       equals(client.state),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.connects,
                       'connects',
                       1,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.disconnects,
                       'disconnects',
                       0,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesReceived,
                       'messagesReceived',
                       greaterThan(BigInt.zero),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesSent,
                       'messagesSent',
                       greaterThan(BigInt.zero),
@@ -236,22 +236,22 @@ void main() {
               expect(
                   client.metrics,
                   allOf([
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state.isConnected,
                       'isConnected',
                       isFalse,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state,
                       'state',
                       equals(client.state),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.connects,
                       'connects',
                       1,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.disconnects,
                       'disconnects',
                       1,
