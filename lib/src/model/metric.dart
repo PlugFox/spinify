@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
 import 'state.dart';
+import 'subscription_state.dart';
 
 /*
 /// Subscription count
@@ -120,17 +121,14 @@ sealed class SpinifyMetrics$Channel {
   /// {@macro metrics_channel}
   const SpinifyMetrics$Channel();
 
-  /// The total number of bytes sent.
-  abstract final BigInt bytesSent;
+  /// The current state of the channel.
+  abstract final SpinifySubscriptionState state;
 
-  /// The total number of bytes received.
-  abstract final BigInt bytesReceived;
+  /// The total number of publications sent.
+  abstract final BigInt publicationsSent;
 
-  /// The total number of messages sent.
-  abstract final BigInt messagesSent;
-
-  /// The total number of messages received.
-  abstract final BigInt messagesReceived;
+  /// The total number of publications received.
+  abstract final BigInt publicationsReceived;
 
   /// The total number of successful subscriptions.
   abstract final int subscribes;
@@ -241,10 +239,9 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
 final class SpinifyMetrics$Channel$Immutable extends SpinifyMetrics$Channel {
   /// {@macro metrics_channel}
   const SpinifyMetrics$Channel$Immutable({
-    required this.bytesSent,
-    required this.bytesReceived,
-    required this.messagesSent,
-    required this.messagesReceived,
+    required this.state,
+    required this.publicationsSent,
+    required this.publicationsReceived,
     required this.subscribes,
     required this.lastSubscribeAt,
     required this.resubscribeAttempts,
@@ -252,18 +249,14 @@ final class SpinifyMetrics$Channel$Immutable extends SpinifyMetrics$Channel {
     required this.unsubscribes,
     required this.lastUnsubscribeAt,
   });
+  @override
+  final SpinifySubscriptionState state;
 
   @override
-  final BigInt bytesSent;
+  final BigInt publicationsSent;
 
   @override
-  final BigInt bytesReceived;
-
-  @override
-  final BigInt messagesSent;
-
-  @override
-  final BigInt messagesReceived;
+  final BigInt publicationsReceived;
 
   @override
   final int subscribes;
@@ -374,16 +367,13 @@ final class SpinifyMetrics$Channel$Mutable extends SpinifyMetrics$Channel {
   SpinifyMetrics$Channel$Mutable();
 
   @override
-  BigInt bytesSent = BigInt.zero;
+  SpinifySubscriptionState state = SpinifySubscriptionState$Unsubscribed();
 
   @override
-  BigInt bytesReceived = BigInt.zero;
+  BigInt publicationsSent = BigInt.zero;
 
   @override
-  BigInt messagesSent = BigInt.zero;
-
-  @override
-  BigInt messagesReceived = BigInt.zero;
+  BigInt publicationsReceived = BigInt.zero;
 
   @override
   int subscribes = 0;
@@ -405,10 +395,9 @@ final class SpinifyMetrics$Channel$Mutable extends SpinifyMetrics$Channel {
 
   /// Freezes the channel metrics.
   SpinifyMetrics$Channel$Immutable freeze() => SpinifyMetrics$Channel$Immutable(
-        bytesSent: bytesSent,
-        bytesReceived: bytesReceived,
-        messagesSent: messagesSent,
-        messagesReceived: messagesReceived,
+        state: state,
+        publicationsSent: publicationsSent,
+        publicationsReceived: publicationsReceived,
         subscribes: subscribes,
         lastSubscribeAt: lastSubscribeAt,
         resubscribeAttempts: resubscribeAttempts,

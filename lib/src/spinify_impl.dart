@@ -459,16 +459,16 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
                   offset: event.since.offset,
                 ))
           ..onEvent(event)
-          ..setState(SpinifySubscriptionState.subscribed(data: event.data));
+          .._setState(SpinifySubscriptionState.subscribed(data: event.data));
       } else if (event is SpinifyUnsubscribe) {
         // Remove server subscription from the registry on unsubscribe event.
         _serverSubscriptionRegistry.remove(event.channel)
           ?..onEvent(event)
-          ..setState(SpinifySubscriptionState.unsubscribed());
+          .._setState(SpinifySubscriptionState.unsubscribed());
         // Unsubscribe client subscription on unsubscribe event.
         _clientSubscriptionRegistry[event.channel]
           ?..onEvent(event)
-          ..setState(SpinifySubscriptionState.unsubscribed());
+          .._setState(SpinifySubscriptionState.unsubscribed());
         // TODO(plugfox): Resubscribe client subscriptions on unsubscribe
         // if unsubscribe.code >= 2500
       } else {
@@ -513,7 +513,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
                   epoch: value.since.epoch,
                   offset: value.since.offset,
                 ))
-          ..setState(SpinifySubscriptionState.subscribed(data: value.data));
+          .._setState(SpinifySubscriptionState.subscribed(data: value.data));
         // Notify about new publications.
         for (var publication in value.publications) {
           // If publication has wrong channel, fix it.
@@ -541,7 +541,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
       for (final key in currentServerSubs) {
         if (newServerSubs.containsKey(key)) continue;
         _serverSubscriptionRegistry.remove(key)
-          ?..setState(SpinifySubscriptionState.unsubscribed())
+          ?.._setState(SpinifySubscriptionState.unsubscribed())
           ..close();
       }
 
@@ -558,11 +558,11 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
     final unsubscribed = SpinifySubscriptionState.unsubscribed();
     for (final sub in _clientSubscriptionRegistry.values)
       sub
-        ..setState(unsubscribed)
+        .._setState(unsubscribed)
         ..close();
     for (final sub in _serverSubscriptionRegistry.values)
       sub
-        ..setState(unsubscribed)
+        .._setState(unsubscribed)
         ..close();
     _clientSubscriptionRegistry.clear();
     _serverSubscriptionRegistry.clear();

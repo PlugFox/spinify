@@ -41,9 +41,6 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   /// Spinify logger.
   SpinifyLogger? get _logger => _clientConfig.logger;
 
-  /// Current subscription state.
-  SpinifySubscriptionState _state = SpinifySubscriptionState.unsubscribed();
-
   final StreamController<SpinifySubscriptionState> _stateController =
       StreamController<SpinifySubscriptionState>.broadcast();
 
@@ -69,7 +66,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   fixnum.Int64 offset;
 
   @override
-  SpinifySubscriptionState get state => _state;
+  SpinifySubscriptionState get state => _metrics.state;
 
   @override
   SpinifySubscriptionStates get states =>
@@ -100,11 +97,11 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
     );
   }
 
-  @internal
   @mustCallSuper
-  void setState(SpinifySubscriptionState state) {
-    if (_state == state) return;
-    _stateController.add(_state = state);
+  void _setState(SpinifySubscriptionState state) {
+    final previous = _metrics.state;
+    if (previous == state) return;
+    _stateController.add(_metrics.state = state);
     _logger?.call(
       const SpinifyLogLevel.config(),
       'subscription_state_changed',
@@ -112,7 +109,8 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
       <String, Object?>{
         'channel': channel,
         'subscription': this,
-        'state': _state,
+        'previous': previous,
+        'state': state,
       },
     );
   }
@@ -122,7 +120,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   void close() {
     _stateController.close().ignore();
     _eventController.close().ignore();
-    assert(_state.isUnsubscribed,
+    assert(state.isUnsubscribed,
         'Subscription "$channel" is not unsubscribed before closing');
   }
 
@@ -134,7 +132,7 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
         channel: channel,
         message: 'Client is closed',
       );
-    if (_state.isSubscribed) return;
+    if (_metrics.state.isSubscribed) return;
     if (_stateController.isClosed)
       throw SpinifySubscriptionException(
         channel: channel,
@@ -268,7 +266,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     String reason = 'unsubscribe called',
   ]) async {
     _tearDownResubscribeTimer();
-    if (_state.isUnsubscribed) return;
+    if (_metrics.state.isUnsubscribed) return;
     //await ready().timeout(_client.config.timeout);
     throw UnimplementedError();
     // TODO(plugfox): implement unsubscribe, remove resubscribe timer
@@ -276,9 +274,9 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
 
   /// `SubscriptionImpl{}._resubscribe()` from `centrifuge` package
   Future<void> _resubscribe() async {
-    if (!_state.isUnsubscribed) return;
+    if (!_metrics.state.isUnsubscribed) return;
     try {
-      setState(SpinifySubscriptionState$Subscribing());
+      _setState(SpinifySubscriptionState$Subscribing());
 
       final token = await config.getToken?.call();
       if (token == null || token.isEmpty) {
@@ -315,7 +313,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         offset = result.since.offset;
       }
 
-      setState(SpinifySubscriptionState$Subscribed(data: result.data));
+      _setState(SpinifySubscriptionState$Subscribed(data: result.data));
 
       if (result.expires) {
         // TODO(plugfox): implement refresh connection timer
@@ -363,7 +361,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
           } else {
             // Disable resubscribe timer
             //moveToUnsubscribed(result.code, result.message, false);
-            setState(SpinifySubscriptionState$Unsubscribed());
+            _setState(SpinifySubscriptionState$Unsubscribed());
           }
         case SpinifySubscriptionException _:
           _setUpResubscribeTimer(); // Some spinify exception, retry resubscribe
@@ -386,6 +384,15 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     _tearDownResubscribeTimer();
     _metrics.lastSubscribeAt = DateTime.now();
     _metrics.subscribes++;
+  }
+
+  void _onUnsubscribed() {
+    _tearDownRefreshSubscriptionTimer();
+    // TODO(plugfox): set up resubscribe timer
+    if (state.isSubscribed || state.isSubscribing) {
+      _metrics.lastUnsubscribeAt = DateTime.now();
+      _metrics.unsubscribes++;
+    }
   }
 
   Timer? _resubscribeTimer;
