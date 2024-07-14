@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
 import '../spinify.dart';
+import 'model/metric.dart';
 import 'protobuf/client.pb.dart' as pb;
 import 'protobuf/protobuf_codec.dart';
 
