@@ -2,6 +2,8 @@ import 'dart:developer' as dev;
 
 import 'package:meta/meta.dart';
 
+// TODO(plugfox): Impliment rotating log buffer
+
 /// Constants used to debug the Spinify client.
 /// --dart-define=dev.plugfox.spinify.debug=true
 const bool $enableLogging = bool.fromEnvironment(
