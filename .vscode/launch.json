@@ -139,6 +139,32 @@
       "preLaunchTask": "echo:start",
       "postDebugTask": "echo:stop"
     },
+    {
+      "name": "[Dart] Smoke Test (dart2js)",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/smoke_test.dart",
+      "env": {
+        "ENVIRONMENT": "test"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "templateFor": "test",
+      "toolArgs": [
+        "--color",
+        "--debug",
+        "--coverage=coverage",
+        "--reporter=expanded",
+        "--platform=chrome",
+        "--compiler=dart2js",
+        "--file-reporter=json:coverage/tests.json",
+        "--timeout=30s",
+        "--concurrency=12"
+      ],
+      "args": [],
+      /* "preLaunchTask": "echo:start",
+      "postDebugTask": "echo:stop" */
+    },
     // dart run server/bin/server.dart
     {
       "name": "[Go] Echo Server",

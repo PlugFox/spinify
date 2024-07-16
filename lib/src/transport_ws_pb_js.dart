@@ -100,7 +100,15 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
         transport.disconnect();
         return;
       }
-      completer.completeError(Exception('WebSocket error'));
+      switch (event) {
+        case web.ErrorEvent value
+            when value.error != null || value.message.isNotEmpty:
+          completer.completeError(Exception(
+              'WebSocket connection error: ${value.error ?? value.message}'));
+        default:
+          completer.completeError(
+              Exception('WebSocket connection error: Unknown error'));
+      }
     }.toJS;
 
     // Fired when a connection with a WebSocket is closed.
@@ -110,8 +118,8 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
         transport.disconnect(event.code, event.reason);
         return;
       }
-      completer.completeError(
-          Exception('WebSocket closed: ${event.code} ${event.reason}'));
+      completer.completeError(Exception(
+          'WebSocket connection closed: ${event.code} ${event.reason}'));
     }.toJS;
 
     socket
