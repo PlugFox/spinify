@@ -95,8 +95,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       return;
     }
     _metrics
-      ..bytesReceived += BigInt.from(bytes.length)
-      ..messagesReceived += BigInt.one;
+      ..bytesReceived += bytes.length
+      ..messagesReceived += 1;
     final reader = pb.CodedBufferReader(bytes);
     while (!reader.isAtEnd()) {
       try {
@@ -147,8 +147,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       final bytes = writer.toBuffer() + commandData;
       _socket.add(bytes);
       _metrics
-        ..bytesSent += BigInt.from(bytes.length)
-        ..messagesSent += BigInt.one;
+        ..bytesSent += bytes.length
+        ..messagesSent += 1;
       _logger?.call(
         const SpinifyLogLevel.transport(),
         'transport_send',

@@ -259,6 +259,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     }
   }
 
+  /// Interactively unsubscribes from the channel.
   @override
   @interactive
   Future<void> unsubscribe([
@@ -271,6 +272,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         sendUnsubscribe: true,
       );
 
+  /// Unsubscribes from the channel.
   Future<void> _unsubscribe({
     required int code,
     required String reason,
@@ -404,7 +406,7 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         }
       }
 
-      _onSubscribed();
+      _onSubscribed(); // Successful subscription completed
 
       _logger?.call(
         const SpinifyLogLevel.config(),
@@ -458,13 +460,17 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     }
   }
 
+  /// Successful subscription completed.
   void _onSubscribed() {
     _tearDownResubscribeTimer();
     _metrics.lastSubscribeAt = DateTime.now();
     _metrics.subscribes++;
   }
 
+  /// Resubscribe timer.
   Timer? _resubscribeTimer;
+
+  /// Set up resubscribe timer.
   void _setUpResubscribeTimer() {
     _resubscribeTimer?.cancel();
     final attempt = _metrics.resubscribeAttempts ?? 0;
@@ -515,10 +521,11 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
           'attempts': attempt,
         },
       );
-      Future<void>.sync(subscribe).ignore();
+      Future<void>.sync(_resubscribe).ignore();
     });
   }
 
+  /// Tear down resubscribe timer.
   void _tearDownResubscribeTimer() {
     _metrics
       ..resubscribeAttempts = 0
@@ -527,19 +534,27 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     _resubscribeTimer = null;
   }
 
+  /// Refresh subscription timer.
   Timer? _refreshTimer;
+
+  /// Set up refresh subscription timer.
   void _setUpRefreshSubscriptionTimer({required DateTime ttl}) {
     _tearDownRefreshSubscriptionTimer();
+    _metrics.ttl = ttl;
     _refreshTimer = Timer(ttl.difference(DateTime.now()), _refreshToken);
   }
 
+  /// Tear down refresh subscription timer.
   void _tearDownRefreshSubscriptionTimer() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
+    _metrics.ttl = null;
   }
 
+  /// Refresh subscription token.
   void _refreshToken() => runZonedGuarded<void>(
         () async {
+          _tearDownRefreshSubscriptionTimer();
           if (!state.isSubscribed || !_client.state.isConnected) return;
           final token = await config.getToken?.call();
           if (token == null || token.isEmpty) {

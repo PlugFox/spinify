@@ -1014,6 +1014,9 @@ base mixin SpinifyPingPongMixin
   Future<void> _onReply(SpinifyReply reply) async {
     if (!reply.isResult && reply is SpinifyServerPing) {
       final command = SpinifyPingRequest(timestamp: DateTime.now());
+      _metrics
+        ..lastPingAt = command.timestamp
+        ..receivedPings = _metrics.receivedPings + 1;
       await _sendCommandAsync(command);
       config.logger?.call(
         const SpinifyLogLevel.debug(),

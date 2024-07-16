@@ -82,8 +82,8 @@ class SpinifyTransportFake implements ISpinifyTransport {
   Future<void> send(SpinifyCommand command) async {
     if (!_isConnected) throw StateError('Not connected');
     metrics
-      ..bytesSent += BigInt.one
-      ..messagesSent += BigInt.one;
+      ..bytesSent += 1
+      ..messagesSent += 1;
     await _sleep();
     if (_overrideCommand != null) {
       final reply = _overrideCommand.call(command);
@@ -228,8 +228,8 @@ class SpinifyTransportFake implements ISpinifyTransport {
         () {
           if (!_isConnected) return;
           metrics
-            ..bytesReceived += BigInt.one
-            ..messagesReceived += BigInt.one;
+            ..bytesReceived += 1
+            ..messagesReceived += 1;
           _onReply?.call(reply(DateTime.now())).ignore();
         },
       );

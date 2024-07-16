@@ -35,6 +35,9 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
     DateTime? timestamp,
   }) = SpinifySubscriptionState$Subscribed;
 
+  /// Converts this state to JSON.
+  Map<String, Object?> toJson();
+
   @override
   String toString() => type;
 }
@@ -76,6 +79,12 @@ final class SpinifySubscriptionState$Unsubscribed
         subscribed,
   }) =>
       unsubscribed(this);
+
+  @override
+  Map<String, Object?> toJson() => {
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+      };
 
   @override
   int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
@@ -124,6 +133,12 @@ final class SpinifySubscriptionState$Subscribing
         subscribed,
   }) =>
       subscribing(this);
+
+  @override
+  Map<String, Object?> toJson() => {
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+      };
 
   @override
   int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
@@ -176,6 +191,12 @@ final class SpinifySubscriptionState$Subscribed
         subscribed,
   }) =>
       subscribed(this);
+
+  @override
+  Map<String, Object?> toJson() => {
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+      };
 
   @override
   int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
