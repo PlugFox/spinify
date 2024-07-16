@@ -466,11 +466,23 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ?..onEvent(event)
           .._setState(SpinifySubscriptionState.unsubscribed());
         // Unsubscribe client subscription on unsubscribe event.
-        _clientSubscriptionRegistry[event.channel]
-          ?..onEvent(event)
-          .._setState(SpinifySubscriptionState.unsubscribed());
-        // TODO(plugfox): Resubscribe client subscriptions on unsubscribe
-        // if unsubscribe.code >= 2500
+        if (_clientSubscriptionRegistry[event.channel]
+            case SpinifyClientSubscriptionImpl subscription) {
+          subscription.onEvent(event);
+          if (event.code < 2500) {
+            // Unsubscribe client subscription on unsubscribe event.
+            subscription
+                ._unsubscribe(
+                  code: event.code,
+                  reason: event.reason,
+                  sendUnsubscribe: false,
+                )
+                .ignore();
+          } else {
+            // Resubscribe client subscription on unsubscribe event.
+            subscription._resubscribe().ignore();
+          }
+        }
       } else {
         // Notify subscription about new event.
         final sub = _serverSubscriptionRegistry[event.channel] ??
@@ -514,6 +526,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
                   offset: value.since.offset,
                 ))
           .._setState(SpinifySubscriptionState.subscribed(data: value.data));
+
         // Notify about new publications.
         for (var publication in value.publications) {
           // If publication has wrong channel, fix it.
@@ -537,6 +550,8 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           }
         }
       }
+
+      // Remove server subscriptions that are not in the new list.
       final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();
       for (final key in currentServerSubs) {
         if (newServerSubs.containsKey(key)) continue;
@@ -545,10 +560,9 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           ..close();
       }
 
-      // Thats a `SpinifyConnectResult` reply.
       // We should resubscribe client subscriptions here.
-
-      // TODO(plugfox): Resubscribe client subscriptions on connect
+      for (final subscription in _clientSubscriptionRegistry.values)
+        subscription._resubscribe().ignore();
     }
   }
 
@@ -1017,7 +1031,11 @@ base mixin SpinifyPingPongMixin
       _metrics
         ..lastPingAt = command.timestamp
         ..receivedPings = _metrics.receivedPings + 1;
-      await _sendCommandAsync(command);
+      if (state case SpinifyState$Connected(:bool sendPong) when sendPong) {
+        // No need to handle error in a special way -
+        // if pong can't be sent but connection is closed anyway.
+        _sendCommandAsync(command).ignore();
+      }
       config.logger?.call(
         const SpinifyLogLevel.debug(),
         'server_ping_received',
