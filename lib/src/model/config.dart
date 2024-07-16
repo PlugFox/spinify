@@ -147,6 +147,89 @@ typedef SpinifyLogger = void Function(
   Map<String, Object?> context,
 );
 
+/// {@template spinify_log_buffer}
+/// Circular buffer for storing log entries.
+/// {@endtemplate}
+final class SpinifyLogBuffer {
+  /// {@macro spinify_log_buffer}
+  SpinifyLogBuffer({
+    this.size = 1000,
+  }) : _logs = List.filled(size.clamp(0, 100000), null, growable: false);
+
+  /// The maximum number of log entries to keep in the buffer.
+  final int size;
+
+  /// The number of log entries currently in the buffer.
+  int get length => _length;
+
+  /// Whether the buffer is empty.
+  bool get isEmpty => _logs.first == null;
+
+  /// Whether the buffer is full.
+  bool get isFull => _logs.last != null;
+
+  int _index = 0;
+  int _length = 0;
+
+  final List<
+      ({
+        SpinifyLogLevel level,
+        String event,
+        String message,
+        Map<String, Object?> context
+      })?> _logs;
+
+  /// Get all log entries from the buffer.
+  List<
+      ({
+        SpinifyLogLevel level,
+        String event,
+        String message,
+        Map<String, Object?> context
+      })> get logs {
+    if (_logs.last == null) {
+      return _logs.sublist(0, _index).cast();
+    } else if (_index == 0) {
+      return _logs.cast();
+    } else {
+      return [
+        ..._logs.sublist(_index),
+        ..._logs.sublist(0, _index),
+      ].cast();
+    }
+  }
+
+  /// Add a log entry to the buffer.
+  void add({
+    required SpinifyLogLevel level,
+    required String event,
+    required String message,
+    required Map<String, Object?> context,
+  }) {
+    _logs[_index] = (
+      level: level,
+      event: event,
+      message: message,
+      context: context,
+    );
+    if (_length < size) {
+      _length++;
+      _index++;
+    } else {
+      _index = (_index + 1) % size;
+    }
+  }
+
+  /// Clear all log entries from the buffer.
+  void clear() {
+    for (var i = 0; i < _length; i++) {
+      _logs[i] = null;
+    }
+    _length = 0;
+    _index = 0;
+  }
+}
+
 /// {@template spinify_config}
 /// Spinify client common options.
 ///
