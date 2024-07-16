@@ -36,20 +36,20 @@ dependencies:
 - ✅ History information
 - ✅ Send custom RPC commands
 - ✅ Handle disconnect advice from the server
-- ❌ Channel subscription
-- ❌ Setting subscription options
+- ✅ Channel subscription
+- ✅ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
 - ✅ Subscription state changes
 - ✅ Subscription command-reply
-- ❌ Subscription token refresh
-- ❌ Handle unsubscribe advice from the server
+- ✅ Subscription token refresh
+- ✅ Handle unsubscribe advice from the server
 - ✅ Manage subscription registry
 - ✅ Publish data into a channel
 - ✅ Set observer for hooking events & errors
 - ✅ Metrics and stats
 - ✅ Package errors
 - ✅ Meta information about the library
-- ❌ Web transport via extension type
+- ✅ Web transport via extension type
 - ❌ WASM compatibility
 - ❌ Run in separate isolate
 - ❌ JSON codec support
