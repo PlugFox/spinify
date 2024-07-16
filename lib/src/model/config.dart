@@ -121,6 +121,9 @@ extension type const SpinifyLogLevel._(int level) implements int {
         error: error,
         critical: critical,
       );
+
+  /// If log level is warning or higher
+  bool get isError => level > 3;
 }
 
 /// Logger function to use for logging.
