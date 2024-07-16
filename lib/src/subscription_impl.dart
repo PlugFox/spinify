@@ -264,12 +264,60 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
   Future<void> unsubscribe([
     int code = 0,
     String reason = 'unsubscribe called',
-  ]) async {
+  ]) =>
+      _unsubscribe(
+        code: code,
+        reason: reason,
+        sendUnsubscribe: true,
+      );
+
+  Future<void> _unsubscribe({
+    required int code,
+    required String reason,
+    required bool sendUnsubscribe,
+  }) async {
+    final currentState = _metrics.state;
     _tearDownResubscribeTimer();
-    if (_metrics.state.isUnsubscribed) return;
-    //await ready().timeout(_client.config.timeout);
-    throw UnimplementedError();
-    // TODO(plugfox): implement unsubscribe, remove resubscribe timer
+    _tearDownRefreshSubscriptionTimer();
+    if (currentState.isUnsubscribed) return;
+    _setState(SpinifySubscriptionState$Unsubscribed());
+    _metrics.lastUnsubscribeAt = DateTime.now();
+    _metrics.unsubscribes++;
+    try {
+      if (sendUnsubscribe &&
+          currentState.isSubscribed &&
+          _client.state.isConnected) {
+        await _sendCommand<SpinifyUnsubscribeResult>(
+          (id) => SpinifyUnsubscribeRequest(
+            id: id,
+            channel: channel,
+            timestamp: DateTime.now(),
+          ),
+        );
+      }
+    } on Object catch (error, stackTrace) {
+      _logger?.call(
+        const SpinifyLogLevel.error(),
+        'subscription_unsubscribe_error',
+        'Subscription "$channel" failed to unsubscribe',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': this,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      _client._transport?.disconnect(4, 'unsubscribe error').ignore();
+      if (error is SpinifyException) rethrow;
+      Error.throwWithStackTrace(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Error while unsubscribing',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
   }
 
   /// `SubscriptionImpl{}._resubscribe()` from `centrifuge` package
@@ -306,6 +354,24 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
           data: data,
         ),
       );
+
+      if (state.isUnsubscribed) {
+        _logger?.call(
+          const SpinifyLogLevel.debug(),
+          'subscription_resubscribe_skipped',
+          'Subscription "$channel" resubscribe skipped, '
+              'subscription is unsubscribed.',
+          <String, Object?>{
+            'channel': channel,
+            'subscription': this,
+          },
+        );
+        await _unsubscribe(
+          code: 0,
+          reason: 'resubscribe skipped',
+          sendUnsubscribe: false,
+        );
+      }
 
       if (result.recoverable) {
         _recover = true;
@@ -359,9 +425,12 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
           } else if (result.temporary) {
             _setUpResubscribeTimer(); // Temporary error, retry resubscribe
           } else {
-            // Disable resubscribe timer
-            //moveToUnsubscribed(result.code, result.message, false);
-            _setState(SpinifySubscriptionState$Unsubscribed());
+            // Disable resubscribe timer and unsubscribe
+            _unsubscribe(
+              code: result.code,
+              reason: result.message,
+              sendUnsubscribe: false,
+            ).ignore();
           }
         case SpinifySubscriptionException _:
           _setUpResubscribeTimer(); // Some spinify exception, retry resubscribe
@@ -384,15 +453,6 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     _tearDownResubscribeTimer();
     _metrics.lastSubscribeAt = DateTime.now();
     _metrics.subscribes++;
-  }
-
-  void _onUnsubscribed() {
-    _tearDownRefreshSubscriptionTimer();
-    // TODO(plugfox): set up resubscribe timer
-    if (state.isSubscribed || state.isSubscribing) {
-      _metrics.lastUnsubscribeAt = DateTime.now();
-      _metrics.unsubscribes++;
-    }
   }
 
   Timer? _resubscribeTimer;
