@@ -1,6 +1,6 @@
 library spinify;
 
-export 'package:fixnum/fixnum.dart';
+export 'package:fixnum/fixnum.dart' show Int64;
 
 export 'src/model/channel_event.dart';
 export 'src/model/client_info.dart';
