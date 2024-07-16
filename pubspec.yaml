@@ -45,11 +45,11 @@ dependencies:
   # Annotations
   meta: ^1.9.1
 
-  # WebSockets
-  ws: ^1.0.0-pre.6
-
   # Protocol Buffers
   protobuf: ^3.1.0
+
+  # Web related libraries
+  web: ^1.0.0
 
   # Utilities
   crypto: ^3.0.3

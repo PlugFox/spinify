@@ -5,8 +5,12 @@ import 'dart:io' as io;
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
-import '../spinify.dart';
+import 'model/channel_event.dart';
+import 'model/command.dart';
+import 'model/config.dart';
 import 'model/metric.dart';
+import 'model/reply.dart';
+import 'model/transport_interface.dart';
 import 'protobuf/client.pb.dart' as pb;
 import 'protobuf/protobuf_codec.dart';
 
@@ -268,7 +272,15 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   @override
   Future<void> disconnect([int? code, String? reason]) async {
     await _subscription.cancel();
-    await _socket.close(code, reason);
+    if (_socket.readyState == 3) return;
+    if (_socket.readyState == 3)
+      return;
+    else if (code != null && reason != null)
+      await _socket.close(code, reason);
+    else if (code != null)
+      await _socket.close(code);
+    else
+      await _socket.close();
     //assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
   }
 }
