@@ -27,6 +27,7 @@ sealed class SpinifyJWT {
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
   const factory SpinifyJWT({
     required String sub,
+    String? channel,
     int? exp,
     int? iat,
     String? jti,
@@ -57,6 +58,10 @@ sealed class SpinifyJWT {
   /// an empty string as a user ID in sub claim.
   /// This is called anonymous access.
   abstract final String sub;
+
+  /// Channel that client tries to subscribe to with this token (string).
+  /// Required for channel token authorization.
+  abstract final String? channel;
 
   /// This is a UNIX timestamp seconds when the token will expire.
   /// This is a standard JWT claim - all JWT libraries
@@ -236,6 +241,7 @@ sealed class SpinifyJWT {
 final class _SpinifyJWTImpl extends SpinifyJWT {
   const _SpinifyJWTImpl({
     required this.sub,
+    this.channel,
     this.exp,
     this.iat,
     this.jti,
@@ -288,6 +294,7 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
     try {
       return _SpinifyJWTImpl(
         sub: payload['sub'] as String,
+        channel: payload['channel'] as String?,
         exp: payload['exp'] as int?,
         iat: payload['iat'] as int?,
         jti: payload['jti'] as String?,
@@ -322,6 +329,9 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
 
   @override
   final String sub;
+
+  @override
+  final String? channel;
 
   @override
   final int? exp;
@@ -362,6 +372,7 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
     final encodedHeader = _$headerHmacSha256;
     final encodedPayload = _$encoder.convert(<String, Object?>{
       'sub': sub,
+      if (channel != null) 'channel': channel,
       if (exp != null) 'exp': exp,
       if (iat != null) 'iat': iat,
       if (jti != null) 'jti': jti,
