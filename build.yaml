@@ -4,6 +4,7 @@ targets:
     sources:
       - $package$
       - lib/**
+      - test/**
       - pubspec.yaml
     builders:
       pubspec_generator:

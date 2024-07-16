@@ -1,6 +1,8 @@
+import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
 import 'state.dart';
+import 'subscription_state.dart';
 
 /*
 /// Subscription count
@@ -41,16 +43,16 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   abstract final SpinifyState state;
 
   /// The total number of bytes sent.
-  abstract final BigInt bytesSent;
+  abstract final fixnum.Int64 bytesSent;
 
   /// The total number of bytes received.
-  abstract final BigInt bytesReceived;
+  abstract final fixnum.Int64 bytesReceived;
 
   /// The total number of messages sent.
-  abstract final BigInt messagesSent;
+  abstract final fixnum.Int64 messagesSent;
 
   /// The total number of messages received.
-  abstract final BigInt messagesReceived;
+  abstract final fixnum.Int64 messagesReceived;
 
   /*
   /// The number of subscriptions.
@@ -67,7 +69,7 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
 
   /// Is refresh active.
   final bool isRefreshActive;
- */
+  */
 
   /// The total number of successful connections.
   abstract final int connects;
@@ -93,14 +95,102 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// The time of the last disconnect.
   abstract final DateTime? lastDisconnectAt;
 
+  /// The last received ping at.
+  abstract final DateTime? lastPingAt;
+
+  /// Pings count.
+  abstract final fixnum.Int64 receivedPings;
+
+  /// Metrics of all channels.
+  abstract final Map<String, SpinifyMetrics$Channel> channels;
+
   /// Convert metrics to JSON.
-  Map<String, Object?> toJson() => <String, Object?>{};
+  Map<String, Object?> toJson() => <String, Object?>{
+        'timestamp': timestamp.toUtc().toIso8601String(),
+        'initializedAt': initializedAt.toUtc().toIso8601String(),
+        'commandId': commandId,
+        'state': state,
+        'bytesSent': bytesSent.toString(),
+        'bytesReceived': bytesReceived.toString(),
+        'messagesSent': messagesSent.toString(),
+        'messagesReceived': messagesReceived.toString(),
+        'connects': connects,
+        'lastConnectAt': lastConnectAt?.toUtc().toIso8601String(),
+        'reconnectUrl': reconnectUrl,
+        'reconnectAttempts': reconnectAttempts,
+        'nextReconnectAt': nextReconnectAt?.toUtc().toIso8601String(),
+        'disconnects': disconnects,
+        'lastDisconnectAt': lastDisconnectAt?.toUtc().toIso8601String(),
+        'lastPingAt': lastPingAt?.toUtc().toIso8601String(),
+        'receivedPings': receivedPings.toString(),
+        'channels': <String, Object?>{
+          for (final entry in channels.entries) entry.key: entry.value.toJson(),
+        },
+      };
 
   @override
   int compareTo(SpinifyMetrics other) => timestamp.compareTo(other.timestamp);
 
   @override
   String toString() => 'SpinifyMetrics{}';
+}
+
+/// {@template metrics_channel}
+/// Metrics of Spinify channel.
+/// {@endtemplate}
+///
+/// {@category Metrics}
+sealed class SpinifyMetrics$Channel {
+  /// {@macro metrics_channel}
+  const SpinifyMetrics$Channel();
+
+  /// The current state of the channel.
+  abstract final SpinifySubscriptionState state;
+
+  /// The total number of publications sent.
+  abstract final fixnum.Int64 publicationsSent;
+
+  /// The total number of publications received.
+  abstract final fixnum.Int64 publicationsReceived;
+
+  /// The total number of successful subscriptions.
+  abstract final int subscribes;
+
+  /// The time of the last subscribe.
+  abstract final DateTime? lastSubscribeAt;
+
+  /// Number of reconnect attempts.
+  /// If null, then client is not connected yet or interractively resubscribed.
+  abstract final int? resubscribeAttempts;
+
+  /// Next reconnect time in case of connection lost.
+  abstract final DateTime? nextResubscribeAt;
+
+  /// The total number of times the connection has been unsubscribed.
+  abstract final int unsubscribes;
+
+  /// The time of the last unsubscribe.
+  abstract final DateTime? lastUnsubscribeAt;
+
+  /// The time of the next token refresh.
+  abstract final DateTime? ttl;
+
+  /// Convert channel metrics to JSON.
+  Map<String, Object?> toJson() => <String, Object?>{
+        'state': state,
+        'publicationsSent': publicationsSent.toString(),
+        'publicationsReceived': publicationsReceived.toString(),
+        'subscribes': subscribes,
+        'lastSubscribeAt': lastSubscribeAt?.toUtc().toIso8601String(),
+        'resubscribeAttempts': resubscribeAttempts,
+        'nextResubscribeAt': nextResubscribeAt?.toUtc().toIso8601String(),
+        'unsubscribes': unsubscribes,
+        'lastUnsubscribeAt': lastUnsubscribeAt?.toUtc().toIso8601String(),
+        'ttl': ttl?.toUtc().toIso8601String(),
+      };
+
+  @override
+  String toString() => r'SpinifyMetrics$Channel{}';
 }
 
 /// {@macro metrics}
@@ -123,6 +213,9 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
     required this.bytesSent,
     required this.messagesReceived,
     required this.messagesSent,
+    required this.lastPingAt,
+    required this.receivedPings,
+    required this.channels,
   });
 
   @override
@@ -159,16 +252,72 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
   final DateTime? lastDisconnectAt;
 
   @override
-  final BigInt bytesReceived;
+  final fixnum.Int64 bytesReceived;
 
   @override
-  final BigInt bytesSent;
+  final fixnum.Int64 bytesSent;
 
   @override
-  final BigInt messagesReceived;
+  final fixnum.Int64 messagesReceived;
 
   @override
-  final BigInt messagesSent;
+  final fixnum.Int64 messagesSent;
+
+  @override
+  final DateTime? lastPingAt;
+
+  @override
+  final fixnum.Int64 receivedPings;
+
+  @override
+  final Map<String, SpinifyMetrics$Channel$Immutable> channels;
+}
+
+/// {@macro metrics_channel}
+@immutable
+final class SpinifyMetrics$Channel$Immutable extends SpinifyMetrics$Channel {
+  /// {@macro metrics_channel}
+  const SpinifyMetrics$Channel$Immutable({
+    required this.state,
+    required this.publicationsSent,
+    required this.publicationsReceived,
+    required this.subscribes,
+    required this.lastSubscribeAt,
+    required this.resubscribeAttempts,
+    required this.nextResubscribeAt,
+    required this.unsubscribes,
+    required this.lastUnsubscribeAt,
+    required this.ttl,
+  });
+  @override
+  final SpinifySubscriptionState state;
+
+  @override
+  final fixnum.Int64 publicationsSent;
+
+  @override
+  final fixnum.Int64 publicationsReceived;
+
+  @override
+  final int subscribes;
+
+  @override
+  final DateTime? lastSubscribeAt;
+
+  @override
+  final int? resubscribeAttempts;
+
+  @override
+  final DateTime? nextResubscribeAt;
+
+  @override
+  final int unsubscribes;
+
+  @override
+  final DateTime? lastUnsubscribeAt;
+
+  @override
+  final DateTime? ttl;
 }
 
 /// {@macro metrics}
@@ -210,16 +359,26 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
   DateTime? lastDisconnectAt;
 
   @override
-  BigInt bytesReceived = BigInt.zero;
+  fixnum.Int64 bytesReceived = fixnum.Int64.ZERO;
 
   @override
-  BigInt bytesSent = BigInt.zero;
+  fixnum.Int64 bytesSent = fixnum.Int64.ZERO;
 
   @override
-  BigInt messagesReceived = BigInt.zero;
+  fixnum.Int64 messagesReceived = fixnum.Int64.ZERO;
 
   @override
-  BigInt messagesSent = BigInt.zero;
+  fixnum.Int64 messagesSent = fixnum.Int64.ZERO;
+
+  @override
+  DateTime? lastPingAt;
+
+  @override
+  fixnum.Int64 receivedPings = fixnum.Int64.ZERO;
+
+  @override
+  final Map<String, SpinifyMetrics$Channel$Mutable> channels =
+      <String, SpinifyMetrics$Channel$Mutable>{};
 
   /// Freezes the metrics.
   SpinifyMetrics$Immutable freeze() => SpinifyMetrics$Immutable(
@@ -238,5 +397,63 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
         bytesSent: bytesSent,
         messagesReceived: messagesReceived,
         messagesSent: messagesSent,
+        lastPingAt: lastPingAt,
+        receivedPings: receivedPings,
+        channels: Map<String, SpinifyMetrics$Channel$Immutable>.unmodifiable(
+          <String, SpinifyMetrics$Channel$Immutable>{
+            for (final entry in channels.entries)
+              entry.key: entry.value.freeze(),
+          },
+        ),
+      );
+}
+
+/// {@macro metrics_channel}
+final class SpinifyMetrics$Channel$Mutable extends SpinifyMetrics$Channel {
+  /// {@macro metrics_channel}
+  SpinifyMetrics$Channel$Mutable();
+
+  @override
+  SpinifySubscriptionState state = SpinifySubscriptionState$Unsubscribed();
+
+  @override
+  fixnum.Int64 publicationsSent = fixnum.Int64.ZERO;
+
+  @override
+  fixnum.Int64 publicationsReceived = fixnum.Int64.ZERO;
+
+  @override
+  int subscribes = 0;
+
+  @override
+  DateTime? lastSubscribeAt;
+
+  @override
+  int? resubscribeAttempts;
+
+  @override
+  DateTime? nextResubscribeAt;
+
+  @override
+  int unsubscribes = 0;
+
+  @override
+  DateTime? lastUnsubscribeAt;
+
+  @override
+  DateTime? ttl;
+
+  /// Freezes the channel metrics.
+  SpinifyMetrics$Channel$Immutable freeze() => SpinifyMetrics$Channel$Immutable(
+        state: state,
+        publicationsSent: publicationsSent,
+        publicationsReceived: publicationsReceived,
+        subscribes: subscribes,
+        lastSubscribeAt: lastSubscribeAt,
+        resubscribeAttempts: resubscribeAttempts,
+        nextResubscribeAt: nextResubscribeAt,
+        unsubscribes: unsubscribes,
+        lastUnsubscribeAt: lastUnsubscribeAt,
+        ttl: ttl,
       );
 }

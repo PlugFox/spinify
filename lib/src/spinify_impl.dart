@@ -1,29 +1,38 @@
 import 'dart:async';
+import 'dart:collection';
 
+import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
-import 'model/channel_push.dart';
+import 'model/annotations.dart';
+import 'model/channel_event.dart';
+import 'model/channel_events.dart';
+import 'model/client_info.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/constant.dart';
+import 'model/exception.dart';
 import 'model/history.dart';
 import 'model/metric.dart';
 import 'model/presence_stats.dart';
-import 'model/pushes_stream.dart';
 import 'model/reply.dart';
-import 'model/spinify_interface.dart';
 import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
-import 'model/subscription.dart';
 import 'model/subscription_config.dart';
+import 'model/subscription_state.dart';
+import 'model/subscription_states.dart';
 import 'model/transport_interface.dart';
+import 'spinify_interface.dart';
+import 'subscription_interface.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.js_util) 'transport_ws_pb_js.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'transport_ws_pb_vm.dart';
 import 'util/backoff.dart';
+
+part 'subscription_impl.dart';
 
 /// Base class for Spinify client.
 abstract base class SpinifyBase implements ISpinify {
@@ -83,15 +92,11 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// On disconnect from the server.
   @mustCallSuper
-  Future<void> _onDisconnected() async {
-    config.logger?.call(
-      const SpinifyLogLevel.config(),
-      'disconnected',
-      'Disconnected',
-      <String, Object?>{
-        'state': state,
-      },
-    );
+  Future<void> _onDisconnected() async {}
+
+  Future<T> _doOnReady<T>(Future<T> Function() action) {
+    if (state.isConnected) return action();
+    return ready().then<T>((_) => action());
   }
 
   @override
@@ -138,7 +143,15 @@ base mixin SpinifyStateMixin on SpinifyBase {
   @override
   Future<void> _onDisconnected() async {
     await super._onDisconnected();
-    if (!state.isDisconnected) _setState(SpinifyState$Disconnected());
+    if (!state.isDisconnected) {
+      _setState(SpinifyState$Disconnected());
+      config.logger?.call(
+        const SpinifyLogLevel.config(),
+        'disconnected',
+        'Disconnected from server',
+        <String, Object?>{},
+      );
+    }
   }
 
   @override
@@ -156,10 +169,14 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       <int, ({SpinifyCommand command, Completer<SpinifyReply> completer})>{};
 
   @override
-  Future<void> send(List<int> data) => _sendCommandAsync(SpinifySendRequest(
-        timestamp: DateTime.now(),
-        data: data,
-      ));
+  Future<void> send(List<int> data) => _doOnReady(
+        () => _sendCommandAsync(
+          SpinifySendRequest(
+            timestamp: DateTime.now(),
+            data: data,
+          ),
+        ),
+      );
 
   Future<T> _sendCommand<T extends SpinifyReply>(SpinifyCommand command) async {
     config.logger?.call(
@@ -246,34 +263,39 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   }
 
   @override
+  @sideEffect
   Future<void> _onReply(SpinifyReply reply) async {
     assert(
         reply.id >= 0 && reply.id <= _metrics.commandId,
         'Reply ID should be greater or equal to 0 '
         'and less or equal than command ID');
-    if (reply.id case int id when id > 0) {
-      final completer = _replies.remove(id)?.completer;
-      assert(
-        completer != null,
-        'Reply completer not found',
-      );
-      assert(
-        completer?.isCompleted == false,
-        'Reply completer already completed',
-      );
-      completer?.complete(reply);
+    if (reply.isResult) {
+      if (reply.id case int id when id > 0) {
+        final completer = _replies.remove(id)?.completer;
+        assert(
+          completer != null,
+          'Reply completer not found',
+        );
+        assert(
+          completer?.isCompleted == false,
+          'Reply completer already completed',
+        );
+        if (reply is SpinifyErrorResult) {
+          completer?.completeError(SpinifyReplyException(
+            replyCode: reply.code,
+            replyMessage: reply.message,
+            temporary: reply.temporary,
+          ));
+        } else {
+          completer?.complete(reply);
+        }
+      }
     }
     await super._onReply(reply);
   }
 
   @override
   Future<void> _onDisconnected() async {
-    config.logger?.call(
-      const SpinifyLogLevel.config(),
-      'disconnected',
-      'Disconnected from server',
-      <String, Object?>{},
-    );
     late final error = StateError('Client is disconnected');
     late final stackTrace = StackTrace.current;
     for (final tuple in _replies.values) {
@@ -296,9 +318,279 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   }
 }
 
+/// Base mixin for Spinify subscription management.
+base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
+  final StreamController<SpinifyChannelEvent> _eventController =
+      StreamController<SpinifyChannelEvent>.broadcast();
+
+  @override
+  late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
+      SpinifyChannelEvents<SpinifyChannelEvent>(_eventController.stream);
+
+  @override
+  ({
+    Map<String, SpinifyClientSubscription> client,
+    Map<String, SpinifyServerSubscription> server
+  }) get subscriptions => (
+        client: UnmodifiableMapView<String, SpinifyClientSubscription>(
+            _clientSubscriptionRegistry),
+        server: UnmodifiableMapView<String, SpinifyServerSubscription>(
+            _serverSubscriptionRegistry),
+      );
+
+  /// Registry of client subscriptions.
+  final Map<String, SpinifyClientSubscriptionImpl> _clientSubscriptionRegistry =
+      <String, SpinifyClientSubscriptionImpl>{};
+
+  /// Registry of server subscriptions.
+  final Map<String, SpinifyServerSubscriptionImpl> _serverSubscriptionRegistry =
+      <String, SpinifyServerSubscriptionImpl>{};
+
+  @override
+  SpinifySubscription? getSubscription(String channel) =>
+      _clientSubscriptionRegistry[channel] ??
+      _serverSubscriptionRegistry[channel];
+
+  @override
+  SpinifyClientSubscription? getClientSubscription(String channel) =>
+      _clientSubscriptionRegistry[channel];
+
+  @override
+  SpinifyServerSubscription? getServerSubscription(String channel) =>
+      _serverSubscriptionRegistry[channel];
+
+  @override
+  SpinifyClientSubscription newSubscription(
+    String channel, {
+    SpinifySubscriptionConfig? config,
+    bool subscribe = false,
+  }) {
+    final sub = _clientSubscriptionRegistry[channel] ??
+        _serverSubscriptionRegistry[channel];
+    if (sub != null) {
+      this.config.logger?.call(
+        const SpinifyLogLevel.warning(),
+        'subscription_exists_error',
+        'Subscription already exists',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': sub,
+        },
+      );
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription already exists',
+      );
+    }
+    final newSub =
+        _clientSubscriptionRegistry[channel] = SpinifyClientSubscriptionImpl(
+      client: this,
+      channel: channel,
+      config: config ?? const SpinifySubscriptionConfig.byDefault(),
+    );
+    if (subscribe) newSub.subscribe();
+    return newSub;
+  }
+
+  @override
+  Future<void> removeSubscription(
+      SpinifyClientSubscription subscription) async {
+    final subFromRegistry =
+        _clientSubscriptionRegistry.remove(subscription.channel);
+    try {
+      await subFromRegistry?.unsubscribe();
+      assert(
+        subFromRegistry != null,
+        'Subscription not found in the registry',
+      );
+      assert(
+        identical(subFromRegistry, subscription),
+        'Subscription should be the same instance as in the registry',
+      );
+    } on Object catch (error, stackTrace) {
+      config.logger?.call(
+        const SpinifyLogLevel.warning(),
+        'subscription_remove_error',
+        'Error removing subscription',
+        <String, Object?>{
+          'channel': subscription.channel,
+          'subscription': subscription,
+        },
+      );
+      Error.throwWithStackTrace(
+        SpinifySubscriptionException(
+          channel: subscription.channel,
+          message: 'Error while unsubscribing',
+          error: error,
+        ),
+        stackTrace,
+      );
+    } finally {
+      subFromRegistry?.close();
+    }
+  }
+
+  @override
+  Future<void> _onReply(SpinifyReply reply) async {
+    await super._onReply(reply);
+    if (reply is SpinifyPush) {
+      // Add push to the stream.
+      final event = reply.event;
+      _eventController.add(event); // Add event to the broadcast stream.
+      config.logger?.call(
+        const SpinifyLogLevel.debug(),
+        'push_received',
+        'Push ${event.type} received',
+        <String, Object?>{
+          'event': event,
+        },
+      );
+      if (event.channel.isEmpty) {
+        /* ignore push without channel */
+      } else if (event is SpinifySubscribe) {
+        // Add server subscription to the registry on subscribe event.
+        _serverSubscriptionRegistry.putIfAbsent(
+            event.channel,
+            () => SpinifyServerSubscriptionImpl(
+                  client: this,
+                  channel: event.channel,
+                  recoverable: event.recoverable,
+                  epoch: event.since.epoch,
+                  offset: event.since.offset,
+                ))
+          ..onEvent(event)
+          .._setState(SpinifySubscriptionState.subscribed(data: event.data));
+      } else if (event is SpinifyUnsubscribe) {
+        // Remove server subscription from the registry on unsubscribe event.
+        _serverSubscriptionRegistry.remove(event.channel)
+          ?..onEvent(event)
+          .._setState(SpinifySubscriptionState.unsubscribed());
+        // Unsubscribe client subscription on unsubscribe event.
+        if (_clientSubscriptionRegistry[event.channel]
+            case SpinifyClientSubscriptionImpl subscription) {
+          subscription.onEvent(event);
+          if (event.code < 2500) {
+            // Unsubscribe client subscription on unsubscribe event.
+            subscription
+                ._unsubscribe(
+                  code: event.code,
+                  reason: event.reason,
+                  sendUnsubscribe: false,
+                )
+                .ignore();
+          } else {
+            // Resubscribe client subscription on unsubscribe event.
+            subscription._resubscribe().ignore();
+          }
+        }
+      } else {
+        // Notify subscription about new event.
+        final sub = _serverSubscriptionRegistry[event.channel] ??
+            _clientSubscriptionRegistry[event.channel];
+        sub?.onEvent(event);
+        if (sub == null) {
+          assert(
+            false,
+            'Subscription not found for event ${event.channel}',
+          );
+          config.logger?.call(
+            const SpinifyLogLevel.warning(),
+            'subscription_not_found_error',
+            'Subscription ${event.channel} not found for event',
+            <String, Object?>{
+              'channel': event.channel,
+              'event': event,
+            },
+          );
+        } else if (event is SpinifyPublication && sub.recoverable) {
+          // Update subscription offset on publication.
+          if (event.offset case fixnum.Int64 newOffset when newOffset > 0)
+            sub.offset = newOffset;
+        }
+      }
+    } else if (reply is SpinifyConnectResult) {
+      // Update server subscriptions.
+      final newServerSubs = reply.subs ?? <String, SpinifySubscribeResult>{};
+      for (final entry in newServerSubs.entries) {
+        final MapEntry<String, SpinifySubscribeResult>(
+          key: channel,
+          value: value
+        ) = entry;
+        final sub = _serverSubscriptionRegistry.putIfAbsent(
+            channel,
+            () => SpinifyServerSubscriptionImpl(
+                  client: this,
+                  channel: channel,
+                  recoverable: value.recoverable,
+                  epoch: value.since.epoch,
+                  offset: value.since.offset,
+                ))
+          .._setState(SpinifySubscriptionState.subscribed(data: value.data));
+
+        // Notify about new publications.
+        for (var publication in value.publications) {
+          // If publication has wrong channel, fix it.
+          // Thats a workaround because we do not have channel
+          // in the publication in this server SpinifyConnectResult reply.
+          if (publication.channel != channel) {
+            assert(
+              publication.channel.isEmpty,
+              'Publication contains wrong channel',
+            );
+            publication = publication.copyWith(channel: channel);
+          }
+          _eventController.add(publication);
+          sub.onEvent(publication);
+          // Update subscription offset on publication.
+          if (sub.recoverable) {
+            if (publication.offset case fixnum.Int64 newOffset
+                when newOffset > sub.offset) {
+              sub.offset = newOffset;
+            }
+          }
+        }
+      }
+
+      // Remove server subscriptions that are not in the new list.
+      final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();
+      for (final key in currentServerSubs) {
+        if (newServerSubs.containsKey(key)) continue;
+        _serverSubscriptionRegistry.remove(key)
+          ?.._setState(SpinifySubscriptionState.unsubscribed())
+          ..close();
+      }
+
+      // We should resubscribe client subscriptions here.
+      for (final subscription in _clientSubscriptionRegistry.values)
+        subscription._resubscribe().ignore();
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await super.close();
+    final unsubscribed = SpinifySubscriptionState.unsubscribed();
+    for (final sub in _clientSubscriptionRegistry.values)
+      sub
+        .._setState(unsubscribed)
+        ..close();
+    for (final sub in _serverSubscriptionRegistry.values)
+      sub
+        .._setState(unsubscribed)
+        ..close();
+    _clientSubscriptionRegistry.clear();
+    _serverSubscriptionRegistry.clear();
+    _eventController.close().ignore();
+  }
+}
+
 /// Base mixin for Spinify client connection management (connect & disconnect).
 base mixin SpinifyConnectionMixin
-    on SpinifyBase, SpinifyCommandMixin, SpinifyStateMixin {
+    on
+        SpinifyBase,
+        SpinifyCommandMixin,
+        SpinifyStateMixin,
+        SpinifySubscriptionMixin {
   Timer? _reconnectTimer;
   Completer<void>? _readyCompleter;
 
@@ -333,19 +625,41 @@ base mixin SpinifyConnectionMixin
         final token = await config.getToken?.call();
         assert(token == null || token.length > 5, 'Spinify JWT is too short');
         final payload = await config.getPayload?.call();
+        final id = _getNextCommandId();
+        final now = DateTime.now();
         request = SpinifyConnectRequest(
-          id: _getNextCommandId(),
-          timestamp: DateTime.now(),
+          id: id,
+          timestamp: now,
           token: token,
           data: payload,
-          // TODO(plugfox): Implement subscriptions.
-          subs: const <String, SpinifySubscribeRequest>{},
+          subs: <String, SpinifySubscribeRequest>{
+            for (final sub in _serverSubscriptionRegistry.values)
+              sub.channel: SpinifySubscribeRequest(
+                id: id,
+                timestamp: now,
+                channel: sub.channel,
+                recover: sub.recoverable,
+                epoch: sub.epoch,
+                offset: sub.offset,
+                token: null,
+                data: null,
+                positioned: null,
+                recoverable: null,
+                joinLeave: null,
+              ),
+          },
           name: config.client.name,
           version: config.client.version,
         );
       }
 
       final reply = await _sendCommand<SpinifyConnectResult>(request);
+
+      if (!state.isConnecting)
+        throw const SpinifyConnectionException(
+          message: 'Connection is not in connecting state',
+        );
+
       _setState(SpinifyState$Connected(
         url: url,
         client: reply.client,
@@ -390,8 +704,36 @@ base mixin SpinifyConnectionMixin
           'stackTrace': stackTrace,
         },
       );
-      _setUpReconnectTimer();
-      rethrow;
+
+      _transport?.disconnect().ignore();
+
+      switch (error) {
+        case SpinifyErrorResult result:
+          if (result.code == 109) {
+            // Token expired error.
+            _setUpReconnectTimer(); // Retry resubscribe
+          } else if (result.temporary) {
+            // Temporary error.
+            _setUpReconnectTimer(); // Retry resubscribe
+          } else {
+            // Disable resubscribe timer
+            //moveToUnsubscribed(result.code, result.message, false);
+            _setState(SpinifyState$Disconnected());
+          }
+        case SpinifyConnectionException _:
+          _setUpReconnectTimer(); // Some spinify exception - retry resubscribe
+          rethrow;
+        default:
+          _setUpReconnectTimer(); // Unknown error - retry resubscribe
+      }
+
+      Error.throwWithStackTrace(
+        SpinifyConnectionException(
+          message: 'Error connecting to server $url',
+          error: error,
+        ),
+        stackTrace,
+      );
     }
   }
 
@@ -515,6 +857,7 @@ base mixin SpinifyConnectionMixin
         {
           'url': lastUrl,
           'delay': delay,
+          'attempt': attempt,
         },
       );
       Future<void>.sync(() => connect(lastUrl)).ignore();
@@ -528,6 +871,7 @@ base mixin SpinifyConnectionMixin
       {
         'url': lastUrl,
         'delay': delay,
+        'attempt': attempt,
       },
     );
     _metrics.nextReconnectAt = DateTime.now().add(delay);
@@ -562,15 +906,20 @@ base mixin SpinifyConnectionMixin
   @override
   Future<void> ready() async {
     if (state.isConnected) return;
+    if (state.isClosed)
+      throw const SpinifyConnectionException(
+        message: 'Connection is closed permanently',
+      );
     return (_readyCompleter ??= Completer<void>()).future;
   }
 
   @override
   Future<void> disconnect() async {
+    // Disable reconnect because we are disconnecting manually/intentionally.
     _metrics.reconnectUrl = null;
     _tearDownReconnectTimer();
     if (state.isDisconnected) return Future.value();
-    await _transport?.disconnect(1000, 'Client disconnecting');
+    await _transport?.disconnect(1000, 'disconnected by client');
     await _onDisconnected();
   }
 
@@ -580,9 +929,29 @@ base mixin SpinifyConnectionMixin
     _transport = null;
     // Reconnect if that callback called not from disconnect method.
     if (_metrics.reconnectUrl != null) _setUpReconnectTimer();
-    _metrics.lastDisconnectAt = DateTime.now();
-    _metrics.disconnects++;
+    if (state.isConnected || state.isConnecting) {
+      _metrics.lastDisconnectAt = DateTime.now();
+      _metrics.disconnects++;
+    }
     await super._onDisconnected();
+  }
+
+  @override
+  Future<void> _onReply(SpinifyReply reply) async {
+    await super._onReply(reply);
+    if (reply
+        case SpinifyPush(
+          event: SpinifyDisconnect(:String reason, :bool reconnect)
+        )) {
+      if (reconnect) {
+        // Disconnect client temporarily.
+        await _transport?.disconnect(1000, reason);
+        await _onDisconnected();
+      } else {
+        // Disconnect client permanently.
+        await disconnect();
+      }
+    }
   }
 
   @override
@@ -600,12 +969,11 @@ base mixin SpinifyPingPongMixin
   Timer? _pingTimer;
 
   /* @override
-  Future<void> ping() => _bucket.push(
-      ClientEvent.command,
-      (int id, DateTime timestamp) => SpinifyPingRequest(
-            id: id,
-            timestamp: timestamp,
-          )); */
+  Future<void> ping() => _doOnReady(
+        () => _sendCommand<SpinifyPingResult>(
+          SpinifyPingRequest(timestamp: DateTime.now()),
+        ),
+      ); */
 
   /// Stop keepalive timer.
   @protected
@@ -658,9 +1026,16 @@ base mixin SpinifyPingPongMixin
 
   @override
   Future<void> _onReply(SpinifyReply reply) async {
-    if (reply is SpinifyServerPing) {
+    if (!reply.isResult && reply is SpinifyServerPing) {
       final command = SpinifyPingRequest(timestamp: DateTime.now());
-      await _sendCommandAsync(command);
+      _metrics
+        ..lastPingAt = command.timestamp
+        ..receivedPings = _metrics.receivedPings + 1;
+      if (state case SpinifyState$Connected(:bool sendPong) when sendPong) {
+        // No need to handle error in a special way -
+        // if pong can't be sent but connection is closed anyway.
+        _sendCommandAsync(command).ignore();
+      }
       config.logger?.call(
         const SpinifyLogLevel.debug(),
         'server_ping_received',
@@ -688,51 +1063,47 @@ base mixin SpinifyPingPongMixin
   }
 }
 
-/// Base mixin for Spinify client subscription management.
-base mixin SpinifyClientSubscriptionMixin on SpinifyBase {
-  @override
-  ({
-    Map<String, SpinifyClientSubscription> client,
-    Map<String, SpinifyServerSubscription> server
-  }) get subscriptions => throw UnimplementedError();
-
-  @override
-  SpinifyClientSubscription? getSubscription(String channel) =>
-      throw UnimplementedError();
-
-  @override
-  SpinifyClientSubscription newSubscription(String channel,
-          [SpinifySubscriptionConfig? config]) =>
-      throw UnimplementedError();
-
-  @override
-  Future<void> removeSubscription(SpinifyClientSubscription subscription) =>
-      throw UnimplementedError();
-}
-
-/// Base mixin for Spinify server subscription management.
-base mixin SpinifyServerSubscriptionMixin on SpinifyBase {}
-
 /// Base mixin for Spinify client publications management.
-base mixin SpinifyPublicationsMixin on SpinifyBase {
+base mixin SpinifyPublicationsMixin on SpinifyBase, SpinifyCommandMixin {
   @override
   Future<void> publish(String channel, List<int> data) =>
-      throw UnimplementedError();
+      getSubscription(channel)?.publish(data) ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 }
 
 /// Base mixin for Spinify client presence management.
-base mixin SpinifyPresenceMixin on SpinifyBase {
+base mixin SpinifyPresenceMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<SpinifyPresence> presence(String channel) =>
-      throw UnimplementedError();
+  Future<Map<String, SpinifyClientInfo>> presence(String channel) =>
+      getSubscription(channel)?.presence() ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 
   @override
   Future<SpinifyPresenceStats> presenceStats(String channel) =>
-      throw UnimplementedError();
+      getSubscription(channel)?.presenceStats() ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 }
 
 /// Base mixin for Spinify client history management.
-base mixin SpinifyHistoryMixin on SpinifyBase {
+base mixin SpinifyHistoryMixin on SpinifyBase, SpinifyCommandMixin {
   @override
   Future<SpinifyHistory> history(
     String channel, {
@@ -740,21 +1111,33 @@ base mixin SpinifyHistoryMixin on SpinifyBase {
     SpinifyStreamPosition? since,
     bool? reverse,
   }) =>
-      throw UnimplementedError();
+      getSubscription(channel)?.history(
+        limit: limit,
+        since: since,
+        reverse: reverse,
+      ) ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 }
 
 /// Base mixin for Spinify client RPC management.
 base mixin SpinifyRPCMixin on SpinifyBase, SpinifyCommandMixin {
   @override
-  Future<List<int>> rpc(String method, List<int> data) =>
-      _sendCommand<SpinifyRPCResult>(
-        SpinifyRPCRequest(
-          id: _getNextCommandId(),
-          timestamp: DateTime.now(),
-          method: method,
-          data: data,
-        ),
-      ).then((reply) => reply.data);
+  Future<List<int>> rpc(String method, [List<int>? data]) => _doOnReady(
+        () => _sendCommand<SpinifyRPCResult>(
+          SpinifyRPCRequest(
+            id: _getNextCommandId(),
+            timestamp: DateTime.now(),
+            method: method,
+            data: data ?? const <int>[],
+          ),
+        ).then<List<int>>((reply) => reply.data),
+      );
 }
 
 /// Base mixin for Spinify client metrics management.
@@ -787,10 +1170,9 @@ final class Spinify extends SpinifyBase
     with
         SpinifyStateMixin,
         SpinifyCommandMixin,
+        SpinifySubscriptionMixin,
         SpinifyConnectionMixin,
         SpinifyPingPongMixin,
-        SpinifyClientSubscriptionMixin,
-        SpinifyServerSubscriptionMixin,
         SpinifyPublicationsMixin,
         SpinifyPresenceMixin,
         SpinifyHistoryMixin,
@@ -805,7 +1187,4 @@ final class Spinify extends SpinifyBase
   /// {@macro spinify}
   factory Spinify.connect(String url, {SpinifyConfig? config}) =>
       Spinify(config: config)..connect(url);
-
-  @override
-  SpinifyPushesStream get stream => throw UnimplementedError();
 }

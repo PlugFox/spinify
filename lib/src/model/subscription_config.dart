@@ -13,7 +13,7 @@ typedef SpinifySubscriptionToken = String;
 /// If method returns null then subscription will be established without token.
 /// {@category Subscription}
 /// {@category Entity}
-typedef SpinifySubscriptionTokenCallback = FutureOr<SpinifySubscriptionToken?>
+typedef SpinifySubscriptionTokenCallback = Future<SpinifySubscriptionToken?>
     Function();
 
 /// Callback to set subscription payload data.
@@ -22,7 +22,7 @@ typedef SpinifySubscriptionTokenCallback = FutureOr<SpinifySubscriptionToken?>
 
 /// {@category Subscription}
 /// {@category Entity}
-typedef SpinifySubscribePayloadCallback = FutureOr<List<int>?> Function();
+typedef SpinifySubscribePayloadCallback = Future<List<int>?> Function();
 
 /// {@template subscription_config}
 /// Subscription common options
@@ -61,7 +61,10 @@ class SpinifySubscriptionConfig {
     this.recoverable = false,
     this.joinLeave = false,
     this.timeout = const Duration(seconds: 15),
-  });
+  }) : assert(
+            (recoverable == false && since == null) ||
+                (recoverable == true && since != null),
+            'recoverable and since must be set together');
 
   /// Create a default config
   ///

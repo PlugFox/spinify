@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart';
 
-import '../model/channel_push.dart';
+import '../model/channel_event.dart';
 import '../model/client_info.dart';
 import '../model/command.dart';
 import '../model/config.dart';
@@ -184,7 +184,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       return _decodeReply(reply);
     } else if (reply.hasError()) {
       final error = reply.error;
-      return SpinifyError(
+      return SpinifyErrorResult(
         id: reply.hasId() ? reply.id : 0,
         timestamp: DateTime.now(),
         code: error.code,
@@ -219,9 +219,9 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       event = SpinifyPublication(
         timestamp: DateTime.now(),
         channel: channel,
-        data: push.pub.data,
+        data: push.pub.hasData() ? push.pub.data : const <int>[],
         info: _decodeClientInfo(push.pub.info),
-        offset: push.pub.offset,
+        offset: push.pub.hasOffset() ? push.pub.offset : null,
         tags: push.pub.tags,
       );
     } else if (push.hasJoin()) {
@@ -254,7 +254,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         timestamp: DateTime.now(),
         channel: channel,
         recoverable: push.subscribe.recoverable,
-        data: push.subscribe.data,
+        data: push.subscribe.hasData() ? push.subscribe.data : null,
         positioned: push.subscribe.positioned,
         since: (
           offset: push.subscribe.offset,
@@ -289,19 +289,24 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         version: push.connect.version,
         expires: expBool,
         ttl: ttlDT,
-        data: push.connect.data,
+        data: push.connect.hasData() ? push.connect.data : null,
         node: push.connect.node,
         pingInterval: pingInterval,
         sendPong: push.connect.pong == true,
         session: push.connect.session,
       );
     } else if (push.hasDisconnect()) {
+      final code = push.disconnect.code;
       event = SpinifyDisconnect(
         timestamp: DateTime.now(),
-        reason: push.disconnect.reason,
+        reason: push.disconnect.hasReason()
+            ? push.disconnect.reason
+            : 'Server disconnecting',
         channel: channel,
-        code: push.disconnect.code,
-        reconnect: push.disconnect.reconnect,
+        code: code,
+        reconnect: push.disconnect.hasReconnect()
+            ? push.disconnect.reconnect
+            : code < 3500 || code >= 5000 || (code >= 4000 && code < 4500),
       );
     } else if (push.hasRefresh()) {
       final pb.Refresh(:expires, :ttl) = push.refresh;
@@ -386,11 +391,11 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
           for (final pub in sub.publications)
             SpinifyPublication(
               timestamp: now,
-              // TODO(plugfox): SpinifyPublication in SubscribeResult do not
+              // SpinifyPublication in SubscribeResult do not
               // have the "channel" field - I should fill it in manually
               // by copying the channel from the SubscribeRequest
               channel: '',
-              data: pub.data,
+              data: pub.hasData() ? pub.data : const <int>[],
               info: _decodeClientInfo(pub.info),
               offset: pub.offset,
               tags: pub.tags,
@@ -435,7 +440,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         version: connect.version,
         expires: expBool,
         ttl: ttlDT,
-        data: connect.data,
+        data: connect.hasData() ? connect.data : null,
         subs: switch (connect.subs) {
           Map<String, pb.SubscribeResult> map when map.isNotEmpty =>
             <String, SpinifySubscribeResult>{
@@ -486,13 +491,27 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
           offset: history.offset,
           epoch: history.epoch,
         ),
+        publications: <SpinifyPublication>[
+          for (final pub in history.publications)
+            SpinifyPublication(
+              timestamp: now,
+              // SpinifyPublication in HistoryResult do not
+              // have the "channel" field - I should fill it in manually
+              // by copying the channel from the SubscribeRequest
+              channel: '',
+              data: pub.hasData() ? pub.data : const <int>[],
+              info: _decodeClientInfo(pub.info),
+              offset: pub.offset,
+              tags: pub.tags,
+            ),
+        ],
       );
     } else if (reply.hasRpc()) {
       final rpc = reply.rpc;
       return SpinifyRPCResult(
         id: id,
         timestamp: now,
-        data: rpc.data,
+        data: rpc.hasData() ? rpc.data : const <int>[],
       );
     } else if (reply.hasRefresh()) {
       final refresh = reply.refresh;
@@ -539,6 +558,15 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         timestamp: now,
         expires: expBool,
         ttl: ttlDT,
+      );
+    } else if (reply.hasError()) {
+      final error = reply.error;
+      return SpinifyErrorResult(
+        id: id,
+        timestamp: now,
+        code: error.code,
+        message: error.message,
+        temporary: error.temporary,
       );
     } else {
       throw UnimplementedError('Unsupported reply type');

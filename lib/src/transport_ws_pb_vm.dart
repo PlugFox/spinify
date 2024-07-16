@@ -5,6 +5,7 @@ import 'dart:io' as io;
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
+import 'model/channel_event.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/metric.dart';
@@ -73,7 +74,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
     _subscription = _socket.listen(
       _onData,
       cancelOnError: false,
-      onDone: _onDisconnect.call,
+      onDone: _onDone,
     );
   }
 
@@ -98,8 +99,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       return;
     }
     _metrics
-      ..bytesReceived += BigInt.from(bytes.length)
-      ..messagesReceived += BigInt.one;
+      ..bytesReceived += bytes.length
+      ..messagesReceived += 1;
     final reader = pb.CodedBufferReader(bytes);
     while (!reader.isAtEnd()) {
       try {
@@ -150,8 +151,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       final bytes = writer.toBuffer() + commandData;
       _socket.add(bytes);
       _metrics
-        ..bytesSent += BigInt.from(bytes.length)
-        ..messagesSent += BigInt.one;
+        ..bytesSent += bytes.length
+        ..messagesSent += 1;
       _logger?.call(
         const SpinifyLogLevel.transport(),
         'transport_send',
@@ -182,10 +183,104 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
     }
   }
 
+  void _onDone() {
+    final timestamp = DateTime.now();
+    int? code;
+    String? reason;
+    var reconnect = true;
+    if (_socket
+        case io.WebSocket(
+          :int closeCode,
+          :String? closeReason,
+        ) when closeCode > 0) {
+      switch (closeCode) {
+        case 1009:
+          // reconnect is true by default
+          code = 3; // disconnectCodeMessageSizeLimit;
+          reason = 'message size limit exceeded';
+          reconnect = true;
+        case < 3000:
+          // We expose codes defined by Centrifuge protocol,
+          // hiding details about transport-specific error codes.
+          // We may have extra optional transportCode field in the future.
+          // reconnect is true by default
+          code = 1; // connectingCodeTransportClosed;
+          reason = closeReason;
+          reconnect = true;
+        case >= 3000 && <= 3499:
+          // reconnect is true by default
+          code = closeCode;
+          reason = closeReason;
+          reconnect = true;
+        case >= 3500 && <= 3999:
+          // application terminal codes
+          code = closeCode;
+          reason = closeReason ?? 'application terminal code';
+          reconnect = false;
+        case >= 4000 && <= 4499:
+          // custom disconnect codes
+          // reconnect is true by default
+          code = closeCode;
+          reason = closeReason;
+          reconnect = true;
+        case >= 4500 && <= 4999:
+          // custom disconnect codes
+          // application terminal codes
+          code = closeCode;
+          reason = closeReason ?? 'application terminal code';
+          reconnect = false;
+        case >= 5000:
+          // reconnect is true by default
+          code = closeCode;
+          reason = closeReason;
+          reconnect = true;
+        default:
+          code = closeCode;
+          reason = closeReason;
+          reconnect = false;
+      }
+    }
+    code ??= 1; // connectingCodeTransportClosed
+    reason ??= 'transport closed';
+    _onReply.call(
+      SpinifyPush(
+        timestamp: timestamp,
+        event: SpinifyDisconnect(
+          channel: '',
+          timestamp: timestamp,
+          code: code,
+          reason: reason,
+          reconnect: reconnect,
+        ),
+      ),
+    );
+    _onDisconnect.call();
+    _logger?.call(
+      const SpinifyLogLevel.transport(),
+      'transport_disconnect',
+      'Transport disconnected '
+          '${reconnect ? 'temporarily' : 'permanently'} '
+          'with reason: $reason',
+      <String, Object?>{
+        'code': code,
+        'reason': reason,
+        'reconnect': reconnect,
+      },
+    );
+  }
+
   @override
   Future<void> disconnect([int? code, String? reason]) async {
     await _subscription.cancel();
-    await _socket.close(code, reason);
+    if (_socket.readyState == 3) return;
+    if (_socket.readyState == 3)
+      return;
+    else if (code != null && reason != null)
+      await _socket.close(code, reason);
+    else if (code != null)
+      await _socket.close(code);
+    else
+      await _socket.close();
     //assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
   }
 }

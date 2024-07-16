@@ -7,7 +7,7 @@
 [![Linter](https://img.shields.io/badge/style-linter-40c4ff.svg)](https://pub.dev/packages/linter)
 [![GitHub stars](https://img.shields.io/github/stars/plugfox/spinify?style=social)](https://github.com/plugfox/spinify/)
 
-Websocket client for [Centrifugo server](https://github.com/centrifugal/centrifugo) and [Centrifuge library](https://github.com/centrifugal/centrifuge) based on [ws library](https://pub.dev/packages/ws).
+Websocket client for [Centrifugo server](https://github.com/centrifugal/centrifugo) and [Centrifuge library](https://github.com/centrifugal/centrifuge).
 
 ## Installation
 
@@ -20,12 +20,11 @@ dependencies:
 
 ## Features and Roadmap
 
-Connection related features
-
 - ✅ Connect to a server
-- ✅ Setting client options
+- ✅ Setting client configuration
 - ✅ Automatic reconnect with backoff algorithm
 - ✅ Client state changes
+- ✅ Protobuf transport
 - ✅ Command-reply
 - ✅ Command timeouts
 - ✅ Async pushes
@@ -36,30 +35,34 @@ Connection related features
 - ✅ Presence stats
 - ✅ History information
 - ✅ Send custom RPC commands
-- ❌ Handle disconnect advice from the server
-- ❌ Batching API
-- ❌ Bidirectional WebSocket emulation
-
-### Client-side features
-
-- ✅ Subscribe to a channel
-- ✅ Protobuf transport
+- ✅ Handle disconnect advice from the server
+- ✅ Channel subscription
 - ✅ Setting subscription options
 - ✅ Automatic resubscribe with backoff algorithm
 - ✅ Subscription state changes
 - ✅ Subscription command-reply
-- ✅ Subscription async pushes
 - ✅ Subscription token refresh
 - ✅ Handle unsubscribe advice from the server
 - ✅ Manage subscription registry
 - ✅ Publish data into a channel
-- ✅ Enqueue methods
 - ✅ Set observer for hooking events & errors
-- ✅ Metrics
-- ❌ Optimistic subscriptions
+- ✅ Metrics and stats
+- ✅ Package errors
+- ✅ Meta information about the library
+- ✅ Web transport via extension type
+- ❌ WASM compatibility
 - ❌ Run in separate isolate
-- ❌ JSON transport
+- ❌ JSON codec support
+- ❌ Flutter package
 - ❌ DevTools extension
+- ❌ Middleware support
+- ❌ 95% test coverage
+- ❌ Benchmarks
+- ❌ Performance comparison with other libraries
+- ❌ Batching API
+- ❌ Bidirectional WebSocket emulation
+- ❌ Optimistic subscriptions
+- ❌ Delta compression
 
 ## Example
 
@@ -86,7 +89,7 @@ Refer to the [Changelog](https://github.com/PlugFox/spinify/blob/master/CHANGELO
 
 ## Maintainers
 
-- [Matiunin Mikhail aka Plague Fox](https://plugfox.dev)
+- [Mike Matiunin aka Plague Fox](https://plugfox.dev)
 
 ## Funding
 

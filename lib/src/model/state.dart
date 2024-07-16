@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:meta/meta.dart';
 
 /// {@template state}
@@ -68,56 +66,8 @@ sealed class SpinifyState extends _$SpinifyStateBase {
   /// {@macro state}
   factory SpinifyState.closed({DateTime? timestamp}) = SpinifyState$Closed;
 
-  /// Restore state from JSON
-  /// {@macro state}
-  factory SpinifyState.fromJson(Map<String, Object?> json) => switch ((
-        json['type']?.toString().trim().toLowerCase(),
-        json['timestamp'] ?? DateTime.now().microsecondsSinceEpoch,
-        json['url'],
-      )) {
-        ('disconnected', int timestamp, _) => SpinifyState.disconnected(
-            timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
-          ),
-        ('connecting', int timestamp, String url) => SpinifyState.connecting(
-            url: url,
-            timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
-          ),
-        ('connected', int timestamp, String url) => SpinifyState.connected(
-            url: url,
-            timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
-            client: json['client']?.toString(),
-            version: json['version']?.toString(),
-            expires: switch (json['expires']) {
-              bool expires => expires,
-              _ => false,
-            },
-            ttl: switch (json['ttl']) {
-              int ttl => DateTime.fromMicrosecondsSinceEpoch(ttl),
-              _ => null,
-            },
-            pingInterval: switch (json['pingInterval']) {
-              int pingInterval => Duration(seconds: pingInterval),
-              _ => null,
-            },
-            sendPong: switch (json['sendPong']) {
-              bool sendPong => sendPong,
-              _ => null,
-            },
-            session: json['session']?.toString(),
-            node: json['node']?.toString(),
-            data: switch (json['data']) {
-              String data when data.isNotEmpty => base64Decode(data),
-              _ => null,
-            },
-          ),
-        ('closed', int timestamp, _) => SpinifyState.closed(
-            timestamp: DateTime.fromMicrosecondsSinceEpoch(timestamp),
-          ),
-        _ => throw FormatException('Unknown state: $json'),
-      };
-
   @override
-  String toString() => 'SpinifyState\$$type{}';
+  String toString() => type;
 }
 
 /// Disconnected
@@ -137,7 +87,7 @@ final class SpinifyState$Disconnected extends SpinifyState {
   }) : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Disconnected';
+  String get type => 'disconnected';
 
   @override
   String? get url => null;
@@ -164,12 +114,7 @@ final class SpinifyState$Disconnected extends SpinifyState {
       disconnected(this);
 
   @override
-  Map<String, Object?> toJson() => <String, Object?>{
-        ...super.toJson(),
-      };
-
-  @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 0;
+  int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -191,7 +136,7 @@ final class SpinifyState$Connecting extends SpinifyState {
       : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Connecting';
+  String get type => 'connecting';
 
   @override
   final String url;
@@ -218,7 +163,7 @@ final class SpinifyState$Connecting extends SpinifyState {
       connecting(this);
 
   @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 1;
+  int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -251,7 +196,7 @@ final class SpinifyState$Connected extends SpinifyState {
   }) : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Connected';
+  String get type => 'connected';
 
   @override
   final String url;
@@ -308,21 +253,7 @@ final class SpinifyState$Connected extends SpinifyState {
       connected(this);
 
   @override
-  Map<String, Object?> toJson() => <String, Object?>{
-        ...super.toJson(),
-        if (client != null) 'client': client,
-        if (version != null) 'version': version,
-        'expires': expires,
-        if (ttl != null) 'ttl': ttl?.microsecondsSinceEpoch,
-        if (pingInterval != null) 'pingInterval': pingInterval?.inSeconds,
-        if (sendPong != null) 'sendPong': sendPong,
-        if (session != null) 'session': session,
-        if (node != null) 'node': node,
-        if (data != null) 'data': base64Encode(data!),
-      };
-
-  @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 2;
+  int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -344,7 +275,7 @@ final class SpinifyState$Closed extends SpinifyState {
       : super(timestamp ?? DateTime.now());
 
   @override
-  String get type => 'Closed';
+  String get type => 'closed';
 
   @override
   String? get url => null;
@@ -371,7 +302,7 @@ final class SpinifyState$Closed extends SpinifyState {
       closed(this);
 
   @override
-  int get hashCode => timestamp.millisecondsSinceEpoch * 10 + 3;
+  int get hashCode => 3 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
   bool operator ==(Object other) =>
@@ -445,10 +376,4 @@ abstract base class _$SpinifyStateBase {
         connected: connected ?? (_) => null,
         closed: closed ?? (_) => null,
       );
-
-  Map<String, Object?> toJson() => <String, Object?>{
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-        if (url != null) 'url': url,
-      };
 }

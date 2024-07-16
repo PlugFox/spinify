@@ -1,7 +1,4 @@
-import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
-
-import 'stream_position.dart';
 
 /// {@template subscription_state}
 /// Subscription has 3 states:
@@ -17,37 +14,32 @@ import 'stream_position.dart';
 @immutable
 sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
   /// {@macro subscription_state}
-  const SpinifySubscriptionState(
-      {required super.timestamp,
-      required super.since,
-      required super.recoverable});
+  const SpinifySubscriptionState({required super.timestamp});
 
   /// Unsubscribed
   /// {@macro subscription_state}
   factory SpinifySubscriptionState.unsubscribed({
-    required int code,
-    required String reason,
     DateTime? timestamp,
-    SpinifyStreamPosition? since,
-    bool recoverable,
   }) = SpinifySubscriptionState$Unsubscribed;
 
   /// Subscribing
   /// {@macro subscription_state}
   factory SpinifySubscriptionState.subscribing({
     DateTime? timestamp,
-    SpinifyStreamPosition? since,
-    bool recoverable,
   }) = SpinifySubscriptionState$Subscribing;
 
   /// Subscribed
   /// {@macro subscription_state}
   factory SpinifySubscriptionState.subscribed({
+    List<int>? data,
     DateTime? timestamp,
-    SpinifyStreamPosition? since,
-    bool recoverable,
-    DateTime? ttl,
   }) = SpinifySubscriptionState$Subscribed;
+
+  /// Converts this state to JSON.
+  Map<String, Object?> toJson();
+
+  @override
+  String toString() => type;
 }
 
 /// Unsubscribed state
@@ -59,21 +51,11 @@ final class SpinifySubscriptionState$Unsubscribed
     extends SpinifySubscriptionState {
   /// {@macro subscription_state}
   SpinifySubscriptionState$Unsubscribed({
-    required this.code,
-    required this.reason,
     DateTime? timestamp,
-    super.since,
-    super.recoverable = false,
   }) : super(timestamp: timestamp ?? DateTime.now());
 
   @override
   String get type => 'unsubscribed';
-
-  /// Unsubscribe code.
-  final int code;
-
-  /// Unsubscribe reason.
-  final String reason;
 
   @override
   bool get isUnsubscribed => true;
@@ -99,20 +81,19 @@ final class SpinifySubscriptionState$Unsubscribed
       unsubscribed(this);
 
   @override
-  Map<String, Object?> toJson() => <String, Object?>{
-        ...super.toJson(),
-        'code': code,
-        'reason': reason,
+  Map<String, Object?> toJson() => {
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
       };
 
   @override
-  int get hashCode => Object.hash(0, timestamp, since);
+  int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
-  bool operator ==(Object other) => identical(this, other);
-
-  @override
-  String toString() => r'SpinifySubscriptionState$Unsubscribed{}';
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SpinifySubscriptionState$Unsubscribed &&
+          other.timestamp.isAtSameMomentAs(timestamp);
 }
 
 /// Subscribing state
@@ -125,8 +106,6 @@ final class SpinifySubscriptionState$Subscribing
   /// {@macro subscription_state}
   SpinifySubscriptionState$Subscribing({
     DateTime? timestamp,
-    super.since,
-    super.recoverable = false,
   }) : super(timestamp: timestamp ?? DateTime.now());
 
   @override
@@ -156,13 +135,19 @@ final class SpinifySubscriptionState$Subscribing
       subscribing(this);
 
   @override
-  int get hashCode => Object.hash(1, timestamp, since);
+  Map<String, Object?> toJson() => {
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
+      };
 
   @override
-  bool operator ==(Object other) => identical(this, other);
+  int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
-  String toString() => r'SpinifySubscriptionState$Subscribing{}';
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SpinifySubscriptionState$Subscribing &&
+          other.timestamp.isAtSameMomentAs(timestamp);
 }
 
 /// Subscribed state
@@ -174,17 +159,15 @@ final class SpinifySubscriptionState$Subscribed
     extends SpinifySubscriptionState {
   /// {@macro subscription_state}
   SpinifySubscriptionState$Subscribed({
+    this.data,
     DateTime? timestamp,
-    super.since,
-    super.recoverable = false,
-    this.ttl,
   }) : super(timestamp: timestamp ?? DateTime.now());
+
+  /// Data attached to current subscription.
+  final List<int>? data;
 
   @override
   String get type => 'subscribed';
-
-  /// Time to live in seconds.
-  final DateTime? ttl;
 
   @override
   bool get isUnsubscribed => false;
@@ -210,19 +193,19 @@ final class SpinifySubscriptionState$Subscribed
       subscribed(this);
 
   @override
-  Map<String, Object?> toJson() => <String, Object?>{
-        ...super.toJson(),
-        if (ttl != null) 'ttl': ttl?.toUtc().toIso8601String(),
+  Map<String, Object?> toJson() => {
+        'type': type,
+        'timestamp': timestamp.toUtc().toIso8601String(),
       };
 
   @override
-  int get hashCode => Object.hash(2, timestamp, since, recoverable, ttl);
+  int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
-  bool operator ==(Object other) => identical(this, other);
-
-  @override
-  String toString() => r'SpinifySubscriptionState$Subscribed{}';
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SpinifySubscriptionState$Subscribed &&
+          other.timestamp.isAtSameMomentAs(timestamp);
 }
 
 /// Pattern matching for [SpinifySubscriptionState].
@@ -234,8 +217,6 @@ typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
 abstract base class _$SpinifySubscriptionStateBase {
   const _$SpinifySubscriptionStateBase({
     required this.timestamp,
-    required this.since,
-    required this.recoverable,
   });
 
   /// Represents the current state type.
@@ -243,12 +224,6 @@ abstract base class _$SpinifySubscriptionStateBase {
 
   /// Timestamp of state change.
   final DateTime timestamp;
-
-  /// Stream Position
-  final SpinifyStreamPosition? since;
-
-  /// Whether channel is recoverable.
-  final bool recoverable;
 
   /// Whether channel is unsubscribed.
   abstract final bool isUnsubscribed;
@@ -302,18 +277,4 @@ abstract base class _$SpinifySubscriptionStateBase {
         subscribing: subscribing ?? (_) => null,
         subscribed: subscribed ?? (_) => null,
       );
-
-  Map<String, Object?> toJson() => <String, Object?>{
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-        if (since != null)
-          'since': switch (since) {
-            (:fixnum.Int64 offset, :String epoch) => <String, Object>{
-                'offset': offset,
-                'epoch': epoch,
-              },
-            _ => null,
-          },
-        'recoverable': recoverable,
-      };
 }

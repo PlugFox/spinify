@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:fixnum/fixnum.dart';
 import 'package:meta/meta.dart';
 
@@ -121,7 +119,7 @@ final class SpinifySubscribeRequest extends SpinifyCommand {
 
   /// Subscription data
   /// (attached to every subscribe/resubscribe request)
-  final Uint8List? data;
+  final List<int>? data;
 
   /// Option to ask server to make subscription positioned
   /// (if not forced by a server)
@@ -169,7 +167,7 @@ final class SpinifyPublishRequest extends SpinifyCommand {
   final String channel;
 
   /// Data to publish.
-  final Uint8List data;
+  final List<int> data;
 }
 
 /// {@macro command}

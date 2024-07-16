@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'channel_push.dart';
+import 'channel_event.dart';
 import 'client_info.dart';
 import 'command.dart';
 import 'stream_position.dart';
@@ -264,8 +264,8 @@ final class SpinifyPresenceResult extends SpinifyReply
   @override
   String get type => 'PresenceResult';
 
-  /// Presence
-  /// { Channel : ClientInfo }
+  /// Contains presence information - a map client IDs as keys
+  /// and client information as values.
   final Map<String, SpinifyClientInfo> presence;
 }
 
@@ -298,6 +298,7 @@ final class SpinifyHistoryResult extends SpinifyReply
     required super.id,
     required super.timestamp,
     required this.since,
+    required this.publications,
   });
 
   @override
@@ -305,6 +306,9 @@ final class SpinifyHistoryResult extends SpinifyReply
 
   /// Offset
   final SpinifyStreamPosition since;
+
+  /// Publications
+  final List<SpinifyPublication> publications;
 }
 
 /// {@macro reply}
@@ -395,10 +399,10 @@ final class SpinifySubRefreshResult extends SpinifyReply
 /// For pushes it will have zero value.
 ///
 /// {@macro reply}
-final class SpinifyError extends SpinifyReply
+final class SpinifyErrorResult extends SpinifyReply
     with SpinifyReplyResult<SpinifyCommand> {
   /// {@macro reply}
-  const SpinifyError({
+  const SpinifyErrorResult({
     required super.id,
     required super.timestamp,
     required this.code,
@@ -407,7 +411,7 @@ final class SpinifyError extends SpinifyReply
   });
 
   @override
-  String get type => 'Error';
+  String get type => 'ErrorResult';
 
   /// Error code.
   final int code;

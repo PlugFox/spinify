@@ -7,11 +7,11 @@ import 'package:test/test.dart';
 void main() {
   group('Spinify', () {
     Spinify createFakeClient([
-      void Function(ISpinifyTransport transport)? out,
+      void Function(ISpinifyTransport? transport)? out,
     ]) =>
         Spinify(
           config: SpinifyConfig(
-            transportBuilder: $createFakeSpinifyTransport(out),
+            transportBuilder: $createFakeSpinifyTransport(out: out),
           ),
         );
 
@@ -164,35 +164,35 @@ void main() {
               expect(
                   client.metrics,
                   allOf([
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state.isConnected,
                       'isConnected',
                       isFalse,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state,
                       'state',
                       equals(client.state),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.connects,
                       'connects',
                       0,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.disconnects,
                       'disconnects',
                       0,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesReceived,
                       'messagesReceived',
-                      equals(BigInt.zero),
+                      equals(Int64.ZERO),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesSent,
                       'messagesSent',
-                      equals(BigInt.zero),
+                      equals(Int64.ZERO),
                     ),
                   ]));
               client.connect('ws://localhost:8000/connection/websocket');
@@ -200,35 +200,35 @@ void main() {
               expect(
                   client.metrics,
                   allOf([
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state.isConnected,
                       'isConnected',
                       isTrue,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state,
                       'state',
                       equals(client.state),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.connects,
                       'connects',
                       1,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.disconnects,
                       'disconnects',
                       0,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesReceived,
                       'messagesReceived',
-                      greaterThan(BigInt.zero),
+                      greaterThan(Int64.ZERO),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.messagesSent,
                       'messagesSent',
-                      greaterThan(BigInt.zero),
+                      greaterThan(Int64.ZERO),
                     ),
                   ]));
               client.close();
@@ -236,27 +236,30 @@ void main() {
               expect(
                   client.metrics,
                   allOf([
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state.isConnected,
                       'isConnected',
                       isFalse,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.state,
                       'state',
                       equals(client.state),
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.connects,
                       'connects',
                       1,
                     ),
-                    isA<SpinifyMetrics$Immutable>().having(
+                    isA<SpinifyMetrics>().having(
                       (m) => m.disconnects,
                       'disconnects',
                       1,
                     ),
                   ]));
+              expect(() => client.metrics.toString(), returnsNormally);
+              expect(() => client.metrics.toJson(), returnsNormally);
+              expect(client.metrics.toJson(), isA<Map<String, Object?>>());
             }));
   });
 }

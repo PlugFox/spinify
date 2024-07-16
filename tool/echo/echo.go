@@ -49,7 +49,7 @@ func waitExitSignal(n *centrifuge.Node, s *http.Server, sigCh chan os.Signal) {
 	<-done
 }
 
-var channels = []string{"public:index", "chat:index", "notification:index"}
+var channels = []string{"public:index", "chat:index"}
 
 // Check whether channel is allowed for subscribing. In real case permission
 // check will probably be more complex than in this example.
@@ -97,9 +97,15 @@ func Centrifuge() (*centrifuge.Node, error) {
 			Subscriptions: map[string]centrifuge.SubscribeOptions{
 				"#" + cred.UserID: {
 					EnableRecovery: true,
-					EmitPresence:   true,
-					EmitJoinLeave:  true,
-					PushJoinLeave:  true,
+					EmitPresence:   false,
+					EmitJoinLeave:  false,
+					PushJoinLeave:  false,
+				},
+				"notification:index": {
+					EnableRecovery: true,
+					EmitPresence:   false,
+					EmitJoinLeave:  false,
+					PushJoinLeave:  false,
 				},
 			},
 		}, nil
@@ -201,6 +207,17 @@ func Centrifuge() (*centrifuge.Node, error) {
 			case "echo":
 				// Return back input data.
 				cb(centrifuge.RPCReply{Data: e.Data}, nil)
+			case "disconnect":
+				// Disconnect user
+				cb(centrifuge.RPCReply{}, nil)
+				if string(e.Data) == "reconnect" {
+					client.Disconnect(centrifuge.Disconnect{
+						Code:   3001,
+						Reason: "disconnect with reconnection",
+					})
+				} else {
+					client.Disconnect(centrifuge.DisconnectForceNoReconnect)
+				}
 			default:
 				// Method not found.
 				cb(centrifuge.RPCReply{}, centrifuge.ErrorMethodNotFound)
