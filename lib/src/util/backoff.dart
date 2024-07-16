@@ -12,6 +12,9 @@ abstract final class Backoff {
 
   /// Full jitter technique.
   /// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+  /// step - current step in backoff strategy.
+  /// minDelay - minimum delay in milliseconds.
+  /// maxDelay - maximum delay in milliseconds.
   static Duration nextDelay(int step, int minDelay, int maxDelay) {
     if (minDelay >= maxDelay) return Duration(milliseconds: maxDelay);
     final val = math.min(maxDelay, minDelay * math.pow(2, step.clamp(0, 31)));

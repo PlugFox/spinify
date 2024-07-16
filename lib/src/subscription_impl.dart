@@ -373,6 +373,8 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         );
       }
 
+      // If subscription is recoverable and server sends recoverable flag
+      // then we should update epoch and offset values.
       if (result.recoverable) {
         _recover = true;
         epoch = result.since.epoch;
@@ -381,9 +383,16 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
 
       _setState(SpinifySubscriptionState$Subscribed(data: result.data));
 
+      // Set up refresh subscription timer if needed.
       if (result.expires) {
-        // TODO(plugfox): implement refresh connection timer
-        //_setUpRefreshConnection();
+        if (result.ttl case DateTime ttl when ttl.isAfter(DateTime.now())) {
+          _setUpRefreshSubscriptionTimer(ttl: ttl);
+        } else {
+          assert(
+            false,
+            'Subscription "$channel" has invalid TTL: ${result.ttl}',
+          );
+        }
       }
 
       // Handle received publications and update offset.
@@ -518,13 +527,95 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
     _resubscribeTimer = null;
   }
 
-  void _setUpRefreshSubscriptionTimer() {
-    // TODO(plugfox): implement refresh subscription timer
+  Timer? _refreshTimer;
+  void _setUpRefreshSubscriptionTimer({required DateTime ttl}) {
+    _tearDownRefreshSubscriptionTimer();
+    _refreshTimer = Timer(ttl.difference(DateTime.now()), _refreshToken);
   }
 
   void _tearDownRefreshSubscriptionTimer() {
-    // TODO(plugfox): implement refresh subscription timer
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
   }
+
+  void _refreshToken() => runZonedGuarded<void>(
+        () async {
+          if (!state.isSubscribed || !_client.state.isConnected) return;
+          final token = await config.getToken?.call();
+          if (token == null || token.isEmpty) {
+            throw SpinifySubscriptionException(
+              channel: channel,
+              message: 'Token is empty',
+            );
+          }
+          final result = await _sendCommand<SpinifyRefreshResult>(
+            (id) => SpinifySubRefreshRequest(
+              id: id,
+              channel: channel,
+              timestamp: DateTime.now(),
+              token: token,
+            ),
+          );
+
+          DateTime? newTtl;
+          if (result.expires) {
+            if (result.ttl case DateTime ttl when ttl.isAfter(DateTime.now())) {
+              newTtl = ttl;
+              _setUpRefreshSubscriptionTimer(ttl: ttl);
+            } else {
+              assert(
+                false,
+                'Subscription "$channel" has invalid TTL: ${result.ttl}',
+              );
+            }
+          }
+
+          _logger?.call(
+            const SpinifyLogLevel.debug(),
+            'subscription_refresh_token',
+            'Subscription "$channel" token refreshed',
+            <String, Object?>{
+              'channel': channel,
+              'subscription': this,
+              if (newTtl != null) 'ttl': newTtl,
+            },
+          );
+        },
+        (error, stackTrace) {
+          _logger?.call(
+            const SpinifyLogLevel.error(),
+            'subscription_refresh_token_error',
+            'Subscription "$channel" failed to refresh token',
+            <String, Object?>{
+              'channel': channel,
+              'subscription': this,
+              'error': error,
+              'stackTrace': stackTrace,
+            },
+          );
+
+          // Calculate new TTL for refresh subscription timer
+          late final ttl =
+              DateTime.now().add(Backoff.nextDelay(0, 5 * 1000, 10 * 1000));
+          switch (error) {
+            case SpinifyErrorResult result:
+              if (result.temporary) {
+                _setUpRefreshSubscriptionTimer(ttl: ttl);
+              } else {
+                // Disable refresh subscription timer and unsubscribe
+                _unsubscribe(
+                  code: result.code,
+                  reason: result.message,
+                  sendUnsubscribe: true,
+                ).ignore();
+              }
+            case SpinifySubscriptionException _:
+              _setUpRefreshSubscriptionTimer(ttl: ttl);
+            default:
+              _setUpRefreshSubscriptionTimer(ttl: ttl);
+          }
+        },
+      );
 }
 
 @internal
