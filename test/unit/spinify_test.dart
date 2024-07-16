@@ -187,12 +187,12 @@ void main() {
                     isA<SpinifyMetrics>().having(
                       (m) => m.messagesReceived,
                       'messagesReceived',
-                      equals(BigInt.zero),
+                      equals(Int64.ZERO),
                     ),
                     isA<SpinifyMetrics>().having(
                       (m) => m.messagesSent,
                       'messagesSent',
-                      equals(BigInt.zero),
+                      equals(Int64.ZERO),
                     ),
                   ]));
               client.connect('ws://localhost:8000/connection/websocket');
@@ -223,12 +223,12 @@ void main() {
                     isA<SpinifyMetrics>().having(
                       (m) => m.messagesReceived,
                       'messagesReceived',
-                      greaterThan(BigInt.zero),
+                      greaterThan(Int64.ZERO),
                     ),
                     isA<SpinifyMetrics>().having(
                       (m) => m.messagesSent,
                       'messagesSent',
-                      greaterThan(BigInt.zero),
+                      greaterThan(Int64.ZERO),
                     ),
                   ]));
               client.close();
@@ -257,6 +257,9 @@ void main() {
                       1,
                     ),
                   ]));
+              expect(() => client.metrics.toString(), returnsNormally);
+              expect(() => client.metrics.toJson(), returnsNormally);
+              expect(client.metrics.toJson(), isA<Map<String, Object?>>());
             }));
   });
 }
