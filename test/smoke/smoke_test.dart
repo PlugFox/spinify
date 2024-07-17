@@ -17,6 +17,32 @@ void main() {
           Map<String, Object?> context) =>
       print('[$event] $message');
 
+  SpinifyReply? $prevPeply; // ignore: unused_local_variable
+  void loggerCheckReply(SpinifyLogLevel level, String event, String message,
+      Map<String, Object?> context) {
+    if (context['reply'] case SpinifyReply reply) {
+      expect(
+        reply,
+        isA<SpinifyReply>()
+            .having((r) => r.id, 'id', isNonNegative)
+            .having((r) => r.timestamp, 'timestamp', isA<DateTime>())
+            .having((r) => r.type, 'type', isNotEmpty)
+            .having((r) => r.isResult, 'isResult',
+                equals(reply is SpinifyReplyResult))
+            .having((r) => r.toString(), 'toString()', isNotEmpty),
+      );
+      expect(reply.hashCode, equals(reply.hashCode));
+      if (reply is SpinifyPush) {
+        expect(reply.channel, equals(reply.event.channel));
+      }
+      if ($prevPeply != null) {
+        expect(() => reply == $prevPeply, returnsNormally);
+        expect(reply.compareTo($prevPeply!), isNonNegative);
+      }
+      $prevPeply = reply;
+    }
+  }
+
   SpinifyChannelEvent? $prevEvent;
   void loggerCheckEvents(SpinifyLogLevel level, String event, String message,
       Map<String, Object?> context) {
@@ -48,7 +74,6 @@ void main() {
         isTrue,
       );
       if ($prevEvent != null) {
-        expect(() => event == $prevEvent, returnsNormally);
         expect(event.compareTo($prevEvent!), isNonNegative);
       }
       $prevEvent = event;
@@ -60,6 +85,7 @@ void main() {
     final args = [level, event, message, context];
     if (enablePrint) Function.apply(loggerPrint, args);
     Function.apply(logBuffer.add, args);
+    Function.apply(loggerCheckReply, args);
     Function.apply(loggerCheckEvents, args);
   }
 
