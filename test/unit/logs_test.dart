@@ -15,7 +15,7 @@ void main() {
             context = const <String, Object?>{}}) =>
         buffer.add(level, event, message, context);
 
-    test('LogLevel', () async {
+    test('LogLevel', () {
       for (final v in SpinifyLogLevel.values) {
         expect(v, isNotNull);
         expect(v.isError, v.level >= const SpinifyLogLevel.warning().level);
@@ -52,7 +52,7 @@ void main() {
       }
     });
 
-    test('LogBuffer', () async {
+    test('LogBuffer', () {
       final buffer = SpinifyLogBuffer(size: 10);
       expect(buffer.logs, isEmpty);
       expect(buffer.size, 10);

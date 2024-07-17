@@ -76,8 +76,7 @@ extension type const SpinifyLogLevel._(int level) implements int {
         3 => info(),
         4 => warning(),
         5 => error(),
-        6 => critical(),
-        _ => throw AssertionError('Unknown log level: $level'),
+        _ => critical(),
       };
 
   /// Pattern matching on log level
