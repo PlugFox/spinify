@@ -23,12 +23,14 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   /// Spinify client
   SpinifySubscriptionMixin get _client {
     final target = _clientWR.target;
+    // coverage:ignore-start
     if (target == null) {
       throw SpinifySubscriptionException(
         channel: channel,
         message: 'Spinify client is do not exist anymore',
       );
     }
+    // coverage:ignore-end
     return target;
   }
 
@@ -79,10 +81,12 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   @sideEffect
   @mustCallSuper
   void onEvent(SpinifyChannelEvent event) {
+    // coverage:ignore-start
     assert(
       event.channel == channel,
       'Subscription "$channel" received event for another channel',
     );
+    // coverage:ignore-end
     _eventController.add(event);
     _logger?.call(
       const SpinifyLogLevel.debug(),
@@ -120,8 +124,10 @@ abstract base class SpinifySubscriptionBase implements SpinifySubscription {
   void close() {
     _stateController.close().ignore();
     _eventController.close().ignore();
+    // coverage:ignore-start
     assert(state.isUnsubscribed,
         'Subscription "$channel" is not unsubscribed before closing');
+    // coverage:ignore-end
   }
 
   @override
@@ -329,13 +335,13 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
       _setState(SpinifySubscriptionState$Subscribing());
 
       final token = await config.getToken?.call();
-      // Token can be empty if it is not required for subscription.
-      /* if (token == null || token.isEmpty) {
+      // Token can be null if it is not required for subscription.
+      if (token != null && token.length <= 5) {
         throw SpinifySubscriptionException(
           channel: channel,
-          message: 'Token is empty',
+          message: 'Subscription token is empty',
         );
-      } */
+      }
 
       final data = await config.getPayload?.call();
 
@@ -391,10 +397,12 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
         if (result.ttl case DateTime ttl when ttl.isAfter(DateTime.now())) {
           _setUpRefreshSubscriptionTimer(ttl: ttl);
         } else {
+          // coverage:ignore-start
           assert(
             false,
             'Subscription "$channel" has invalid TTL: ${result.ttl}',
           );
+          // coverage:ignore-end
         }
       }
 
@@ -579,10 +587,12 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
               newTtl = ttl;
               _setUpRefreshSubscriptionTimer(ttl: ttl);
             } else {
+              // coverage:ignore-start
               assert(
                 false,
                 'Subscription "$channel" has invalid TTL: ${result.ttl}',
               );
+              // coverage:ignore-end
             }
           }
 

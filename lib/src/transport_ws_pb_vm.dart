@@ -94,10 +94,12 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   final void Function() _onDisconnect;
 
   void _onData(Object? bytes) {
+    // coverage:ignore-start
     if (bytes is! List<int> || bytes.isEmpty) {
       assert(false, 'Data is not byte array');
       return;
     }
+    // coverage:ignore-end
     _metrics
       ..bytesReceived += bytes.length
       ..messagesReceived += 1;
@@ -122,6 +124,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
           },
         );
       } on Object catch (error, stackTrace) {
+        // coverage:ignore-start
         _logger?.call(
           const SpinifyLogLevel.error(),
           'transport_on_reply_error',
@@ -136,6 +139,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         );
         assert(false, 'Error reading message: $error');
         continue;
+        // coverage:ignore-end
       }
     }
   }
@@ -167,6 +171,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         },
       );
     } on Object catch (error, stackTrace) {
+      // coverage:ignore-start
       _logger?.call(
         const SpinifyLogLevel.error(),
         'transport_send_error',
@@ -180,6 +185,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         },
       );
       rethrow;
+      // coverage:ignore-end
     }
   }
 
@@ -272,7 +278,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   @override
   Future<void> disconnect([int? code, String? reason]) async {
     await _subscription.cancel();
-    if (_socket.readyState == 3) return;
+    // coverage:ignore-start
     if (_socket.readyState == 3)
       return;
     else if (code != null && reason != null)
@@ -281,6 +287,8 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       await _socket.close(code);
     else
       await _socket.close();
+    // coverage:ignore-end
+    // Thats a bug in the dart:io, the socket is not closed immediately
     //assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
   }
 }
