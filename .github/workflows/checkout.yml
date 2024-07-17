@@ -72,8 +72,10 @@ jobs:
       - name: 👀 Verify versions
         timeout-minutes: 1
         run: |
+          test -f pubspec.yaml && test -f lib/src/model/pubspec.yaml.g.dart
           version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}' | sed 's/[^[:print:]]//g')
           version_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | sed 's/[^[:print:]]//g')
+          test -n "$version_pubspec" && test -n "$version_g_dart"
           echo "Version from pubspec.yaml: '$version_pubspec'"
           echo "Version from pubspec.yaml.g.dart: '$version_dart'"
           echo "$version_pubspec" > /tmp/version_pubspec
