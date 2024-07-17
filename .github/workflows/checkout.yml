@@ -73,17 +73,12 @@ jobs:
         timeout-minutes: 1
         run: |
           version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}' | sed 's/[^[:print:]]//g')
-          version_g_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | sed 's/[^[:print:]]//g')
-
+          version_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | sed 's/[^[:print:]]//g')
           echo "Version from pubspec.yaml: '$version_pubspec'"
-          echo "Version from pubspec.yaml.g.dart: '$version_g_dart'"
-
-          if [ "$version_pubspec" == "$version_g_dart" ]; then
-            echo "Versions match!"
-          else
-            echo "Version mismatch: '$version_pubspec' != '$version_g_dart'"
-            exit 1
-          fi
+          echo "Version from pubspec.yaml.g.dart: '$version_dart'"
+          echo "$version_pubspec" > /tmp/version_pubspec
+          echo "$version_dart" > /tmp/version_dart
+          diff /tmp/version_pubspec /tmp/version_dart
 
       - name: 🧪 Run tests
         timeout-minutes: 2
