@@ -377,7 +377,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
       SpinifyPush(
         timestamp: timestamp,
         event: SpinifyDisconnect(
-          channel: '',
+          channel: '', // empty channel
           timestamp: timestamp,
           code: code,
           reason: reason,

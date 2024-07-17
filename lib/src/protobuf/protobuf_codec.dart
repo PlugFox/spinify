@@ -212,7 +212,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
     Refresh refresh = 12;
   */
   static SpinifyReply _decodePush(pb.Push push) {
-    final channel = push.channel;
+    final channel = push.hasChannel() ? push.channel : '';
     final now = DateTime.now();
     final SpinifyChannelEvent event;
     if (push.hasPub()) {

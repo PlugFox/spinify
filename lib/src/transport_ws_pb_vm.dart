@@ -246,7 +246,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
       SpinifyPush(
         timestamp: timestamp,
         event: SpinifyDisconnect(
-          channel: '',
+          channel: '', // empty channel
           timestamp: timestamp,
           code: code,
           reason: reason,

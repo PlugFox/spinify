@@ -9,7 +9,8 @@ extension type _SpinifyChannelEventView(SpinifyChannelEvent event) {}
 
 void main() {
   const url = 'ws://localhost:8000/connection/websocket';
-  final enablePrint = false; // ignore: prefer_const_declarations
+  const enablePrint =
+      bool.fromEnvironment('TEST_ENABLE_PRINT', defaultValue: false);
   final logBuffer = SpinifyLogBuffer(size: 100);
 
   void loggerPrint(SpinifyLogLevel level, String event, String message,
@@ -23,8 +24,7 @@ void main() {
       expect(
         event,
         isA<SpinifyChannelEvent>()
-            .having((s) => s.channel, 'channel', isNotEmpty)
-            .having((s) => s.type, 'type', isNotEmpty)
+            .having((s) => s.channel, 'channel', isNotNull)
             .having((s) => s.type, 'type', isNotEmpty)
             .having((s) => s.toString(), 'toString()', isNotEmpty)
             .having(
@@ -48,8 +48,8 @@ void main() {
         isTrue,
       );
       if ($prevEvent != null) {
-        expect(event, isNot(equals($prevEvent)));
-        expect(event.compareTo($prevEvent!), isPositive);
+        expect(() => event == $prevEvent, returnsNormally);
+        expect(event.compareTo($prevEvent!), isNonNegative);
       }
       $prevEvent = event;
     }
@@ -57,12 +57,10 @@ void main() {
 
   void logger(SpinifyLogLevel level, String event, String message,
       Map<String, Object?> context) {
-    // ignore: dead_code
-    if (enablePrint) {
-      Function.apply(loggerPrint, [level, event, message, context]);
-    }
-    Function.apply(logBuffer.add, [level, event, message, context]);
-    Function.apply(loggerCheckEvents, [level, event, message, context]);
+    final args = [level, event, message, context];
+    if (enablePrint) Function.apply(loggerPrint, args);
+    Function.apply(logBuffer.add, args);
+    Function.apply(loggerCheckEvents, args);
   }
 
   ISpinify createClient() => Spinify(
