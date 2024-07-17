@@ -103,7 +103,6 @@ final class SpinifyPush extends SpinifyReply {
   String get channel => event.channel;
 
   /// Channel push event
-  @override
   final SpinifyChannelEvent event;
 }
 
