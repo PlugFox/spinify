@@ -55,12 +55,14 @@ void main() {
     test('LogBuffer', () {
       final buffer = SpinifyLogBuffer(size: 10);
       expect(buffer.logs, isEmpty);
+      expect(buffer.length, 0);
       expect(buffer.size, 10);
       expect(buffer.isFull, isFalse);
       expect(buffer.isEmpty, isTrue);
       final addFake = addFakeTo(buffer);
       addFake();
       expect(buffer.logs, hasLength(1));
+      expect(buffer.length, 1);
       expect(buffer.isFull, isFalse);
       expect(buffer.isEmpty, isFalse);
       buffer.clear();
@@ -71,6 +73,7 @@ void main() {
         addFake();
       }
       expect(buffer.logs, hasLength(buffer.size));
+      expect(buffer.length, buffer.size);
       expect(buffer.isFull, isTrue);
       expect(buffer.isEmpty, isFalse);
       addFake();
@@ -81,6 +84,7 @@ void main() {
         addFake();
       }
       expect(buffer.logs, hasLength(buffer.size));
+      expect(buffer.length, buffer.size);
       expect(buffer.isFull, isTrue);
       expect(buffer.isEmpty, isFalse);
     });
