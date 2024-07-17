@@ -234,7 +234,9 @@ void main() {
                       greaterThan(Int64.ZERO),
                     ),
                   ]));
-              client.close();
+              client
+                ..newSubscription('channel')
+                ..close();
               async.elapse(client.config.timeout);
               expect(
                   client.metrics,
@@ -261,8 +263,14 @@ void main() {
                     ),
                   ]));
               expect(() => client.metrics.toString(), returnsNormally);
+              expect(client.metrics.toString(), equals('SpinifyMetrics{}'));
               expect(() => client.metrics.toJson(), returnsNormally);
               expect(client.metrics.toJson(), isA<Map<String, Object?>>());
+              expect(client.metrics.channels, hasLength(2));
+              expect(
+                  client.metrics.channels['channel'],
+                  isA<SpinifyMetrics$Channel>().having((c) => c.toString(),
+                      'subscriptions', equals(r'SpinifyMetrics$Channel{}')));
             }));
   });
 }
