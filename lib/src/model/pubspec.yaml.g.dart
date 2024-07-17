@@ -93,13 +93,13 @@ sealed class Pubspec {
   static const PubspecVersion version = (
     /// Non-canonical string representation of the version as provided
     /// in the pubspec.yaml file.
-    representation: r'0.0.1-pre.7',
+    representation: r'0.0.1-pre.8',
 
     /// Returns a 'canonicalized' representation
     /// of the application version.
     /// This represents the version string in accordance with
     /// Semantic Versioning (SemVer) standards.
-    canonical: r'0.0.1-pre.7',
+    canonical: r'0.0.1-pre.8',
 
     /// MAJOR version when you make incompatible API changes.
     /// The major version number: 1 in "1.2.3".
@@ -115,7 +115,7 @@ sealed class Pubspec {
     patch: 1,
 
     /// The pre-release identifier: "foo" in "1.2.3-foo".
-    preRelease: <String>[r'pre', r'7'],
+    preRelease: <String>[r'pre', r'8'],
 
     /// The build identifier: "foo" in "1.2.3+foo".
     build: <String>[],
@@ -124,13 +124,13 @@ sealed class Pubspec {
   /// Build date and time (UTC)
   static final DateTime timestamp = DateTime.utc(
     2024,
-    6,
-    12,
-    10,
-    22,
-    54,
-    467,
-    344,
+    7,
+    17,
+    19,
+    8,
+    28,
+    336,
+    435,
   );
 
   /// Name
@@ -358,7 +358,7 @@ sealed class Pubspec {
 
   /// Environment
   static const Map<String, String> environment = <String, String>{
-    'sdk': '>=3.3.0 <4.0.0',
+    'sdk': '>=3.4.0 <4.0.0',
   };
 
   /// Platforms
@@ -426,8 +426,8 @@ sealed class Pubspec {
   /// see [Package dependencies](https://dart.dev/tools/pub/dependencies).
   static const Map<String, Object> dependencies = <String, Object>{
     'meta': r'^1.9.1',
-    'ws': r'^1.0.0-pre.6',
     'protobuf': r'^3.1.0',
+    'web': r'^1.0.0',
     'crypto': r'^3.0.3',
     'fixnum': r'^1.1.0',
     'stack_trace': r'^1.11.0',
@@ -438,10 +438,9 @@ sealed class Pubspec {
     'build_runner': r'^2.4.6',
     'pubspec_generator': r'^4.0.0',
     'benchmark_harness': r'^2.2.2',
-    'lints': r'^3.0.0',
+    'lints': r'>=3.0.0 <5.0.0',
     'test': r'^1.24.4',
     'fake_async': r'^1.3.1',
-    'mockito': r'^5.4.4',
   };
 
   /// Dependency overrides
