@@ -6,12 +6,15 @@ import 'package:test/test.dart';
 
 void main() {
   group('Spinify', () {
+    final buffer = SpinifyLogBuffer(size: 10);
+
     Spinify createFakeClient([
       void Function(ISpinifyTransport? transport)? out,
     ]) =>
         Spinify(
           config: SpinifyConfig(
             transportBuilder: $createFakeSpinifyTransport(out: out),
+            logger: buffer.add,
           ),
         );
 

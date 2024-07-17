@@ -200,24 +200,20 @@ final class SpinifyLogBuffer {
   }
 
   /// Add a log entry to the buffer.
-  void add({
-    required SpinifyLogLevel level,
-    required String event,
-    required String message,
-    required Map<String, Object?> context,
-  }) {
+  void add(
+    SpinifyLogLevel level,
+    String event,
+    String message,
+    Map<String, Object?> context,
+  ) {
     _logs[_index] = (
       level: level,
       event: event,
       message: message,
       context: context,
     );
-    if (_length < size) {
-      _length++;
-      _index++;
-    } else {
-      _index = (_index + 1) % size;
-    }
+    if (_length < size) _length++;
+    _index = (_index + 1) % size;
   }
 
   /// Clear all log entries from the buffer.
