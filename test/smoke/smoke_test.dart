@@ -5,17 +5,79 @@ import 'dart:convert';
 import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
+extension type _SpinifyChannelEventView(SpinifyChannelEvent event) {}
+
 void main() {
   const url = 'ws://localhost:8000/connection/websocket';
+  final enablePrint = false; // ignore: prefer_const_declarations
+  final logBuffer = SpinifyLogBuffer(size: 100);
+
+  void loggerPrint(SpinifyLogLevel level, String event, String message,
+          Map<String, Object?> context) =>
+      print('[$event] $message');
+
+  SpinifyChannelEvent? $prevEvent;
+  void loggerCheckEvents(SpinifyLogLevel level, String event, String message,
+      Map<String, Object?> context) {
+    if (context['event'] case SpinifyChannelEvent event) {
+      expect(
+        event,
+        isA<SpinifyChannelEvent>()
+            .having((s) => s.channel, 'channel', isNotEmpty)
+            .having((s) => s.type, 'type', isNotEmpty)
+            .having((s) => s.type, 'type', isNotEmpty)
+            .having((s) => s.toString(), 'toString()', isNotEmpty)
+            .having(
+              (s) => s,
+              'equals',
+              equals(_SpinifyChannelEventView(event)),
+            ),
+      );
+      expect(
+        event.mapOrNull(
+              publication: (e) => e.isPublication,
+              presence: (e) => e.isPresence,
+              unsubscribe: (e) => e.isUnsubscribe,
+              message: (e) => e.isMessage,
+              subscribe: (e) => e.isSubscribe,
+              connect: (e) => e.isConnect,
+              disconnect: (e) => e.isDisconnect,
+              refresh: (e) => e.isRefresh,
+            ) ??
+            false,
+        isTrue,
+      );
+      if ($prevEvent != null) {
+        expect(event, isNot(equals($prevEvent)));
+        expect(event.compareTo($prevEvent!), isPositive);
+      }
+      $prevEvent = event;
+    }
+  }
+
+  void logger(SpinifyLogLevel level, String event, String message,
+      Map<String, Object?> context) {
+    // ignore: dead_code
+    if (enablePrint) {
+      Function.apply(loggerPrint, [level, event, message, context]);
+    }
+    Function.apply(logBuffer.add, [level, event, message, context]);
+    Function.apply(loggerCheckEvents, [level, event, message, context]);
+  }
+
+  ISpinify createClient() => Spinify(
+        config: SpinifyConfig(
+          connectionRetryInterval: (
+            min: const Duration(milliseconds: 50),
+            max: const Duration(milliseconds: 150),
+          ),
+          logger: logger,
+        ),
+      );
 
   group('Connection', () {
-    // ignore: unused_element
-    void logger(SpinifyLogLevel level, String event, String message,
-            Map<String, Object?> context) =>
-        print('[$event] $message');
-
     test('Connect_and_disconnect', () async {
-      final client = Spinify();
+      final client = createClient();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
       //await client.ping();
@@ -27,11 +89,7 @@ void main() {
     });
 
     test('Connect_and_refresh', () async {
-      final client = Spinify(
-        config: SpinifyConfig(
-            /* logger: logger, */
-            ),
-      );
+      final client = createClient();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
       //await client.ping();
@@ -43,15 +101,7 @@ void main() {
     }, timeout: const Timeout(Duration(minutes: 7)));
 
     test('Disconnect_temporarily', () async {
-      final client = Spinify(
-        config: SpinifyConfig(
-          connectionRetryInterval: (
-            min: const Duration(milliseconds: 50),
-            max: const Duration(milliseconds: 150),
-          ),
-          /* logger: logger, */
-        ),
-      );
+      final client = createClient();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
       await client.rpc('disconnect', utf8.encode('reconnect'));
@@ -91,18 +141,10 @@ void main() {
     });
 
     test('Disconnect_permanent', () async {
-      final client = Spinify(
-        config: SpinifyConfig(
-          connectionRetryInterval: (
-            min: const Duration(milliseconds: 50),
-            max: const Duration(milliseconds: 150),
-          ),
-          /* logger: logger, */
-        ),
-      );
+      final client = createClient();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
-      await client.rpc('disconnect');
+      await client.rpc('disconnect', utf8.encode('permanent'));
       await client.states.disconnected.first;
       expect(client.state, isA<SpinifyState$Disconnected>());
       expect(
@@ -138,7 +180,7 @@ void main() {
 
   group('Subscriptions', () {
     test('Server_subscription', () async {
-      final client = Spinify();
+      final client = createClient();
       await client.connect(url);
       expect(client.state, isA<SpinifyState$Connected>());
       final serverSubscriptions = client.subscriptions.server;
