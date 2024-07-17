@@ -69,6 +69,22 @@ jobs:
         timeout-minutes: 1
         run: dart analyze --fatal-infos --fatal-warnings lib/
 
+      - name: 👀 Verify versions
+        timeout-minutes: 1
+        run: |
+          version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          version_g_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}')
+
+          echo "Version from pubspec.yaml: $version_pubspec"
+          echo "Version from pubspec.yaml.g.dart: $version_g_dart"
+
+          if [ "$version_pubspec" == "$version_g_dart" ]; then
+            echo "Versions match!"
+          else
+            echo "Version mismatch: $version_pubspec != $version_g_dart"
+            exit 1
+          fi
+
       - name: 🧪 Run tests
         timeout-minutes: 2
         run: |
