@@ -1,108 +1,15 @@
-// ignore_for_file: avoid_print
-
 import 'dart:convert';
 
 import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
-extension type _SpinifyChannelEventView(SpinifyChannelEvent event) {}
+import 'create_client.dart';
 
 void main() {
-  const url = 'ws://localhost:8000/connection/websocket';
-  const enablePrint =
-      bool.fromEnvironment('TEST_ENABLE_PRINT', defaultValue: false);
-  final logBuffer = SpinifyLogBuffer(size: 100);
-
-  void loggerPrint(SpinifyLogLevel level, String event, String message,
-          Map<String, Object?> context) =>
-      print('[$event] $message');
-
-  SpinifyReply? $prevPeply; // ignore: unused_local_variable
-  void loggerCheckReply(SpinifyLogLevel level, String event, String message,
-      Map<String, Object?> context) {
-    if (context['reply'] case SpinifyReply reply) {
-      expect(
-        reply,
-        isA<SpinifyReply>()
-            .having((r) => r.id, 'id', isNonNegative)
-            .having((r) => r.timestamp, 'timestamp', isA<DateTime>())
-            .having((r) => r.type, 'type', isNotEmpty)
-            .having((r) => r.isResult, 'isResult',
-                equals(reply is SpinifyReplyResult))
-            .having((r) => r.toString(), 'toString()', isNotEmpty),
-      );
-      expect(reply.hashCode, equals(reply.hashCode));
-      if (reply is SpinifyPush) {
-        expect(reply.channel, equals(reply.event.channel));
-      }
-      if ($prevPeply != null) {
-        expect(() => reply == $prevPeply, returnsNormally);
-        expect(reply.compareTo($prevPeply!), isNonNegative);
-      }
-      $prevPeply = reply;
-    }
-  }
-
-  SpinifyChannelEvent? $prevEvent;
-  void loggerCheckEvents(SpinifyLogLevel level, String event, String message,
-      Map<String, Object?> context) {
-    if (context['event'] case SpinifyChannelEvent event) {
-      expect(
-        event,
-        isA<SpinifyChannelEvent>()
-            .having((s) => s.channel, 'channel', isNotNull)
-            .having((s) => s.type, 'type', isNotEmpty)
-            .having((s) => s.toString(), 'toString()', isNotEmpty)
-            .having(
-              (s) => s,
-              'equals',
-              equals(_SpinifyChannelEventView(event)),
-            ),
-      );
-      expect(
-        event.mapOrNull(
-              publication: (e) => e.isPublication,
-              presence: (e) => e.isPresence,
-              unsubscribe: (e) => e.isUnsubscribe,
-              message: (e) => e.isMessage,
-              subscribe: (e) => e.isSubscribe,
-              connect: (e) => e.isConnect,
-              disconnect: (e) => e.isDisconnect,
-              refresh: (e) => e.isRefresh,
-            ) ??
-            false,
-        isTrue,
-      );
-      if ($prevEvent != null) {
-        expect(event.compareTo($prevEvent!), isNonNegative);
-      }
-      $prevEvent = event;
-    }
-  }
-
-  void logger(SpinifyLogLevel level, String event, String message,
-      Map<String, Object?> context) {
-    final args = [level, event, message, context];
-    if (enablePrint) Function.apply(loggerPrint, args);
-    Function.apply(logBuffer.add, args);
-    Function.apply(loggerCheckReply, args);
-    Function.apply(loggerCheckEvents, args);
-  }
-
-  ISpinify createClient() => Spinify(
-        config: SpinifyConfig(
-          connectionRetryInterval: (
-            min: const Duration(milliseconds: 50),
-            max: const Duration(milliseconds: 150),
-          ),
-          logger: logger,
-        ),
-      );
-
   group('Connection', () {
     test('Connect_and_disconnect', () async {
-      final client = createClient();
-      await client.connect(url);
+      final client = $createClient();
+      await client.connect($url);
       expect(client.state, isA<SpinifyState$Connected>());
       //await client.ping();
       await client.send(utf8.encode('Hello from Spinify!'));
@@ -113,8 +20,8 @@ void main() {
     });
 
     test('Connect_and_refresh', () async {
-      final client = createClient();
-      await client.connect(url);
+      final client = $createClient();
+      await client.connect($url);
       expect(client.state, isA<SpinifyState$Connected>());
       //await client.ping();
       await Future<void>.delayed(const Duration(seconds: 60));
@@ -125,8 +32,8 @@ void main() {
     }, timeout: const Timeout(Duration(minutes: 7)));
 
     test('Disconnect_temporarily', () async {
-      final client = createClient();
-      await client.connect(url);
+      final client = $createClient();
+      await client.connect($url);
       expect(client.state, isA<SpinifyState$Connected>());
       await client.rpc('disconnect', utf8.encode('reconnect'));
       // await client.stream.disconnect().first;
@@ -165,8 +72,8 @@ void main() {
     });
 
     test('Disconnect_permanent', () async {
-      final client = createClient();
-      await client.connect(url);
+      final client = $createClient();
+      await client.connect($url);
       expect(client.state, isA<SpinifyState$Connected>());
       await client.rpc('disconnect', utf8.encode('permanent'));
       await client.states.disconnected.first;
@@ -204,8 +111,8 @@ void main() {
 
   group('Subscriptions', () {
     test('Server_subscription', () async {
-      final client = createClient();
-      await client.connect(url);
+      final client = $createClient();
+      await client.connect($url);
       expect(client.state, isA<SpinifyState$Connected>());
       final serverSubscriptions = client.subscriptions.server;
       expect(
@@ -237,10 +144,14 @@ void main() {
         notification,
         allOf(
           isNotNull,
+          equals(client.subscriptions.server['notification:index']),
+          equals(client.getServerSubscription('notification:index')),
+          equals(client.getSubscription('notification:index')),
           isA<SpinifyServerSubscription>()
               .having((sub) => sub.state.isSubscribed, 'subscribed', isTrue),
         ),
       );
+
       notification!;
       await expectLater(
         notification.history,
@@ -279,6 +190,33 @@ void main() {
       expect(client.state, isA<SpinifyState$Closed>());
       expect(notification.state.isUnsubscribed, isTrue);
       expect(serverSubscriptions, isEmpty);
+    });
+
+    test('Client_subscription', () async {
+      final client = $createClient();
+      await client.connect($url);
+      expect(client.state, isA<SpinifyState$Connected>());
+      final sub = client.newSubscription('public:index');
+      expect(
+        sub,
+        allOf(
+          isNotNull,
+          equals(client.subscriptions.client['public:index']),
+          equals(client.getClientSubscription('public:index')),
+          equals(client.getSubscription('public:index')),
+          isA<SpinifyClientSubscription>().having(
+              (sub) => sub.state.isUnsubscribed, 'unsubscribed', isTrue),
+        ),
+      );
+      await expectLater(sub.subscribe(), completes);
+      expect(sub.state.isSubscribed, isTrue);
+      await expectLater(sub.unsubscribe(), completes);
+      expect(sub.state.isUnsubscribed, isTrue);
+      await expectLater(sub.subscribe(), completes);
+      expect(sub.state.isSubscribed, isTrue);
+      await client.close();
+      expect(client.state, isA<SpinifyState$Closed>());
+      expect(sub.state.isUnsubscribed, isTrue);
     });
   });
 }

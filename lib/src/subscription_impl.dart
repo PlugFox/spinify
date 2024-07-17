@@ -329,12 +329,13 @@ final class SpinifyClientSubscriptionImpl extends SpinifySubscriptionBase
       _setState(SpinifySubscriptionState$Subscribing());
 
       final token = await config.getToken?.call();
-      if (token == null || token.isEmpty) {
+      // Token can be empty if it is not required for subscription.
+      /* if (token == null || token.isEmpty) {
         throw SpinifySubscriptionException(
           channel: channel,
           message: 'Token is empty',
         );
-      }
+      } */
 
       final data = await config.getPayload?.call();
 
