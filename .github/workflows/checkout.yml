@@ -72,8 +72,8 @@ jobs:
       - name: 👀 Verify versions
         timeout-minutes: 1
         run: |
-          version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}' | tr -d '[:space:]')
-          version_g_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | tr -d '[:space:]')
+          version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}' | sed 's/[^[:print:]]//g')
+          version_g_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | sed 's/[^[:print:]]//g')
 
           echo "Version from pubspec.yaml: '$version_pubspec'"
           echo "Version from pubspec.yaml.g.dart: '$version_g_dart'"
