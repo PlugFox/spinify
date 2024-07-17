@@ -214,6 +214,34 @@ void main() {
       expect(sub.state.isUnsubscribed, isTrue);
       await expectLater(sub.subscribe(), completes);
       expect(sub.state.isSubscribed, isTrue);
+
+      final messages = <String>[
+        'Hello from',
+        'Spinify!',
+      ];
+
+      // ignore: unawaited_futures
+      expectLater(
+          sub.stream
+              .publication(channel: sub.channel)
+              .map((p) => p.data)
+              .map(utf8.decode)
+              .map(jsonDecode)
+              .cast<Map<String, Object?>>()
+              .map((m) => m['input'])
+              .cast<String>(),
+          emitsInOrder([
+            ...messages,
+            emitsDone,
+          ]));
+      for (final message in messages) {
+        await expectLater(
+            sub.publish(utf8.encode(jsonEncode({
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+              'input': message,
+            }))),
+            completes);
+      }
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
       expect(sub.state.isUnsubscribed, isTrue);
