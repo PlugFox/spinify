@@ -154,7 +154,8 @@ jobs:
         id: run-echo-server
         timeout-minutes: 1
         run: |
-          nohup ~/build/bin/echo > /dev/null 2>&1 &
+          nohup ~/build/bin/echo > echo.log 2>&1 &
+          echo $! > echo_pid.txt
         env:
           PORT: 8000
 
@@ -169,12 +170,25 @@ jobs:
             --timeout=10m --concurrency=12 --color \
               test/unit_test.dart test/smoke_test.dart
 
-      - name: ⛔ Stop Go server
+      - name: 🧾 Upload echo logs
+        id: upload-echo-logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs
+          path: echo.log
+          compression-level: 9
+          overwrite: true
+          retention-days: 1
+
+      - name: ⛔ Stop echo server
         id: stop-echo-server
         timeout-minutes: 1
         if: always()
         run: |
-          kill $(lsof -t -i:8000)
+          kill $(cat echo_pid.txt) || true
+          rm -f echo_pid.txt || true
+          rm -f echo.log || true
 
       - name: 🧹 Cleanup artifacts
         id: cleanup-artifacts
