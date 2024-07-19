@@ -204,7 +204,7 @@ jobs:
           lcov --remove coverage/lcov.base.info '*/protobuf/client.*.dart' '*/model/*.g.dart' -o coverage/lcov.info
           lcov --list coverage/lcov.info
           THRESHOLD=${{ env.threshold }}
-          COVERAGE=$(lcov --summary coverage/lcov.info | grep -i 'lines\|Total:' | tail -n 1 | awk '{print $4}' | sed 's/%//')
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep -i 'lines\|Total:' | tail -n 1 | awk '{print $2}' | sed 's/%//')
           echo "Coverage is $COVERAGE%"
           echo $COVERAGE | awk '{if ($1 < 50) exit 1}'
 
