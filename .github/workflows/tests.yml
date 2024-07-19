@@ -36,35 +36,96 @@ on:
       - "pubspec.yaml"
 
 jobs:
+  build-echo:
+    name: "Build Echo server"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    container:
+      image: golang:1.22
+    env:
+      echo-cache-name: echo
+    timeout-minutes: 5
+    steps:
+      - name: 🚂 Get latest code
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            tool/echo
+
+      - name: 📤 Restore Go echo server
+        id: cache-echo-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/build/bin/echo
+          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
+
+      - name: 🦫 Build Go echo server
+        id: build-echo
+        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/go/bin
+          go build -o ~/go/bin/echo tool/echo/echo.go
+
+      - name: 📥 Save Go echo server
+        id: cache-echo-save
+        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/build/bin/echo
+          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
+
+      - name: 💾 Upload Go echo server
+        id: upload-echo-server
+        uses: actions/upload-artifact@v4
+        with:
+          name: echo-server
+          path: ~/build/bin/echo
+
   tests:
     name: "Tests"
     runs-on: ubuntu-latest
-    #runs-on: ${{ matrix.os }}
-    #strategy:
-    #  matrix:
-    #    os: [ubuntu-latest, macos-latest, windows-latest]
+    needs: build-echo
     defaults:
       run:
         working-directory: ./
     container:
       image: dart:stable
     env:
-      cache-name: cache-spinify-package
+      pub-cache-name: pub
     timeout-minutes: 15
     steps:
       - name: 🚂 Get latest code
         id: checkout
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            pubspec.yaml
+            lib
+            test
+            analysis_options.yaml
 
-      - name: 📤 Restore pub modules
-        id: cache-spinify-package-restore
+      - name: 📂 Download Echo server
+        uses: actions/download-artifact@v4
+        with:
+          name: echo-server
+          path: ~/build/bin/echo
+
+      - name: 📤 Restore Pub modules
+        id: cache-pub-restore
         uses: actions/cache/restore@v4
         with:
           path: |
             $PWD/.pub_cache/
-          key: ${{ runner.os }}-spinify-${{ env.cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
+          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
-      - name: 🗄️ Export pub cache directory
+      - name: 🗄️ Export Pub cache directory
         id: export-pub-cache
         timeout-minutes: 1
         run: |
@@ -76,13 +137,13 @@ jobs:
         timeout-minutes: 1
         run: dart pub get --no-example
 
-      - name: 📥 Save pub modules
-        id: cache-spinify-package-save
+      - name: 📥 Save Pub modules
+        id: cache-pub-save
         uses: actions/cache/save@v4
         with:
           path: |
             $PWD/.pub_cache/
-          key: ${{ runner.os }}-spinify-${{ env.cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
+          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
       - name: 🧪 Run tests
         id: run-tests
@@ -95,14 +156,14 @@ jobs:
             --timeout=10m --concurrency=12 --color \
               test/unit_test.dart
 
-      - name: 🔍 Format coverage
-        id: format-coverage
-        timeout-minutes: 1
-        run: |
-          mv coverage/lcov.info coverage/lcov.base.info
-          lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/src/protobuf/client.*.dart" "lib/**/*.g.dart"
-          mv coverage/lcov.base.info coverage/lcov.info
-          lcov --list coverage/lcov.info
+      #- name: 🔍 Format coverage
+      #  id: format-coverage
+      #  timeout-minutes: 1
+      #  run: |
+      #    mv coverage/lcov.info coverage/lcov.base.info
+      #    lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/src/protobuf/client.*.dart" "lib/**/*.g.dart"
+      #    mv coverage/lcov.base.info coverage/lcov.info
+      #    lcov --list coverage/lcov.info
 
       - name: 📥 Upload coverage to Codecov
         id: upload-coverage
