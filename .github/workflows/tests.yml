@@ -150,13 +150,13 @@ jobs:
             $PWD/.pub_cache/
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
-      #- name: 📢 Run Echo server
-      #  id: run-echo-server
-      #  timeout-minutes: 1
-      #  run: |
-      #    ~/build/bin/echo &
-      #  env:
-      #    PORT: 8080
+      - name: 📢 Run Echo server
+        id: run-echo-server
+        timeout-minutes: 1
+        run: |
+          nohup ~/build/bin/echo > /dev/null 2>&1 &
+        env:
+          PORT: 8080
 
       - name: 🧪 Run tests
         id: run-tests
@@ -167,31 +167,45 @@ jobs:
             --platform vm --compiler=kernel --coverage=coverage \
             --reporter=github --file-reporter=json:coverage/tests.json \
             --timeout=10m --concurrency=12 --color \
-              test/unit_test.dart
+              test/unit_test.dart test/smoke_test.dart
 
-      #- name: ⛔ Stop Go server
-      #  timeout-minutes: 1
-      #  run: |
-      #    kill $(lsof -t -i:8080)
+      - name: ⛔ Stop Go server
+        id: stop-echo-server
+        timeout-minutes: 1
+        if: always()
+        run: |
+          kill $(lsof -t -i:8080)
 
       - name: 🧹 Cleanup artifacts
         id: cleanup-artifacts
         if: always()
-        timeout-minutes: 1
+        timeout-minutes: 2
         run: |
           rm -rf ~/build
+          artifact_id=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/artifacts | \
+            jq -r '.artifacts[] | select(.name=="echo-server") | .id')
+          curl -X DELETE \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$artifact_id
           echo "Artifacts cleaned up."
 
-      #- name: 🔍 Format coverage
-      #  id: format-coverage
-      #  timeout-minutes: 1
-      #  run: |
-      #    mv coverage/lcov.info coverage/lcov.base.info
-      #    lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/src/protobuf/client.*.dart" "lib/**/*.g.dart"
-      #    mv coverage/lcov.base.info coverage/lcov.info
-      #    lcov --list coverage/lcov.info
+      - name: 🔍 Check coverage
+        id: check-coverage
+        timeout-minutes: 2
+        run: |
+          sudo apt-get update && sudo apt-get install -y lcov
+          mv coverage/lcov.info coverage/lcov.base.info
+          lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/src/protobuf/client.*.dart" "lib/**/*.g.dart"
+          mv coverage/lcov.base.info coverage/lcov.info
+          lcov --list coverage/lcov.info
+          THRESHOLD=50
+          COVERAGE=$(lcov --summary coverage.info | grep lines | tail -1 | awk '{print $4}' | sed 's/%//')
+          echo "Coverage is $COVERAGE%"
+          echo $COVERAGE'<'$THRESHOLD | bc | grep -q 1 && echo "Coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)" && exit 1 || echo "Coverage ($COVERAGE%) is above the threshold ($THRESHOLD%)"
 
-      - name: 📥 Upload coverage to Codecov
+      - name: ☂️ Upload coverage to Codecov
         id: upload-coverage
         timeout-minutes: 2
         uses: codecov/codecov-action@v4
