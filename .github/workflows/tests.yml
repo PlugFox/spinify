@@ -156,7 +156,7 @@ jobs:
         run: |
           nohup ~/build/bin/echo > /dev/null 2>&1 &
         env:
-          PORT: 8080
+          PORT: 8000
 
       - name: 🧪 Run tests
         id: run-tests
@@ -174,7 +174,7 @@ jobs:
         timeout-minutes: 1
         if: always()
         run: |
-          kill $(lsof -t -i:8080)
+          kill $(lsof -t -i:8000)
 
       - name: 🧹 Cleanup artifacts
         id: cleanup-artifacts
