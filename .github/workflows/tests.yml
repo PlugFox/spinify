@@ -103,6 +103,7 @@ jobs:
       image: dart:stable
     env:
       pub-cache-name: pub
+      threshold: 50
     timeout-minutes: 15
     steps:
       - name: 🚂 Get latest code
@@ -202,10 +203,9 @@ jobs:
           mv coverage/lcov.info coverage/lcov.base.info
           lcov --remove coverage/lcov.base.info '*/protobuf/client.*.dart' '*/model/*.g.dart' -o coverage/lcov.info
           lcov --list coverage/lcov.info
-          THRESHOLD=50
-          COVERAGE=$(lcov --summary coverage/lcov.info | grep lines | tail -1 | awk '{print $4}' | sed 's/%//')
-          echo "Coverage is $COVERAGE%"
-          echo $COVERAGE'<'$THRESHOLD | bc | grep -q 1 && echo "Coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)" && exit 1 || echo "Coverage ($COVERAGE%) is above the threshold ($THRESHOLD%)"
+          THRESHOLD=${{ env.threshold }}
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep -i 'lines\|Total:' | tail -n 1 | awk '{print $4}' | sed 's/%//')
+          echo $COVERAGE | awk '{if ($1 < 50) exit 1}'
 
       - name: 🧹 Cleanup artifacts
         id: cleanup-artifacts
