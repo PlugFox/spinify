@@ -67,9 +67,11 @@ jobs:
       - name: 🦫 Build Go echo server
         id: build-echo
         if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+        working-directory: ./tool/echo
         run: |
           mkdir -p ~/go/bin
-          go build -o ~/go/bin/echo tool/echo/echo.go
+          go get
+          go build -o ~/go/bin/echo echo.go
 
       - name: 📥 Save Go echo server
         id: cache-echo-save
