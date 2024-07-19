@@ -1,0 +1,223 @@
+name: Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+      - "master"
+      #- "dev"
+      #- "develop"
+      #- "feature/**"
+      #- "bugfix/**"
+      #- "hotfix/**"
+      #- "support/**"
+    paths:
+      - "lib/**.dart"
+      - "test/**.dart"
+      - "example/**.dart"
+      - .github/workflows/*.yml
+      - "pubspec.yaml"
+  pull_request:
+    branches:
+      - "main"
+      - "master"
+      - "dev"
+      - "develop"
+      - "feature/**"
+      - "bugfix/**"
+      - "hotfix/**"
+      - "support/**"
+    paths:
+      - "lib/**.dart"
+      - "test/**.dart"
+      - "example/**.dart"
+      - .github/workflows/*.yml
+      - "pubspec.yaml"
+
+jobs:
+  build-echo:
+    name: "Build Echo server"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    container:
+      image: golang:1.22
+    env:
+      echo-cache-name: echo
+    timeout-minutes: 5
+    steps:
+      - name: 🚂 Get latest code
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            tool/echo
+
+      - name: 📤 Restore Go echo server
+        id: cache-echo-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/build/bin/echo
+          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
+
+      - name: 🦫 Build Go echo server
+        id: build-echo
+        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+        working-directory: ./tool/echo
+        run: |
+          mkdir -p ~/build/bin/
+          go get
+          go build -o ~/build/bin/echo echo.go
+
+      - name: 📥 Save Go echo server
+        id: cache-echo-save
+        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/build/bin/echo
+          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
+
+      - name: 💾 Upload Go echo server
+        id: upload-echo-server
+        uses: actions/upload-artifact@v4
+        with:
+          name: echo-server
+          path: ~/build/bin/echo
+          compression-level: 6
+          overwrite: true
+          retention-days: 1
+
+  tests:
+    name: "Tests"
+    runs-on: ubuntu-latest
+    needs: build-echo
+    defaults:
+      run:
+        working-directory: ./
+    container:
+      image: dart:stable
+    env:
+      pub-cache-name: pub
+      threshold: 50
+    timeout-minutes: 15
+    steps:
+      - name: 🚂 Get latest code
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            pubspec.yaml
+            lib
+            test
+            analysis_options.yaml
+
+      - name: 📂 Download Echo server
+        id: download-echo-server
+        uses: actions/download-artifact@v4
+        with:
+          name: echo-server
+          path: ~/build/bin/
+
+      - name: 📤 Restore Pub modules
+        id: cache-pub-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            $PWD/.pub_cache/
+          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
+
+      - name: 🗄️ Export Pub cache directory
+        id: export-pub-cache
+        timeout-minutes: 1
+        run: |
+          export PUB_CACHE=$PWD/.pub_cache/
+          export PATH="$PATH":"$HOME/.pub-cache/bin"
+
+      - name: 👷 Install Dependencies
+        id: install-dependencies
+        timeout-minutes: 1
+        run: |
+          apt-get update && apt-get install -y lcov bc
+          dart pub get --no-example
+
+      - name: 📥 Save Pub modules
+        id: cache-pub-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            $PWD/.pub_cache/
+          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
+
+      - name: 📢 Run Echo server
+        id: run-echo-server
+        timeout-minutes: 1
+        run: |
+          test -f ~/build/bin/echo
+          chmod +x ~/build/bin/echo
+          nohup ~/build/bin/echo > echo.log 2>&1 &
+          echo $! > echo_pid.txt
+        env:
+          PORT: 8000
+
+      - name: 🧪 Run tests
+        id: run-tests
+        timeout-minutes: 10
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:test_with_coverage -fb -o coverage -- \
+            --platform vm --compiler=kernel --coverage=coverage \
+            --reporter=github --file-reporter=json:coverage/tests.json \
+            --timeout=10m --concurrency=12 --color \
+              test/unit_test.dart test/smoke_test.dart
+
+      - name: 🧾 Upload echo logs
+        id: upload-echo-logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs
+          path: echo.log
+          compression-level: 9
+          overwrite: true
+          retention-days: 1
+
+      - name: ✋ Stop echo server
+        id: stop-echo-server
+        timeout-minutes: 1
+        if: always()
+        run: |
+          kill $(cat echo_pid.txt) || true
+          rm -f echo_pid.txt || true
+          rm -f echo.log || true
+
+      - name: 🔍 Check coverage
+        id: check-coverage
+        timeout-minutes: 2
+        run: |
+          mv coverage/lcov.info coverage/lcov.base.info
+          lcov --remove coverage/lcov.base.info '*/protobuf/client.*.dart' '*/model/*.g.dart' -o coverage/lcov.info
+          lcov --list coverage/lcov.info
+          THRESHOLD=${{ env.threshold }}
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep -i 'lines\|Total:' | tail -n 1 | awk '{print $2}' | sed 's/%//')
+          echo "Coverage is $COVERAGE%"
+          echo $COVERAGE | awk '{if ($1 < 50) exit 1}'
+
+      - name: 🧹 Cleanup artifacts
+        id: cleanup-artifacts
+        if: always()
+        timeout-minutes: 2
+        run: |
+          rm -rf ~/build
+
+      - name: ✨ Upload coverage to Codecov
+        id: upload-coverage
+        timeout-minutes: 2
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos

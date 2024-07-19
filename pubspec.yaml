@@ -4,7 +4,7 @@ description: >
   Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM
   over WebSockets
 
-version: 0.0.1-pre.7
+version: 0.0.1-pre.9
 
 homepage: https://centrifugal.dev
 
@@ -55,7 +55,6 @@ dependencies:
   crypto: ^3.0.3
   fixnum: ^1.1.0
   stack_trace: ^1.11.0
-
 
 dev_dependencies:
   build_runner: ^2.4.6

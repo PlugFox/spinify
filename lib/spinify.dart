@@ -9,7 +9,7 @@ export 'src/model/config.dart';
 export 'src/model/exception.dart';
 export 'src/model/history.dart';
 export 'src/model/jwt.dart';
-export 'src/model/metric.dart' show SpinifyMetrics, SpinifyMetrics$Channel;
+export 'src/model/metric.dart';
 export 'src/model/presence_stats.dart';
 export 'src/model/reply.dart';
 export 'src/model/state.dart';

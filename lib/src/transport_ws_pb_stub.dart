@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:meta/meta.dart';
 
 import 'model/config.dart';

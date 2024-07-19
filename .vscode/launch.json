@@ -136,8 +136,8 @@
         "--concurrency=12"
       ],
       "args": [],
-      "preLaunchTask": "echo:start",
-      "postDebugTask": "echo:stop"
+      /* "preLaunchTask": "echo:start",
+      "postDebugTask": "echo:stop" */
     },
     {
       "name": "[Dart] Smoke Test (dart2js)",

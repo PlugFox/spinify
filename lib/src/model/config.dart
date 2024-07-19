@@ -76,8 +76,7 @@ extension type const SpinifyLogLevel._(int level) implements int {
         3 => info(),
         4 => warning(),
         5 => error(),
-        6 => critical(),
-        _ => throw AssertionError('Unknown log level: $level'),
+        _ => critical(),
       };
 
   /// Pattern matching on log level
@@ -124,6 +123,17 @@ extension type const SpinifyLogLevel._(int level) implements int {
 
   /// If log level is warning or higher
   bool get isError => level > 3;
+
+  /// Values of log level
+  static const List<SpinifyLogLevel> values = <SpinifyLogLevel>[
+    SpinifyLogLevel.debug(),
+    SpinifyLogLevel.transport(),
+    SpinifyLogLevel.config(),
+    SpinifyLogLevel.info(),
+    SpinifyLogLevel.warning(),
+    SpinifyLogLevel.error(),
+    SpinifyLogLevel.critical(),
+  ];
 }
 
 /// Logger function to use for logging.
@@ -200,24 +210,20 @@ final class SpinifyLogBuffer {
   }
 
   /// Add a log entry to the buffer.
-  void add({
-    required SpinifyLogLevel level,
-    required String event,
-    required String message,
-    required Map<String, Object?> context,
-  }) {
+  void add(
+    SpinifyLogLevel level,
+    String event,
+    String message,
+    Map<String, Object?> context,
+  ) {
     _logs[_index] = (
       level: level,
       event: event,
       message: message,
       context: context,
     );
-    if (_length < size) {
-      _length++;
-      _index++;
-    } else {
-      _index = (_index + 1) % size;
-    }
+    if (_length < size) _length++;
+    _index = (_index + 1) % size;
   }
 
   /// Clear all log entries from the buffer.

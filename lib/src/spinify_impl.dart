@@ -188,10 +188,12 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       },
     );
     try {
+      // coverage:ignore-start
       assert(command.id > -1, 'Command ID should be greater or equal to 0');
       assert(_replies[command.id] == null, 'Command ID should be unique');
       assert(_transport != null, 'Transport is not connected');
       assert(!state.isClosed, 'State is closed');
+      // coverage:ignore-end
       final completer = Completer<T>();
       _replies[command.id] = (command: command, completer: completer);
       await _transport?.send(command); // await _sendCommandAsync(command);
@@ -235,9 +237,11 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       },
     );
     try {
+      // coverage:ignore-start
       assert(command.id > -1, 'Command ID should be greater or equal to 0');
       assert(_transport != null, 'Transport is not connected');
       assert(!state.isClosed, 'State is closed');
+      // coverage:ignore-end
       await _transport?.send(command);
       config.logger?.call(
         const SpinifyLogLevel.config(),
@@ -265,13 +269,16 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   @override
   @sideEffect
   Future<void> _onReply(SpinifyReply reply) async {
+    // coverage:ignore-start
     assert(
         reply.id >= 0 && reply.id <= _metrics.commandId,
         'Reply ID should be greater or equal to 0 '
         'and less or equal than command ID');
+    // coverage:ignore-end
     if (reply.isResult) {
       if (reply.id case int id when id > 0) {
         final completer = _replies.remove(id)?.completer;
+        // coverage:ignore-start
         assert(
           completer != null,
           'Reply completer not found',
@@ -280,6 +287,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
           completer?.isCompleted == false,
           'Reply completer already completed',
         );
+        // coverage:ignore-end
         if (reply is SpinifyErrorResult) {
           completer?.completeError(SpinifyReplyException(
             replyCode: reply.code,
@@ -399,6 +407,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         _clientSubscriptionRegistry.remove(subscription.channel);
     try {
       await subFromRegistry?.unsubscribe();
+      // coverage:ignore-start
       assert(
         subFromRegistry != null,
         'Subscription not found in the registry',
@@ -407,6 +416,7 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
         identical(subFromRegistry, subscription),
         'Subscription should be the same instance as in the registry',
       );
+      // coverage:ignore-end
     } on Object catch (error, stackTrace) {
       config.logger?.call(
         const SpinifyLogLevel.warning(),
@@ -489,10 +499,12 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
             _clientSubscriptionRegistry[event.channel];
         sub?.onEvent(event);
         if (sub == null) {
+          // coverage:ignore-start
           assert(
             false,
             'Subscription not found for event ${event.channel}',
           );
+          // coverage:ignore-end
           config.logger?.call(
             const SpinifyLogLevel.warning(),
             'subscription_not_found_error',
@@ -533,10 +545,12 @@ base mixin SpinifySubscriptionMixin on SpinifyBase, SpinifyCommandMixin {
           // Thats a workaround because we do not have channel
           // in the publication in this server SpinifyConnectResult reply.
           if (publication.channel != channel) {
+            // coverage:ignore-start
             assert(
               publication.channel.isEmpty,
               'Publication contains wrong channel',
             );
+            // coverage:ignore-end
             publication = publication.copyWith(channel: channel);
           }
           _eventController.add(publication);
@@ -623,7 +637,9 @@ base mixin SpinifyConnectionMixin
       final SpinifyConnectRequest request;
       {
         final token = await config.getToken?.call();
+        // coverage:ignore-start
         assert(token == null || token.length > 5, 'Spinify JWT is too short');
+        // coverage:ignore-end
         final payload = await config.getPayload?.call();
         final id = _getNextCommandId();
         final now = DateTime.now();
@@ -762,14 +778,18 @@ base mixin SpinifyConnectionMixin
             'ttl': ttl,
           },
         );
+        // coverage:ignore-start
         assert(false, 'Token TTL is too short');
+        // coverage:ignore-end
         return;
       }
       _refreshTimer = Timer(duration, () async {
         if (!state.isConnected) return;
         final token = await config.getToken?.call();
         if (token == null || token.isEmpty) {
+          // coverage:ignore-start
           assert(token == null || token.length > 5, 'Spinify JWT is too short');
+          // coverage:ignore-end
           config.logger?.call(
             const SpinifyLogLevel.warning(),
             'refresh_connection_cancelled',
@@ -987,8 +1007,10 @@ base mixin SpinifyPingPongMixin
   @nonVirtual
   void _restartPingTimer() {
     _tearDownPingTimer();
+    // coverage:ignore-start
     assert(!isClosed, 'Client is closed');
     assert(state.isConnected, 'Invalid state');
+    // coverage:ignore-end
     if (state case SpinifyState$Connected(:Duration? pingInterval)
         when pingInterval != null && pingInterval > Duration.zero) {
       _pingTimer = Timer(

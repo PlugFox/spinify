@@ -212,7 +212,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
     Refresh refresh = 12;
   */
   static SpinifyReply _decodePush(pb.Push push) {
-    final channel = push.channel;
+    final channel = push.hasChannel() ? push.channel : '';
     final now = DateTime.now();
     final SpinifyChannelEvent event;
     if (push.hasPub()) {
@@ -274,13 +274,13 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       } else {
         expBool = false;
         ttlDT = null;
-        assert(false, 'Connection expires is invalid');
+        assert(false, 'Connection expires is invalid'); // coverage:ignore-line
       }
       Duration? pingInterval;
       if (ping > 0) {
         pingInterval = Duration(seconds: ping);
       } else {
-        assert(false, 'Ping interval is invalid');
+        assert(false, 'Ping interval is invalid'); // coverage:ignore-line
       }
       event = SpinifyConnect(
         channel: channel,
@@ -321,7 +321,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       } else {
         expBool = false;
         ttlDT = null;
-        assert(false, 'Connection refresh is invalid');
+        assert(false, 'Connection refresh is invalid'); // coverage:ignore-line
       }
       event = SpinifyRefresh(
         timestamp: DateTime.now(),
@@ -330,7 +330,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         ttl: ttlDT,
       );
     } else {
-      throw UnimplementedError('Unsupported push type');
+      throw UnimplementedError('Unsupported push type'); // coverage:ignore-line
     }
     return SpinifyPush(
       timestamp: now,
@@ -378,7 +378,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       } else {
         expBool = false;
         ttlDT = null;
-        assert(false, 'Connection expires is invalid');
+        assert(false, 'Connection expires is invalid'); // coverage:ignore-line
       }
       return SpinifySubscribeResult(
         id: id,
@@ -425,13 +425,13 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       } else {
         expBool = false;
         ttlDT = null;
-        assert(false, 'Connection expires is invalid');
+        assert(false, 'Connection expires is invalid'); // coverage:ignore-line
       }
       Duration? pingInterval;
       if (ping > 0) {
         pingInterval = Duration(seconds: ping);
       } else {
-        assert(false, 'Ping interval is invalid');
+        assert(false, 'Ping interval is invalid'); // coverage:ignore-line
       }
       return SpinifyConnectResult(
         id: id,
@@ -527,7 +527,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       } else {
         expBool = false;
         ttlDT = null;
-        assert(false, 'Connection refresh is invalid');
+        assert(false, 'Connection refresh is invalid'); // coverage:ignore-line
       }
       return SpinifyRefreshResult(
         id: id,
@@ -551,7 +551,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
       } else {
         expBool = false;
         ttlDT = null;
-        assert(false, 'Connection refresh is invalid');
+        assert(false, 'Connection refresh is invalid'); // coverage:ignore-line
       }
       return SpinifySubRefreshResult(
         id: id,
@@ -569,7 +569,9 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         temporary: error.temporary,
       );
     } else {
+      // coverage:ignore-start
       throw UnimplementedError('Unsupported reply type');
+      // coverage:ignore-end
     }
   }
 }

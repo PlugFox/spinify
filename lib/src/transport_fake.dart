@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_setters_without_getters
+// coverage:ignore-file
 
 import 'dart:async';
 import 'dart:convert';

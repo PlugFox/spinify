@@ -236,6 +236,9 @@ sealed class SpinifyJWT {
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
   /// and current payload.
   String encode(String secret);
+
+  /// Creates a JSON representation of payload.
+  Map<String, Object?> toJson();
 }
 
 final class _SpinifyJWTImpl extends SpinifyJWT {
@@ -256,28 +259,30 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
   }) : super._();
 
   factory _SpinifyJWTImpl.decode(String jwt, [String? secret]) {
-    // Разделение токена на составляющие части
+    // Split token into parts
     var parts = jwt.split('.');
     if (parts.length != 3) {
+      // coverage:ignore-line
       throw const FormatException(
           'Invalid token format, expected 3 parts separated by "."');
     }
     final <String>[encodedHeader, encodedPayload, encodedSignature] = parts;
 
     if (secret != null) {
-      // Вычисление подписи
+      // Compute signature
       final key = utf8.encode(secret); // Your 256 bit secret key
       final bytes = utf8.encode('$encodedHeader.$encodedPayload');
-      var hmacSha256 = Hmac(sha256, key); // HMAC-SHA256
-      var digest = hmacSha256.convert(bytes);
+      final hmacSha256 = Hmac(sha256, key); // HMAC-SHA256
+      final digest = hmacSha256.convert(bytes);
+      final computedSignature = const _UnpaddedBase64Converter()
+          .convert(base64Url.encode(digest.bytes));
 
-      // Кодирование подписи
-      var computedSignature = base64Url.encode(digest.bytes);
-
-      // Сравнение подписи в токене с вычисленной подписью
+      // Check signature equality
+      // coverage:ignore-start
       if (computedSignature != encodedSignature) {
         throw const FormatException('Invalid token signature');
       }
+      // coverage:ignore-end
     }
 
     Map<String, Object?> payload;
@@ -286,10 +291,12 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
           .fuse<String>(const Utf8Decoder())
           .fuse<Map<String, Object?>>(
               const JsonDecoder().cast<String, Map<String, Object?>>())
-          .convert(encodedPayload);
+          .convert(const _NormilizeBase64Converter().convert(encodedPayload));
     } on Object catch (_, stackTrace) {
+      // coverage:ignore-start
       Error.throwWithStackTrace(
           const FormatException('Can\'t decode token payload'), stackTrace);
+      // coverage:ignore-end
     }
     try {
       return _SpinifyJWTImpl(
@@ -310,8 +317,10 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
         expireAt: payload['expire_at'] as int?,
       );
     } on Object catch (_, stackTrace) {
+      // coverage:ignore-start
       Error.throwWithStackTrace(
           const FormatException('Invalid token payload data'), stackTrace);
+      // coverage:ignore-end
     }
   }
 
@@ -403,6 +412,23 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
   }
 
   @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        'sub': sub,
+        if (channel != null) 'channel': channel,
+        if (exp != null) 'exp': exp,
+        if (iat != null) 'iat': iat,
+        if (jti != null) 'jti': jti,
+        if (aud != null) 'aud': aud,
+        if (iss != null) 'iss': iss,
+        if (info != null) 'info': info,
+        if (b64info != null) 'b64info': b64info,
+        if (channels != null) 'channels': channels,
+        if (subs != null) 'subs': subs,
+        if (meta != null) 'meta': meta,
+        if (expireAt != null) 'expireAt': expireAt,
+      };
+
+  @override
   String toString() => 'SpinifyJWT{sub: $sub}';
 }
 
@@ -416,5 +442,16 @@ class _UnpaddedBase64Converter extends Converter<String, String> {
     final padding = input.indexOf('=', input.length - 2);
     if (padding != -1) return input.substring(0, padding);
     return input;
+  }
+}
+
+/// A converter thats normalizes Base64-encoded strings
+class _NormilizeBase64Converter extends Converter<String, String> {
+  const _NormilizeBase64Converter();
+
+  @override
+  String convert(String input) {
+    final padding = (4 - input.length % 4) % 4;
+    return input + '=' * padding;
   }
 }
