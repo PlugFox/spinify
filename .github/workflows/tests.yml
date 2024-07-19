@@ -69,9 +69,9 @@ jobs:
         if: steps.cache-echo-restore.outputs.cache-hit != 'true'
         working-directory: ./tool/echo
         run: |
-          mkdir -p ~/go/bin
+          mkdir -p ~/build/bin/
           go get
-          go build -o ~/go/bin/echo echo.go
+          go build -o ~/build/bin/echo echo.go
 
       - name: 📥 Save Go echo server
         id: cache-echo-save
@@ -147,6 +147,14 @@ jobs:
             $PWD/.pub_cache/
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
+      #- name: 📢 Run Echo server
+      #  id: run-echo-server
+      #  timeout-minutes: 1
+      #  run: |
+      #    ~/build/bin/echo &
+      #  env:
+      #    PORT: 8080
+
       - name: 🧪 Run tests
         id: run-tests
         timeout-minutes: 10
@@ -157,6 +165,19 @@ jobs:
             --reporter=github --file-reporter=json:coverage/tests.json \
             --timeout=10m --concurrency=12 --color \
               test/unit_test.dart
+
+      #- name: ⛔ Stop Go server
+      #  timeout-minutes: 1
+      #  run: |
+      #    kill $(lsof -t -i:8080)
+
+      - name: 🧹 Cleanup artifacts
+        id: cleanup-artifacts
+        if: always()
+        timeout-minutes: 1
+        run: |
+          rm -rf ~/build
+          echo "Artifacts cleaned up."
 
       #- name: 🔍 Format coverage
       #  id: format-coverage
