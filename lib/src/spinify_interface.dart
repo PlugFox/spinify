@@ -155,7 +155,7 @@ abstract interface class ISpinifyHistoryOwner {
 /// Spinify remote procedure call interface.
 abstract interface class ISpinifyRemoteProcedureCall {
   /// Send arbitrary RPC and wait for response.
-  Future<List<int>> rpc(String method, List<int> data);
+  Future<List<int>> rpc(String method, [List<int>? data]);
 }
 
 /// Spinify metrics interface.

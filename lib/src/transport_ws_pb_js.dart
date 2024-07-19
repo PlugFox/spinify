@@ -415,5 +415,6 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
       _socket.close(code);
     else
       _socket.close();
+    //assert(_socket.readyState == 3, 'Socket is not closed');
   }
 }

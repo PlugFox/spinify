@@ -132,8 +132,10 @@
         "--reporter=expanded",
         "--platform=vm", // chrome
         "--file-reporter=json:coverage/tests.json",
-        "--timeout=30s",
-        "--concurrency=12"
+        "--timeout=5m",
+        "--concurrency=12",
+        "--chain-stack-traces",
+        /* "--name=Disconnect_temporarily" */
       ],
       "args": [],
       /* "preLaunchTask": "echo:start",
@@ -158,8 +160,10 @@
         "--platform=chrome",
         "--compiler=dart2js",
         "--file-reporter=json:coverage/tests.json",
-        "--timeout=30s",
-        "--concurrency=12"
+        "--timeout=5m",
+        "--concurrency=12",
+        "--chain-stack-traces",
+        "--name=Disconnect_temporarily",
       ],
       "args": [],
       /* "preLaunchTask": "echo:start",
