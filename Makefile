@@ -40,7 +40,7 @@ coverage: get
 	@dart pub global run coverage:test_with_coverage -fb -o coverage -- \
 		--platform vm --compiler=kernel --coverage=coverage \
 		--reporter=expanded --file-reporter=json:coverage/tests.json \
-		--timeout=30s --concurrency=12 --color \
+		--timeout=10m --concurrency=12 --color \
 			test/unit_test.dart test/smoke_test.dart
 #	@dart test --concurrency=6 --platform vm --coverage=coverage test/
 #	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib

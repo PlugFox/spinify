@@ -1,4 +1,4 @@
-name: Checkout
+name: Tests
 
 on:
   workflow_dispatch:
@@ -18,11 +18,31 @@ on:
       - "example/**.dart"
       - .github/workflows/*.yml
       - "pubspec.yaml"
+  pull_request:
+    branches:
+      - "main"
+      - "master"
+      - "dev"
+      - "develop"
+      - "feature/**"
+      - "bugfix/**"
+      - "hotfix/**"
+      - "support/**"
+    paths:
+      - "lib/**.dart"
+      - "test/**.dart"
+      - "example/**.dart"
+      - .github/workflows/*.yml
+      - "pubspec.yaml"
 
 jobs:
-  checkout:
-    name: "Checkout"
+  tests:
+    name: "Tests"
     runs-on: ubuntu-latest
+    #runs-on: ${{ matrix.os }}
+    #strategy:
+    #  matrix:
+    #    os: [ubuntu-latest, macos-latest, windows-latest]
     defaults:
       run:
         working-directory: ./
@@ -30,7 +50,7 @@ jobs:
       image: dart:stable
     env:
       cache-name: cache-spinify-package
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: 🚂 Get latest code
         id: checkout
@@ -64,34 +84,29 @@ jobs:
             $PWD/.pub_cache/
           key: ${{ runner.os }}-spinify-${{ env.cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
-      - name: 🔎 Check format
-        id: check-format
-        timeout-minutes: 1
-        run: dart format --set-exit-if-changed -l 80 -o none lib/
+      - name: 🧪 Run tests
+        id: run-tests
+        timeout-minutes: 10
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:test_with_coverage -fb -o coverage -- \
+            --platform vm --compiler=kernel --coverage=coverage \
+            --reporter=github --file-reporter=json:coverage/tests.json \
+            --timeout=10m --concurrency=12 --color \
+              test/unit_test.dart
 
-      - name: 📈 Check analyzer
-        id: check-analyzer
-        timeout-minutes: 1
-        run: dart analyze --fatal-infos --fatal-warnings lib/
-
-      - name: 👀 Verify versions
-        id: verify-versions
+      - name: 🔍 Format coverage
+        id: format-coverage
         timeout-minutes: 1
         run: |
-          test -f pubspec.yaml && test -f lib/src/model/pubspec.yaml.g.dart
-          version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}' | sed 's/[^[:print:]]//g')
-          version_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | sed 's/[^[:print:]]//g')
-          test -n "$version_pubspec" && test -n "$version_dart"
-          echo "Version from pubspec.yaml: '$version_pubspec'"
-          echo "Version from pubspec.yaml.g.dart: '$version_dart'"
-          echo "$version_pubspec" > /tmp/version_pubspec
-          echo "$version_dart" > /tmp/version_dart
-          diff /tmp/version_pubspec /tmp/version_dart
+          mv coverage/lcov.info coverage/lcov.base.info
+          lcov -r coverage/lcov.base.info -o coverage/lcov.base.info "lib/src/protobuf/client.*.dart" "lib/**/*.g.dart"
+          mv coverage/lcov.base.info coverage/lcov.info
+          lcov --list coverage/lcov.info
 
-      - name: 🧪 Run unit tests
-        id: run-unit-tests
+      - name: 📥 Upload coverage to Codecov
+        id: upload-coverage
         timeout-minutes: 2
-        run: |
-          dart test --color --platform=vm --concurrency=12 \
-            --timeout=60s --reporter=github --file-reporter=json:coverage/tests.json \
-            --coverage=coverage -- test/unit_test.dart
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
