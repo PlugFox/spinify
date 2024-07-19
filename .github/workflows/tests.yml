@@ -141,7 +141,7 @@ jobs:
         id: install-dependencies
         timeout-minutes: 1
         run: |
-          sudo apt-get update && sudo apt-get install -y lcov jq
+          apt-get update && apt-get install -y lcov jq
           dart pub get --no-example
 
       - name: 📥 Save Pub modules
@@ -156,6 +156,7 @@ jobs:
         id: run-echo-server
         timeout-minutes: 1
         run: |
+          ls -la ~/build/bin
           chmod +x ~/build/bin/echo
           nohup ~/build/bin/echo > echo.log 2>&1 &
           echo $! > echo_pid.txt
