@@ -88,6 +88,9 @@ jobs:
         with:
           name: echo-server
           path: ~/build/bin/echo
+          compression-level: 6
+          overwrite: true
+          retention-days: 1
 
   tests:
     name: "Tests"
