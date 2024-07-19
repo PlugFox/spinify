@@ -117,6 +117,7 @@ jobs:
             analysis_options.yaml
 
       - name: 📂 Download Echo server
+        id: download-echo-server
         uses: actions/download-artifact@v4
         with:
           name: echo-server
@@ -185,7 +186,7 @@ jobs:
           overwrite: true
           retention-days: 1
 
-      - name: ⛔ Stop echo server
+      - name: ✋ Stop echo server
         id: stop-echo-server
         timeout-minutes: 1
         if: always()
@@ -214,7 +215,7 @@ jobs:
         run: |
           rm -rf ~/build
 
-      - name: ☂️ Upload coverage to Codecov
+      - name: ✨ Upload coverage to Codecov
         id: upload-coverage
         timeout-minutes: 2
         uses: codecov/codecov-action@v4
