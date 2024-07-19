@@ -73,6 +73,23 @@ func authMiddleware(h http.Handler) http.Handler {
 	})
 }
 
+// corsMiddleware is a middleware function that adds CORS headers to the response before passing it to the next handler.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // main function initializes a new Centrifuge node and sets up event handlers for client connections, subscriptions, and RPCs.
 // It also sets up a websocket handler and a file server for serving static files.
 // The function waits for an exit signal before shutting down the node and exiting.
@@ -309,6 +326,7 @@ func main() {
 	websocketHandler := centrifuge.NewWebsocketHandler(node, centrifuge.WebsocketConfig{
 		ReadBufferSize:     1024,
 		UseWriteBufferPool: true,
+		CheckOrigin:        func(r *http.Request) bool { return true }, // Allow all connections.
 	})
 	mux.Handle("/connection/websocket", authMiddleware(websocketHandler))
 
@@ -334,7 +352,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Handler:      mux,
+		Handler:      corsMiddleware(mux),
 		Addr:         ":" + strconv.Itoa(*port),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
