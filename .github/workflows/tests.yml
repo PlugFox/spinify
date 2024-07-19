@@ -142,7 +142,7 @@ jobs:
         id: install-dependencies
         timeout-minutes: 1
         run: |
-          apt-get update && apt-get install -y lcov
+          apt-get update && apt-get install -y lcov bc
           dart pub get --no-example
 
       - name: 📥 Save Pub modules
@@ -200,7 +200,7 @@ jobs:
         timeout-minutes: 2
         run: |
           mv coverage/lcov.info coverage/lcov.base.info
-          lcov --remove coverage/lcov.base.info 'lib/src/protobuf/client.pb.dart' 'lib/src/model/pubspec.yaml.g.dart' -o coverage/lcov.info
+          lcov --remove coverage/lcov.base.info '*/protobuf/client.*.dart' '*/model/*.g.dart' -o coverage/lcov.info
           lcov --list coverage/lcov.info
           THRESHOLD=50
           COVERAGE=$(lcov --summary coverage/lcov.info | grep lines | tail -1 | awk '{print $4}' | sed 's/%//')
