@@ -82,16 +82,6 @@ jobs:
             ~/build/bin/echo
           key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
 
-      - name: 💾 Upload Go echo server
-        id: upload-echo-server
-        uses: actions/upload-artifact@v4
-        with:
-          name: echo-server
-          path: ~/build/bin/echo
-          compression-level: 6
-          overwrite: true
-          retention-days: 1
-
   tests:
     name: "Tests"
     runs-on: ubuntu-latest
@@ -103,6 +93,7 @@ jobs:
       image: dart:stable
     env:
       pub-cache-name: pub
+      echo-cache-name: echo
     timeout-minutes: 15
     steps:
       - name: 🚂 Get latest code
@@ -116,11 +107,13 @@ jobs:
             test
             analysis_options.yaml
 
-      - name: 📂 Download Echo server
-        uses: actions/download-artifact@v4
+      - name: 📂 Download Go echo server
+        id: cache-echo-restore
+        uses: actions/cache/restore@v4
         with:
-          name: echo-server
-          path: ~/build/bin/
+          path: |
+            ~/build/bin/echo
+          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
 
       - name: 📤 Restore Pub modules
         id: cache-pub-restore
@@ -141,6 +134,7 @@ jobs:
         id: install-dependencies
         timeout-minutes: 1
         run: |
+          test -f ~/build/bin/echo
           apt-get update && apt-get install -y lcov
           dart pub get --no-example
 
