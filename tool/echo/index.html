@@ -17,9 +17,16 @@
 <body>
     <h1>Example</h1>
     <button id="connectBtn">Connect</button>
-    <button id="rpcBtn" disabled>RPC</button>
     <button id="disconnectBtn" disabled>Disconnect</button>
     <p id="status">Status: Disconnected</p>
+
+    <label>
+        <input type="radio" name="payload" value="permanent" checked> Permanent
+    </label>
+    <label>
+        <input type="radio" name="payload" value="reconnect"> Reconnect
+    </label>
+    <button id="rpcBtn" disabled>RPC</button>
 
     <script>
         const centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket');
@@ -27,6 +34,7 @@
         const disconnectBtn = document.getElementById('disconnectBtn');
         const rpcBtn = document.getElementById('rpcBtn');
         const status = document.getElementById('status');
+        const payloadInputs = document.querySelectorAll('input[name="payload"]');
 
         centrifuge.on('connected', () => {
             status.textContent = 'Status: Connected';
@@ -37,14 +45,11 @@
         });
 
         centrifuge.on('disconnected', (ctx) => {
+            console.log(ctx);
             status.textContent = 'Status: Disconnected';
             connectBtn.disabled = false;
             disconnectBtn.disabled = true;
             rpcBtn.disabled = true;
-        });
-
-        centrifuge.on('state', (ctx) => {
-            status.textContent = `Status: ${ctx.newState}`;
         });
 
         connectBtn.addEventListener('click', () => {
@@ -57,7 +62,8 @@
 
         rpcBtn.addEventListener('click', () => {
             rpcBtn.textContent = 'RPC: sending';
-            centrifuge.rpc('disconnect', 'permanent').then(response => {
+            var data = Array.from(payloadInputs).find(input => input.checked).value; // reconnect | permanent
+            centrifuge.rpc('disconnect', data).then(response => {
                 rpcBtn.textContent = 'RPC: done';
             }).catch(error => {
                 rpcBtn.textContent = 'RPC: error';

@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"io"
@@ -220,7 +221,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 		})
 
 		client.OnRPC(func(e centrifuge.RPCEvent, cb centrifuge.RPCCallback) {
-			log.Printf("[user %s] sent RPC, method: %s, data: %s", client.UserID(), string(e.Data), e.Method)
+			log.Printf("[user %s] sent RPC, method: %s, data: %s", client.UserID(), e.Method, string(e.Data))
 			switch e.Method {
 			case "getCurrentYear":
 				// Return current year.
@@ -232,12 +233,14 @@ func Centrifuge() (*centrifuge.Node, error) {
 				// Disconnect user
 				cb(centrifuge.RPCReply{}, nil)
 				//time.Sleep(50 * time.Millisecond) // <== without this sleep, client will not receive disconnect reply
-				if string(e.Data) == "reconnect" {
+				if strings.Contains(string(e.Data), "reconnect") {
+					log.Printf("[user %s] disconnect with reconnection", client.UserID())
 					client.Disconnect(centrifuge.Disconnect{
 						Code:   3001,
 						Reason: "disconnect with reconnection",
 					})
 				} else {
+					log.Printf("[user %s] disconnect without reconnection", client.UserID())
 					client.Disconnect(centrifuge.DisconnectForceNoReconnect)
 				}
 			default:
