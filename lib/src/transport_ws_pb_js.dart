@@ -87,6 +87,8 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
     final completer = Completer<void>();
     SpinifyTransport$WS$PB$JS? transport;
 
+    // TODO(plugfox): create event queue for socket events
+
     // Fired when a connection with a WebSocket is opened.
     // ignore: avoid_types_on_closure_parameters
     final onOpen = (web.Event event) {
