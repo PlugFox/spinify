@@ -50,6 +50,7 @@ final class _BlobCodec {
 
   @internal
   Future<List<int>> read(web.Blob blob) async {
+    // TODO(plugfox): that async have a concurrency problem
     final arrayBuffer = await blob.arrayBuffer().toDart;
     final bytes = arrayBuffer.toDart.asUint8List();
     return bytes;
