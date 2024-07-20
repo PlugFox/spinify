@@ -49,7 +49,7 @@ final class _BlobCodec {
   }
 
   @internal
-  Future<List<int>> read(web.Blob blob) async {
+  Future<Uint8List> read(web.Blob blob) async {
     // TODO(plugfox): that async have a concurrency problem
     final arrayBuffer = await blob.arrayBuffer().toDart;
     final bytes = arrayBuffer.toDart.asUint8List();
@@ -176,7 +176,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
         } {
     _subscription = _socket.onMessage
         .map<Object?>((event) => event.data)
-        .asyncMap<List<int>?>((data) {
+        .asyncMap<Uint8List?>((data) {
       switch (data) {
         case String text:
           return utf8.encode(text);
@@ -189,10 +189,11 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
             td.lengthInBytes,
           );
         case ByteBuffer bb:
-          return bb.asInt8List();
+          return bb.asUint8List();
         case List<int> bytes:
-          return bytes;
+          return Uint8List.fromList(bytes);
         default:
+          assert(false, 'Unsupported data type: $data');
           return null;
       }
     }).listen(
@@ -222,7 +223,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
 
   /// Fired when data is received through a WebSocket.
   void _onData(Object? bytes) {
-    if (bytes is! List<int> || bytes.isEmpty) {
+    if (bytes is! Uint8List || bytes.isEmpty) {
       assert(false, 'Data is not byte array');
       return;
     }
