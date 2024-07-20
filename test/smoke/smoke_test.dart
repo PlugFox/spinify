@@ -129,6 +129,39 @@ void main() {
     );
   });
 
+  group('RPC', () {
+    test('Concurrency', () async {
+      final client = $createClient();
+      await client.connect($url);
+      expect(client.state, isA<SpinifyState$Connected>());
+      final timeouts = <int>[1000, 100, 10, 100, 0];
+      final futures = <Future<List<int>>>[
+        for (final timeout in timeouts)
+          client.rpc('timeout', utf8.encode(timeout.toString())),
+      ];
+      await expectLater(
+          Stream.fromFutures(futures),
+          emitsInOrder([
+            for (final timeout in timeouts)
+              emits(isA<List<int>>().having(
+                (data) => utf8.decode(data),
+                'timeout',
+                equals(timeout.toString()),
+              )),
+            emitsDone,
+          ]));
+      await expectLater(
+          Future.wait(futures),
+          completion(
+            equals([
+              for (final timeout in timeouts) utf8.encode(timeout.toString()),
+            ]),
+          ));
+      await client.close();
+      expect(client.state, isA<SpinifyState$Closed>());
+    });
+  });
+
   group('Subscriptions', () {
     test('Server_subscription', () async {
       final client = $createClient();

@@ -229,6 +229,11 @@ func Centrifuge() (*centrifuge.Node, error) {
 			case "echo":
 				// Return back input data.
 				cb(centrifuge.RPCReply{Data: e.Data}, nil)
+			case "timeout":
+				// Simulate long running task.
+				timeout, _ := strconv.Atoi(string(e.Data))
+				time.Sleep(time.Duration(timeout) * time.Millisecond)
+				cb(centrifuge.RPCReply{Data: e.Data}, nil)
 			case "disconnect":
 				// Disconnect user
 				cb(centrifuge.RPCReply{}, nil)
