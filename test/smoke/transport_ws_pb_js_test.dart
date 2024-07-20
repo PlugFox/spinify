@@ -1,14 +1,10 @@
-// ignore_for_file: unused_import, directives_ordering
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop' as js;
 import 'dart:typed_data';
 
 import 'package:protobuf/protobuf.dart' as pb;
-import 'package:spinify/spinify.dart';
 import 'package:spinify/src/protobuf/client.pb.dart' as pb;
-import 'package:spinify/src/transport_ws_pb_js.dart';
 import 'package:test/test.dart';
 import 'package:web/web.dart' as web;
 
@@ -86,20 +82,44 @@ void main() => group('Transport_WS_JS', () {
             ['centrifuge-protobuf'.toJS].toJS,
           );
           await socket.onOpen.first;
-          final messages = StreamController<pb.Reply>.broadcast();
-          socket.onMessage
-              .map((e) => e.data)
-              .cast<web.Blob>()
-              .asyncMap((b) => b.arrayBuffer().toDart)
-              .map((a) => a.toDart.asUint8List())
-              .map(pb.CodedBufferReader.new)
-              .map((reader) {
-                final reply = pb.Reply();
-                reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
-                return reply;
-              })
-              .where((_) => !messages.isClosed)
-              .listen(messages.add);
+          final onClose = StreamController<web.CloseEvent>();
+          final onMessage = StreamController<pb.Reply>.broadcast();
+          final events = StreamController<web.Event>()
+            ..stream
+                .asyncMap<void>((event) async {
+                  switch (event.type) {
+                    case 'close':
+                      onClose.add(event as web.CloseEvent);
+                    case 'message':
+                      final blob = (event as web.MessageEvent).data as web.Blob;
+                      final buffer = await blob.arrayBuffer().toDart;
+                      final bytes = buffer.toDart.asUint8List();
+                      final reader = pb.CodedBufferReader(bytes);
+                      final reply = pb.Reply();
+                      reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
+                      onMessage.add(reply);
+                    default:
+                      throw UnsupportedError(
+                          'Unsupported event type: ${event.type}');
+                  }
+                })
+                .drain<void>()
+                .ignore();
+          socket
+            ..onMessage
+                .map((e) => e.data)
+                .cast<web.Blob>()
+                .asyncMap((b) => b.arrayBuffer().toDart)
+                .map((a) => a.toDart.asUint8List())
+                .map(pb.CodedBufferReader.new)
+                .map((reader) {
+                  final reply = pb.Reply();
+                  reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
+                  return reply;
+                })
+                .where((_) => !onMessage.isClosed)
+                .listen(onMessage.add)
+            ..onClose.listen(events.add);
 
           void send(pb.Command command) {
             final commandData = command.writeToBuffer();
@@ -115,7 +135,7 @@ void main() => group('Transport_WS_JS', () {
               connect: pb.ConnectRequest(name: 'test'),
             ));
             await expectLater(
-              messages.stream.first,
+              onMessage.stream.first,
               completion(
                 isA<pb.Reply>()
                     .having((r) => r.id, 'id', equals(1))
@@ -132,17 +152,16 @@ void main() => group('Transport_WS_JS', () {
                 data: utf8.encode('permanent'),
               ),
             ));
-            /* await expectLater(
-              messages.stream.first,
+            await expectLater(
+              onMessage.stream.first,
               completion(
                 isA<pb.Reply>()
                     .having((r) => r.id, 'id', equals(2))
                     .having((r) => r.hasRpc(), 'hasRpc', isTrue),
               ),
             );
-            expect(socket.readyState, equals(web.WebSocket.OPEN)); */
             await expectLater(
-              socket.onClose.first,
+              onClose.stream.first,
               completion(
                 isA<web.CloseEvent>()
                     .having(
@@ -158,8 +177,11 @@ void main() => group('Transport_WS_JS', () {
               ),
             );
             expect(socket.readyState, equals(web.WebSocket.CLOSED));
+            await Future<void>.delayed(const Duration(milliseconds: 250));
           } finally {
-            messages.close().ignore();
+            onClose.close().ignore();
+            onMessage.close().ignore();
+            events.close().ignore();
             if (socket.readyState == web.WebSocket.OPEN) {
               socket.close(1000, 'Normal closure');
             }
@@ -169,8 +191,3 @@ void main() => group('Transport_WS_JS', () {
     }, onPlatform: {
       'dart-vm': const Skip('Only runs on the browser.'),
     });
-
-// < {"connect":{"name":"js"},"id":1}
-// > {"id":1,"connect":{"client":"39939319-e710-43b4-8dda-58ebc92ae5f8","version":"0.0.0","data":{},"subs":{"#42":{"recoverable":true,"epoch":"LTyI","offset":5,"positioned":true},"notification:index":{"recoverable":true,"epoch":"KTeT","offset":5,"positioned":true}},"ping":2,"pong":true}}
-// < {"rpc":{"method":"disconnect","data":"permanent"},"id":2}
-// > {"id":2,"rpc":{}}
