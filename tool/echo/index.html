@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrifuge Client Example</title>
+    <script src="https://unpkg.com/centrifuge@5.2.2/dist/centrifuge.js"></script>
+    <style>
+        button {
+            display: block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Example</h1>
+    <button id="connectBtn">Connect</button>
+    <button id="rpcBtn" disabled>RPC</button>
+    <button id="disconnectBtn" disabled>Disconnect</button>
+    <p id="status">Status: Disconnected</p>
+
+    <script>
+        const centrifuge = new Centrifuge('ws://localhost:8000/connection/websocket');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const rpcBtn = document.getElementById('rpcBtn');
+        const status = document.getElementById('status');
+
+        centrifuge.on('connected', () => {
+            status.textContent = 'Status: Connected';
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+            rpcBtn.disabled = false;
+            rpcBtn.textContent = 'RPC';
+        });
+
+        centrifuge.on('disconnected', (ctx) => {
+            status.textContent = 'Status: Disconnected';
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            rpcBtn.disabled = true;
+        });
+
+        centrifuge.on('state', (ctx) => {
+            status.textContent = `Status: ${ctx.newState}`;
+        });
+
+        connectBtn.addEventListener('click', () => {
+            centrifuge.connect();
+        });
+
+        disconnectBtn.addEventListener('click', () => {
+            centrifuge.disconnect();
+        });
+
+        rpcBtn.addEventListener('click', () => {
+            rpcBtn.textContent = 'RPC: sending';
+            centrifuge.rpc('disconnect', 'permanent').then(response => {
+                rpcBtn.textContent = 'RPC: done';
+            }).catch(error => {
+                rpcBtn.textContent = 'RPC: error';
+            });
+        });
+    </script>
+</body>
+
+</html>

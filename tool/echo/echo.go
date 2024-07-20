@@ -231,7 +231,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 			case "disconnect":
 				// Disconnect user
 				cb(centrifuge.RPCReply{}, nil)
-				time.Sleep(50 * time.Millisecond) // <== without this sleep, client will not receive disconnect reply
+				//time.Sleep(50 * time.Millisecond) // <== without this sleep, client will not receive disconnect reply
 				if string(e.Data) == "reconnect" {
 					client.Disconnect(centrifuge.Disconnect{
 						Code:   3001,
