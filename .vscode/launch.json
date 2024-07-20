@@ -163,7 +163,7 @@
         "--timeout=5m",
         "--concurrency=12",
         "--chain-stack-traces",
-        "--name=Disconnect_temporarily",
+        /* "--name=Disconnect_permanent", */
       ],
       "args": [],
       /* "preLaunchTask": "echo:start",

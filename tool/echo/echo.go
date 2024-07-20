@@ -110,6 +110,10 @@ func Centrifuge() (*centrifuge.Node, error) {
 		return centrifuge.ConnectReply{
 			Data:              []byte(`{}`),
 			ClientSideRefresh: false,
+			PingPongConfig: &centrifuge.PingPongConfig{
+				PingInterval: 2 * time.Second,
+				PongTimeout:  1 * time.Second,
+			},
 			// Subscribe to a personal server-side channel.
 			Subscriptions: map[string]centrifuge.SubscribeOptions{
 				"#" + cred.UserID: {
@@ -216,7 +220,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 		})
 
 		client.OnRPC(func(e centrifuge.RPCEvent, cb centrifuge.RPCCallback) {
-			log.Printf("[user %s] sent RPC, data: %s, method: %s", client.UserID(), string(e.Data), e.Method)
+			log.Printf("[user %s] sent RPC, method: %s, data: %s", client.UserID(), string(e.Data), e.Method)
 			switch e.Method {
 			case "getCurrentYear":
 				// Return current year.
@@ -227,6 +231,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 			case "disconnect":
 				// Disconnect user
 				cb(centrifuge.RPCReply{}, nil)
+				time.Sleep(50 * time.Millisecond) // <== without this sleep, client will not receive disconnect reply
 				if string(e.Data) == "reconnect" {
 					client.Disconnect(centrifuge.Disconnect{
 						Code:   3001,

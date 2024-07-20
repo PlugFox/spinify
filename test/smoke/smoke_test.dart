@@ -31,82 +31,102 @@ void main() {
       expect(client.state, isA<SpinifyState$Closed>());
     }, timeout: const Timeout(Duration(minutes: 7)));
 
-    test('Disconnect_temporarily', () async {
-      final client = $createClient();
-      await client.connect($url);
-      expect(client.state, isA<SpinifyState$Connected>());
-      await client.rpc('disconnect', utf8.encode('reconnect'));
-      // await client.stream.disconnect().first;
-      await client.states.disconnected.first;
-      expect(client.state, isA<SpinifyState$Disconnected>());
-      expect(
-        client.metrics,
-        isA<SpinifyMetrics>()
-            .having(
-              (m) => m.connects,
-              'connects = 1',
-              equals(1),
-            )
-            .having(
-              (m) => m.disconnects,
-              'disconnects = 1',
-              equals(1),
-            )
-            .having(
-              (m) => m.reconnectUrl,
-              'reconnectUrl is set',
-              isNotNull,
-            )
-            .having(
-              (m) => m.nextReconnectAt,
-              'nextReconnectAt is set',
-              isNotNull,
-            ),
-      );
-      await client.states.connecting.first;
-      await client.states.connected.first;
-      expect(client.state, isA<SpinifyState$Connected>());
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      await client.close();
-      expect(client.state, isA<SpinifyState$Closed>());
-    });
+    test(
+      'Disconnect_temporarily',
+      () async {
+        final client = $createClient();
+        await client.connect($url);
+        expect(client.state, isA<SpinifyState$Connected>());
+        await client.rpc('disconnect', utf8.encode('reconnect'));
+        // await client.stream.disconnect().first;
+        await client.states.disconnected.first;
+        expect(client.state, isA<SpinifyState$Disconnected>());
+        expect(
+          client.metrics,
+          isA<SpinifyMetrics>()
+              .having(
+                (m) => m.connects,
+                'connects = 1',
+                equals(1),
+              )
+              .having(
+                (m) => m.disconnects,
+                'disconnects = 1',
+                equals(1),
+              )
+              .having(
+                (m) => m.reconnectUrl,
+                'reconnectUrl is set',
+                isNotNull,
+              )
+              .having(
+                (m) => m.nextReconnectAt,
+                'nextReconnectAt is set',
+                isNotNull,
+              ),
+        );
+        await client.states.connecting.first;
+        await client.states.connected.first;
+        expect(client.state, isA<SpinifyState$Connected>());
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        await client.close();
+        expect(client.state, isA<SpinifyState$Closed>());
+      },
+      onPlatform: <String, Object?>{
+        'browser': <Object?>[
+          const Timeout.factor(2),
+        ],
+      },
+    );
 
-    test('Disconnect_permanent', () async {
-      final client = $createClient();
-      await client.connect($url);
-      expect(client.state, isA<SpinifyState$Connected>());
-      await client.rpc('disconnect', utf8.encode('permanent'));
-      await client.states.disconnected.first;
-      expect(client.state, isA<SpinifyState$Disconnected>());
-      expect(
-        client.metrics,
-        isA<SpinifyMetrics>()
-            .having(
-              (m) => m.connects,
-              'connects = 1',
-              equals(1),
-            )
-            .having(
-              (m) => m.disconnects,
-              'disconnects = 1',
-              equals(1),
-            )
-            .having(
-              (m) => m.reconnectUrl,
-              'reconnectUrl is not set',
-              isNull,
-            )
-            .having(
-              (m) => m.nextReconnectAt,
-              'nextReconnectAt is not set',
-              isNull,
-            ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      expect(client.state, isA<SpinifyState$Disconnected>());
-      await client.close();
-      expect(client.state, isA<SpinifyState$Closed>());
-    });
+    test(
+      'Disconnect_permanent',
+      () async {
+        final client = $createClient();
+        await client.connect($url);
+        expect(client.state, isA<SpinifyState$Connected>());
+        await client.rpc('disconnect', utf8.encode('permanent'));
+        await client.states.disconnected.first;
+        expect(client.state, isA<SpinifyState$Disconnected>());
+        expect(
+          client.metrics,
+          isA<SpinifyMetrics>()
+              .having(
+                (m) => m.connects,
+                'connects = 1',
+                equals(1),
+              )
+              .having(
+                (m) => m.disconnects,
+                'disconnects = 1',
+                equals(1),
+              )
+              .having(
+                (m) => m.reconnectUrl,
+                'reconnectUrl is not set',
+                isNull,
+              )
+              .having(
+                (m) => m.nextReconnectAt,
+                'nextReconnectAt is not set',
+                isNull,
+              ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        expect(client.state, isA<SpinifyState$Disconnected>());
+        await client.close();
+        expect(client.state, isA<SpinifyState$Closed>());
+      },
+      onPlatform: <String, Object?>{
+        'browser': <Object?>[
+          const Skip('Not supported on browsers, yet. '
+              'Because server can not disconnect with code and reason '
+              'and reconnect will happen by ping.'),
+          // They'll be slow on browsers once it works on them.
+          const Timeout.factor(2),
+        ],
+      },
+    );
   });
 
   group('Subscriptions', () {

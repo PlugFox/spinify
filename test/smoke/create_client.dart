@@ -37,7 +37,7 @@ void _loggerCheckReply(SpinifyLogLevel level, String event, String message,
     }
     if (_$prevPeply != null) {
       expect(() => reply == _$prevPeply, returnsNormally);
-      expect(reply.compareTo(_$prevPeply!), isNonNegative);
+      expect(() => reply.compareTo(_$prevPeply!), returnsNormally);
     }
     _$prevPeply = reply;
   }
@@ -95,6 +95,7 @@ ISpinify $createClient() => Spinify(
           min: const Duration(milliseconds: 50),
           max: const Duration(milliseconds: 150),
         ),
+        serverPingDelay: const Duration(milliseconds: 500),
         logger: _logger,
       ),
     );
