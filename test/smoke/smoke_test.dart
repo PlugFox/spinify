@@ -134,7 +134,7 @@ void main() {
       final client = $createClient();
       await client.connect($url);
       expect(client.state, isA<SpinifyState$Connected>());
-      final timeouts = <int>[1000, 100, 10, 100, 0];
+      final timeouts = <int>[200, 50, 10, 25, 0];
       final futures = <Future<List<int>>>[
         for (final timeout in timeouts)
           client.rpc('timeout', utf8.encode(timeout.toString())),
@@ -152,11 +152,11 @@ void main() {
           ]));
       await expectLater(
           Future.wait(futures),
-          completion(
-            equals([
-              for (final timeout in timeouts) utf8.encode(timeout.toString()),
-            ]),
-          ));
+          completion(equals(timeouts
+              .map((t) => t.toString())
+              .map(utf8.encode)
+              .map(equals)
+              .toList(growable: false))));
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
     });
