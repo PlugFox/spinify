@@ -168,8 +168,8 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
         transport
           .._closeCode = code
           .._closeReason = reason
-          ..disconnect(code, reason)
-          .._onDone();
+          .._onDone()
+          ..disconnect(code, reason);
         return;
       }
       if (completer.isCompleted) return;
