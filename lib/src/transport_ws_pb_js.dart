@@ -17,6 +17,7 @@ import 'model/reply.dart';
 import 'model/transport_interface.dart';
 import 'protobuf/client.pb.dart' as pb;
 import 'protobuf/protobuf_codec.dart';
+import 'util/event_queue.dart';
 
 const _BlobCodec _blobCodec = _BlobCodec();
 
@@ -49,11 +50,27 @@ final class _BlobCodec {
   }
 
   @internal
-  Future<Uint8List> read(web.Blob blob) async {
-    // TODO(plugfox): that async have a concurrency problem
-    final arrayBuffer = await blob.arrayBuffer().toDart;
-    final bytes = arrayBuffer.toDart.asUint8List();
-    return bytes;
+  Future<Uint8List> read(js.JSAny? data) async {
+    switch (data) {
+      case String text:
+        return utf8.encode(text);
+      case web.Blob blob:
+        final arrayBuffer = await blob.arrayBuffer().toDart;
+        return arrayBuffer.toDart.asUint8List();
+      case TypedData td:
+        return Uint8List.view(
+          td.buffer,
+          td.offsetInBytes,
+          td.lengthInBytes,
+        );
+      case ByteBuffer bb:
+        return bb.asUint8List();
+      case List<int> bytes:
+        return Uint8List.fromList(bytes);
+      default:
+        assert(false, 'Unsupported data type: $data');
+        throw ArgumentError.value(data, 'data', 'Invalid data type.');
+    }
   }
 }
 
@@ -84,52 +101,77 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
         .toJS,
   );
 
+  final eventQueue = EventQueue(); // Event queue for WebSocket events
   try {
     final completer = Completer<void>();
     SpinifyTransport$WS$PB$JS? transport;
 
-    // TODO(plugfox): create event queue for socket events
-
     // Fired when a connection with a WebSocket is opened.
     // ignore: avoid_types_on_closure_parameters
     final onOpen = (web.Event event) {
-      if (transport != null) return;
-      completer.complete();
+      eventQueue.add(() {
+        // coverage:ignore-start
+        if (transport != null || completer.isCompleted) return;
+        // coverage:ignore-start
+        completer.complete();
+      });
     }.toJS;
 
+    // coverage:ignore-start
     // Fired when a connection with a WebSocket has been closed
     // because of an error, such as when some data couldn't be sent.
     // ignore: avoid_types_on_closure_parameters
     final onError = (web.Event event) {
-      if (transport != null) {
-        transport.disconnect();
-        return;
-      }
-      switch (event) {
-        case web.ErrorEvent value
-            when value.error != null || value.message.isNotEmpty:
-          completer.completeError(Exception(
-              'WebSocket connection error: ${value.error ?? value.message}'));
-        default:
-          completer.completeError(
-              Exception('WebSocket connection error: Unknown error'));
-      }
+      eventQueue.add(() {
+        if (transport != null) {
+          transport.disconnect();
+          return;
+        }
+        if (completer.isCompleted) return;
+        switch (event) {
+          case web.ErrorEvent value
+              when value.error != null || value.message.isNotEmpty:
+            completer.completeError(Exception(
+                'WebSocket connection error: ${value.error ?? value.message}'));
+          default:
+            completer.completeError(
+                Exception('WebSocket connection error: Unknown error'));
+        }
+      });
+    }.toJS;
+    // coverage:ignore-end
+
+    // Fired when a new message is received through a WebSocket.
+    // ignore: avoid_types_on_closure_parameters
+    final onMessage = (web.MessageEvent event) {
+      eventQueue.add(() async {
+        final bytes = await _blobCodec.read(event.data);
+        if (transport == null) return; // coverage:ignore-line
+        transport._onData(bytes);
+      });
     }.toJS;
 
+    // coverage:ignore-start
     // Fired when a connection with a WebSocket is closed.
     // ignore: avoid_types_on_closure_parameters
     final onClose = (web.CloseEvent event) {
-      if (transport != null) {
-        transport.disconnect(event.code, event.reason);
-        return;
-      }
-      completer.completeError(Exception(
-          'WebSocket connection closed: ${event.code} ${event.reason}'));
+      eventQueue.add(() {
+        Timer(const Duration(seconds: 1), () => eventQueue.close(force: true));
+        if (transport != null) {
+          transport.disconnect(event.code, event.reason);
+          return;
+        }
+        if (completer.isCompleted) return;
+        completer.completeError(Exception(
+            'WebSocket connection closed: ${event.code} ${event.reason}'));
+      });
     }.toJS;
+    // coverage:ignore-end
 
     socket
       ..addEventListener('open', onOpen)
       ..addEventListener('error', onError)
+      ..addEventListener('message', onMessage)
       ..addEventListener('close', onClose);
 
     await completer.future;
@@ -142,17 +184,19 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
       onDisconnect,
     );
 
+    // coverage:ignore-start
     // 0	CONNECTING	Socket has been created. The connection is not yet open.
     // 1	OPEN	The connection is open and ready to communicate.
     // 2	CLOSING	The connection is in the process of closing.
     // 3	CLOSED	The connection is closed or couldn't be opened.
     assert(socket.readyState == 1, 'Socket is not open');
+    // coverage:ignore-end
     return transport;
   } on Object {
-    if (socket.readyState != 3) {
-      socket.close();
-    }
+    if (socket.readyState != 3) socket.close();
+    Timer(const Duration(seconds: 1), () => eventQueue.close(force: true));
     rethrow;
+    // coverage:ignore-end
   }
 }
 
