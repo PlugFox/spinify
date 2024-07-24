@@ -123,9 +123,9 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
     // because of an error, such as when some data couldn't be sent.
     // ignore: avoid_types_on_closure_parameters
     final onError = (web.Event event) {
-      eventQueue.add(() {
+      eventQueue.add(() async {
         if (transport != null) {
-          transport.disconnect();
+          await transport.disconnect();
           return;
         }
         if (completer.isCompleted) return;
@@ -154,24 +154,26 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
 
     // coverage:ignore-start
     js.JSExportedDartFunction? onClose;
-    void onDone(int code, String reason) {
+    Future<void> onDone(int code, String reason) async {
+      socket
+        ..removeEventListener('open', onOpen)
+        ..removeEventListener('error', onError)
+        ..removeEventListener('message', onMessage)
+        ..removeEventListener('close', onClose);
+
       Timer(const Duration(seconds: 1), () {
-        socket
-          ..removeEventListener('open', onOpen)
-          ..removeEventListener('error', onError)
-          ..removeEventListener('message', onMessage)
-          ..removeEventListener('close', onClose);
         eventQueue.close(force: true);
         if (socket.readyState != 3) socket.close(code, reason);
       });
+
       if (transport != null) {
         transport
           .._closeCode = code
           .._closeReason = reason
-          .._onDone()
-          ..disconnect(code, reason);
-        return;
+          .._onDone();
+        await transport.disconnect(code, reason);
       }
+
       if (completer.isCompleted) return;
       completer.completeError(
           Exception('WebSocket connection closed: $code $reason'));
@@ -180,7 +182,9 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
     // Fired when a connection with a WebSocket is closed.
     // ignore: avoid_types_on_closure_parameters
     onClose = (web.CloseEvent event) {
-      eventQueue.add(() => onDone(event.code, event.reason));
+      eventQueue.add(() async {
+        await onDone(event.code, event.reason);
+      });
     }.toJS;
     // coverage:ignore-end
 
@@ -209,8 +213,10 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
     // coverage:ignore-end
     return transport;
   } on Object {
-    if (socket.readyState != 3) socket.close();
-    Timer(const Duration(seconds: 1), () => eventQueue.close(force: true));
+    Timer(const Duration(seconds: 1), () {
+      if (socket.readyState != 3) socket.close();
+      eventQueue.close(force: true);
+    });
     rethrow;
     // coverage:ignore-end
   }
