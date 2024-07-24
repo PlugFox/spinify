@@ -118,13 +118,13 @@ void main() {
         expect(client.state, isA<SpinifyState$Closed>());
       },
       onPlatform: <String, Object?>{
-        'browser': <Object?>[
+        /* 'browser': <Object?>[
           const Skip('Not supported on browsers, yet. '
               'Because server can not disconnect with code and reason '
               'and reconnect will happen by ping.'),
           // They'll be slow on browsers once it works on them.
           const Timeout.factor(2),
-        ],
+        ], */
       },
     );
   });

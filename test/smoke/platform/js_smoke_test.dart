@@ -8,7 +8,7 @@ import 'package:spinify/src/protobuf/client.pb.dart' as pb;
 import 'package:test/test.dart';
 import 'package:web/web.dart' as web;
 
-import 'create_client.dart' as variables;
+import '../create_client.dart' as variables;
 
 void main() => group('Transport_WS_JS', () {
       test(

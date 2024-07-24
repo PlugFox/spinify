@@ -101,10 +101,11 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
         .toJS,
   );
 
+  SpinifyTransport$WS$PB$JS? transport;
+
   final eventQueue = EventQueue(); // Event queue for WebSocket events
   try {
     final completer = Completer<void>();
-    SpinifyTransport$WS$PB$JS? transport;
 
     // Fired when a connection with a WebSocket is opened.
     // ignore: avoid_types_on_closure_parameters
@@ -152,19 +153,34 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
     }.toJS;
 
     // coverage:ignore-start
+    js.JSExportedDartFunction? onClose;
+    void onDone(int code, String reason) {
+      Timer(const Duration(seconds: 1), () {
+        socket
+          ..removeEventListener('open', onOpen)
+          ..removeEventListener('error', onError)
+          ..removeEventListener('message', onMessage)
+          ..removeEventListener('close', onClose);
+        eventQueue.close(force: true);
+        if (socket.readyState != 3) socket.close(code, reason);
+      });
+      if (transport != null) {
+        transport
+          .._closeCode = code
+          .._closeReason = reason
+          ..disconnect(code, reason)
+          .._onDone();
+        return;
+      }
+      if (completer.isCompleted) return;
+      completer.completeError(
+          Exception('WebSocket connection closed: $code $reason'));
+    }
+
     // Fired when a connection with a WebSocket is closed.
     // ignore: avoid_types_on_closure_parameters
-    final onClose = (web.CloseEvent event) {
-      eventQueue.add(() {
-        Timer(const Duration(seconds: 1), () => eventQueue.close(force: true));
-        if (transport != null) {
-          transport.disconnect(event.code, event.reason);
-          return;
-        }
-        if (completer.isCompleted) return;
-        completer.completeError(Exception(
-            'WebSocket connection closed: ${event.code} ${event.reason}'));
-      });
+    onClose = (web.CloseEvent event) {
+      eventQueue.add(() => onDone(event.code, event.reason));
     }.toJS;
     // coverage:ignore-end
 
@@ -217,41 +233,12 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
         _decoder = switch (config.logger) {
           null => const ProtobufReplyDecoder(),
           _ => ProtobufReplyDecoder(config.logger),
-        } {
-    _subscription = _socket.onMessage
-        .map<Object?>((event) => event.data)
-        .asyncMap<Uint8List?>((data) {
-      switch (data) {
-        case String text:
-          return utf8.encode(text);
-        case web.Blob blob:
-          return _blobCodec.read(blob);
-        case TypedData td:
-          return Uint8List.view(
-            td.buffer,
-            td.offsetInBytes,
-            td.lengthInBytes,
-          );
-        case ByteBuffer bb:
-          return bb.asUint8List();
-        case List<int> bytes:
-          return Uint8List.fromList(bytes);
-        default:
-          assert(false, 'Unsupported data type: $data');
-          return null;
-      }
-    }).listen(
-      _onData,
-      cancelOnError: false,
-      onDone: _onDone,
-    );
-  }
+        };
 
   final web.WebSocket _socket;
   final Converter<SpinifyCommand, pb.Command> _encoder;
   final Converter<pb.Reply, SpinifyReply> _decoder;
   final SpinifyLogger? _logger;
-  late final StreamSubscription<List<int>?> _subscription;
 
   int? _closeCode;
   String? _closeReason;
@@ -454,7 +441,6 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
   Future<void> disconnect([int? code, String? reason]) async {
     _closeCode = code;
     _closeReason = reason;
-    await _subscription.cancel();
     if (_socket.readyState == 3)
       return;
     else if (code != null && reason != null)
