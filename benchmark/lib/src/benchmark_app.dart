@@ -63,7 +63,7 @@ class BenchmarkController with ChangeNotifier {
   final ValueNotifier<int> payloadSize = ValueNotifier<int>(1024 * 1024);
 
   /// Number of messages to send/receive.
-  final ValueNotifier<int> duration = ValueNotifier<int>(1000);
+  final ValueNotifier<int> messageCount = ValueNotifier<int>(1000);
 
   Future<void> start() async {}
 
@@ -199,14 +199,24 @@ class _BenchmarkTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: controller.endpoint,
-              decoration: const InputDecoration(
-                labelText: 'Endpoint',
-                hintText: 'ws://localhost:8000/connection/websocket',
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: controller.endpoint,
+                decoration: const InputDecoration(
+                  labelText: 'Endpoint',
+                  hintText: 'ws://localhost:8000/connection/websocket',
+                ),
               ),
             ),
             const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Text(
+                'Payload size',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
             ValueListenableBuilder<int>(
               valueListenable: controller.payloadSize,
               builder: (context, size, _) => Slider(
@@ -227,21 +237,29 @@ class _BenchmarkTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Text(
+                'Message count',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
             ValueListenableBuilder<int>(
-              valueListenable: controller.duration,
-              builder: (context, duration, _) => Slider(
-                value: duration.toDouble(),
+              valueListenable: controller.messageCount,
+              builder: (context, count, _) => Slider(
+                value: count.toDouble(),
                 min: 1,
                 max: 1000000,
                 divisions: 100,
-                label: switch (duration) {
+                label: switch (count) {
                   0 => 'Not set',
                   1 => '1 message',
-                  >= 1000000 => '${duration ~/ 1000000}M messages',
-                  >= 1000 => '${duration ~/ 1000}k messages',
-                  _ => '$duration messages',
+                  >= 1000000 => '${count ~/ 1000000}M messages',
+                  >= 1000 => '${count ~/ 1000}k messages',
+                  _ => '$count messages',
                 },
-                onChanged: (value) => controller.duration.value = value.toInt(),
+                onChanged: (value) =>
+                    controller.messageCount.value = value.toInt(),
               ),
             ),
             /* Spacer(),
