@@ -50,7 +50,7 @@ class _BenchmarkAppState extends State<BenchmarkApp> {
 
 enum Library { spinify, centrifuge }
 
-class BenchmarkController with ChangeNotifier {
+abstract base class BenchmarkControllerBase with ChangeNotifier {
   /// Library to use for the benchmark.
   final ValueNotifier<Library> library =
       ValueNotifier<Library>(Library.centrifuge);
@@ -65,12 +65,58 @@ class BenchmarkController with ChangeNotifier {
   /// Number of messages to send/receive.
   final ValueNotifier<int> messageCount = ValueNotifier<int>(1000);
 
-  Future<void> start() async {}
+  /// Number of sent messages.
+  int get sent => _sent;
+  int _sent = 0;
+
+  /// Number of received messages.
+  int get received => _received;
+  int _received = 0;
+
+  /// Number of failed messages.
+  int get failed => _failed;
+  int _failed = 0;
+
+  /// Total number of messages to send/receive.
+  int get total => _total;
+  int _total = 0;
+
+  /// Progress of the benchmark in percent.
+  int get progress =>
+      _total == 0 ? 0 : (((_received + _failed) * 100) ~/ _total).clamp(0, 100);
+
+  /// Duration of the benchmark in milliseconds.
+  int get duration => _duration;
+  int _duration = 0;
+
+  /// Start the benchmark.
+  Future<void> start();
 
   @override
   void dispose() {
     endpoint.dispose();
     super.dispose();
+  }
+}
+
+mixin SpinifyBenchmark on ChangeNotifier {
+  Future<void> startSpinify() async {}
+}
+
+mixin CentrifugeBenchmark on ChangeNotifier {
+  Future<void> startCentrifuge() async {}
+}
+
+final class BenchmarkControllerImpl extends BenchmarkControllerBase
+    with SpinifyBenchmark, CentrifugeBenchmark {
+  @override
+  Future<void> start() {
+    switch (library.value) {
+      case Library.spinify:
+        return startSpinify();
+      case Library.centrifuge:
+        return startCentrifuge();
+    }
   }
 }
 
@@ -88,7 +134,7 @@ class _BenchmarkScaffold extends StatefulWidget {
 
 class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
     with SingleTickerProviderStateMixin {
-  final BenchmarkController controller = BenchmarkController();
+  final BenchmarkControllerImpl controller = BenchmarkControllerImpl();
   late final TabController tabBarController;
 
   @override
@@ -172,7 +218,7 @@ class _BenchmarkTab extends StatelessWidget {
     super.key, // ignore: unused_element
   });
 
-  final BenchmarkController controller;
+  final BenchmarkControllerImpl controller;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -262,8 +308,8 @@ class _BenchmarkTab extends StatelessWidget {
                     controller.messageCount.value = value.toInt(),
               ),
             ),
-            /* Spacer(),
-              Spacer(), */
+            Spacer(),
+            Spacer(),
           ],
         ),
       );
