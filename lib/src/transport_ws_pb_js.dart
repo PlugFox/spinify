@@ -104,27 +104,23 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
   SpinifyTransport$WS$PB$JS? transport;
 
   final eventQueue = EventQueue(); // Event queue for WebSocket events
+
+  // ignore: cancel_subscriptions
+  StreamSubscription<web.Event>? onOpen, onError, onMessage, onClose;
   try {
     final completer = Completer<void>();
 
-    // Fired when a connection with a WebSocket is opened.
-    // ignore: avoid_types_on_closure_parameters
-    final onOpen = (web.Event event) {
+    // coverage:ignore-start
+    onOpen = socket.onOpen.listen((event) {
       eventQueue.add(() {
-        // coverage:ignore-start
         if (transport != null || completer.isCompleted) return;
-        // coverage:ignore-start
         completer.complete();
       });
-    }.toJS;
+    });
 
-    // coverage:ignore-start
-    // Fired when a connection with a WebSocket has been closed
-    // because of an error, such as when some data couldn't be sent.
-    // ignore: avoid_types_on_closure_parameters
-    final onError = (web.Event event) {
+    onError = socket.onError.listen((event) {
       eventQueue.add(() async {
-        if (transport != null) {
+        if (transport != null && !transport.disconnected) {
           await transport.disconnect();
           return;
         }
@@ -139,63 +135,50 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
                 Exception('WebSocket connection error: Unknown error'));
         }
       });
-    }.toJS;
-    // coverage:ignore-end
+    });
 
-    // Fired when a new message is received through a WebSocket.
-    // ignore: avoid_types_on_closure_parameters
-    final onMessage = (web.MessageEvent event) {
+    onMessage = socket.onMessage.listen((event) {
       eventQueue.add(() async {
         final bytes = await _blobCodec.read(event.data);
-        if (transport == null) return; // coverage:ignore-line
+        if (transport == null || transport.disconnected) return;
         transport._onData(bytes);
       });
-    }.toJS;
+    });
 
-    // coverage:ignore-start
-    js.JSExportedDartFunction? onClose;
-    Future<void> onDone(int code, String reason) async {
-      socket
-        ..removeEventListener('open', onOpen)
-        ..removeEventListener('error', onError)
-        ..removeEventListener('message', onMessage)
-        ..removeEventListener('close', onClose);
-
-      Timer(const Duration(seconds: 1), () {
-        eventQueue.close(force: true);
-        if (socket.readyState != 3) socket.close(code, reason);
-      });
-
-      if (transport != null) {
-        transport
-          .._closeCode = code
-          .._closeReason = reason
-          .._onDone();
-        await transport.disconnect(code, reason);
-      }
-
-      if (completer.isCompleted) return;
-      completer.completeError(
-          Exception('WebSocket connection closed: $code $reason'));
-    }
-
-    // Fired when a connection with a WebSocket is closed.
-    // ignore: avoid_types_on_closure_parameters
-    onClose = (web.CloseEvent event) {
+    onClose = socket.onClose.listen((event) {
+      final code = event.code;
+      final reason = event.reason;
       eventQueue.add(() async {
-        await onDone(event.code, event.reason);
-      });
-    }.toJS;
-    // coverage:ignore-end
+        for (final e in [onOpen, onError, onMessage, onClose])
+          e?.cancel().ignore();
 
-    socket
-      ..addEventListener('open', onOpen)
-      ..addEventListener('error', onError)
-      ..addEventListener('message', onMessage)
-      ..addEventListener('close', onClose);
+        if (transport != null && !transport.disconnected) {
+          transport
+            .._closeCode = code
+            .._closeReason = reason
+            .._onDone();
+          await transport.disconnect(code, reason);
+        }
+
+        if (socket.readyState != 3) socket.close(code, reason);
+        eventQueue.close(force: true).ignore();
+
+        if (completer.isCompleted) return;
+        completer.completeError(
+            Exception('WebSocket connection closed: $code $reason'));
+      });
+    });
 
     await completer.future;
 
+    // 0	CONNECTING	Socket has been created. The connection is not yet open.
+    // 1	OPEN	The connection is open and ready to communicate.
+    // 2	CLOSING	The connection is in the process of closing.
+    // 3	CLOSED	The connection is closed or couldn't be opened.
+    assert(socket.readyState == 1, 'Socket is not open');
+    // coverage:ignore-end
+
+    // ignore: join_return_with_assignment
     transport = SpinifyTransport$WS$PB$JS(
       socket,
       config,
@@ -204,19 +187,11 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
       onDisconnect,
     );
 
-    // coverage:ignore-start
-    // 0	CONNECTING	Socket has been created. The connection is not yet open.
-    // 1	OPEN	The connection is open and ready to communicate.
-    // 2	CLOSING	The connection is in the process of closing.
-    // 3	CLOSED	The connection is closed or couldn't be opened.
-    assert(socket.readyState == 1, 'Socket is not open');
-    // coverage:ignore-end
     return transport;
   } on Object {
-    Timer(const Duration(seconds: 1), () {
-      if (socket.readyState != 3) socket.close();
-      eventQueue.close(force: true);
-    });
+    for (final e in [onOpen, onError, onMessage, onClose]) e?.cancel().ignore();
+    if (socket.readyState != 3) socket.close();
+    eventQueue.close(force: true).ignore();
     rethrow;
     // coverage:ignore-end
   }
@@ -239,13 +214,15 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
         _decoder = switch (config.logger) {
           null => const ProtobufReplyDecoder(),
           _ => ProtobufReplyDecoder(config.logger),
-        };
+        },
+        disconnected = false;
 
   final web.WebSocket _socket;
   final Converter<SpinifyCommand, pb.Command> _encoder;
   final Converter<pb.Reply, SpinifyReply> _decoder;
   final SpinifyLogger? _logger;
 
+  bool disconnected;
   int? _closeCode;
   String? _closeReason;
 
@@ -445,6 +422,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
 
   @override
   Future<void> disconnect([int? code, String? reason]) async {
+    disconnected = true;
     _closeCode = code;
     _closeReason = reason;
     if (_socket.readyState == 3)

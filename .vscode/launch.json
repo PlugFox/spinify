@@ -84,7 +84,7 @@
         "--file-reporter=json:coverage/tests.json",
         "--timeout=30s",
         "--concurrency=12",
-        /* "--name=can send binary data" */
+        /* "--name=Disconnect_permanent" */
       ],
       "args": []
     },
@@ -163,7 +163,7 @@
         "--timeout=5m",
         "--concurrency=12",
         "--chain-stack-traces",
-        /* "--name=WebSocket_PB_RPC_Disconnect_permanent", */
+        /* "--name=Connect_and_disconnect" */
       ],
       "args": [],
       /* "preLaunchTask": "echo:start",
