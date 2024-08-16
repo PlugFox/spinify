@@ -1,12 +1,12 @@
 {
   "version": "0.2.0",
   "configurations": [
-    /* {
-      "name": "[Flutter] Example (Local)",
+    {
+      "name": "[Flutter] Benchmark",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
-      "cwd": "${workspaceFolder}/example",
+      "cwd": "${workspaceFolder}/benchmark",
       "program": "lib/main.dart",
       "env": {
         "ENVIRONMENT": "local"
@@ -14,10 +14,8 @@
       "console": "debugConsole",
       "runTestsOnDevice": false,
       "toolArgs": [],
-      "args": [
-        "--dart-define-from-file=config/local.json"
-      ]
-    }, */
+      "args": []
+    },
     /* {
       "name": "[Flutter] Example (Development)",
       "request": "launch",
