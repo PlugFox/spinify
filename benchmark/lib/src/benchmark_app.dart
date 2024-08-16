@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:spinify/spinify.dart';
 
 class BenchmarkApp extends StatefulWidget {
   const BenchmarkApp({super.key});
@@ -53,7 +56,7 @@ enum Library { spinify, centrifuge }
 abstract base class BenchmarkControllerBase with ChangeNotifier {
   /// Library to use for the benchmark.
   final ValueNotifier<Library> library =
-      ValueNotifier<Library>(Library.centrifuge);
+      ValueNotifier<Library>(Library.spinify);
 
   /// WebSocket endpoint to connect to.
   final TextEditingController endpoint =
@@ -64,6 +67,10 @@ abstract base class BenchmarkControllerBase with ChangeNotifier {
 
   /// Number of messages to send/receive.
   final ValueNotifier<int> messageCount = ValueNotifier<int>(1000);
+
+  /// Number of pending messages.
+  int get pending => _pending;
+  int _pending = 0;
 
   /// Number of sent messages.
   int get sent => _sent;
@@ -99,23 +106,80 @@ abstract base class BenchmarkControllerBase with ChangeNotifier {
   }
 }
 
-mixin SpinifyBenchmark on ChangeNotifier {
-  Future<void> startSpinify() async {}
+base mixin SpinifyBenchmark on BenchmarkControllerBase {
+  Future<void> startSpinify({void Function(Object error)? onError}) async {
+    final Spinify client;
+    try {
+      client = Spinify();
+      await client.connect(endpoint.text);
+    } on Object catch (e) {
+      onError?.call(e);
+      return;
+    }
+
+    final payload =
+        List<int>.generate(payloadSize.value, (index) => index % 256);
+    final stopwatch = Stopwatch()..start();
+    void pump() {
+      _duration = stopwatch.elapsedMilliseconds;
+      notifyListeners();
+    }
+
+    _total = messageCount.value;
+    StreamSubscription<SpinifyPublication>? subscription;
+    Completer? completer;
+    try {
+      _pending = _sent = _received = _failed = 0;
+      subscription =
+          client.stream.publication(channel: 'benchmark').listen((event) {
+        if (event.data.length == payload.length) {
+          _received++;
+        } else {
+          _failed++;
+        }
+        _duration = stopwatch.elapsedMilliseconds;
+        completer?.complete();
+      });
+      for (var i = 0; i < _total; i++) {
+        try {
+          _pending++;
+          pump();
+          completer = Completer<void>();
+          await client.publish('benchmark', payload);
+          _sent++;
+          pump();
+          await completer.future.timeout(const Duration(seconds: 5));
+          pump();
+        } on Object catch (e) {
+          _failed++;
+          onError?.call(e);
+          pump();
+        }
+      }
+    } on Object catch (e) {
+      onError?.call(e);
+      return;
+    } finally {
+      subscription?.cancel().ignore();
+      stopwatch.stop();
+      client.disconnect().ignore();
+    }
+  }
 }
 
-mixin CentrifugeBenchmark on ChangeNotifier {
-  Future<void> startCentrifuge() async {}
+base mixin CentrifugeBenchmark on BenchmarkControllerBase {
+  Future<void> startCentrifuge({void Function(Object error)? onError}) async {}
 }
 
 final class BenchmarkControllerImpl extends BenchmarkControllerBase
     with SpinifyBenchmark, CentrifugeBenchmark {
   @override
-  Future<void> start() {
+  Future<void> start({void Function(Object error)? onError}) {
     switch (library.value) {
       case Library.spinify:
-        return startSpinify();
+        return startSpinify(onError: onError);
       case Library.centrifuge:
-        return startCentrifuge();
+        return startCentrifuge(onError: onError);
     }
   }
 }
@@ -156,40 +220,42 @@ class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
           title: const Text('Benchmark'),
           actions: <Widget>[
             ValueListenableBuilder(
-                valueListenable: widget.themeMode,
-                builder: (context, mode, _) => IconButton(
-                      icon: switch (mode) {
-                        ThemeMode.dark => Icon(Icons.light_mode),
-                        ThemeMode.light => Icon(Icons.dark_mode),
-                        ThemeMode.system => Icon(Icons.auto_awesome),
-                      },
-                      onPressed: () => context
-                          .findAncestorStateOfType<_BenchmarkAppState>()
-                          ?.toggleTheme(),
-                    )),
+              valueListenable: widget.themeMode,
+              builder: (context, mode, _) => IconButton(
+                icon: switch (mode) {
+                  ThemeMode.dark => Icon(Icons.light_mode),
+                  ThemeMode.light => Icon(Icons.dark_mode),
+                  ThemeMode.system => Icon(Icons.auto_awesome),
+                },
+                onPressed: () => context
+                    .findAncestorStateOfType<_BenchmarkAppState>()
+                    ?.toggleTheme(),
+              ),
+            ),
             SizedBox(width: 8),
           ],
         ),
         bottomNavigationBar: ListenableBuilder(
-            listenable: tabBarController,
-            builder: (context, _) => BottomNavigationBar(
-                  currentIndex: tabBarController.index,
-                  onTap: (index) => tabBarController.animateTo(index),
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.speed),
-                      label: 'Benchmark',
-                    ),
-                    /* BottomNavigationBarItem(
-                    icon: Icon(Icons.device_unknown),
-                    label: 'Unknown',
-                  ), */
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.help),
-                      label: 'Help',
-                    ),
-                  ],
-                )),
+          listenable: tabBarController,
+          builder: (context, _) => BottomNavigationBar(
+            currentIndex: tabBarController.index,
+            onTap: (index) => tabBarController.animateTo(index),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.speed),
+                label: 'Benchmark',
+              ),
+              /* BottomNavigationBarItem(
+                icon: Icon(Icons.device_unknown),
+                label: 'Unknown',
+              ), */
+              BottomNavigationBarItem(
+                icon: Icon(Icons.help),
+                label: 'Help',
+              ),
+            ],
+          ),
+        ),
         body: SafeArea(
           child: TabBarView(
             controller: tabBarController,
@@ -201,8 +267,8 @@ class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
                 ),
               ),
               /* Center(
-              child: Text('Unknown'),
-            ), */
+                child: Text('Unknown'),
+              ), */
               Center(
                 child: Text('Help'),
               ),
@@ -231,6 +297,8 @@ class _BenchmarkTab extends StatelessWidget {
             ValueListenableBuilder<Library>(
               valueListenable: controller.library,
               builder: (context, library, _) => SegmentedButton(
+                onSelectionChanged: (value) =>
+                    controller.library.value = value.firstOrNull ?? library,
                 selected: {library},
                 segments: <ButtonSegment<Library>>[
                   ButtonSegment<Library>(
@@ -306,6 +374,24 @@ class _BenchmarkTab extends StatelessWidget {
                 },
                 onChanged: (value) =>
                     controller.messageCount.value = value.toInt(),
+              ),
+            ),
+            Spacer(),
+            ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) => Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Pending: ${controller.pending}'),
+                  Text('Sent: ${controller.sent}'),
+                  Text('Received: ${controller.received}'),
+                  Text('Failed: ${controller.failed}'),
+                  Text('Total: ${controller.total}'),
+                  Text('Progress: ${controller.progress}%'),
+                  Text('Duration: ${controller.duration}ms'),
+                ],
               ),
             ),
             Spacer(),
