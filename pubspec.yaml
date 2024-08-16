@@ -33,7 +33,7 @@ platforms:
   windows:
 
 #screenshots:
-#  - description: 'Example of using the ws library to connect to a Centrifugo server.'
+#  - description: 'Example of using the library to connect to a Centrifugo server.'
 #    path: example.png
 
 
