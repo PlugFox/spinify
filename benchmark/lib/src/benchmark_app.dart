@@ -71,6 +71,10 @@ abstract base class BenchmarkControllerBase with ChangeNotifier {
   /// Whether the benchmark is running.
   final ValueNotifier<bool> isRunning = ValueNotifier<bool>(false);
 
+  /// Status of the benchmark.
+  String get status => _status;
+  String _status = '';
+
   /// Number of pending messages.
   int get pending => _pending;
   int _pending = 0;
@@ -111,32 +115,42 @@ abstract base class BenchmarkControllerBase with ChangeNotifier {
 
 base mixin SpinifyBenchmark on BenchmarkControllerBase {
   Future<void> startSpinify({void Function(Object error)? onError}) async {
+    _duration = 0;
     isRunning.value = true;
+    final stopwatch = Stopwatch()..start();
+    void pump(String message) {
+      _status = message;
+      _duration = stopwatch.elapsedMilliseconds;
+      notifyListeners();
+    }
+
     final Spinify client;
     try {
+      pump('Connecting to ${endpoint.text}...');
       client = Spinify();
       await client.connect(endpoint.text);
+      pump('Connected to ${endpoint.text}.');
     } on Object catch (e) {
+      pump('Failed to connect to ${endpoint.text}. ${e}');
       onError?.call(e);
+      stopwatch.stop();
       isRunning.value = false;
       return;
     }
 
     final payload =
         List<int>.generate(payloadSize.value, (index) => index % 256);
-    final stopwatch = Stopwatch()..start();
-    void pump() {
-      _duration = stopwatch.elapsedMilliseconds;
-      notifyListeners();
-    }
 
     _total = messageCount.value;
-    StreamSubscription<SpinifyPublication>? subscription;
+    SpinifyClientSubscription subscription;
+    StreamSubscription<SpinifyPublication>? streamSubscription;
     Completer? completer;
     try {
-      _pending = _sent = _received = _failed = 0;
-      subscription =
-          client.stream.publication(channel: 'benchmark').listen((event) {
+      _pending = _sent = _received = _failed = _duration = 0;
+      pump('Subscribing to channel "benchmark"...');
+      subscription = client.newSubscription('benchmark');
+      await subscription.subscribe();
+      streamSubscription = subscription.stream.publication().listen((event) {
         if (event.data.length == payload.length) {
           _received++;
         } else {
@@ -148,25 +162,31 @@ base mixin SpinifyBenchmark on BenchmarkControllerBase {
       for (var i = 0; i < _total; i++) {
         try {
           _pending++;
-          pump();
+          pump('Sending message $i...');
           completer = Completer<void>();
           await client.publish('benchmark', payload);
           _sent++;
-          pump();
+          pump('Sent message $i.');
           await completer.future.timeout(const Duration(seconds: 5));
-          pump();
+          pump('Received message $i.');
         } on Object catch (e) {
           _failed++;
           onError?.call(e);
-          pump();
+          pump('Failed to send message $i.');
         }
       }
+      pump('Unsubscribing from channel "benchmark"...');
+      await client.removeSubscription(subscription);
+      pump('Disconnecting from ${endpoint.text}...');
+      await client.disconnect();
+      pump('Done.');
     } on Object catch (e) {
       onError?.call(e);
+      pump('Failed. ${e}');
       isRunning.value = false;
       return;
     } finally {
-      subscription?.cancel().ignore();
+      streamSubscription?.cancel().ignore();
       stopwatch.stop();
       client.disconnect().ignore();
     }
@@ -446,6 +466,7 @@ class _BenchmarkTab extends StatelessWidget {
                     Text('Total: ${controller.total}'),
                     Text('Progress: ${controller.progress}%'),
                     Text('Duration: ${controller.duration}ms'),
+                    Text('Status: ${controller.status}'),
                   ],
                 ),
               ],
