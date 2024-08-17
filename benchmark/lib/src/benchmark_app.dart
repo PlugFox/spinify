@@ -39,7 +39,7 @@ class _BenchmarkAppState extends State<BenchmarkApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Benchmark',
+        title: 'Spinify Benchmark',
         themeMode: themeMode.value,
         theme: switch (themeMode.value) {
           ThemeMode.dark => ThemeData.dark(),
@@ -84,7 +84,7 @@ class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Benchmark'),
+          title: const Text('Spinify Benchmark'),
           actions: <Widget>[
             ValueListenableBuilder(
               valueListenable: widget.themeMode,
