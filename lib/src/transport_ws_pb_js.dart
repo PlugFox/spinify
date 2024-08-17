@@ -137,6 +137,14 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
       });
     });
 
+    /* socket.onmessage = (web.MessageEvent event) {
+      final data = event.data;
+      eventQueue.add(() async {
+        if (transport == null || transport.disconnected) return;
+        final bytes = await _blobCodec.read(data);
+        transport._onData(bytes);
+      });
+    }.toJS; */
     onMessage = socket.onMessage.listen((event) {
       eventQueue.add(() async {
         final bytes = await _blobCodec.read(event.data);
