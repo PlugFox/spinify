@@ -85,7 +85,7 @@ abstract base class BenchmarkControllerBase
       TextEditingController(text: defaultEndpoint);
 
   @override
-  final ValueNotifier<int> payloadSize = ValueNotifier<int>(255);
+  final ValueNotifier<int> payloadSize = ValueNotifier<int>(255 * 25);
 
   @override
   final ValueNotifier<int> messageCount = ValueNotifier<int>(1000);

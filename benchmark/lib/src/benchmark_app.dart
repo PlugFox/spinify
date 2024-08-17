@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:spinifybenchmark/src/benchmark_controller.dart';
 import 'package:spinifybenchmark/src/benchmark_tab.dart';
+import 'package:spinifybenchmark/src/help_tab.dart';
 
 class BenchmarkApp extends StatefulWidget {
   const BenchmarkApp({super.key});
@@ -135,9 +136,7 @@ class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
               /* Center(
                 child: Text('Unknown'),
               ), */
-              const Center(
-                child: Text('Help'),
-              ),
+              const HelpTab(),
             ],
           ),
         ),
