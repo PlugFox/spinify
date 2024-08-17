@@ -233,26 +233,108 @@ class BenchmarkTab extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: 256,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text('Pending: ${controller.pending}'),
-                      Text('Sent: ${controller.sent} '
-                          '(${_formatBytes(controller.sentBytes)})'),
-                      Text('Received: ${controller.received} '
-                          '(${_formatBytes(controller.receivedBytes)})'),
-                      Text('Failed: ${controller.failed}'),
-                      Text('Total: ${controller.total}'),
-                      Text('Progress: ${controller.progress}%'),
-                      Text('Duration: ${_formatMs(controller.duration)}'),
-                      Text('Speed: ${controller.messagePerSecond} msg/s '
-                          '(${_formatBytes(controller.bytesPerSecond)}/s)'),
-                      Text('Status: ${controller.status}'),
-                    ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: SizedBox(
+                    width: 512,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.copy),
+                          onPressed: () async {
+                            final messenger =
+                                ScaffoldMessenger.maybeOf(context);
+                            final buffer = StringBuffer()
+                              ..writeln(
+                                  'Library: ${controller.library.value.name}')
+                              ..writeln('Sent: ${controller.sent} '
+                                  '(${_formatBytes(controller.sentBytes)})')
+                              ..writeln('Received: ${controller.received} '
+                                  '(${_formatBytes(controller.receivedBytes)})')
+                              ..writeln('Failed: ${controller.failed}')
+                              ..writeln('Total: ${controller.total}')
+                              ..writeln('Progress: ${controller.progress}%')
+                              ..writeln(
+                                  'Duration: ${_formatMs(controller.duration)}')
+                              ..writeln(
+                                  'Speed: ${controller.messagePerSecond} msg/s '
+                                  '(${_formatBytes(controller.bytesPerSecond)}/s)');
+
+                            await Clipboard.setData(
+                                ClipboardData(text: buffer.toString()));
+                            messenger
+                              ?..clearSnackBars()
+                              ..showSnackBar(
+                                const SnackBar(
+                                  content: Text('Copied to clipboard.'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        SelectionArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                'Pending: ${controller.pending}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Sent: ${controller.sent} '
+                                '(${_formatBytes(controller.sentBytes)})',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Received: ${controller.received} '
+                                '(${_formatBytes(controller.receivedBytes)})',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Failed: ${controller.failed}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Total: ${controller.total}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Progress: ${controller.progress}%',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Duration: ${_formatMs(controller.duration)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Speed: ${controller.messagePerSecond} msg/s '
+                                '(${_formatBytes(controller.bytesPerSecond)}/s)',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Status: ${controller.status}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

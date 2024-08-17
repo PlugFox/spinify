@@ -161,7 +161,7 @@ services:
     container_name: centrifugo-benchmark
     image: centrifugo/centrifugo:v5
     restart: unless-stopped
-    command: centrifugo
+    command: centrifugo --client_insecure --admin
     tty: true
     ports:
       - 8000:8000
