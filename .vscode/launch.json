@@ -2,10 +2,25 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "[Flutter] Benchmark",
+      "name": "[Flutter] Benchmark (debug)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/benchmark",
+      "program": "lib/main.dart",
+      "env": {
+        "ENVIRONMENT": "local"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "toolArgs": [],
+      "args": []
+    },
+    {
+      "name": "[Flutter] Benchmark (release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
       "cwd": "${workspaceFolder}/benchmark",
       "program": "lib/main.dart",
       "env": {

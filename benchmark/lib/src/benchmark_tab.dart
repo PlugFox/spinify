@@ -99,14 +99,11 @@ class BenchmarkTab extends StatelessWidget {
                               );
                           },
                         ),
-                        Flexible(
-                          fit: FlexFit.tight,
-                          child: Text(
-                            'Token HMAC Secret Key:',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
+                        Text(
+                          'Token HMAC Secret Key:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge,
                         ),
                         SelectableText(
                           tokenHmacSecretKey,
@@ -180,13 +177,11 @@ class BenchmarkTab extends StatelessWidget {
           const Divider(height: 48),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: ListenableBuilder(
-              listenable: controller,
-              builder: (context, _) => LinearProgressIndicator(
-                value: controller.progress / 100,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  controller.isRunning.value ? Colors.green : Colors.grey,
-                ),
+            child: SizedBox(
+              height: 24,
+              child: CustomPaint(
+                painter: ProgressPainter(controller),
+                child: const SizedBox(height: 8),
               ),
             ),
           ),
@@ -342,4 +337,51 @@ class BenchmarkTab extends StatelessWidget {
           ),
         ],
       );
+}
+
+class ProgressPainter extends CustomPainter {
+  const ProgressPainter(this.controller) : super(repaint: controller);
+
+  final IBenchmarkController controller;
+
+  static final backgroundPaint = Paint()
+    ..color = Colors.grey
+    ..strokeWidth = 8
+    ..strokeCap = StrokeCap.round;
+
+  static final progressPaint = Paint()
+    ..color = Colors.green
+    ..strokeWidth = 8
+    ..strokeCap = StrokeCap.round;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        0,
+        0,
+        size.width,
+        size.height,
+        const Radius.circular(8),
+      ),
+      backgroundPaint,
+    );
+    if (controller.isRunning.value)
+      canvas.drawRRect(
+        RRect.fromLTRBR(
+          0,
+          0,
+          controller.progress / 100 * size.width,
+          size.height,
+          const Radius.circular(8),
+        ),
+        progressPaint,
+      );
+  }
+
+  @override
+  bool shouldRepaint(ProgressPainter oldDelegate) => false;
+
+  @override
+  bool shouldRebuildSemantics(ProgressPainter oldDelegate) => false;
 }
