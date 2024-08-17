@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:spinify/spinify.dart';
+import 'package:spinifybenchmark/src/benchmark_controller.dart';
+import 'package:spinifybenchmark/src/benchmark_tab.dart';
 
 class BenchmarkApp extends StatefulWidget {
   const BenchmarkApp({super.key});
@@ -51,165 +50,6 @@ class _BenchmarkAppState extends State<BenchmarkApp> {
       );
 }
 
-enum Library { spinify, centrifuge }
-
-abstract base class BenchmarkControllerBase with ChangeNotifier {
-  /// Library to use for the benchmark.
-  final ValueNotifier<Library> library =
-      ValueNotifier<Library>(Library.spinify);
-
-  /// WebSocket endpoint to connect to.
-  final TextEditingController endpoint =
-      TextEditingController(text: 'ws://localhost:8000/connection/websocket');
-
-  /// Size in bytes of the payload to send/receive.
-  final ValueNotifier<int> payloadSize = ValueNotifier<int>(1024 * 1024);
-
-  /// Number of messages to send/receive.
-  final ValueNotifier<int> messageCount = ValueNotifier<int>(1000);
-
-  /// Whether the benchmark is running.
-  final ValueNotifier<bool> isRunning = ValueNotifier<bool>(false);
-
-  /// Status of the benchmark.
-  String get status => _status;
-  String _status = '';
-
-  /// Number of pending messages.
-  int get pending => _pending;
-  int _pending = 0;
-
-  /// Number of sent messages.
-  int get sent => _sent;
-  int _sent = 0;
-
-  /// Number of received messages.
-  int get received => _received;
-  int _received = 0;
-
-  /// Number of failed messages.
-  int get failed => _failed;
-  int _failed = 0;
-
-  /// Total number of messages to send/receive.
-  int get total => _total;
-  int _total = 0;
-
-  /// Progress of the benchmark in percent.
-  int get progress =>
-      _total == 0 ? 0 : (((_received + _failed) * 100) ~/ _total).clamp(0, 100);
-
-  /// Duration of the benchmark in milliseconds.
-  int get duration => _duration;
-  int _duration = 0;
-
-  /// Start the benchmark.
-  Future<void> start();
-
-  @override
-  void dispose() {
-    endpoint.dispose();
-    super.dispose();
-  }
-}
-
-base mixin SpinifyBenchmark on BenchmarkControllerBase {
-  Future<void> startSpinify({void Function(Object error)? onError}) async {
-    _duration = 0;
-    isRunning.value = true;
-    final stopwatch = Stopwatch()..start();
-    void pump(String message) {
-      _status = message;
-      _duration = stopwatch.elapsedMilliseconds;
-      notifyListeners();
-    }
-
-    final Spinify client;
-    try {
-      pump('Connecting to ${endpoint.text}...');
-      client = Spinify();
-      await client.connect(endpoint.text);
-      pump('Connected to ${endpoint.text}.');
-    } on Object catch (e) {
-      pump('Failed to connect to ${endpoint.text}. ${e}');
-      onError?.call(e);
-      stopwatch.stop();
-      isRunning.value = false;
-      return;
-    }
-
-    final payload =
-        List<int>.generate(payloadSize.value, (index) => index % 256);
-
-    _total = messageCount.value;
-    SpinifyClientSubscription subscription;
-    StreamSubscription<SpinifyPublication>? streamSubscription;
-    Completer? completer;
-    try {
-      _pending = _sent = _received = _failed = _duration = 0;
-      pump('Subscribing to channel "benchmark"...');
-      subscription = client.newSubscription('benchmark');
-      await subscription.subscribe();
-      streamSubscription = subscription.stream.publication().listen((event) {
-        if (event.data.length == payload.length) {
-          _received++;
-        } else {
-          _failed++;
-        }
-        _duration = stopwatch.elapsedMilliseconds;
-        completer?.complete();
-      });
-      for (var i = 0; i < _total; i++) {
-        try {
-          _pending++;
-          pump('Sending message $i...');
-          completer = Completer<void>();
-          await client.publish('benchmark', payload);
-          _sent++;
-          pump('Sent message $i.');
-          await completer.future.timeout(const Duration(seconds: 5));
-          pump('Received message $i.');
-        } on Object catch (e) {
-          _failed++;
-          onError?.call(e);
-          pump('Failed to send message $i.');
-        }
-      }
-      pump('Unsubscribing from channel "benchmark"...');
-      await client.removeSubscription(subscription);
-      pump('Disconnecting from ${endpoint.text}...');
-      await client.disconnect();
-      pump('Done.');
-    } on Object catch (e) {
-      onError?.call(e);
-      pump('Failed. ${e}');
-      isRunning.value = false;
-      return;
-    } finally {
-      streamSubscription?.cancel().ignore();
-      stopwatch.stop();
-      client.disconnect().ignore();
-    }
-  }
-}
-
-base mixin CentrifugeBenchmark on BenchmarkControllerBase {
-  Future<void> startCentrifuge({void Function(Object error)? onError}) async {}
-}
-
-final class BenchmarkControllerImpl extends BenchmarkControllerBase
-    with SpinifyBenchmark, CentrifugeBenchmark {
-  @override
-  Future<void> start({void Function(Object error)? onError}) {
-    switch (library.value) {
-      case Library.spinify:
-        return startSpinify(onError: onError);
-      case Library.centrifuge:
-        return startCentrifuge(onError: onError);
-    }
-  }
-}
-
 class _BenchmarkScaffold extends StatefulWidget {
   const _BenchmarkScaffold({
     required this.themeMode,
@@ -224,7 +64,7 @@ class _BenchmarkScaffold extends StatefulWidget {
 
 class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
     with SingleTickerProviderStateMixin {
-  final BenchmarkControllerImpl controller = BenchmarkControllerImpl();
+  final IBenchmarkController controller = BenchmarkControllerImpl();
   late final TabController tabBarController;
 
   @override
@@ -249,16 +89,16 @@ class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
               valueListenable: widget.themeMode,
               builder: (context, mode, _) => IconButton(
                 icon: switch (mode) {
-                  ThemeMode.dark => Icon(Icons.light_mode),
-                  ThemeMode.light => Icon(Icons.dark_mode),
-                  ThemeMode.system => Icon(Icons.auto_awesome),
+                  ThemeMode.dark => const Icon(Icons.light_mode),
+                  ThemeMode.light => const Icon(Icons.dark_mode),
+                  ThemeMode.system => const Icon(Icons.auto_awesome),
                 },
                 onPressed: () => context
                     .findAncestorStateOfType<_BenchmarkAppState>()
                     ?.toggleTheme(),
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
           ],
         ),
         bottomNavigationBar: ListenableBuilder(
@@ -288,191 +128,18 @@ class _BenchmarkScaffoldState extends State<_BenchmarkScaffold>
             children: <Widget>[
               Align(
                 alignment: Alignment.topCenter,
-                child: _BenchmarkTab(
+                child: BenchmarkTab(
                   controller: controller,
                 ),
               ),
               /* Center(
                 child: Text('Unknown'),
               ), */
-              Center(
+              const Center(
                 child: Text('Help'),
               ),
             ],
           ),
         ),
-      );
-}
-
-class _BenchmarkTab extends StatelessWidget {
-  const _BenchmarkTab({
-    required this.controller,
-    super.key, // ignore: unused_element
-  });
-
-  final BenchmarkControllerImpl controller;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          ValueListenableBuilder<bool>(
-            valueListenable: controller.isRunning,
-            builder: (context, running, child) => AbsorbPointer(
-              absorbing: running,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: running ? 0.5 : 1,
-                child: child,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  ValueListenableBuilder<Library>(
-                    valueListenable: controller.library,
-                    builder: (context, library, _) => SegmentedButton(
-                      onSelectionChanged: (value) => controller.library.value =
-                          value.firstOrNull ?? library,
-                      selected: {library},
-                      segments: <ButtonSegment<Library>>[
-                        ButtonSegment<Library>(
-                          value: Library.spinify,
-                          label: Text('Spinify'),
-                        ),
-                        ButtonSegment<Library>(
-                          value: Library.centrifuge,
-                          label: Text('Centrifuge'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: controller.endpoint,
-                      decoration: const InputDecoration(
-                        labelText: 'Endpoint',
-                        hintText: 'ws://localhost:8000/connection/websocket',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Text(
-                      'Payload size',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ),
-                  ValueListenableBuilder<int>(
-                    valueListenable: controller.payloadSize,
-                    builder: (context, size, _) => Slider(
-                      value: size.toDouble(),
-                      min: 0,
-                      max: 1024 * 1024 * 10,
-                      divisions: 100,
-                      label: switch (size) {
-                        0 => 'Not set',
-                        1 => '1 byte',
-                        >= 1024 * 1024 * 1024 =>
-                          '${size ~/ 1024 ~/ 1024 ~/ 100}GB',
-                        >= 1024 * 1024 => '${size ~/ 1024 ~/ 1024}MB',
-                        >= 1024 => '${size ~/ 1024}KB',
-                        _ => '$size bytes',
-                      },
-                      onChanged: (value) =>
-                          controller.payloadSize.value = value.toInt(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Text(
-                      'Message count',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ),
-                  ValueListenableBuilder<int>(
-                    valueListenable: controller.messageCount,
-                    builder: (context, count, _) => Slider(
-                      value: count.toDouble(),
-                      min: 1,
-                      max: 1000000,
-                      divisions: 100,
-                      label: switch (count) {
-                        0 => 'Not set',
-                        1 => '1 message',
-                        >= 1000000 => '${count ~/ 1000000}M messages',
-                        >= 1000 => '${count ~/ 1000}k messages',
-                        _ => '$count messages',
-                      },
-                      onChanged: (value) =>
-                          controller.messageCount.value = value.toInt(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Spacer(),
-          ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                ValueListenableBuilder<bool>(
-                  valueListenable: controller.isRunning,
-                  builder: (context, running, child) => IconButton(
-                    iconSize: 64,
-                    icon: Icon(running ? Icons.timer : Icons.play_arrow,
-                        color: running ? Colors.grey : Colors.red),
-                    onPressed: running
-                        ? null
-                        : () {
-                            final messenger =
-                                ScaffoldMessenger.maybeOf(context);
-                            controller.start(
-                              onError: (error) => messenger
-                                ?..clearSnackBars()
-                                ..showSnackBar(
-                                  SnackBar(
-                                    content: Text('$error'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                ),
-                            );
-                          },
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text('Pending: ${controller.pending}'),
-                    Text('Sent: ${controller.sent}'),
-                    Text('Received: ${controller.received}'),
-                    Text('Failed: ${controller.failed}'),
-                    Text('Total: ${controller.total}'),
-                    Text('Progress: ${controller.progress}%'),
-                    Text('Duration: ${controller.duration}ms'),
-                    Text('Status: ${controller.status}'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Spacer(),
-        ],
       );
 }
