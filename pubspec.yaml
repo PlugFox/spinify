@@ -2,7 +2,7 @@ name: spinify
 
 description: >
   Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM
-  over WebSockets
+  over WebSockets with Protobuf support.
 
 version: 0.0.2
 
