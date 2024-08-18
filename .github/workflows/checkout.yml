@@ -86,7 +86,7 @@ jobs:
         id: verify-versions
         timeout-minutes: 1
         run: |
-          test -f pubspec.yaml && test -f lib/src/model/pubspec.yaml.g.dart
+          test -f pubspec.yaml && test -f lib/src/model/pubspec.yaml.g.dart && test -f CHANGELOG.md
           version_pubspec=$(grep '^version:' pubspec.yaml | awk '{print $2}' | sed 's/[^[:print:]]//g')
           version_dart=$(grep 'representation: r' lib/src/model/pubspec.yaml.g.dart | awk -F"'" '{print $2}' | sed 's/[^[:print:]]//g')
           test -n "$version_pubspec" && test -n "$version_dart"
@@ -95,6 +95,7 @@ jobs:
           echo "$version_pubspec" > /tmp/version_pubspec
           echo "$version_dart" > /tmp/version_dart
           diff /tmp/version_pubspec /tmp/version_dart
+          grep -q "# $version_pubspec" CHANGELOG.md || (echo "Version not found in CHANGELOG.md" >&2; exit 1)
 
       - name: 🧪 Run unit tests
         id: run-unit-tests
