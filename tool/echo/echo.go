@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"io"
@@ -73,6 +74,23 @@ func authMiddleware(h http.Handler) http.Handler {
 	})
 }
 
+// corsMiddleware is a middleware function that adds CORS headers to the response before passing it to the next handler.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // main function initializes a new Centrifuge node and sets up event handlers for client connections, subscriptions, and RPCs.
 // It also sets up a websocket handler and a file server for serving static files.
 // The function waits for an exit signal before shutting down the node and exiting.
@@ -93,6 +111,10 @@ func Centrifuge() (*centrifuge.Node, error) {
 		return centrifuge.ConnectReply{
 			Data:              []byte(`{}`),
 			ClientSideRefresh: false,
+			PingPongConfig: &centrifuge.PingPongConfig{
+				PingInterval: 2 * time.Second,
+				PongTimeout:  1 * time.Second,
+			},
 			// Subscribe to a personal server-side channel.
 			Subscriptions: map[string]centrifuge.SubscribeOptions{
 				"#" + cred.UserID: {
@@ -199,7 +221,7 @@ func Centrifuge() (*centrifuge.Node, error) {
 		})
 
 		client.OnRPC(func(e centrifuge.RPCEvent, cb centrifuge.RPCCallback) {
-			log.Printf("[user %s] sent RPC, data: %s, method: %s", client.UserID(), string(e.Data), e.Method)
+			log.Printf("[user %s] sent RPC, method: %s, data: %s", client.UserID(), e.Method, string(e.Data))
 			switch e.Method {
 			case "getCurrentYear":
 				// Return current year.
@@ -207,15 +229,23 @@ func Centrifuge() (*centrifuge.Node, error) {
 			case "echo":
 				// Return back input data.
 				cb(centrifuge.RPCReply{Data: e.Data}, nil)
+			case "timeout":
+				// Simulate long running task.
+				timeout, _ := strconv.Atoi(string(e.Data))
+				time.Sleep(time.Duration(timeout) * time.Millisecond)
+				cb(centrifuge.RPCReply{Data: e.Data}, nil)
 			case "disconnect":
 				// Disconnect user
 				cb(centrifuge.RPCReply{}, nil)
-				if string(e.Data) == "reconnect" {
+				//time.Sleep(50 * time.Millisecond) // <== without this sleep, client will not receive disconnect reply
+				if strings.Contains(string(e.Data), "reconnect") {
+					log.Printf("[user %s] disconnect with reconnection", client.UserID())
 					client.Disconnect(centrifuge.Disconnect{
 						Code:   3001,
 						Reason: "disconnect with reconnection",
 					})
 				} else {
+					log.Printf("[user %s] disconnect without reconnection", client.UserID())
 					client.Disconnect(centrifuge.DisconnectForceNoReconnect)
 				}
 			default:
@@ -309,6 +339,7 @@ func main() {
 	websocketHandler := centrifuge.NewWebsocketHandler(node, centrifuge.WebsocketConfig{
 		ReadBufferSize:     1024,
 		UseWriteBufferPool: true,
+		CheckOrigin:        func(r *http.Request) bool { return true }, // Allow all connections.
 	})
 	mux.Handle("/connection/websocket", authMiddleware(websocketHandler))
 
@@ -334,7 +365,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Handler:      mux,
+		Handler:      corsMiddleware(mux),
 		Addr:         ":" + strconv.Itoa(*port),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

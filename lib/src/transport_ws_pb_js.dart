@@ -17,6 +17,7 @@ import 'model/reply.dart';
 import 'model/transport_interface.dart';
 import 'protobuf/client.pb.dart' as pb;
 import 'protobuf/protobuf_codec.dart';
+import 'util/event_queue.dart';
 
 const _BlobCodec _blobCodec = _BlobCodec();
 
@@ -49,10 +50,27 @@ final class _BlobCodec {
   }
 
   @internal
-  Future<List<int>> read(web.Blob blob) async {
-    final arrayBuffer = await blob.arrayBuffer().toDart;
-    final bytes = arrayBuffer.toDart.asUint8List();
-    return bytes;
+  Future<Uint8List> read(js.JSAny? data) async {
+    switch (data) {
+      case String text:
+        return utf8.encode(text);
+      case web.Blob blob:
+        final arrayBuffer = await blob.arrayBuffer().toDart;
+        return arrayBuffer.toDart.asUint8List();
+      case TypedData td:
+        return Uint8List.view(
+          td.buffer,
+          td.offsetInBytes,
+          td.lengthInBytes,
+        );
+      case ByteBuffer bb:
+        return bb.asUint8List();
+      case List<int> bytes:
+        return Uint8List.fromList(bytes);
+      default:
+        assert(false, 'Unsupported data type: $data');
+        throw ArgumentError.value(data, 'data', 'Invalid data type.');
+    }
   }
 }
 
@@ -83,54 +101,92 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
         .toJS,
   );
 
+  SpinifyTransport$WS$PB$JS? transport;
+
+  final eventQueue = EventQueue(); // Event queue for WebSocket events
+
+  // ignore: cancel_subscriptions
+  StreamSubscription<web.Event>? onOpen, onError, onMessage, onClose;
   try {
     final completer = Completer<void>();
-    SpinifyTransport$WS$PB$JS? transport;
 
-    // Fired when a connection with a WebSocket is opened.
-    // ignore: avoid_types_on_closure_parameters
-    final onOpen = (web.Event event) {
-      if (transport != null) return;
-      completer.complete();
-    }.toJS;
+    // coverage:ignore-start
+    onOpen = socket.onOpen.listen((event) {
+      eventQueue.add(() {
+        if (transport != null || completer.isCompleted) return;
+        completer.complete();
+      });
+    });
 
-    // Fired when a connection with a WebSocket has been closed
-    // because of an error, such as when some data couldn't be sent.
-    // ignore: avoid_types_on_closure_parameters
-    final onError = (web.Event event) {
-      if (transport != null) {
-        transport.disconnect();
-        return;
-      }
-      switch (event) {
-        case web.ErrorEvent value
-            when value.error != null || value.message.isNotEmpty:
-          completer.completeError(Exception(
-              'WebSocket connection error: ${value.error ?? value.message}'));
-        default:
-          completer.completeError(
-              Exception('WebSocket connection error: Unknown error'));
-      }
-    }.toJS;
+    onError = socket.onError.listen((event) {
+      eventQueue.add(() async {
+        if (transport != null && !transport.disconnected) {
+          await transport.disconnect();
+          return;
+        }
+        if (completer.isCompleted) return;
+        switch (event) {
+          case web.ErrorEvent value
+              when value.error != null || value.message.isNotEmpty:
+            completer.completeError(Exception(
+                'WebSocket connection error: ${value.error ?? value.message}'));
+          default:
+            completer.completeError(
+                Exception('WebSocket connection error: Unknown error'));
+        }
+      });
+    });
 
-    // Fired when a connection with a WebSocket is closed.
-    // ignore: avoid_types_on_closure_parameters
-    final onClose = (web.CloseEvent event) {
-      if (transport != null) {
-        transport.disconnect(event.code, event.reason);
-        return;
-      }
-      completer.completeError(Exception(
-          'WebSocket connection closed: ${event.code} ${event.reason}'));
-    }.toJS;
+    /* socket.onmessage = (web.MessageEvent event) {
+      final data = event.data;
+      eventQueue.add(() async {
+        if (transport == null || transport.disconnected) return;
+        final bytes = await _blobCodec.read(data);
+        transport._onData(bytes);
+      });
+    }.toJS; */
+    onMessage = socket.onMessage.listen((event) {
+      eventQueue.add(() async {
+        final bytes = await _blobCodec.read(event.data);
+        if (transport == null || transport.disconnected) return;
+        transport._onData(bytes);
+      });
+    });
 
-    socket
-      ..addEventListener('open', onOpen)
-      ..addEventListener('error', onError)
-      ..addEventListener('close', onClose);
+    onClose = socket.onClose.listen((event) {
+      final code = event.code;
+      final reason = event.reason;
+      eventQueue.add(() async {
+        for (final e in [onOpen, onError, onMessage, onClose])
+          e?.cancel().ignore();
+
+        if (transport != null && !transport.disconnected) {
+          transport
+            .._closeCode = code
+            .._closeReason = reason
+            .._onDone();
+          await transport.disconnect(code, reason);
+        }
+
+        if (socket.readyState != 3) socket.close(code, reason);
+        eventQueue.close(force: true).ignore();
+
+        if (completer.isCompleted) return;
+        completer.completeError(
+            Exception('WebSocket connection closed: $code $reason'));
+      });
+    });
 
     await completer.future;
 
+    // 0	CONNECTING	Socket has been created. The connection is not yet open.
+    // 1	OPEN	The connection is open and ready to communicate.
+    // 2	CLOSING	The connection is in the process of closing.
+    // 3	CLOSED	The connection is closed or couldn't be opened.
+    assert(socket.readyState == 1, 'Socket is not open');
+    // coverage:ignore-end
+
+    // ignore: join_return_with_assignment
     transport = SpinifyTransport$WS$PB$JS(
       socket,
       config,
@@ -139,17 +195,13 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
       onDisconnect,
     );
 
-    // 0	CONNECTING	Socket has been created. The connection is not yet open.
-    // 1	OPEN	The connection is open and ready to communicate.
-    // 2	CLOSING	The connection is in the process of closing.
-    // 3	CLOSED	The connection is closed or couldn't be opened.
-    assert(socket.readyState == 1, 'Socket is not open');
     return transport;
   } on Object {
-    if (socket.readyState != 3) {
-      socket.close();
-    }
+    for (final e in [onOpen, onError, onMessage, onClose]) e?.cancel().ignore();
+    if (socket.readyState != 3) socket.close();
+    eventQueue.close(force: true).ignore();
     rethrow;
+    // coverage:ignore-end
   }
 }
 
@@ -170,41 +222,15 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
         _decoder = switch (config.logger) {
           null => const ProtobufReplyDecoder(),
           _ => ProtobufReplyDecoder(config.logger),
-        } {
-    _subscription = _socket.onMessage
-        .map<Object?>((event) => event.data)
-        .asyncMap<List<int>?>((data) {
-      switch (data) {
-        case String text:
-          return utf8.encode(text);
-        case web.Blob blob:
-          return _blobCodec.read(blob);
-        case TypedData td:
-          return Uint8List.view(
-            td.buffer,
-            td.offsetInBytes,
-            td.lengthInBytes,
-          );
-        case ByteBuffer bb:
-          return bb.asInt8List();
-        case List<int> bytes:
-          return bytes;
-        default:
-          return null;
-      }
-    }).listen(
-      _onData,
-      cancelOnError: false,
-      onDone: _onDone,
-    );
-  }
+        },
+        disconnected = false;
 
   final web.WebSocket _socket;
   final Converter<SpinifyCommand, pb.Command> _encoder;
   final Converter<pb.Reply, SpinifyReply> _decoder;
   final SpinifyLogger? _logger;
-  late final StreamSubscription<List<int>?> _subscription;
 
+  bool disconnected;
   int? _closeCode;
   String? _closeReason;
 
@@ -219,7 +245,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
 
   /// Fired when data is received through a WebSocket.
   void _onData(Object? bytes) {
-    if (bytes is! List<int> || bytes.isEmpty) {
+    if (bytes is! Uint8List || bytes.isEmpty) {
       assert(false, 'Data is not byte array');
       return;
     }
@@ -404,9 +430,9 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
 
   @override
   Future<void> disconnect([int? code, String? reason]) async {
+    disconnected = true;
     _closeCode = code;
     _closeReason = reason;
-    await _subscription.cancel();
     if (_socket.readyState == 3)
       return;
     else if (code != null && reason != null)
@@ -415,5 +441,6 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
       _socket.close(code);
     else
       _socket.close();
+    //assert(_socket.readyState == 3, 'Socket is not closed');
   }
 }

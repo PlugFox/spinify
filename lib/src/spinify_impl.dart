@@ -614,13 +614,19 @@ base mixin SpinifyConnectionMixin
 
   @override
   Future<void> connect(String url) async {
-    if (state.url == url) return;
-    final completer = _readyCompleter ??= Completer<void>();
+    //if (state.url == url) return;
+    final completer = _readyCompleter = switch (_readyCompleter) {
+      Completer<void> value when !value.isCompleted => value,
+      _ => Completer<void>(),
+    };
     try {
       if (state.isConnected || state.isConnecting) await disconnect();
     } on Object {/* ignore */}
+    assert(!completer.isCompleted, 'Completer should not be completed');
+    assert(state.isDisconnected, 'State should be disconnected');
     try {
       _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
+      assert(state.isConnecting, 'State should be connecting');
 
       // Create new transport.
       _transport = await _createTransport(
@@ -934,12 +940,19 @@ base mixin SpinifyConnectionMixin
   }
 
   @override
-  Future<void> disconnect() async {
-    // Disable reconnect because we are disconnecting manually/intentionally.
-    _metrics.reconnectUrl = null;
-    _tearDownReconnectTimer();
+  Future<void> disconnect() =>
+      _disconnect(code: 1000, reason: 'disconnected by client');
+
+  /// Disconnect client from the server with optional reconnect and reason.
+  Future<void> _disconnect(
+      {int? code, String? reason, bool reconnect = false}) async {
+    if (!reconnect) {
+      // Disable reconnect because we are disconnecting manually/intentionally.
+      _metrics.reconnectUrl = null;
+      _tearDownReconnectTimer();
+    }
     if (state.isDisconnected) return Future.value();
-    await _transport?.disconnect(1000, 'disconnected by client');
+    await _transport?.disconnect(code, reason);
     await _onDisconnected();
   }
 
@@ -1015,7 +1028,7 @@ base mixin SpinifyPingPongMixin
         when pingInterval != null && pingInterval > Duration.zero) {
       _pingTimer = Timer(
         pingInterval + config.serverPingDelay,
-        () {
+        () async {
           // Reconnect if no pong received.
           if (state case SpinifyState$Connected(:String url)) {
             config.logger?.call(
@@ -1028,7 +1041,16 @@ base mixin SpinifyPingPongMixin
                 'serverPingDelay': config.serverPingDelay,
               },
             );
-            connect(url);
+            try {
+              await _disconnect(
+                code: 2,
+                reason: 'No ping from server',
+                reconnect: true,
+              );
+              await Future<void>.delayed(Duration.zero);
+            } finally {
+              await connect(url);
+            }
           }
           /* disconnect(
             SpinifyConnectingCode.noPing,

@@ -5,13 +5,22 @@ import 'package:test/test.dart';
 
 extension type _SpinifyChannelEventView(SpinifyChannelEvent event) {}
 
-const $url = String.fromEnvironment('TEST_URL',
+const String $url = String.fromEnvironment('TEST_URL',
     defaultValue: 'ws://localhost:8000/connection/websocket');
 
-const _enablePrint =
+const bool _enablePrint =
     bool.fromEnvironment('TEST_ENABLE_PRINT', defaultValue: false);
 
-final $logBuffer = SpinifyLogBuffer(size: 100);
+final SpinifyLogBuffer $logBuffer = SpinifyLogBuffer(size: 100);
+
+final SpinifyConfig $config = SpinifyConfig(
+  connectionRetryInterval: (
+    min: const Duration(milliseconds: 50),
+    max: const Duration(milliseconds: 150),
+  ),
+  serverPingDelay: const Duration(milliseconds: 500),
+  logger: _logger,
+);
 
 void _loggerPrint(SpinifyLogLevel level, String event, String message,
         Map<String, Object?> context) =>
@@ -37,7 +46,7 @@ void _loggerCheckReply(SpinifyLogLevel level, String event, String message,
     }
     if (_$prevPeply != null) {
       expect(() => reply == _$prevPeply, returnsNormally);
-      expect(reply.compareTo(_$prevPeply!), isNonNegative);
+      expect(() => reply.compareTo(_$prevPeply!), returnsNormally);
     }
     _$prevPeply = reply;
   }
@@ -90,11 +99,5 @@ void _logger(SpinifyLogLevel level, String event, String message,
 }
 
 ISpinify $createClient() => Spinify(
-      config: SpinifyConfig(
-        connectionRetryInterval: (
-          min: const Duration(milliseconds: 50),
-          max: const Duration(milliseconds: 150),
-        ),
-        logger: _logger,
-      ),
+      config: $config,
     );

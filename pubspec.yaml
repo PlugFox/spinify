@@ -1,10 +1,10 @@
 name: spinify
 
 description: >
-  Dart client to communicate with Centrifuge and Centrifugo from Flutter and VM
-  over WebSockets
+  Dart client to communicate with Centrifuge and Centrifugo from Dart and Flutter
+  over WebSockets with Protobuf support.
 
-version: 0.0.1-pre.9
+version: 0.0.2
 
 homepage: https://centrifugal.dev
 
@@ -33,7 +33,7 @@ platforms:
   windows:
 
 #screenshots:
-#  - description: 'Example of using the ws library to connect to a Centrifugo server.'
+#  - description: 'Example of using the library to connect to a Centrifugo server.'
 #    path: example.png
 
 

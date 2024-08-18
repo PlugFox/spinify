@@ -87,3 +87,6 @@ config.json
 # Binaries for programs and plugins
 *.exe
 *.exe~
+
+# Firebase
+.firebase/

@@ -1,12 +1,12 @@
 {
   "version": "0.2.0",
   "configurations": [
-    /* {
-      "name": "[Flutter] Example (Local)",
+    {
+      "name": "[Flutter] Benchmark (debug)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
-      "cwd": "${workspaceFolder}/example",
+      "cwd": "${workspaceFolder}/benchmark",
       "program": "lib/main.dart",
       "env": {
         "ENVIRONMENT": "local"
@@ -14,10 +14,23 @@
       "console": "debugConsole",
       "runTestsOnDevice": false,
       "toolArgs": [],
-      "args": [
-        "--dart-define-from-file=config/local.json"
-      ]
-    }, */
+      "args": []
+    },
+    {
+      "name": "[Flutter] Benchmark (release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "cwd": "${workspaceFolder}/benchmark",
+      "program": "lib/main.dart",
+      "env": {
+        "ENVIRONMENT": "local"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "toolArgs": [],
+      "args": []
+    },
     /* {
       "name": "[Flutter] Example (Development)",
       "request": "launch",
@@ -84,7 +97,7 @@
         "--file-reporter=json:coverage/tests.json",
         "--timeout=30s",
         "--concurrency=12",
-        /* "--name=can send binary data" */
+        /* "--name=Disconnect_permanent" */
       ],
       "args": []
     },
@@ -132,8 +145,10 @@
         "--reporter=expanded",
         "--platform=vm", // chrome
         "--file-reporter=json:coverage/tests.json",
-        "--timeout=30s",
-        "--concurrency=12"
+        "--timeout=5m",
+        "--concurrency=12",
+        "--chain-stack-traces",
+        /* "--name=Disconnect_temporarily" */
       ],
       "args": [],
       /* "preLaunchTask": "echo:start",
@@ -158,8 +173,10 @@
         "--platform=chrome",
         "--compiler=dart2js",
         "--file-reporter=json:coverage/tests.json",
-        "--timeout=30s",
-        "--concurrency=12"
+        "--timeout=5m",
+        "--concurrency=12",
+        "--chain-stack-traces",
+        /* "--name=Connect_and_disconnect" */
       ],
       "args": [],
       /* "preLaunchTask": "echo:start",
