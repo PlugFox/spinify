@@ -19,7 +19,7 @@ dependencies:
   # Centrifuge clients
   centrifuge: ^0.14.0
   spinify:
-    path: ../
+    path: ../../
 
   # Utilities
   l: ^5.0.0-pre.2

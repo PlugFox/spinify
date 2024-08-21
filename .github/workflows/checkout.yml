@@ -75,12 +75,12 @@ jobs:
       - name: 🔎 Check format
         id: check-format
         timeout-minutes: 1
-        run: dart format --set-exit-if-changed -l 80 -o none lib/
+        run: dart format --set-exit-if-changed -l 80 -o none lib/ test/ example/
 
       - name: 📈 Check analyzer
         id: check-analyzer
         timeout-minutes: 1
-        run: dart analyze --fatal-infos --fatal-warnings lib/
+        run: dart analyze --fatal-infos --fatal-warnings lib/ test/ example/
 
       - name: 👀 Verify versions
         id: verify-versions
