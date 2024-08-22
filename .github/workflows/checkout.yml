@@ -63,7 +63,9 @@ jobs:
       - name: 👷 Install Dependencies
         id: install-dependencies
         timeout-minutes: 1
-        run: dart pub get --no-example
+        run: |
+          dart pub get --no-example
+          ls -la $PUB_CACHE
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
