@@ -30,8 +30,7 @@ jobs:
       image: dart:stable
     env:
       pub-cache-name: pub
-      PUB_CACHE: $HOME/.pub-cache
-      PATH: $PATH:$HOME/.pub-cache/bin
+      PUB_CACHE: /github/home/.pub-cache
     timeout-minutes: 10
     steps:
       - name: 🚂 Get latest code
@@ -59,10 +58,11 @@ jobs:
         id: install-dependencies
         timeout-minutes: 1
         run: |
+          echo $PUB_CACHE >> $GITHUB_PATH
           dart pub get --no-example
           echo "PUB_CACHE=$PUB_CACHE"
           echo "PUB_CACHE=${{ env.PUB_CACHE }}"
-          ls -la $HOME/.pub-cache
+          ls -la $PUB_CACHE
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
