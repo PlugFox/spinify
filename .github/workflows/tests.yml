@@ -130,7 +130,7 @@ jobs:
         with:
           path: |
             .pub_cache/
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
+          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 🗄️ Export Pub cache directory
         id: export-pub-cache
@@ -152,7 +152,7 @@ jobs:
         with:
           path: |
             .pub_cache/
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
+          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 📢 Run Echo server
         id: run-echo-server
