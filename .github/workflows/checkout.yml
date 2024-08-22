@@ -53,20 +53,15 @@ jobs:
             $HOME/.pub-cache
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
-      - name: 🗄️ Export Pub cache directory
-        id: export-pub-cache
-        timeout-minutes: 1
-        run: |
-          export PUB_CACHE=$HOME/.pub-cache
-          export PATH="$PATH":"$HOME/.pub-cache/bin"
-
       - name: 👷 Install Dependencies
         id: install-dependencies
         timeout-minutes: 1
         run: |
+          export PUB_CACHE=$HOME/.pub-cache
+          export PATH="$PATH":"$HOME/.pub-cache/bin"
           dart pub get --no-example
           echo "PUB_CACHE=$PUB_CACHE"
-          ls -la $PUB_CACHE
+          ls -la $HOME/.pub-cache
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
