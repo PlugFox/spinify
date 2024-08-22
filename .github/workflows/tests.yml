@@ -104,6 +104,7 @@ jobs:
     env:
       pub-cache-name: pub
       threshold: 50
+      PUB_CACHE: /github/home/.pub-cache
     timeout-minutes: 15
     steps:
       - name: 🚂 Get latest code
@@ -129,20 +130,14 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            $HOME/.pub-cache
+            ${{ env.PUB_CACHE }}
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
-
-      - name: 🗄️ Export Pub cache directory
-        id: export-pub-cache
-        timeout-minutes: 1
-        run: |
-          export PUB_CACHE=$HOME/.pub-cache
-          export PATH="$PATH":"$HOME/.pub-cache/bin"
 
       - name: 👷 Install Dependencies
         id: install-dependencies
         timeout-minutes: 1
         run: |
+          echo $PUB_CACHE/bin >> $GITHUB_PATH
           apt-get update && apt-get install -y lcov bc
           dart pub get --no-example
 
@@ -151,7 +146,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            $HOME/.pub-cache
+            ${{ env.PUB_CACHE }}
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 📢 Run Echo server

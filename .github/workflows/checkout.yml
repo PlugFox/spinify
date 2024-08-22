@@ -58,11 +58,8 @@ jobs:
         id: install-dependencies
         timeout-minutes: 1
         run: |
-          echo $PUB_CACHE >> $GITHUB_PATH
+          echo $PUB_CACHE/bin >> $GITHUB_PATH
           dart pub get --no-example
-          echo "PUB_CACHE=$PUB_CACHE"
-          echo "PUB_CACHE=${{ env.PUB_CACHE }}"
-          ls -la $PUB_CACHE
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
