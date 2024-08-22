@@ -30,6 +30,8 @@ jobs:
       image: dart:stable
     env:
       pub-cache-name: pub
+      PUB_CACHE: $HOME/.pub-cache
+      PATH: $HOME/.pub-cache/bin
     timeout-minutes: 10
     steps:
       - name: 🚂 Get latest code
@@ -50,17 +52,16 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            $HOME/.pub-cache
+            ${{ env.PUB_CACHE }}
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 👷 Install Dependencies
         id: install-dependencies
         timeout-minutes: 1
         run: |
-          export PUB_CACHE=$HOME/.pub-cache
-          export PATH="$PATH":"$HOME/.pub-cache/bin"
           dart pub get --no-example
           echo "PUB_CACHE=$PUB_CACHE"
+          echo "PUB_CACHE=${{ env.PUB_CACHE }}"
           ls -la $HOME/.pub-cache
 
       - name: 📥 Save Pub modules
@@ -68,7 +69,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            $HOME/.pub-cache
+            ${{ env.PUB_CACHE }}
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 🔎 Check format
