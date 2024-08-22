@@ -31,7 +31,7 @@ jobs:
     env:
       pub-cache-name: pub
       PUB_CACHE: $HOME/.pub-cache
-      PATH: $HOME/.pub-cache/bin
+      PATH: $PATH:$HOME/.pub-cache/bin
     timeout-minutes: 10
     steps:
       - name: 🚂 Get latest code
