@@ -129,7 +129,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            $PWD/.pub_cache/
+            .pub_cache/
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
       - name: 🗄️ Export Pub cache directory
@@ -151,7 +151,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            $PWD/.pub_cache/
+            .pub_cache/
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('**/pubspec.yaml') }}
 
       - name: 📢 Run Echo server
