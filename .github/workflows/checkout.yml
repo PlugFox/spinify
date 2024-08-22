@@ -41,7 +41,6 @@ jobs:
             pubspec.yaml
             lib
             test
-            example
             analysis_options.yaml
             README.md
             CHANGELOG.md
@@ -77,12 +76,12 @@ jobs:
       - name: 🔎 Check format
         id: check-format
         timeout-minutes: 1
-        run: dart format --set-exit-if-changed -l 80 -o none lib/ test/ example/
+        run: dart format --set-exit-if-changed -l 80 -o none lib/ test/
 
       - name: 📈 Check analyzer
         id: check-analyzer
         timeout-minutes: 1
-        run: dart analyze --fatal-infos --fatal-warnings lib/ test/ example/
+        run: dart analyze --fatal-infos --fatal-warnings lib/ test/
 
       - name: 👀 Verify versions
         id: verify-versions

@@ -27,7 +27,7 @@ help:
 
 .PHONY: format
 format: ## Format the code
-	@dart format -l 80 --fix lib/ test/ example/
+	@dart format -l 80 --fix lib/ test/
 	@dart fix --apply .
 
 .PHONY: get
@@ -82,8 +82,8 @@ coverage: get ## Generate the coverage report
 
 .PHONY: analyze
 analyze: get ## Analyze the code
-	@dart format --set-exit-if-changed -l 80 -o none lib/ test/ example/
-	@dart analyze --fatal-infos --fatal-warnings lib/ test/ example/
+	@dart format --set-exit-if-changed -l 80 -o none lib/ test/
+	@dart analyze --fatal-infos --fatal-warnings lib/ test/
 
 .PHONY: check
 check: analyze publish-check ## Check the code
