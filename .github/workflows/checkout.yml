@@ -41,7 +41,9 @@ jobs:
             pubspec.yaml
             lib
             test
+            example
             analysis_options.yaml
+            README.md
             CHANGELOG.md
 
       - name: 📤 Restore Pub modules
