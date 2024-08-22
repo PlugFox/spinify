@@ -129,14 +129,14 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            .pub_cache/
+            $HOME/.pub-cache
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 🗄️ Export Pub cache directory
         id: export-pub-cache
         timeout-minutes: 1
         run: |
-          export PUB_CACHE=$PWD/.pub_cache/
+          export PUB_CACHE=$HOME/.pub-cache
           export PATH="$PATH":"$HOME/.pub-cache/bin"
 
       - name: 👷 Install Dependencies
@@ -151,7 +151,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            .pub_cache/
+            $HOME/.pub-cache
           key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 📢 Run Echo server
