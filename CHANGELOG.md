@@ -1,3 +1,7 @@
+## 0.0.3
+
+- Move benchmark to example folder
+
 ## 0.0.2
 
 - Basic functionality implemented
