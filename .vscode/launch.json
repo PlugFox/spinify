@@ -6,7 +6,7 @@
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
-      "cwd": "${workspaceFolder}/benchmark",
+      "cwd": "${workspaceFolder}/example/benchmark",
       "program": "lib/main.dart",
       "env": {
         "ENVIRONMENT": "local"
@@ -21,7 +21,7 @@
       "request": "launch",
       "type": "dart",
       "flutterMode": "release",
-      "cwd": "${workspaceFolder}/benchmark",
+      "cwd": "${workspaceFolder}/example/benchmark",
       "program": "lib/main.dart",
       "env": {
         "ENVIRONMENT": "local"
