@@ -3,8 +3,6 @@
 # docker compose down
 # docker compose logs -f
 
-version: "3.9"
-
 services:
   centrifugo-benchmark:
     container_name: centrifugo-benchmark

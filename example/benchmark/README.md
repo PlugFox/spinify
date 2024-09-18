@@ -21,8 +21,6 @@ Stop: `docker-compose down`
 Logs: `docker-compose logs -f`
 
 ```yaml
-version: "3.9"
-
 services:
   centrifugo-benchmark:
     container_name: centrifugo-benchmark

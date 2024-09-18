@@ -154,8 +154,6 @@ class _HelpStep extends StatelessWidget {
 }
 
 const String _helpComposeContent = '''
-version: "3.9"
-
 services:
   centrifugo-benchmark:
     container_name: centrifugo-benchmark
