@@ -1,6 +1,7 @@
 # Docker Compose configuration file for running Centrifugo benchmark.
-# docker-compose up -d
-# docker-compose down
+# docker compose up -d
+# docker compose down
+# docker compose logs -f
 
 version: "3.9"
 
