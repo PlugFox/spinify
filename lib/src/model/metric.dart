@@ -335,7 +335,7 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
   int commandId = 1;
 
   @override
-  SpinifyState state = SpinifyState$Disconnected();
+  SpinifyState state = SpinifyState$Disconnected(temporary: false);
 
   @override
   int connects = 0;

@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Update `SpinifyState$Disconnected` state and extend with `bool get temporary`
+
 ## 0.0.3
 
 - Move benchmark to example folder

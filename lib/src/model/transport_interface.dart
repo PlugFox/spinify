@@ -19,7 +19,7 @@ typedef SpinifyTransportBuilder = Future<ISpinifyTransport> Function({
   required Future<void> Function(SpinifyReply reply) onReply,
 
   /// Callback for disconnect event
-  required Future<void> Function() onDisconnect,
+  required Future<void> Function({required bool temporary}) onDisconnect,
 });
 
 /// Spinify transport interface.

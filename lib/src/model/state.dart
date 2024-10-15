@@ -38,13 +38,17 @@ sealed class SpinifyState extends _$SpinifyStateBase {
 
   /// Disconnected state
   /// {@macro state}
-  factory SpinifyState.disconnected({DateTime? timestamp}) =
-      SpinifyState$Disconnected;
+  factory SpinifyState.disconnected({
+    required bool temporary,
+    DateTime? timestamp,
+  }) = SpinifyState$Disconnected;
 
   /// Connecting
   /// {@macro state}
-  factory SpinifyState.connecting({required String url, DateTime? timestamp}) =
-      SpinifyState$Connecting;
+  factory SpinifyState.connecting({
+    required String url,
+    DateTime? timestamp,
+  }) = SpinifyState$Connecting;
 
   /// Connected
   /// {@macro state}
@@ -83,11 +87,18 @@ final class SpinifyState$Disconnected extends SpinifyState {
   ///
   /// {@macro state}
   SpinifyState$Disconnected({
+    required this.temporary,
     DateTime? timestamp,
   }) : super(timestamp ?? DateTime.now());
 
   @override
   String get type => 'disconnected';
+
+  /// Whether there any chance to reconnect.
+  final bool temporary;
+
+  /// Whether there is no chance to reconnect.
+  bool get permanent => !temporary;
 
   @override
   String? get url => null;

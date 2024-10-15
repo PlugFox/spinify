@@ -90,7 +90,7 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
   required void Function(SpinifyReply reply) onReply,
 
   /// Callback for disconnect event
-  required void Function() onDisconnect,
+  required void Function({required bool temporary}) onDisconnect,
 }) async {
   // ignore: close_sinks
   final socket = web.WebSocket(
@@ -241,7 +241,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
   final void Function(SpinifyReply reply) _onReply;
 
   /// Callback for disconnect event
-  final void Function() _onDisconnect;
+  final void Function({required bool temporary}) _onDisconnect;
 
   /// Fired when data is received through a WebSocket.
   void _onData(Object? bytes) {
@@ -413,7 +413,7 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
         ),
       ),
     );
-    _onDisconnect.call();
+    _onDisconnect.call(temporary: reconnect);
     _logger?.call(
       const SpinifyLogLevel.transport(),
       'transport_disconnect',

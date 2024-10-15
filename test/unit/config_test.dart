@@ -17,7 +17,7 @@ void main() {
         required SpinifyConfig config,
         required SpinifyMetrics metrics,
         required Future<void> Function(SpinifyReply reply) onReply,
-        required Future<void> Function() onDisconnect,
+        required Future<void> Function({required bool temporary}) onDisconnect,
       }) =>
           throw UnimplementedError();
 

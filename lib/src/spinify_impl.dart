@@ -92,7 +92,7 @@ abstract base class SpinifyBase implements ISpinify {
 
   /// On disconnect from the server.
   @mustCallSuper
-  Future<void> _onDisconnected() async {}
+  Future<void> _onDisconnected({required bool temporary}) async {}
 
   Future<T> _doOnReady<T>(Future<T> Function() action) {
     if (state.isConnected) return action();
@@ -141,10 +141,10 @@ base mixin SpinifyStateMixin on SpinifyBase {
   }
 
   @override
-  Future<void> _onDisconnected() async {
-    await super._onDisconnected();
+  Future<void> _onDisconnected({required bool temporary}) async {
+    await super._onDisconnected(temporary: temporary);
     if (!state.isDisconnected) {
-      _setState(SpinifyState$Disconnected());
+      _setState(SpinifyState$Disconnected(temporary: temporary));
       config.logger?.call(
         const SpinifyLogLevel.config(),
         'disconnected',
@@ -303,7 +303,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
   }
 
   @override
-  Future<void> _onDisconnected() async {
+  Future<void> _onDisconnected({required bool temporary}) async {
     late final error = StateError('Client is disconnected');
     late final stackTrace = StackTrace.current;
     for (final tuple in _replies.values) {
@@ -322,7 +322,7 @@ base mixin SpinifyCommandMixin on SpinifyBase {
       );
     }
     _replies.clear();
-    await super._onDisconnected();
+    await super._onDisconnected(temporary: temporary);
   }
 }
 
@@ -740,7 +740,7 @@ base mixin SpinifyConnectionMixin
           } else {
             // Disable resubscribe timer
             //moveToUnsubscribed(result.code, result.message, false);
-            _setState(SpinifyState$Disconnected());
+            _setState(SpinifyState$Disconnected(temporary: false));
           }
         case SpinifyConnectionException _:
           _setUpReconnectTimer(); // Some spinify exception - retry resubscribe
@@ -953,11 +953,11 @@ base mixin SpinifyConnectionMixin
     }
     if (state.isDisconnected) return Future.value();
     await _transport?.disconnect(code, reason);
-    await _onDisconnected();
+    await _onDisconnected(temporary: reconnect);
   }
 
   @override
-  Future<void> _onDisconnected() async {
+  Future<void> _onDisconnected({required bool temporary}) async {
     _refreshTimer?.cancel();
     _transport = null;
     // Reconnect if that callback called not from disconnect method.
@@ -966,7 +966,7 @@ base mixin SpinifyConnectionMixin
       _metrics.lastDisconnectAt = DateTime.now();
       _metrics.disconnects++;
     }
-    await super._onDisconnected();
+    await super._onDisconnected(temporary: temporary);
   }
 
   @override
@@ -979,7 +979,7 @@ base mixin SpinifyConnectionMixin
       if (reconnect) {
         // Disconnect client temporarily.
         await _transport?.disconnect(1000, reason);
-        await _onDisconnected();
+        await _onDisconnected(temporary: true);
       } else {
         // Disconnect client permanently.
         await disconnect();
@@ -1095,9 +1095,9 @@ base mixin SpinifyPingPongMixin
   }
 
   @override
-  Future<void> _onDisconnected() async {
+  Future<void> _onDisconnected({required bool temporary}) async {
     _tearDownPingTimer();
-    await super._onDisconnected();
+    await super._onDisconnected(temporary: temporary);
   }
 
   @override
