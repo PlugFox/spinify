@@ -127,10 +127,10 @@ sealed class Pubspec {
     10,
     15,
     17,
-    32,
-    12,
-    596,
-    360,
+    34,
+    30,
+    637,
+    667,
   );
 
   /// Name
@@ -438,7 +438,7 @@ sealed class Pubspec {
     'build_runner': r'^2.4.6',
     'pubspec_generator': r'^4.0.0',
     'benchmark_harness': r'^2.2.2',
-    'lints': r'>=3.0.0 <5.0.0',
+    'lints': r'^5.0.0',
     'test': r'^1.24.4',
     'fake_async': r'^1.3.1',
   };
