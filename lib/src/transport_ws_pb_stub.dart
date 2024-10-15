@@ -22,6 +22,6 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
   required void Function(SpinifyReply reply) onReply,
 
   /// Callback for disconnect event
-  required void Function() onDisconnect,
+  required void Function({required bool temporary}) onDisconnect,
 }) =>
     throw UnimplementedError();

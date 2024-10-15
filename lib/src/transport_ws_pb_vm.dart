@@ -30,7 +30,7 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
   required void Function(SpinifyReply reply) onReply,
 
   /// Callback for disconnect event
-  required void Function() onDisconnect,
+  required void Function({required bool temporary}) onDisconnect,
 }) async {
   // ignore: close_sinks
   final socket = await io.WebSocket.connect(
@@ -91,7 +91,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
   final void Function(SpinifyReply reply) _onReply;
 
   /// Callback for disconnect event
-  final void Function() _onDisconnect;
+  final void Function({required bool temporary}) _onDisconnect;
 
   void _onData(Object? bytes) {
     // coverage:ignore-start
@@ -260,7 +260,7 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
         ),
       ),
     );
-    _onDisconnect.call();
+    _onDisconnect.call(temporary: reconnect);
     _logger?.call(
       const SpinifyLogLevel.transport(),
       'transport_disconnect',

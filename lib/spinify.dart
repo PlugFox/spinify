@@ -1,4 +1,4 @@
-library spinify;
+library;
 
 export 'package:fixnum/fixnum.dart' show Int64;
 

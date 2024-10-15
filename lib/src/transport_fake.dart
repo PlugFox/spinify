@@ -32,16 +32,16 @@ SpinifyTransportBuilder $createFakeSpinifyTransport({
       required Future<void> Function(SpinifyReply reply) onReply,
 
       /// Callback for disconnect event
-      required Future<void> Function() onDisconnect,
+      required Future<void> Function({required bool temporary}) onDisconnect,
     }) async {
       final transport = SpinifyTransportFake(
         overrideCommand: overrideCommand,
       )
         ..metrics = metrics
         ..onReply = onReply
-        ..onDisconnect = () {
+        ..onDisconnect = ({required temporary}) {
           out?.call(null);
-          return onDisconnect();
+          return onDisconnect(temporary: temporary);
         };
       await transport._connect(url);
       out?.call(transport);
@@ -244,14 +244,68 @@ class SpinifyTransportFake implements ISpinifyTransport {
   Future<void> Function(SpinifyReply reply)? _onReply;
 
   /// Callback for disconnect event
-  set onDisconnect(Future<void> Function() handler) => _onDisconnect = handler;
-  Future<void> Function()? _onDisconnect;
+  set onDisconnect(Future<void> Function({required bool temporary}) handler) =>
+      _onDisconnect = handler;
+  Future<void> Function({required bool temporary})? _onDisconnect;
 
   @override
   Future<void> disconnect([int? code, String? reason]) async {
     if (!_isConnected) return;
     await _sleep();
-    await _onDisconnect?.call();
+    int? closeCode;
+    String? closeReason;
+    var reconnect = true;
+    if (code case int value when value > 0) {
+      switch (value) {
+        case 1009:
+          // reconnect is true by default
+          closeCode = 3; // disconnectCodeMessageSizeLimit;
+          closeReason = 'message size limit exceeded';
+          reconnect = true;
+        case < 3000:
+          // We expose codes defined by Centrifuge protocol,
+          // hiding details about transport-specific error codes.
+          // We may have extra optional transportCode field in the future.
+          // reconnect is true by default
+          closeCode = 1; // connectingCodeTransportClosed;
+          closeReason = reason;
+          reconnect = true;
+        case >= 3000 && <= 3499:
+          // reconnect is true by default
+          closeCode = value;
+          closeReason = reason;
+          reconnect = true;
+        case >= 3500 && <= 3999:
+          // application terminal codes
+          closeCode = value;
+          closeReason = reason ?? 'application terminal code';
+          reconnect = false;
+        case >= 4000 && <= 4499:
+          // custom disconnect codes
+          // reconnect is true by default
+          closeCode = value;
+          closeReason = reason;
+          reconnect = true;
+        case >= 4500 && <= 4999:
+          // custom disconnect codes
+          // application terminal codes
+          closeCode = value;
+          closeReason = reason ?? 'application terminal code';
+          reconnect = false;
+        case >= 5000:
+          // reconnect is true by default
+          closeCode = value;
+          closeReason = reason;
+          reconnect = true;
+        default:
+          closeCode = value;
+          closeReason = reason;
+          reconnect = false;
+      }
+    }
+    closeCode ??= 1; // connectingCodeTransportClosed
+    closeReason ??= 'transport closed';
+    await _onDisconnect?.call(temporary: reconnect);
     _timer?.cancel();
     _timer = null;
   }
