@@ -1,4 +1,4 @@
-part of 'spinify_impl.dart';
+part of 'spinify_deprecated.dart';
 
 @internal
 abstract base class SpinifySubscriptionBase implements SpinifySubscription {

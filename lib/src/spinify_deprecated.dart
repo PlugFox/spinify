@@ -1,3 +1,5 @@
+@Deprecated('Use new implementation instead')
+
 import 'dart:async';
 import 'dart:collection';
 
