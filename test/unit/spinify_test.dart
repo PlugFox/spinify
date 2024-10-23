@@ -9,14 +9,18 @@ void main() {
     final buffer = SpinifyLogBuffer(size: 10);
 
     Spinify createFakeClient([
-      void Function(ISpinifyTransport? transport)? out,
-    ]) =>
-        Spinify(
-          config: SpinifyConfig(
-            transportBuilder: $createFakeSpinifyTransport(out: out),
-            logger: buffer.add,
-          ),
-        );
+      void Function(WebSocket$Fake transport)? out,
+    ]) {
+      final ws = WebSocket$Fake();
+      out?.call(ws);
+      return Spinify(
+        config: SpinifyConfig(
+          transportBuilder: ({required url, headers, protocols}) =>
+              Future<WebSocket>.value(ws),
+          logger: buffer.add,
+        ),
+      );
+    }
 
     test('Create_and_close_client', () async {
       final client = createFakeClient();
@@ -71,15 +75,15 @@ void main() {
     test(
         'Reconnect_after_disconnected_transport',
         () => fakeAsync((async) {
-              ISpinifyTransport? transport;
+              WebSocket? transport;
               final client = createFakeClient((t) => transport = t)
                 ..connect('ws://localhost:8000/connection/websocket');
               expect(client.state, isA<SpinifyState$Connecting>());
               async.elapse(client.config.timeout);
               expect(client.state, isA<SpinifyState$Connected>());
               expect(transport, isNotNull);
-              expect(transport, isA<SpinifyTransportFake>());
-              transport!.disconnect();
+              expect(transport, isA<WebSocket$Fake>());
+              transport!.close();
               async.elapse(const Duration(milliseconds: 50));
               expect(client.state, isA<SpinifyState$Disconnected>());
               async.elapse(Duration(

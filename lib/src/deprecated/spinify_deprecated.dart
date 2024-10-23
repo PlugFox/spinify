@@ -28,7 +28,6 @@ import '../model/transport_interface.dart';
 import '../spinify_interface.dart';
 import '../subscription_interface.dart';
 import '../util/backoff.dart';
-import '../web_socket_js.dart';
 
 part 'subscription_impl.dart';
 
@@ -61,7 +60,7 @@ abstract base class SpinifyBase implements ISpinify {
   /// Client initialization (from constructor).
   @mustCallSuper
   void _init() {
-    _createTransport = config.transportBuilder ?? $createWebSocketClient;
+    _createTransport = config.transportBuilder! /* ?? $createWebSocketClient */;
     config.logger?.call(
       const SpinifyLogLevel.info(),
       'init',

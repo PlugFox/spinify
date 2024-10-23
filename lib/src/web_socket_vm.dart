@@ -168,10 +168,12 @@ class WebSocket$VM implements WebSocket {
   final io.WebSocket _socket;
 
   @override
-  int? get closeCode => _socket.closeCode;
+  int? get closeCode => _socket.closeCode ?? _closeCode;
+  int? _closeCode;
 
   @override
-  String? get closeReason => _socket.closeReason;
+  String? get closeReason => _socket.closeReason ?? _closeReason;
+  String? _closeReason;
 
   @override
   bool get isClosed => _isClosed;
@@ -185,17 +187,21 @@ class WebSocket$VM implements WebSocket {
 
   @override
   Future<void> close([int? code, String? reason]) async {
+    _closeCode ??= code;
+    _closeReason ??= reason;
     // coverage:ignore-start
-    if (_socket.readyState == 3)
-      return;
-    else if (code != null && reason != null)
-      await _socket.close(code, reason);
-    else if (code != null)
-      await _socket.close(code);
-    else
-      await _socket.close();
+    try {
+      if (_socket.readyState == 3)
+        return;
+      else if (code != null && reason != null)
+        _socket.close(code, reason).ignore();
+      else if (code != null)
+        _socket.close(code).ignore();
+      else
+        _socket.close().ignore();
+      // Thats a bug in the dart:io, the socket is not closed immediately
+      //assert(_socket.readyState == io.WebSocket.closed);
+    } on Object {/* ignore */}
     // coverage:ignore-end
-    // Thats a bug in the dart:io, the socket is not closed immediately
-    //assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
   }
 }

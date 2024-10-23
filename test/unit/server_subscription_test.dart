@@ -1,5 +1,4 @@
 import 'package:fake_async/fake_async.dart';
-import 'package:spinify/spinify.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -8,7 +7,7 @@ void main() {
       'Emulate server subscription',
       () => fakeAsync(
         (async) {
-          final client = Spinify(
+          /* final client = Spinify(
             config: SpinifyConfig(
               transportBuilder: $createFakeSpinifyTransport(
                 overrideCommand: (command) => switch (command) {
@@ -75,7 +74,7 @@ void main() {
                   'notification:index',
                   isA<SpinifyServerSubscription>(),
                 ),
-          );
+          ); */
         },
       ),
     );

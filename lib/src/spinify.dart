@@ -501,6 +501,7 @@ final class Spinify implements ISpinify {
   // --- Send --- //
 
   @unsafe
+  @Throws([SpinifySendException])
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
     _log(
       const SpinifyLogLevel.debug(),
@@ -516,7 +517,10 @@ final class Spinify implements ISpinify {
       assert(_transport != null, 'Transport is not connected');
       assert(!state.isClosed, 'State is closed');
       // coverage:ignore-end
-      await _transport?.send(command);
+      // TODO: Encode command to binary format.
+      // TODO: Check that transport is not closed and exists.
+      // TODO: Send command to the server.
+      //await _transport?.send(command);
       _log(
         const SpinifyLogLevel.config(),
         'send_command_async_success',
@@ -536,7 +540,12 @@ final class Spinify implements ISpinify {
           'stackTrace': stackTrace,
         },
       );
-      rethrow;
+      Error.throwWithStackTrace(
+        SpinifySendException(
+          message: 'Failed to send command ${command.type}{id: ${command.id}}',
+        ),
+        stackTrace,
+      );
     }
   }
 

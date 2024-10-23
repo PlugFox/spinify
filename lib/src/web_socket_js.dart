@@ -192,15 +192,19 @@ class WebSocket$JS implements WebSocket {
   Future<void> close([int? code, String? reason]) async {
     _closeCode ??= code;
     _closeReason ??= reason;
-    if (_socket.readyState == 3)
-      return;
-    else if (code != null && reason != null)
-      _socket.close(code, reason);
-    else if (code != null)
-      _socket.close(code);
-    else
-      _socket.close();
-    //assert(_socket.readyState == 3, 'Socket is not closed');
+    // coverage:ignore-start
+    try {
+      if (_socket.readyState == 3)
+        return;
+      else if (code != null && reason != null)
+        _socket.close(code, reason);
+      else if (code != null)
+        _socket.close(code);
+      else
+        _socket.close();
+      //assert(_socket.readyState == 3, 'Socket is not closed');
+    } on Object {/* ignore */}
+    // coverage:ignore-end
   }
 }
 

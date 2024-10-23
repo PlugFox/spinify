@@ -28,7 +28,7 @@ abstract interface class WebSocket implements Sink<List<int>> {
 
   @safe
   @override
-  Future<void> close([int? code, String? reason]);
+  void close([int? code, String? reason]);
 }
 
 /// Create a Spinify transport
