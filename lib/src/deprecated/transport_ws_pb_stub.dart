@@ -1,10 +1,10 @@
 // coverage:ignore-file
 import 'package:meta/meta.dart';
 
-import 'model/config.dart';
-import 'model/metric.dart';
-import 'model/reply.dart';
-import 'model/transport_interface.dart';
+import '../model/config.dart';
+import '../model/metric.dart';
+import '../model/reply.dart';
+import '../model/transport_interface.dart';
 
 /// Create a WebSocket Protocol Buffers transport.
 @internal

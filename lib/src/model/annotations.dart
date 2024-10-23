@@ -8,12 +8,18 @@ const SpinifyAnnotation interactive = SpinifyAnnotation('interactive');
 @internal
 const SpinifyAnnotation sideEffect = SpinifyAnnotation('sideEffect');
 
-// TODO(plugfox): add more annotations
+/// Method that shouldn't throw an any exception.
+@internal
+const SpinifyAnnotation safe = SpinifyAnnotation('safe');
+
+/// Method that can throw an exception.
+@internal
+const SpinifyAnnotation unsafe = SpinifyAnnotation('unsafe');
 
 /// Annotation for Spinify library.
 @internal
 @immutable
-final class SpinifyAnnotation {
+class SpinifyAnnotation {
   @literal
   const SpinifyAnnotation(
     this.name, {
@@ -25,4 +31,16 @@ final class SpinifyAnnotation {
 
   /// Annotation metadata.
   final Map<String, Object?> meta;
+}
+
+/// Annotation for Spinify library that mark methods as possible to throw
+/// exceptions of specified types.
+@internal
+@immutable
+class Throws extends SpinifyAnnotation {
+  @literal
+  const Throws(this.exceptions) : super('throws');
+
+  /// List of exceptions that can be thrown.
+  final List<Type> exceptions;
 }

@@ -9,15 +9,15 @@ import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 import 'package:web/web.dart' as web;
 
-import 'model/channel_event.dart';
-import 'model/command.dart';
-import 'model/config.dart';
-import 'model/metric.dart';
-import 'model/reply.dart';
-import 'model/transport_interface.dart';
-import 'protobuf/client.pb.dart' as pb;
-import 'protobuf/protobuf_codec.dart';
-import 'util/event_queue.dart';
+import '../model/channel_event.dart';
+import '../model/command.dart';
+import '../model/config.dart';
+import '../model/metric.dart';
+import '../model/reply.dart';
+import '../model/transport_interface.dart';
+import '../protobuf/client.pb.dart' as pb;
+import '../protobuf/protobuf_codec.dart';
+import '../util/event_queue.dart';
 
 const _BlobCodec _blobCodec = _BlobCodec();
 

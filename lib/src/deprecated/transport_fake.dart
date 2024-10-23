@@ -7,11 +7,11 @@ import 'dart:math' as math;
 
 import 'package:fixnum/fixnum.dart';
 
-import 'model/channel_event.dart';
-import 'model/command.dart';
-import 'model/metric.dart';
-import 'model/reply.dart';
-import 'model/transport_interface.dart';
+import '../model/channel_event.dart';
+import '../model/command.dart';
+import '../model/metric.dart';
+import '../model/reply.dart';
+import '../model/transport_interface.dart';
 
 /// Create a fake Spinify transport.
 SpinifyTransportBuilder $createFakeSpinifyTransport({

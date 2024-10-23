@@ -5,14 +5,14 @@ import 'dart:io' as io;
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
-import 'model/channel_event.dart';
-import 'model/command.dart';
-import 'model/config.dart';
-import 'model/metric.dart';
-import 'model/reply.dart';
-import 'model/transport_interface.dart';
-import 'protobuf/client.pb.dart' as pb;
-import 'protobuf/protobuf_codec.dart';
+import '../model/channel_event.dart';
+import '../model/command.dart';
+import '../model/config.dart';
+import '../model/metric.dart';
+import '../model/reply.dart';
+import '../model/transport_interface.dart';
+import '../protobuf/client.pb.dart' as pb;
+import '../protobuf/protobuf_codec.dart';
 
 /// Create a WebSocket Protocol Buffers transport.
 @internal

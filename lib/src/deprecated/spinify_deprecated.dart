@@ -6,33 +6,33 @@ import 'dart:collection';
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
-import 'model/annotations.dart';
-import 'model/channel_event.dart';
-import 'model/channel_events.dart';
-import 'model/client_info.dart';
-import 'model/command.dart';
-import 'model/config.dart';
-import 'model/constant.dart';
-import 'model/exception.dart';
-import 'model/history.dart';
-import 'model/metric.dart';
-import 'model/presence_stats.dart';
-import 'model/reply.dart';
-import 'model/state.dart';
-import 'model/states_stream.dart';
-import 'model/stream_position.dart';
-import 'model/subscription_config.dart';
-import 'model/subscription_state.dart';
-import 'model/subscription_states.dart';
-import 'model/transport_interface.dart';
-import 'spinify_interface.dart';
-import 'subscription_interface.dart';
+import '../model/annotations.dart';
+import '../model/channel_event.dart';
+import '../model/channel_events.dart';
+import '../model/client_info.dart';
+import '../model/command.dart';
+import '../model/config.dart';
+import '../model/constant.dart';
+import '../model/exception.dart';
+import '../model/history.dart';
+import '../model/metric.dart';
+import '../model/presence_stats.dart';
+import '../model/reply.dart';
+import '../model/state.dart';
+import '../model/states_stream.dart';
+import '../model/stream_position.dart';
+import '../model/subscription_config.dart';
+import '../model/subscription_state.dart';
+import '../model/subscription_states.dart';
+import '../model/transport_interface.dart';
+import '../spinify_interface.dart';
+import '../subscription_interface.dart';
+import '../util/backoff.dart';
 import 'transport_ws_pb_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.js_util) 'transport_ws_pb_js.dart'
     // ignore: uri_does_not_exist
     if (dart.library.io) 'transport_ws_pb_vm.dart';
-import 'util/backoff.dart';
 
 part 'subscription_impl.dart';
 
