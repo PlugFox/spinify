@@ -13,7 +13,7 @@ import 'model/transport_interface.dart';
 @unsafe
 @internal
 @Throws([SpinifyTransportException])
-Future<WebSocket> $createWebSocketClient({
+Future<WebSocket> $webSocketConnect({
   required String url, // e.g. 'ws://localhost:8000/connection/websocket'
   Map<String, String>? headers, // e.g. {'Authorization': 'Bearer <token>'}
   Iterable<String>? protocols, // e.g. {'centrifuge-protobuf'}

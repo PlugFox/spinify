@@ -17,8 +17,14 @@ import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
+import 'model/transport_interface.dart';
 import 'spinify_interface.dart';
 import 'subscription_interface.dart';
+import 'web_socket_stub.dart'
+    // ignore: uri_does_not_exist
+    if (dart.library.js_interop) 'web_socket_js.dart'
+    // ignore: uri_does_not_exist
+    if (dart.library.io) 'web_socket_vm.dart';
 
 /// {@template spinify}
 /// Spinify client for Centrifuge.
@@ -67,8 +73,7 @@ final class Spinify implements ISpinify {
   @override
   SpinifyMetrics get metrics => _metrics.freeze();
 
-  /// TODO: Transport implementation.
-  dynamic _transport;
+  WebSocket? _transport;
 
   /// Internal mutable metrics. Also it's container for Spinify's state.
   final SpinifyMetrics$Mutable _metrics = SpinifyMetrics$Mutable();
@@ -298,6 +303,17 @@ final class Spinify implements ISpinify {
   }
 
   // --- Connection --- //
+
+  Future<WebSocket> _webSocketConnect({
+    required String url,
+    Map<String, String>? headers,
+    Iterable<String>? protocols,
+  }) =>
+      (config.transportBuilder ?? $webSocketConnect)(
+        url: url,
+        headers: headers,
+        protocols: protocols,
+      );
 
   @unsafe
   @override
