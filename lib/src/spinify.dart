@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'model/annotations.dart';
 import 'model/channel_event.dart';
@@ -47,14 +48,7 @@ final class Spinify implements ISpinify {
   Spinify({SpinifyConfig? config})
       : config = config ?? SpinifyConfig.byDefault() {
     /// Client initialization (from constructor).
-    _log(
-      const SpinifyLogLevel.info(),
-      'init',
-      'Spinify client initialized',
-      <String, Object?>{
-        'config': config,
-      },
-    );
+    _init();
   }
 
   /// Create client and connect.
@@ -97,8 +91,39 @@ final class Spinify implements ISpinify {
       StreamController<SpinifyState>.broadcast();
 
   @override
-  SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
-      throw UnimplementedError();
+  late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
+      SpinifyChannelEvents<SpinifyChannelEvent>(_eventController.stream);
+  final StreamController<SpinifyChannelEvent> _eventController =
+      StreamController<SpinifyChannelEvent>.broadcast();
+
+  Completer<void>? _readyCompleter;
+  Timer? _refreshTimer;
+  Timer? _reconnectTimer;
+  Timer? _healthTimer;
+
+  /// Registry of client subscriptions.
+  final Map<String, SpinifyClientSubscription> _clientSubscriptionRegistry =
+      <String, SpinifyClientSubscription>{};
+
+  /// Registry of server subscriptions.
+  final Map<String, SpinifyServerSubscription> _serverSubscriptionRegistry =
+      <String, SpinifyServerSubscription>{};
+
+  @override
+  ({
+    Map<String, SpinifyClientSubscription> client,
+    Map<String, SpinifyServerSubscription> server
+  }) get subscriptions => (
+        client: UnmodifiableMapView<String, SpinifyClientSubscription>(
+          _clientSubscriptionRegistry,
+        ),
+        server: UnmodifiableMapView<String, SpinifyServerSubscription>(
+          _serverSubscriptionRegistry,
+        ),
+      );
+
+  /// Hash map of pending replies.
+  final Map<int, _PendingReply> _replies = <int, _PendingReply>{};
 
   /// Log an event with the given [level], [event], [message] and [context].
   @safe
@@ -130,6 +155,90 @@ final class Spinify implements ISpinify {
     );
   }
 
+  /// Counter for command messages.
+  @safe
+  int _getNextCommandId() {
+    if (_metrics.commandId == kMaxInt) _metrics.commandId = 1;
+    return _metrics.commandId++;
+  }
+
+  // --- Init --- //
+
+  /// Initialization from constructor
+  @safe
+  void _init() {
+    _setUpHealthCheckTimer();
+    _log(
+      const SpinifyLogLevel.info(),
+      'init',
+      'Spinify client initialized',
+      <String, Object?>{
+        'config': config,
+      },
+    );
+  }
+
+  // --- Health checks --- //
+
+  /// Set up health check timer.
+  @safe
+  void _setUpHealthCheckTimer() {}
+
+  /// Tear down health check timer.
+  @safe
+  void _tearDownHealthCheckTimer() {}
+
+  /// Set up refresh connection timer.
+  @safe
+  void _setUpRefreshConnection() {}
+
+  /// Tear down refresh connection timer.
+  @safe
+  void _tearDownRefreshConnection() {}
+
+  /// Set up reconnect timer.
+  @safe
+  void _setUpReconnectTimer() {}
+
+  /// Tear down reconnect timer.
+  @safe
+  void _tearDownReconnectTimer() {}
+
+  // --- Ready --- //
+
+  @unsafe
+  @override
+  @Throws([SpinifyConnectionException])
+  Future<void> ready() async {
+    const error = SpinifyConnectionException(
+      message: 'Connection is closed permanently',
+    );
+    if (state.isConnected) return;
+    if (state.isClosed) throw error;
+    try {
+      await (_readyCompleter ??= Completer<void>()).future;
+    } on SpinifyConnectionException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyConnectionException(
+          message: 'Failed to wait for connection',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
+
+  /// Plan to do action when client is connected.
+  @unsafe
+  Future<T> _doOnReady<T>(Future<T> Function() action) {
+    if (state.isConnected) return action();
+    return ready().then<T>((_) => action());
+  }
+
+  // --- Connection --- //
+
   @unsafe
   @override
   @Throws([SpinifyConnectionException])
@@ -152,17 +261,58 @@ final class Spinify implements ISpinify {
   /// User initiated connect.
   @unsafe
   Future<void> _interactiveConnect(String url) async {
-    throw UnimplementedError();
+    if (state.isConnected || state.isConnecting) await _interactiveDisconnect();
+    // TODO: Set-up reconnect logic.
+    await _internalReconnect(url);
   }
 
   /// Library initiated connect.
   @unsafe
   Future<void> _internalReconnect(String url) async {
-    throw UnimplementedError();
+    assert(state.isDisconnected, 'State should be disconnected');
+    final completer = _readyCompleter = switch (_readyCompleter) {
+      Completer<void> value when !value.isCompleted => value,
+      _ => Completer<void>(),
+    };
+    _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
+    assert(state.isConnecting, 'State should be connecting');
+    // TODO: Create a new transport
+
+    // Prepare connect request.
+    final SpinifyConnectRequest request;
+    {
+      final token = await config.getToken?.call();
+      final payload = await config.getPayload?.call();
+      final id = _getNextCommandId();
+      final now = DateTime.now();
+      request = SpinifyConnectRequest(
+        id: id,
+        timestamp: now,
+        token: token,
+        data: payload,
+        subs: <String, SpinifySubscribeRequest>{
+          for (final sub in _serverSubscriptionRegistry.values)
+            sub.channel: SpinifySubscribeRequest(
+              id: id,
+              timestamp: now,
+              channel: sub.channel,
+              recover: sub.recoverable,
+              epoch: sub.epoch,
+              offset: sub.offset,
+              token: null,
+              data: null,
+              positioned: null,
+              recoverable: null,
+              joinLeave: null,
+            ),
+        },
+        name: config.client.name,
+        version: config.client.version,
+      );
+    }
   }
 
-  /// On connect to the server.
-  Future<void> _onConnected() async {}
+  // --- Disconnection --- //
 
   @safe
   @override
@@ -170,12 +320,14 @@ final class Spinify implements ISpinify {
 
   /// User initiated disconnect.
   @safe
-  Future<void> _interactiveDisconnect() =>
-      _internalDisconnect(temporary: false);
+  Future<void> _interactiveDisconnect() async {
+    // TODO: Tear down reconnect logic.
+    _internalDisconnect(temporary: false);
+  }
 
   /// Library initiated disconnect.
   @safe
-  Future<void> _internalDisconnect({required bool temporary}) async {
+  void _internalDisconnect({required bool temporary}) {
     try {
       // Close all pending replies with error.
       const error = SpinifyReplyException(
@@ -201,6 +353,12 @@ final class Spinify implements ISpinify {
         );
       }
       _replies.clear();
+
+      // Complete ready completer with error,
+      // if we still waiting for connection.
+      if (_readyCompleter case Completer<void> c when !c.isCompleted) {
+        c.completeError(error, stackTrace);
+      }
     } on Object catch (error, stackTrace) {
       _log(
         const SpinifyLogLevel.warning(),
@@ -216,26 +374,24 @@ final class Spinify implements ISpinify {
       _log(
         const SpinifyLogLevel.config(),
         'disconnected',
-        'Disconnected from server',
-        <String, Object?>{},
+        'Disconnected from server ${temporary ? 'temporarily' : 'permanent'}',
+        <String, Object?>{
+          'temporary': temporary,
+        },
       );
     }
   }
 
-  /// Plan to do action when client is connected.
-  @unsafe
-  Future<T> _doOnReady<T>(Future<T> Function() action) {
-    if (state.isConnected) return action();
-    return ready().then<T>((_) => action());
-  }
+  // --- Close --- //
 
   @safe
   @override
   Future<void> close() async {
     if (state.isClosed) return;
     try {
+      _internalDisconnect(temporary: false);
       _setState(SpinifyState$Closed());
-      await _internalDisconnect(temporary: false);
+      _tearDownHealthCheckTimer();
     } on Object {/* ignore */} finally {
       _statesController.close().ignore();
       _log(
@@ -249,76 +405,7 @@ final class Spinify implements ISpinify {
     }
   }
 
-  /// Counter for command messages.
-  @safe
-  int _getNextCommandId() {
-    if (_metrics.commandId == kMaxInt) _metrics.commandId = 1;
-    return _metrics.commandId++;
-  }
-
-  @override
-  SpinifyClientSubscription? getClientSubscription(String channel) {
-    throw UnimplementedError();
-  }
-
-  @override
-  SpinifyServerSubscription? getServerSubscription(String channel) {
-    throw UnimplementedError();
-  }
-
-  @override
-  SpinifySubscription? getSubscription(String channel) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<SpinifyHistory> history(
-    String channel, {
-    int? limit,
-    SpinifyStreamPosition? since,
-    bool? reverse,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  SpinifyClientSubscription newSubscription(
-    String channel, {
-    SpinifySubscriptionConfig? config,
-    bool subscribe = false,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Map<String, SpinifyClientInfo>> presence(String channel) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<SpinifyPresenceStats> presenceStats(String channel) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> publish(String channel, List<int> data) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> ready() {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> removeSubscription(SpinifyClientSubscription subscription) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<List<int>> rpc(String method, [List<int>? data]) {
-    throw UnimplementedError();
-  }
+  // --- Send --- //
 
   @unsafe
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
@@ -360,8 +447,95 @@ final class Spinify implements ISpinify {
     }
   }
 
-  /// Hash map of pending replies.
-  final Map<int, _PendingReply> _replies = <int, _PendingReply>{};
+  @unsafe
+  @override
+  @Throws([SpinifySendException])
+  Future<void> send(List<int> data) async {
+    try {
+      await _doOnReady(() => _sendCommandAsync(
+            SpinifySendRequest(
+              timestamp: DateTime.now(),
+              data: data,
+            ),
+          ));
+    } on SpinifySendException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(SpinifySendException(error: error), stackTrace);
+    }
+  }
+
+  // --- Remote Procedure Call --- //
+
+  @override
+  Future<List<int>> rpc(String method, [List<int>? data]) {
+    throw UnimplementedError();
+  }
+
+  // --- Subscriptions and Channels --- //
+
+  @safe
+  @override
+  SpinifySubscription? getSubscription(String channel) =>
+      _clientSubscriptionRegistry[channel] ??
+      _serverSubscriptionRegistry[channel];
+
+  @safe
+  @override
+  SpinifyClientSubscription? getClientSubscription(String channel) =>
+      _clientSubscriptionRegistry[channel];
+
+  @safe
+  @override
+  SpinifyServerSubscription? getServerSubscription(String channel) =>
+      _serverSubscriptionRegistry[channel];
+
+  @override
+  SpinifyClientSubscription newSubscription(
+    String channel, {
+    SpinifySubscriptionConfig? config,
+    bool subscribe = false,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> removeSubscription(SpinifyClientSubscription subscription) {
+    throw UnimplementedError();
+  }
+
+  // --- Publish --- //
+
+  @override
+  Future<void> publish(String channel, List<int> data) {
+    throw UnimplementedError();
+  }
+
+  // --- Presence --- //
+
+  @override
+  Future<Map<String, SpinifyClientInfo>> presence(String channel) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<SpinifyPresenceStats> presenceStats(String channel) {
+    throw UnimplementedError();
+  }
+
+  // --- History --- //
+
+  @override
+  Future<SpinifyHistory> history(
+    String channel, {
+    int? limit,
+    SpinifyStreamPosition? since,
+    bool? reverse,
+  }) {
+    throw UnimplementedError();
+  }
+
+  // --- Replies --- //
 
   /// Called when [SpinifyReply] received from the server.
   @safe
@@ -430,30 +604,6 @@ final class Spinify implements ISpinify {
       );
     }
   }
-
-  @unsafe
-  @override
-  @Throws([SpinifySendException])
-  Future<void> send(List<int> data) async {
-    try {
-      await _doOnReady(() => _sendCommandAsync(
-            SpinifySendRequest(
-              timestamp: DateTime.now(),
-              data: data,
-            ),
-          ));
-    } on SpinifySendException {
-      rethrow;
-    } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(SpinifySendException(error: error), stackTrace);
-    }
-  }
-
-  @override
-  ({
-    Map<String, SpinifyClientSubscription> client,
-    Map<String, SpinifyServerSubscription> server
-  }) get subscriptions => throw UnimplementedError();
 }
 
 /// Pending reply.

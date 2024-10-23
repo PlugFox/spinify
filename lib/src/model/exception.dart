@@ -22,6 +22,20 @@ sealed class SpinifyException implements Exception {
   /// Source error of exception if exists.
   final Object? error;
 
+  /// Visitor pattern for nested exceptions.
+  /// Callback for each nested exception, starting from the current one.
+  void visitor(void Function(Object error) fn) {
+    fn(this);
+    switch (error) {
+      case SpinifyException e:
+        e.visitor(fn);
+      case Object e:
+        fn(e);
+      case null:
+        break;
+    }
+  }
+
   @override
   int get hashCode => code.hashCode;
 
