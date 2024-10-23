@@ -1,5 +1,4 @@
-// coverage:ignore-file
-
+/*
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop' as js;
@@ -444,3 +443,4 @@ final class SpinifyTransport$WS$PB$JS implements ISpinifyTransport {
     //assert(_socket.readyState == 3, 'Socket is not closed');
   }
 }
+ */

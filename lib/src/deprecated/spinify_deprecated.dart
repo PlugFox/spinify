@@ -28,11 +28,7 @@ import '../model/transport_interface.dart';
 import '../spinify_interface.dart';
 import '../subscription_interface.dart';
 import '../util/backoff.dart';
-import 'transport_ws_pb_stub.dart'
-    // ignore: uri_does_not_exist
-    if (dart.library.js_util) 'transport_ws_pb_js.dart'
-    // ignore: uri_does_not_exist
-    if (dart.library.io) 'transport_ws_pb_vm.dart';
+import '../web_socket_js.dart';
 
 part 'subscription_impl.dart';
 
@@ -58,14 +54,14 @@ abstract base class SpinifyBase implements ISpinify {
   final SpinifyConfig config;
 
   late final SpinifyTransportBuilder _createTransport;
-  ISpinifyTransport? _transport;
+  dynamic _transport;
 
   final SpinifyMetrics$Mutable _metrics = SpinifyMetrics$Mutable();
 
   /// Client initialization (from constructor).
   @mustCallSuper
   void _init() {
-    _createTransport = config.transportBuilder ?? $create$WS$PB$Transport;
+    _createTransport = config.transportBuilder ?? $createWebSocketClient;
     config.logger?.call(
       const SpinifyLogLevel.info(),
       'init',
@@ -633,10 +629,8 @@ base mixin SpinifyConnectionMixin
       // Create new transport.
       _transport = await _createTransport(
         url: url,
-        config: config,
-        metrics: _metrics,
-        onReply: _onReply,
-        onDisconnect: _onDisconnected,
+        headers: config.headers,
+        protocols: {'centrifuge-protobuf'},
       );
       //  ..onReply = _onReply
       //  ..onDisconnect = () => _onDisconnected().ignore();

@@ -184,48 +184,48 @@ final class Spinify implements ISpinify {
   @safe
   void _setUpHealthCheckTimer() {
     _tearDownHealthCheckTimer();
+
+    void warning(String message) => _log(
+          const SpinifyLogLevel.warning(),
+          'health_check_error',
+          message,
+          <String, Object?>{},
+        );
+
     _healthTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) {
         if (_statesController.isClosed) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'health_check_error',
-            'Health check failed: states controller is closed',
-            <String, Object?>{},
-          );
+          warning('Health check failed: states controller is closed');
         }
         if (_eventController.isClosed) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'health_check_error',
-            'Health check failed: event controller is closed',
-            <String, Object?>{},
-          );
+          warning('Health check failed: event controller is closed');
         }
-        if (!state.isDisconnected && _reconnectTimer == null) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'health_check_error',
-            'Health check failed: no reconnect timer set',
-            <String, Object?>{},
-          );
-        }
-        if (state.isConnected && _refreshTimer == null) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'health_check_error',
-            'Health check failed: no refresh timer set',
-            <String, Object?>{},
-          );
-        }
-        if (!state.isConnected && _refreshTimer != null) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'health_check_error',
-            'Health check failed: refresh timer set but not connected',
-            <String, Object?>{},
-          );
+        switch (state) {
+          case SpinifyState$Disconnected state:
+            if (state.temporary && _reconnectTimer == null) {
+              warning('Health check failed: no reconnect timer set');
+            }
+            if (state.temporary && _metrics.reconnectUrl == null) {
+              warning('Health check failed: no reconnect URL set');
+            }
+            if (_refreshTimer != null) {
+              warning(
+                  'Health check failed: refresh timer set but not connected');
+            }
+          case SpinifyState$Connecting _:
+            if (_reconnectTimer == null) {
+              warning('Health check failed: no reconnect timer set');
+            }
+            if (_refreshTimer == null) {
+              warning('Health check failed: no refresh timer set');
+            }
+          case SpinifyState$Connected _:
+            if (_refreshTimer == null) {
+              warning('Health check failed: no refresh timer set');
+            }
+          case SpinifyState$Closed _:
+            warning('Health check failed: health check should be stopped');
         }
       },
     );
@@ -386,6 +386,7 @@ final class Spinify implements ISpinify {
   @safe
   Future<void> _interactiveDisconnect() async {
     _tearDownReconnectTimer();
+    _metrics.reconnectUrl = null;
     _internalDisconnect(
       code: 0,
       reason: 'disconnect interactively called by client',

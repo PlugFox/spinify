@@ -1,4 +1,4 @@
-import 'dart:async';
+/* import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -292,3 +292,4 @@ final class SpinifyTransport$WS$PB$VM implements ISpinifyTransport {
     //assert(_socket.readyState == io.WebSocket.closed, 'Socket is not closed');
   }
 }
+ */

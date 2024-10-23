@@ -149,3 +149,23 @@ final class SpinifyRefreshException extends SpinifyException {
           error,
         );
 }
+
+/// Problem relevant to transport layer, connection,
+/// data transfer or encoding/decoding issues.
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyTransportException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyTransportException({
+    required String message,
+    Object? error,
+    this.data,
+  }) : super(
+          'spinify_transport_exception',
+          message,
+          error,
+        );
+
+  /// Additional data related to the exception.
+  final Object? data;
+}

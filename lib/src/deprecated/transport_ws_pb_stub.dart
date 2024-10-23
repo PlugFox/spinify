@@ -1,4 +1,4 @@
-// coverage:ignore-file
+/* // coverage:ignore-file
 import 'package:meta/meta.dart';
 
 import '../model/config.dart';
@@ -25,3 +25,4 @@ Future<ISpinifyTransport> $create$WS$PB$Transport({
   required void Function({required bool temporary}) onDisconnect,
 }) =>
     throw UnimplementedError();
+ */

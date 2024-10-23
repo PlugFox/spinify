@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_setters_without_getters
+/* // ignore_for_file: avoid_setters_without_getters
 // coverage:ignore-file
 
 import 'dart:async';
@@ -16,7 +16,7 @@ import '../model/transport_interface.dart';
 /// Create a fake Spinify transport.
 SpinifyTransportBuilder $createFakeSpinifyTransport({
   SpinifyReply? Function(SpinifyCommand command)? overrideCommand,
-  void Function(ISpinifyTransport? transport)? out,
+  void Function(dynamic transport)? out,
 }) =>
     ({
       /// URL for the connection
@@ -310,3 +310,4 @@ class SpinifyTransportFake implements ISpinifyTransport {
     _timer = null;
   }
 }
+ */
