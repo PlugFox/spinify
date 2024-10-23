@@ -56,6 +56,14 @@ publish: generate ## Publish the package
 .PHONY: deploy
 deploy: publish
 
+.PHONY: echo-go
+echo-go: ## Start the echo server
+	@cd tool/echo && go run echo.go
+
+.PHONY: echo-dart
+echo-dart: ## Start the echo client
+	@cd example/echo && dart run main.dart
+
 .PHONY: echo-up
 echo-up: ## Start the echo server
 	@dart run tool/echo_up.dart
