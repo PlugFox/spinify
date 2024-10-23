@@ -33,8 +33,13 @@ Future<WebSocket> $webSocketConnect({
           .map<js.JSString>((e) => e.toJS)
           .toList(growable: false)
           .toJS,
-    );
+    )
+      // Change binary type from "blob" to "arraybuffer"
+      ..binaryType = 'arraybuffer';
+
     final completer = Completer<WebSocket$JS>();
+    // The socket API guarantees that only a single open event will be
+    // emitted.
     onOpen = s.onOpen.listen(
       (event) {
         if (completer.isCompleted) return;
@@ -45,6 +50,8 @@ Future<WebSocket> $webSocketConnect({
     onError = s.onError.listen(
       (event) {
         if (completer.isCompleted) return;
+        // Unfortunately, the underlying WebSocket API doesn't expose any
+        // specific information about the error itself.
         completer.completeError(
           SpinifyTransportException(
             message: 'WebSocket connection failed',
@@ -55,7 +62,19 @@ Future<WebSocket> $webSocketConnect({
       },
       cancelOnError: false,
     );
-    return await completer.future;
+
+    if (s.readyState == web.WebSocket.OPEN) {
+      completer.complete(WebSocket$JS(socket: s));
+    } else if (s.readyState == web.WebSocket.CLOSING ||
+        s.readyState == web.WebSocket.CLOSED) {
+      completer.completeError(
+        const SpinifyTransportException(
+          message: 'WebSocket connection already closed',
+        ),
+        StackTrace.current,
+      );
+    }
+    return await completer.future; // Return the WebSocket instance.
   } on SpinifyTransportException {
     socket?.close(1002, 'Protocol error during connection setup');
     rethrow;
@@ -96,11 +115,13 @@ class WebSocket$JS implements WebSocket {
       controller.close().ignore();
       onMessage?.cancel().ignore();
       onClose?.cancel().ignore();
+      if (socket.readyState != web.WebSocket.CLOSED) socket.close();
     }
 
     onMessage = _socket.onMessage.listen(
       controller.add,
       cancelOnError: false,
+      onDone: onDone,
     );
 
     onClose = _socket.onClose.listen(
@@ -110,6 +131,7 @@ class WebSocket$JS implements WebSocket {
         onDone();
       },
       cancelOnError: false,
+      onDone: onDone,
     );
   }
 
@@ -182,6 +204,10 @@ class WebSocket$JS implements WebSocket {
   bool get isClosed => _isClosed;
   bool _isClosed = false;
 
+  /// The number of bytes of data that have been queued but not yet transmitted
+  /// to the network.
+  int? get bufferedAmount => _socket.bufferedAmount;
+
   @override
   late final Stream<List<int>> stream;
 
@@ -228,34 +254,45 @@ final class _BlobCodec {
         ).toJS;
       case ByteBuffer bb:
         return bb.asUint8List().toJS;
-      case web.Blob blob:
-        return blob;
+      case js.JSObject blob:
+        return blob; // if (blob.isA<web.Blob>())
       default:
         throw ArgumentError.value(data, 'data', 'Invalid data type.');
     }
   }
 
   @internal
-  Future<List<int>> read(js.JSAny? data) async {
+  Future<List<int>> read(web.MessageEvent message) async {
+    final data = message.data;
+    if (data == null) {
+      return <int>[];
+    } else if (data.typeofEquals('object') &&
+        (data as js.JSObject).instanceOfString('ArrayBuffer')) {
+      return (data as js.JSArrayBuffer).toDart.asUint8List();
+    } else if (data.typeofEquals('string')) {
+      return utf8.encode((data as js.JSString).toDart);
+    }
     switch (data) {
       case List<int> bytes:
         return bytes;
       case String text:
         return utf8.encode(text);
-      case web.Blob blob:
-        final arrayBuffer = await blob.arrayBuffer().toDart;
-        return arrayBuffer.toDart.asUint8List();
+      case ByteBuffer bb:
+        return bb.asUint8List();
       case TypedData td:
         return Uint8List.view(
           td.buffer,
           td.offsetInBytes,
           td.lengthInBytes,
         );
-      case ByteBuffer bb:
-        return bb.asUint8List();
       default:
-        assert(false, 'Unsupported data type: $data');
-        throw ArgumentError.value(data, 'data', 'Invalid data type.');
+        if (data.isA<web.Blob>()) {
+          final arrayBuffer = await (data as web.Blob).arrayBuffer().toDart;
+          return arrayBuffer.toDart.asUint8List();
+        } else {
+          assert(false, 'Unsupported data type: $data');
+          throw ArgumentError.value(data, 'data', 'Invalid data type.');
+        }
     }
   }
 }

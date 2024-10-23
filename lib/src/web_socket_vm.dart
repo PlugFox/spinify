@@ -25,7 +25,9 @@ Future<WebSocket> $webSocketConnect({
       url,
       headers: headers,
       protocols: protocols,
-    );
+    )
+      // Disable ping interval
+      ..pingInterval = null;
     return WebSocket$VM(socket: s);
   } on SpinifyTransportException {
     socket?.close(1002, 'Protocol error during connection setup').ignore();
