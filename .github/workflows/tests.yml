@@ -16,8 +16,9 @@ on:
       - "lib/**.dart"
       - "test/**.dart"
       - "example/**.dart"
-      - .github/workflows/*.yml
+      - ".github/workflows/*.yml"
       - "pubspec.yaml"
+      - "analysis_options.yaml"
   pull_request:
     branches:
       - "main"
@@ -32,8 +33,14 @@ on:
       - "lib/**.dart"
       - "test/**.dart"
       - "example/**.dart"
-      - .github/workflows/*.yml
+      - ".github/workflows/*.yml"
       - "pubspec.yaml"
+      - "analysis_options.yaml"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
 
 jobs:
   build-echo:
@@ -167,7 +174,7 @@ jobs:
           dart pub global activate coverage
           dart pub global run coverage:test_with_coverage -fb -o coverage -- \
             --platform vm --compiler=kernel --coverage=coverage \
-            --reporter=github --file-reporter=json:coverage/tests.json \
+            --reporter=github --file-reporter=json:reports/tests.json \
             --timeout=10m --concurrency=12 --color \
               test/unit_test.dart test/smoke_test.dart
 
@@ -216,3 +223,10 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+
+      - name: 📥 Upload test report
+        uses: actions/upload-artifact@v4
+        if: (success() || failure()) && ${{ github.actor != 'dependabot[bot]' }}
+        with:
+          name: test-results
+          path: reports/tests.json
