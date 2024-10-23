@@ -182,27 +182,87 @@ final class Spinify implements ISpinify {
 
   /// Set up health check timer.
   @safe
-  void _setUpHealthCheckTimer() {}
+  void _setUpHealthCheckTimer() {
+    _tearDownHealthCheckTimer();
+    _healthTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) {
+        if (_statesController.isClosed) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'health_check_error',
+            'Health check failed: states controller is closed',
+            <String, Object?>{},
+          );
+        }
+        if (_eventController.isClosed) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'health_check_error',
+            'Health check failed: event controller is closed',
+            <String, Object?>{},
+          );
+        }
+        if (!state.isDisconnected && _reconnectTimer == null) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'health_check_error',
+            'Health check failed: no reconnect timer set',
+            <String, Object?>{},
+          );
+        }
+        if (state.isConnected && _refreshTimer == null) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'health_check_error',
+            'Health check failed: no refresh timer set',
+            <String, Object?>{},
+          );
+        }
+        if (!state.isConnected && _refreshTimer != null) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'health_check_error',
+            'Health check failed: refresh timer set but not connected',
+            <String, Object?>{},
+          );
+        }
+      },
+    );
+  }
 
   /// Tear down health check timer.
   @safe
-  void _tearDownHealthCheckTimer() {}
+  void _tearDownHealthCheckTimer() {
+    _healthTimer?.cancel();
+    _healthTimer = null;
+  }
 
   /// Set up refresh connection timer.
   @safe
-  void _setUpRefreshConnection() {}
+  void _setUpRefreshConnection() {
+    _tearDownRefreshConnection();
+  }
 
   /// Tear down refresh connection timer.
   @safe
-  void _tearDownRefreshConnection() {}
+  void _tearDownRefreshConnection() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
 
   /// Set up reconnect timer.
   @safe
-  void _setUpReconnectTimer() {}
+  void _setUpReconnectTimer() {
+    _tearDownReconnectTimer();
+  }
 
   /// Tear down reconnect timer.
   @safe
-  void _tearDownReconnectTimer() {}
+  void _tearDownReconnectTimer() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+  }
 
   // --- Ready --- //
 
@@ -262,7 +322,7 @@ final class Spinify implements ISpinify {
   @unsafe
   Future<void> _interactiveConnect(String url) async {
     if (state.isConnected || state.isConnecting) await _interactiveDisconnect();
-    // TODO: Set-up reconnect logic.
+    _setUpReconnectTimer();
     await _internalReconnect(url);
   }
 
@@ -310,6 +370,10 @@ final class Spinify implements ISpinify {
         version: config.client.version,
       );
     }
+
+    // ...
+
+    _setUpRefreshConnection();
   }
 
   // --- Disconnection --- //
@@ -321,13 +385,21 @@ final class Spinify implements ISpinify {
   /// User initiated disconnect.
   @safe
   Future<void> _interactiveDisconnect() async {
-    // TODO: Tear down reconnect logic.
-    _internalDisconnect(temporary: false);
+    _tearDownReconnectTimer();
+    _internalDisconnect(
+      code: 0,
+      reason: 'disconnect interactively called by client',
+      reconnect: false,
+    );
   }
 
   /// Library initiated disconnect.
   @safe
-  void _internalDisconnect({required bool temporary}) {
+  void _internalDisconnect({
+    required int code,
+    required String reason,
+    required bool reconnect,
+  }) {
     try {
       // Close all pending replies with error.
       const error = SpinifyReplyException(
@@ -370,13 +442,13 @@ final class Spinify implements ISpinify {
         },
       );
     } finally {
-      _setState(SpinifyState$Disconnected(temporary: temporary));
+      _setState(SpinifyState$Disconnected(temporary: reconnect));
       _log(
         const SpinifyLogLevel.config(),
         'disconnected',
-        'Disconnected from server ${temporary ? 'temporarily' : 'permanent'}',
+        'Disconnected from server ${reconnect ? 'temporarily' : 'permanent'}',
         <String, Object?>{
-          'temporary': temporary,
+          'temporary': reconnect,
         },
       );
     }
@@ -389,9 +461,13 @@ final class Spinify implements ISpinify {
   Future<void> close() async {
     if (state.isClosed) return;
     try {
-      _internalDisconnect(temporary: false);
-      _setState(SpinifyState$Closed());
       _tearDownHealthCheckTimer();
+      _internalDisconnect(
+        code: 0,
+        reason: 'close interactively called by client',
+        reconnect: false,
+      );
+      _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
       _statesController.close().ignore();
       _log(
@@ -581,8 +657,19 @@ final class Spinify implements ISpinify {
             completer.complete(reply);
           }
         }
+      } else if (reply is SpinifyPush) {
+        switch (reply.event) {
+          case SpinifyDisconnect disconnect:
+            _internalDisconnect(
+              code: disconnect.code,
+              reason: disconnect.reason,
+              reconnect: disconnect.reconnect,
+            );
+          default:
+          // TODO: Handle other push events.
+        }
       }
-      // ...
+
       _log(
         const SpinifyLogLevel.debug(),
         'reply',
