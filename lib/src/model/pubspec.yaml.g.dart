@@ -93,13 +93,13 @@ sealed class Pubspec {
   static const PubspecVersion version = (
     /// Non-canonical string representation of the version as provided
     /// in the pubspec.yaml file.
-    representation: r'0.0.4',
+    representation: r'0.1.0-pre.1',
 
     /// Returns a 'canonicalized' representation
     /// of the application version.
     /// This represents the version string in accordance with
     /// Semantic Versioning (SemVer) standards.
-    canonical: r'0.0.4',
+    canonical: r'0.1.0-pre.1',
 
     /// MAJOR version when you make incompatible API changes.
     /// The major version number: 1 in "1.2.3".
@@ -108,14 +108,14 @@ sealed class Pubspec {
     /// MINOR version when you add functionality
     /// in a backward compatible manner.
     /// The minor version number: 2 in "1.2.3".
-    minor: 0,
+    minor: 1,
 
     /// PATCH version when you make backward compatible bug fixes.
     /// The patch version number: 3 in "1.2.3".
-    patch: 4,
+    patch: 0,
 
     /// The pre-release identifier: "foo" in "1.2.3-foo".
-    preRelease: <String>[],
+    preRelease: <String>[r'pre', r'1'],
 
     /// The build identifier: "foo" in "1.2.3+foo".
     build: <String>[],
@@ -125,12 +125,12 @@ sealed class Pubspec {
   static final DateTime timestamp = DateTime.utc(
     2024,
     10,
-    15,
-    17,
-    34,
-    30,
-    637,
-    667,
+    23,
+    20,
+    54,
+    10,
+    259,
+    414,
   );
 
   /// Name
@@ -326,7 +326,9 @@ sealed class Pubspec {
   ///
   /// Current app [topics]
   ///
-  /// Package authors can use the topics field to categorize their package. Topics can be used to assist discoverability during search with filters on pub.dev. Pub.dev displays the topics on the package page as well as in the search results.
+  /// Package authors can use the topics field to categorize their package.
+  /// Topics can be used to assist discoverability during search with filters on pub.dev.
+  /// Pub.dev displays the topics on the package page as well as in the search results.
   ///
   /// The field consists of a list of names. For example:
   ///
@@ -358,7 +360,7 @@ sealed class Pubspec {
 
   /// Environment
   static const Map<String, String> environment = <String, String>{
-    'sdk': '>=3.4.0 <4.0.0',
+    'sdk': '>=3.5.0 <4.0.0',
   };
 
   /// Platforms
@@ -435,12 +437,13 @@ sealed class Pubspec {
 
   /// Developer dependencies
   static const Map<String, Object> devDependencies = <String, Object>{
-    'build_runner': r'^2.4.6',
-    'pubspec_generator': r'^4.0.0',
+    'build_runner': r'^2.4.13',
+    'pubspec_generator': r'^4.1.0-pre.1',
     'benchmark_harness': r'^2.2.2',
     'lints': r'^5.0.0',
-    'test': r'^1.24.4',
-    'fake_async': r'^1.3.1',
+    'test': r'^1.25.8',
+    'fake_async': r'^1.3.2',
+    'mockito': r'^5.0.0',
   };
 
   /// Dependency overrides
