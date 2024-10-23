@@ -27,6 +27,7 @@ Future<WebSocket> $webSocketConnect({
   // ignore: close_sinks
   web.WebSocket? socket;
   try {
+    final completer = Completer<WebSocket$JS>();
     final s = socket = web.WebSocket(
       url,
       <String>{...?protocols}
@@ -37,17 +38,16 @@ Future<WebSocket> $webSocketConnect({
       // Change binary type from "blob" to "arraybuffer"
       ..binaryType = 'arraybuffer';
 
-    final completer = Completer<WebSocket$JS>();
     // The socket API guarantees that only a single open event will be
     // emitted.
-    onOpen = s.onOpen.listen(
+    onOpen = s.onOpen.take(1).listen(
       (event) {
         if (completer.isCompleted) return;
         completer.complete(WebSocket$JS(socket: s));
       },
       cancelOnError: false,
     );
-    onError = s.onError.listen(
+    onError = s.onError.take(1).listen(
       (event) {
         if (completer.isCompleted) return;
         // Unfortunately, the underlying WebSocket API doesn't expose any
@@ -206,7 +206,7 @@ class WebSocket$JS implements WebSocket {
 
   /// The number of bytes of data that have been queued but not yet transmitted
   /// to the network.
-  int? get bufferedAmount => _socket.bufferedAmount;
+  //int? get bufferedAmount => _socket.bufferedAmount;
 
   @override
   late final Stream<List<int>> stream;
