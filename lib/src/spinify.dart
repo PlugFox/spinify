@@ -297,10 +297,14 @@ final class Spinify implements ISpinify {
 
   /// Plan to do action when client is connected.
   @unsafe
-  Future<T> _doOnReady<T>(Future<T> Function() action) {
-    if (state.isConnected) return action();
-    return ready().then<T>((_) => action());
-  }
+  Future<T> _doOnReady<T>(Future<T> Function() action) => switch (state) {
+        SpinifyState$Connected _ => action(),
+        SpinifyState$Connecting _ => ready().then<T>((_) => action()),
+        SpinifyState$Disconnected _ => Future.error(
+            const SpinifyConnectionException(message: 'Disconnected')),
+        SpinifyState$Closed _ =>
+          Future.error(const SpinifyConnectionException(message: 'Closed')),
+      };
 
   // --- Connection --- //
 
