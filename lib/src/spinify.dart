@@ -146,16 +146,32 @@ final class Spinify implements ISpinify {
   /// Set a new state and notify listeners via [states].
   @safe
   void _setState(SpinifyState state) {
-    if (isClosed) return;
-    final previous = _metrics.state;
-    _statesController.add(_metrics.state = state);
+    if (isClosed) return; // Client is closed, do not notify about states.
+    final prev = _metrics.state, next = state;
+    if (prev.type == next.type) {
+      // Should we notify about the same state?
+      switch ((prev, next)) {
+        case (SpinifyState$Connecting prev, SpinifyState$Connecting next):
+          if (prev.url == next.url) return; // The same
+        case (SpinifyState$Disconnected prev, SpinifyState$Disconnected next):
+          if (prev.temporary == next.temporary) return; // The same
+        case (SpinifyState$Closed _, SpinifyState$Closed _):
+          return; // Do not notify about closed states changes.
+        case (SpinifyState$Connected _, SpinifyState$Connected _):
+          break; // Always notify about connected states changes.
+        default:
+          break; // Notify about other states changes.
+      }
+    }
+    _statesController.add(_metrics.state = next);
     _log(
       const SpinifyLogLevel.config(),
       'state_changed',
-      'State changed from $previous to $state',
+      'State changed from $prev to $next',
       <String, Object?>{
-        'previous': previous,
-        'state': state,
+        'prev': prev,
+        'next': next,
+        'state': next,
       },
     );
   }
