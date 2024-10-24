@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:meta/meta.dart';
+import 'package:protobuf/protobuf.dart' as pb;
 
 import '../model/channel_event.dart';
 import '../model/client_info.dart';
@@ -11,9 +12,9 @@ import '../model/reply.dart';
 import '../model/stream_position.dart';
 import 'client.pb.dart' as pb;
 
-/// SpinifyCommand --> Protobuf Command encoder.
+/// SpinifyCommand --> List<int> encoder.
 final class ProtobufCommandEncoder
-    extends Converter<SpinifyCommand, pb.Command> {
+    extends Converter<SpinifyCommand, List<int>> {
   /// SpinifyCommand --> List<int> encoder.
   const ProtobufCommandEncoder([this.logger]);
 
@@ -34,7 +35,7 @@ final class ProtobufCommandEncoder
   final SpinifyLogger? logger;
 
   @override
-  pb.Command convert(SpinifyCommand input) {
+  List<int> convert(SpinifyCommand input) {
     final cmd = pb.Command(id: input.id);
     switch (input) {
       case SpinifySendRequest send:
@@ -125,28 +126,23 @@ final class ProtobufCommandEncoder
           token: subRefresh.token,
         );
     }
-    /* assert(() {
-      print('Command > ${cmd.toProto3Json()}');
-      return true;
-    }()); */
-
-    /* final buffer = pb.CodedBufferWriter();
-    pb.writeToCodedBufferWriter(buffer);
-    return buffer.toBuffer(); */
-
-    /* final commandData = cmd.writeToBuffer();
-    final length = commandData.lengthInBytes;
-    final writer = pb.CodedBufferWriter()
-      ..writeInt32NoTag(length); //..writeRawBytes(commandData);
-    return writer.toBuffer() + commandData; */
-
-    return cmd;
+    final commandData = cmd.writeToBuffer();
+    /* final writer = pb.CodedBufferWriter()
+      ..writeInt32NoTag(
+          commandData.lengthInBytes); //..writeRawBytes(commandData);
+    final bytes = writer.toBuffer() + commandData;
+    return bytes; */
+    return (pb.CodedBufferWriter()
+          ..writeInt32NoTag(commandData.lengthInBytes)
+          ..writeRawBytes(commandData))
+        .toBuffer();
   }
 }
 
-/// Protobuf Reply --> SpinifyReply decoder.
-final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
-  /// List<int> --> SpinifyCommand decoder.
+/// Protobuf List<int> --> Iterable<SpinifyReply> decoder.
+final class ProtobufReplyDecoder
+    extends Converter<List<int>, Iterable<SpinifyReply>> {
+  /// List<int> --> Iterable<SpinifyReply> decoder.
   const ProtobufReplyDecoder([this.logger]);
 
   /// Logger function to use for logging.
@@ -166,38 +162,50 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
   final SpinifyLogger? logger;
 
   @override
-  SpinifyReply convert(pb.Reply input) {
-    //final reader = pb.CodedBufferReader(input);
-    //while (!reader.isAtEnd()) {
-    //final reply = pb.Reply();
-    //reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
-    final reply = input;
-
-    /* assert(() {
-      print('Reply < ${reply.toProto3Json()}');
-      return true;
-    }()); */
-
-    if (reply.hasPush()) {
-      return _decodePush(reply.push);
-    } else if (reply.hasId() && reply.id > 0) {
-      return _decodeReply(reply);
-    } else if (reply.hasError()) {
-      final error = reply.error;
-      return SpinifyErrorResult(
-        id: reply.hasId() ? reply.id : 0,
-        timestamp: DateTime.now(),
-        code: error.code,
-        message: error.message,
-        temporary: error.temporary,
-      );
-    } else {
-      return SpinifyServerPing(
-        timestamp: DateTime.now(),
-      );
+  Iterable<SpinifyReply> convert(List<int> input) sync* {
+    if (input.isEmpty) return;
+    final reader = pb.CodedBufferReader(input);
+    while (!reader.isAtEnd()) {
+      try {
+        final message = pb.Reply();
+        reader.readMessage(message, pb.ExtensionRegistry.EMPTY);
+        /* assert(() {
+          print('Reply < ${message.toProto3Json()}');
+          return true;
+        }()); */
+        if (message.hasPush()) {
+          yield _decodePush(message.push);
+        } else if (message.hasId() && message.id > 0) {
+          yield _decodeReply(message);
+        } else if (message.hasError()) {
+          final error = message.error;
+          yield SpinifyErrorResult(
+            id: message.hasId() ? message.id : 0,
+            timestamp: DateTime.now(),
+            code: error.code,
+            message: error.message,
+            temporary: error.temporary,
+          );
+        } else {
+          yield SpinifyServerPing(
+            timestamp: DateTime.now(),
+          );
+        }
+      } on Object catch (error, stackTrace) {
+        logger?.call(
+          const SpinifyLogLevel.warning(),
+          'protobuf_reply_decoder_error',
+          'Error decoding reply',
+          <String, Object?>{
+            'error': error,
+            'stackTrace': stackTrace,
+            'input': input,
+          },
+        );
+      }
     }
-    //}
-    //assert(reader.isAtEnd(), 'Data is not fully consumed');
+
+    assert(reader.isAtEnd(), 'Data is not fully consumed');
   }
 
   /*

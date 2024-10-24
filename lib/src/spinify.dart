@@ -487,6 +487,7 @@ final class Spinify implements ISpinify {
       _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
       _statesController.close().ignore();
+      _eventController.close().ignore();
       _log(
         const SpinifyLogLevel.info(),
         'closed',

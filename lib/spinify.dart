@@ -5,6 +5,7 @@ export 'package:fixnum/fixnum.dart' show Int64;
 export 'src/deprecated/transport_fake.dart';
 export 'src/model/channel_event.dart';
 export 'src/model/client_info.dart';
+export 'src/model/codec.dart';
 export 'src/model/command.dart';
 export 'src/model/config.dart';
 export 'src/model/exception.dart';
