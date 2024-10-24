@@ -5,6 +5,7 @@ import 'model/annotations.dart';
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
 import 'model/client_info.dart';
+import 'model/codec.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/constant.dart';
@@ -18,6 +19,7 @@ import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
 import 'model/transport_interface.dart';
+import 'protobuf/protobuf_codec.dart';
 import 'spinify_interface.dart';
 import 'subscription_interface.dart';
 import 'web_socket_stub.dart'
@@ -52,7 +54,8 @@ final class Spinify implements ISpinify {
   /// {@macro spinify}
   @safe
   Spinify({SpinifyConfig? config})
-      : config = config ?? SpinifyConfig.byDefault() {
+      : config = config ?? SpinifyConfig.byDefault(),
+        _codec = config?.codec ?? ProtobufCodec() {
     /// Client initialization (from constructor).
     _init();
   }
@@ -73,6 +76,10 @@ final class Spinify implements ISpinify {
   @override
   SpinifyMetrics get metrics => _metrics.freeze();
 
+  /// Codec to encode and decode messages for the [_transport].
+  final SpinifyCodec _codec;
+
+  /// Current WebSocket transport.
   WebSocket? _transport;
 
   /// Internal mutable metrics. Also it's container for Spinify's state.
@@ -317,9 +324,13 @@ final class Spinify implements ISpinify {
         SpinifyState$Connected _ => action(),
         SpinifyState$Connecting _ => ready().then<T>((_) => action()),
         SpinifyState$Disconnected _ => Future.error(
-            const SpinifyConnectionException(message: 'Disconnected')),
-        SpinifyState$Closed _ =>
-          Future.error(const SpinifyConnectionException(message: 'Closed')),
+            const SpinifyConnectionException(message: 'Disconnected'),
+            StackTrace.current,
+          ),
+        SpinifyState$Closed _ => Future.error(
+            const SpinifyConnectionException(message: 'Closed'),
+            StackTrace.current,
+          ),
       };
 
   // --- Connection --- //
@@ -357,6 +368,10 @@ final class Spinify implements ISpinify {
   /// User initiated connect.
   @unsafe
   Future<void> _interactiveConnect(String url) async {
+    if (isClosed)
+      throw const SpinifyConnectionException(
+        message: 'Client is closed permanently',
+      );
     if (state.isConnected || state.isConnecting) await _interactiveDisconnect();
     _setUpReconnectTimer();
     await _internalReconnect(url);
@@ -370,46 +385,66 @@ final class Spinify implements ISpinify {
       Completer<void> value when !value.isCompleted => value,
       _ => Completer<void>(),
     };
-    _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
-    assert(state.isConnecting, 'State should be connecting');
-    // TODO: Create a new transport
-
-    // Prepare connect request.
-    final SpinifyConnectRequest request;
-    {
-      final token = await config.getToken?.call();
-      final payload = await config.getPayload?.call();
-      final id = _getNextCommandId();
-      final now = DateTime.now();
-      request = SpinifyConnectRequest(
-        id: id,
-        timestamp: now,
-        token: token,
-        data: payload,
-        subs: <String, SpinifySubscribeRequest>{
-          for (final sub in _serverSubscriptionRegistry.values)
-            sub.channel: SpinifySubscribeRequest(
-              id: id,
-              timestamp: now,
-              channel: sub.channel,
-              recover: sub.recoverable,
-              epoch: sub.epoch,
-              offset: sub.offset,
-              token: null,
-              data: null,
-              positioned: null,
-              recoverable: null,
-              joinLeave: null,
-            ),
-        },
-        name: config.client.name,
-        version: config.client.version,
+    if (state.isConnected || state.isConnecting)
+      _internalDisconnect(
+        code: 0,
+        reason: 'reconnect called while already connected or connecting',
+        reconnect: false,
       );
+    _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
+    try {
+      assert(state.isConnecting, 'State should be connecting');
+      // Create a new transport
+      final ws = _transport = await _webSocketConnect(
+        url: url,
+        headers: config.headers,
+        protocols: <String>[_codec.protocol],
+      );
+
+      // Prepare connect request.
+      final SpinifyConnectRequest request;
+      {
+        final token = await config.getToken?.call();
+        final payload = await config.getPayload?.call();
+        final id = _getNextCommandId();
+        final now = DateTime.now();
+        request = SpinifyConnectRequest(
+          id: id,
+          timestamp: now,
+          token: token,
+          data: payload,
+          subs: <String, SpinifySubscribeRequest>{
+            for (final sub in _serverSubscriptionRegistry.values)
+              sub.channel: SpinifySubscribeRequest(
+                id: id,
+                timestamp: now,
+                channel: sub.channel,
+                recover: sub.recoverable,
+                epoch: sub.epoch,
+                offset: sub.offset,
+                token: null,
+                data: null,
+                positioned: null,
+                recoverable: null,
+                joinLeave: null,
+              ),
+          },
+          name: config.client.name,
+          version: config.client.version,
+        );
+      }
+
+      final reply = await _sendCommand<SpinifyConnectResult>(request);
+
+      // TODO: Handle connect reply.
+      // Mike Matiunin <plugfox@gmail.com>, 24 October 2024
+      // ...
+
+      _setUpRefreshConnection();
+    } on Object catch (error, stackTrace) {
+      // TODO: Handle error.
+      // Mike Matiunin <plugfox@gmail.com>, 24 October 2024
     }
-
-    // ...
-
-    _setUpRefreshConnection();
   }
 
   // --- Disconnection --- //
@@ -438,6 +473,10 @@ final class Spinify implements ISpinify {
     required bool reconnect,
   }) {
     try {
+      // Close transport.
+      _transport?.close(code, reason);
+      _transport = null;
+
       // Close all pending replies with error.
       const error = SpinifyReplyException(
         replyCode: 0,
@@ -567,6 +606,75 @@ final class Spinify implements ISpinify {
         ),
         stackTrace,
       );
+    }
+  }
+
+  Future<R> _sendCommand<R extends SpinifyReply>(SpinifyCommand command) async {
+    _log(
+      const SpinifyLogLevel.debug(),
+      'send_command_begin',
+      'Command ${command.type}{id: ${command.id}} sent begin',
+      <String, Object?>{
+        'command': command,
+      },
+    );
+    try {
+      // coverage:ignore-start
+      assert(command.id > -1, 'Command ID should be greater or equal to 0');
+      assert(_replies[command.id] == null, 'Command ID should be unique');
+      assert(_transport != null, 'Transport is not connected');
+      assert(!state.isClosed, 'State is closed');
+      // coverage:ignore-end
+      final pr = _replies[command.id] = _PendingReply<R>(command);
+      final bytes = _codec.encoder.convert(command);
+      if (_transport == null)
+        throw const SpinifySendException(message: 'Transport is not connected');
+      _transport?.add(bytes); // await _sendCommandAsync(command);
+      final result = await pr.future.timeout(config.timeout);
+      _log(
+        const SpinifyLogLevel.config(),
+        'send_command_success',
+        'Command ${command.type}{id: ${command.id}} sent successfully',
+        <String, Object?>{
+          'command': command,
+          'result': result,
+        },
+      );
+      return result;
+    } on Object catch (error, stackTrace) {
+      if (_replies.remove(command.id) case _PendingReply pr
+          when !pr.isCompleted) {
+        pr.completeError(
+          SpinifyReplyException(
+            replyCode: 0,
+            replyMessage: 'Failed to send command',
+            temporary: true,
+            error: error,
+          ),
+          stackTrace,
+        );
+      }
+      _log(
+        const SpinifyLogLevel.warning(),
+        'send_command_error',
+        'Error sending command ${command.type}{id: ${command.id}}',
+        <String, Object?>{
+          'command': command,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      if (error is SpinifySendException)
+        rethrow;
+      else
+        Error.throwWithStackTrace(
+          SpinifySendException(
+            message:
+                'Failed to send command ${command.type}{id: ${command.id}}',
+            error: error,
+          ),
+          stackTrace,
+        );
     }
   }
 
@@ -741,15 +849,17 @@ final class Spinify implements ISpinify {
 }
 
 /// Pending reply.
-class _PendingReply {
-  _PendingReply(this.command) : _completer = Completer<SpinifyReply>();
+class _PendingReply<R extends SpinifyReply> {
+  _PendingReply(this.command) : _completer = Completer<R>();
 
   final SpinifyCommand command;
-  final Completer<SpinifyReply> _completer;
+  final Completer<R> _completer;
+
+  Future<R> get future => _completer.future;
 
   bool get isCompleted => _completer.isCompleted;
 
-  void complete(SpinifyReply reply) => _completer.complete(reply);
+  void complete(R reply) => _completer.complete(reply);
 
   void completeError(SpinifyReplyException error, StackTrace stackTrace) =>
       _completer.completeError(error, stackTrace);

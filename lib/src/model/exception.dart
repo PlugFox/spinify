@@ -66,9 +66,11 @@ final class SpinifyReplyException extends SpinifyException {
     required this.replyCode,
     required String replyMessage,
     required this.temporary,
+    Object? error,
   }) : super(
           'spinify_reply_exception',
           replyMessage,
+          error,
         );
 
   /// Reply code.
