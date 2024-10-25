@@ -1,5 +1,8 @@
 {
   "recommendations": [
     "dart-code.dart-code",
+    "github.vscode-github-actions",
+    "golang.go",
+    "kangping.protobuf"
   ]
 }
