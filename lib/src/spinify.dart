@@ -357,7 +357,7 @@ final class Spinify implements ISpinify {
   Future<void> connect(String url) async {
     try {
       await _interactiveConnect(url);
-    } on SpinifyConnectionException {
+    } on SpinifyConnectionException catch (error, stackTrace) {
       rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
@@ -515,7 +515,88 @@ final class Spinify implements ISpinify {
 
           handleReply(reply); // Handle replies
         },
-        onError: (error, stackTrace) {},
+        onDone: () {
+          var WebSocket(:int? closeCode, :String? closeReason) = ws;
+          var reconnect = true;
+          switch (closeCode) {
+            case null || <= 0:
+              closeCode = closeCode;
+              closeReason = closeReason;
+              reconnect = true;
+            case 1009:
+              // reconnect is true by default
+              closeCode = 3; // disconnectCodeMessageSizeLimit;
+              closeReason = 'message size limit exceeded';
+              reconnect = true;
+            case < 3000:
+              // We expose codes defined by Centrifuge protocol,
+              // hiding details about transport-specific error codes.
+              // We may have extra optional transportCode field in the future.
+              // reconnect is true by default
+              closeCode = 1; // connectingCodeTransportClosed;
+              closeReason = closeReason;
+              reconnect = true;
+            case >= 3000 && <= 3499:
+              // reconnect is true by default
+              closeCode = closeCode;
+              closeReason = closeReason;
+              reconnect = true;
+            case >= 3500 && <= 3999:
+              // application terminal codes
+              closeCode = closeCode;
+              closeReason = closeReason ?? 'application terminal code';
+              reconnect = false;
+            case >= 4000 && <= 4499:
+              // custom disconnect codes
+              // reconnect is true by default
+              closeCode = closeCode;
+              closeReason = closeReason;
+              reconnect = true;
+            case >= 4500 && <= 4999:
+              // custom disconnect codes
+              // application terminal codes
+              closeCode = closeCode;
+              closeReason = closeReason ?? 'application terminal code';
+              reconnect = false;
+            case >= 5000:
+              // reconnect is true by default
+              closeCode = closeCode;
+              closeReason = closeReason;
+              reconnect = true;
+            default:
+              closeCode = closeCode;
+              closeReason = closeReason;
+              reconnect = false;
+          }
+          _internalDisconnect(
+            code: closeCode ?? 1,
+            reason: closeReason ?? 'transport closed',
+            reconnect: reconnect,
+          );
+          _log(
+            const SpinifyLogLevel.transport(),
+            'transport_disconnect',
+            'Transport disconnected '
+                '${reconnect ? 'temporarily' : 'permanently'} '
+                'with reason: $closeReason',
+            <String, Object?>{
+              'code': closeCode,
+              'reason': closeReason,
+              'reconnect': reconnect,
+            },
+          );
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'reply_error',
+            'Error receiving reply',
+            <String, Object?>{
+              'error': error,
+              'stackTrace': stackTrace,
+            },
+          );
+        },
         cancelOnError: false,
       );
 
@@ -643,6 +724,8 @@ final class Spinify implements ISpinify {
     required bool reconnect,
   }) {
     try {
+      _tearDownRefreshConnection();
+
       // Close transport.
       _transport?.close(code, reason);
       _transport = null;
