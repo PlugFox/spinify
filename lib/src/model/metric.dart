@@ -51,8 +51,14 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   /// The total number of messages sent.
   abstract final fixnum.Int64 chunksSent;
 
+  /// The total number of messages sent.
+  fixnum.Int64 get messagesSent => chunksSent;
+
   /// The total number of bytes chunks received.
   abstract final fixnum.Int64 chunksReceived;
+
+  /// The total number of messages received.
+  fixnum.Int64 get messagesReceived => chunksReceived;
 
   /// The total number of commands encoded.
   abstract final fixnum.Int64 commandsEncoded;

@@ -197,8 +197,8 @@ void main() {
                       equals(Int64.ZERO),
                     ),
                     isA<SpinifyMetrics>().having(
-                      (m) => m.messagesSent,
-                      'messagesSent',
+                      (m) => m.chunksSent,
+                      'chunksSent',
                       equals(Int64.ZERO),
                     ),
                   ]));
@@ -233,8 +233,8 @@ void main() {
                       greaterThan(Int64.ZERO),
                     ),
                     isA<SpinifyMetrics>().having(
-                      (m) => m.messagesSent,
-                      'messagesSent',
+                      (m) => m.chunksSent,
+                      'chunksSent',
                       greaterThan(Int64.ZERO),
                     ),
                   ]));
