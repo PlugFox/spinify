@@ -21,6 +21,7 @@ export 'src/model/subscription_config.dart';
 export 'src/model/subscription_state.dart';
 export 'src/model/subscription_states.dart';
 export 'src/model/transport_interface.dart';
+export 'src/protobuf/protobuf_codec.dart';
 export 'src/spinify.dart' show Spinify;
 export 'src/spinify_interface.dart';
 export 'src/subscription_interface.dart';

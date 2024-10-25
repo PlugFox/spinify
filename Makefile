@@ -114,6 +114,11 @@ gen: generate
 .PHONY: codegen
 codegen: generate
 
+.PHONY: dart-version
+dart-version: ## Show the Dart version
+	@dart --version
+	@which dart
+
 .PHONY: diff
 diff: ## git diff
 	$(call print-target)

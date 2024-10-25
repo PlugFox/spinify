@@ -10,7 +10,7 @@ void main() => group('Codec', () {
           timestamp: DateTime(2021, 1, 1),
           data: [for (var i = 0; i < 256; i++) i],
         );
-        const codec = ProtobufCommandEncoder();
+        const codec = SpinifyProtobufCommandEncoder();
         final bytesFromCodec = codec.convert(command);
         expect(bytesFromCodec.length, greaterThan(0));
 

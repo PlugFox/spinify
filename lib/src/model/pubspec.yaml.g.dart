@@ -125,12 +125,12 @@ sealed class Pubspec {
   static final DateTime timestamp = DateTime.utc(
     2024,
     10,
-    23,
+    25,
+    16,
+    59,
     20,
-    54,
-    10,
-    259,
-    414,
+    571,
+    395,
   );
 
   /// Name
@@ -360,7 +360,7 @@ sealed class Pubspec {
 
   /// Environment
   static const Map<String, String> environment = <String, String>{
-    'sdk': '>=3.5.0 <4.0.0',
+    'sdk': '>=3.4.0 <4.0.0',
   };
 
   /// Platforms
@@ -437,10 +437,10 @@ sealed class Pubspec {
 
   /// Developer dependencies
   static const Map<String, Object> devDependencies = <String, Object>{
-    'build_runner': r'^2.4.13',
+    'build_runner': r'^2.4.10',
     'pubspec_generator': r'^4.1.0-pre.1',
     'benchmark_harness': r'^2.2.2',
-    'lints': r'^5.0.0',
+    'lints': r'>=4.0.0 <6.0.0',
     'test': r'^1.25.8',
     'fake_async': r'^1.3.2',
     'mockito': r'^5.0.0',

@@ -1,7 +1,5 @@
-@internal
 import 'dart:convert';
 
-import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart' as pb;
 
 import '../model/channel_event.dart';
@@ -14,14 +12,11 @@ import '../model/stream_position.dart';
 import 'client.pb.dart' as pb;
 
 /// Default protobuf codec for Spinify.
-@internal
-final class ProtobufCodec implements SpinifyCodec {
+final class SpinifyProtobufCodec implements SpinifyCodec {
   /// Default protobuf codec for Spinify.
-  ProtobufCodec([this.logger])
-      : decoder = ProtobufReplyDecoder(logger),
-        encoder = ProtobufCommandEncoder(logger);
-
-  final SpinifyLogger? logger;
+  SpinifyProtobufCodec([SpinifyLogger? logger])
+      : decoder = SpinifyProtobufReplyDecoder(logger),
+        encoder = SpinifyProtobufCommandEncoder(logger);
 
   @override
   String get protocol => 'centrifuge-protobuf';
@@ -34,11 +29,10 @@ final class ProtobufCodec implements SpinifyCodec {
 }
 
 /// SpinifyCommand --> List<int> encoder.
-@internal
-final class ProtobufCommandEncoder
+final class SpinifyProtobufCommandEncoder
     extends Converter<SpinifyCommand, List<int>> {
   /// SpinifyCommand --> List<int> encoder.
-  const ProtobufCommandEncoder([this.logger]);
+  const SpinifyProtobufCommandEncoder([this.logger]);
 
   /// Logger function to use for logging.
   /// If not specified, the logger will be disabled.
@@ -162,11 +156,10 @@ final class ProtobufCommandEncoder
 }
 
 /// Protobuf List<int> --> Iterable<SpinifyReply> decoder.
-@internal
-final class ProtobufReplyDecoder
+final class SpinifyProtobufReplyDecoder
     extends Converter<List<int>, Iterable<SpinifyReply>> {
   /// List<int> --> Iterable<SpinifyReply> decoder.
-  const ProtobufReplyDecoder([this.logger]);
+  const SpinifyProtobufReplyDecoder([this.logger]);
 
   /// Logger function to use for logging.
   /// If not specified, the logger will be disabled.

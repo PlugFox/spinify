@@ -1,26 +1,29 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:spinify/spinify.dart';
+import 'package:spinify/src/protobuf/client.pb.dart' as pb;
 import 'package:test/test.dart';
 
+import 'codecs.dart';
+
+@GenerateNiceMocks([MockSpec<WebSocket>(as: #MockWebSocket)])
 void main() {
   group('Spinify', () {
     final buffer = SpinifyLogBuffer(size: 10);
 
-    Spinify createFakeClient([
-      void Function(WebSocket$Fake transport)? out,
-    ]) {
-      final ws = WebSocket$Fake();
-      out?.call(ws);
-      return Spinify(
-        config: SpinifyConfig(
-          transportBuilder: ({required url, headers, protocols}) =>
-              Future<WebSocket>.value(ws),
-          logger: buffer.add,
-        ),
-      );
-    }
+    Spinify createFakeClient([WebSocket Function(String)? transport]) =>
+        Spinify(
+          config: SpinifyConfig(
+            transportBuilder: ({required url, headers, protocols}) =>
+                Future<WebSocket>.value(
+                    transport?.call(url) ?? WebSocket$Fake()),
+            logger: buffer.add,
+          ),
+        );
 
     test('Create_and_close_client', () async {
       final client = createFakeClient();
@@ -75,15 +78,40 @@ void main() {
     test(
         'Reconnect_after_disconnected_transport',
         () => fakeAsync((async) {
-              WebSocket? transport;
-              final client = createFakeClient((t) => transport = t)
-                ..connect('ws://localhost:8000/connection/websocket');
+              final transport = WebSocket$Fake();
+              final client = createFakeClient((_) => transport);
+              transport.onAdd(
+                (_, sink) => Timer(
+                  const Duration(milliseconds: 50),
+                  () => sink.add(
+                    ProtobufCodec.encode(
+                      pb.Reply(
+                        id: 1,
+                        connect: pb.ConnectResult(
+                          client: 'fake',
+                          version: '0.0.1',
+                          expires: false,
+                          ttl: null,
+                          data: null,
+                          subs: <String, pb.SubscribeResult>{},
+                          ping: null,
+                          pong: false,
+                          session: 'fake',
+                          node: 'fake',
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              client.connect('ws://localhost:8000/connection/websocket');
               expect(client.state, isA<SpinifyState$Connecting>());
               async.elapse(client.config.timeout);
               expect(client.state, isA<SpinifyState$Connected>());
               expect(transport, isNotNull);
               expect(transport, isA<WebSocket$Fake>());
-              transport!.close();
+              transport.close();
+              when(transport.isClosed).thenReturn(true);
               async.elapse(const Duration(milliseconds: 50));
               expect(client.state, isA<SpinifyState$Disconnected>());
               async.elapse(Duration(
@@ -91,6 +119,7 @@ void main() {
                           .config.connectionRetryInterval.min.inMilliseconds ~/
                       2));
               expect(client.state, isA<SpinifyState$Disconnected>());
+              transport.reset();
               async.elapse(client.config.connectionRetryInterval.max);
               expect(client.state, isA<SpinifyState$Connected>());
               client.close();

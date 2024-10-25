@@ -55,7 +55,7 @@ final class Spinify implements ISpinify {
   @safe
   Spinify({SpinifyConfig? config})
       : config = config ?? SpinifyConfig.byDefault(),
-        _codec = config?.codec ?? ProtobufCodec() {
+        _codec = config?.codec ?? SpinifyProtobufCodec() {
     /// Client initialization (from constructor).
     _init();
   }
