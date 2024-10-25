@@ -3,9 +3,10 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+import 'package:spinify/spinify.dart';
+import 'package:spinify/src/protobuf/client.pb.dart' as pb;
 
-import 'model/exception.dart';
-import 'model/transport_interface.dart';
+import 'codecs.dart';
 
 /// Fake WebSocket implementation.
 @visibleForTesting
@@ -26,6 +27,35 @@ class WebSocket$Fake implements WebSocket {
         handleDone: _doneHandler,
       ),
     );
+
+    // Default callbacks to handle connects and disconnects.
+    _onAddCallback = (bytes, sink) {
+      final command = ProtobufCodec.decode(pb.Command(), bytes);
+      Timer(Duration.zero, () {
+        if (isClosed) return;
+        if (command.hasConnect()) {
+          sink.add(
+            ProtobufCodec.encode(
+              pb.Reply(
+                id: command.id,
+                connect: pb.ConnectResult(
+                  client: 'fake',
+                  version: '0.0.1',
+                  expires: false,
+                  ttl: null,
+                  data: null,
+                  subs: <String, pb.SubscribeResult>{},
+                  ping: 600,
+                  pong: false,
+                  session: 'fake',
+                  node: 'fake',
+                ),
+              ),
+            ),
+          );
+        }
+      });
+    };
   }
 
   StreamController<List<int>>? _socket;
@@ -81,12 +111,14 @@ class WebSocket$Fake implements WebSocket {
   void Function(List<int> bytes, Sink<List<int>> sink)? _onAddCallback;
 
   /// Add callback to handle sending data and allow to respond with reply.
-  void onAdd(void Function(List<int> bytes, Sink<List<int>> sink) callback) {
+  void onAdd(void Function(List<int> bytes, Sink<List<int>> sink)? callback) {
     _onAddCallback = callback;
   }
 
   void Function()? _onDoneCallback;
-  void onDone(void Function() callback) {
+
+  /// Add callback to handle socket close event.
+  void onDone(void Function()? callback) {
     _onDoneCallback = callback;
   }
 

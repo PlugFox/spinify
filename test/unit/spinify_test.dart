@@ -9,6 +9,7 @@ import 'package:spinify/src/protobuf/client.pb.dart' as pb;
 import 'package:test/test.dart';
 
 import 'codecs.dart';
+import 'web_socket_fake.dart';
 
 @GenerateNiceMocks([MockSpec<WebSocket>(as: #MockWebSocket)])
 void main() {
@@ -42,7 +43,9 @@ void main() {
     });
 
     test('Change_client_state', () async {
-      final client = createFakeClient();
+      final transport = WebSocket$Fake(); // ignore: close_sinks
+      final client = createFakeClient((_) => transport);
+      expect(transport.isClosed, isFalse);
       expect(client.state, isA<SpinifyState$Disconnected>());
       await client.connect('ws://localhost:8000/connection/websocket');
       expect(client.state, isA<SpinifyState$Connected>());
@@ -50,10 +53,13 @@ void main() {
       expect(client.state, isA<SpinifyState$Disconnected>());
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());
+      expect(client.isClosed, isTrue);
+      expect(transport.isClosed, isTrue);
     });
 
     test('Change_client_states', () {
-      final client = createFakeClient();
+      final transport = WebSocket$Fake(); // ignore: close_sinks
+      final client = createFakeClient((_) => transport);
       Stream.fromIterable([
         () => client.connect('ws://localhost:8000/connection/websocket'),
         client.disconnect,
@@ -82,7 +88,7 @@ void main() {
               final client = createFakeClient((_) => transport);
               transport.onAdd(
                 (_, sink) => Timer(
-                  const Duration(milliseconds: 50),
+                  const Duration(milliseconds: 1),
                   () => sink.add(
                     ProtobufCodec.encode(
                       pb.Reply(

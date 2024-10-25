@@ -25,4 +25,3 @@ export 'src/protobuf/protobuf_codec.dart';
 export 'src/spinify.dart' show Spinify;
 export 'src/spinify_interface.dart';
 export 'src/subscription_interface.dart';
-export 'src/web_socket_fake.dart';
