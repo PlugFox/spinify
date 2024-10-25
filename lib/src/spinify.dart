@@ -100,13 +100,13 @@ final class Spinify implements ISpinify {
 
   @safe
   final StreamController<SpinifyState> _statesController =
-      StreamController<SpinifyState>.broadcast();
+      StreamController<SpinifyState>.broadcast(sync: true);
 
   @override
   late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
       SpinifyChannelEvents<SpinifyChannelEvent>(_eventController.stream);
   final StreamController<SpinifyChannelEvent> _eventController =
-      StreamController<SpinifyChannelEvent>.broadcast();
+      StreamController<SpinifyChannelEvent>.broadcast(sync: true);
 
   Completer<void>? _readyCompleter;
   Timer? _refreshTimer;
@@ -221,7 +221,7 @@ final class Spinify implements ISpinify {
         );
 
     _healthTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 15),
       (_) {
         if (_statesController.isClosed) {
           warning('Health check failed: states controller is closed');
@@ -231,26 +231,27 @@ final class Spinify implements ISpinify {
         }
         switch (state) {
           case SpinifyState$Disconnected state:
-            if (state.temporary && _reconnectTimer == null) {
-              warning('Health check failed: no reconnect timer set');
-            }
-            if (state.temporary && _metrics.reconnectUrl == null) {
-              warning('Health check failed: no reconnect URL set');
+            if (state.temporary) {
+              if (_metrics.reconnectUrl == null) {
+                warning('Health check failed: no reconnect URL set');
+                _setState(SpinifyState$Disconnected(temporary: false));
+              } else if (_reconnectTimer == null) {
+                warning('Health check failed: no reconnect timer set');
+                _setUpReconnectTimer();
+              }
             }
             if (_refreshTimer != null) {
               warning(
                   'Health check failed: refresh timer set but not connected');
             }
           case SpinifyState$Connecting _:
-            if (_reconnectTimer == null) {
-              warning('Health check failed: no reconnect timer set');
-            }
-            if (_refreshTimer == null) {
-              warning('Health check failed: no refresh timer set');
+            if (_refreshTimer != null) {
+              warning('Health check failed: refresh timer set during connect');
             }
           case SpinifyState$Connected _:
             if (_refreshTimer == null) {
               warning('Health check failed: no refresh timer set');
+              _setUpRefreshConnection();
             }
           case SpinifyState$Closed _:
             warning('Health check failed: health check should be stopped');
@@ -270,6 +271,8 @@ final class Spinify implements ISpinify {
   @safe
   void _setUpRefreshConnection() {
     _tearDownRefreshConnection();
+    // TODO: Implement refresh connection timer.
+    // Mike Matiunin <plugfox@gmail.com>, 25 October 2024
   }
 
   /// Tear down refresh connection timer.
@@ -283,6 +286,8 @@ final class Spinify implements ISpinify {
   @safe
   void _setUpReconnectTimer() {
     _tearDownReconnectTimer();
+    // TODO: Implement reconnect timer.
+    // Mike Matiunin <plugfox@gmail.com>, 25 October 2024
   }
 
   /// Tear down reconnect timer.
@@ -380,26 +385,39 @@ final class Spinify implements ISpinify {
   /// Library initiated connect.
   @unsafe
   Future<void> _internalReconnect(String url) async {
-    assert(state.isDisconnected, 'State should be disconnected');
-    final completer = _readyCompleter = switch (_readyCompleter) {
+    final readyCompleter = _readyCompleter = switch (_readyCompleter) {
       Completer<void> value when !value.isCompleted => value,
       _ => Completer<void>(),
     };
-    if (state.isConnected || state.isConnecting)
+    if (state.isConnected || state.isConnecting) {
       _internalDisconnect(
         code: 0,
         reason: 'reconnect called while already connected or connecting',
         reconnect: false,
       );
-    _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
+    }
     try {
-      assert(state.isConnecting, 'State should be connecting');
-      // Create a new transport
-      final ws = _transport = await _webSocketConnect(
-        url: url,
-        headers: config.headers,
-        protocols: <String>[_codec.protocol],
+      if (!state.isDisconnected) {
+        _log(
+          const SpinifyLogLevel.warning(),
+          'reconnect_error',
+          'Failed to reconnect: state is not disconnected',
+          <String, Object?>{
+            'state': state,
+          },
+        );
+        assert(
+          false,
+          'State should be disconnected',
+        );
+        return;
+      }
+      assert(
+        _transport == null,
+        'Transport should be null',
       );
+      _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
+      assert(state.isConnecting, 'State should be connecting');
 
       // Prepare connect request.
       final SpinifyConnectRequest request;
@@ -434,16 +452,168 @@ final class Spinify implements ISpinify {
         );
       }
 
-      final reply = await _sendCommand<SpinifyConnectResult>(request);
+      // Create a new transport
+      final ws = _transport = await _webSocketConnect(
+        url: url,
+        headers: config.headers,
+        protocols: <String>[_codec.protocol],
+      );
 
-      // TODO: Handle connect reply.
-      // Mike Matiunin <plugfox@gmail.com>, 24 October 2024
-      // ...
+      // Create handler for connect reply.
+      final connectResultCompleter = Completer<SpinifyConnectResult>();
+
+      // ignore: omit_local_variable_types
+      void Function(SpinifyReply reply) handleReply = (reply) {
+        if (connectResultCompleter.isCompleted) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'connect_result_error',
+            'Connect result completer is already completed',
+            <String, Object?>{
+              'reply': reply,
+            },
+          );
+        } else if (reply is SpinifyConnectResult) {
+          connectResultCompleter.complete(reply);
+        } else if (reply is SpinifyErrorResult) {
+          connectResultCompleter.completeError(reply);
+        } else {
+          connectResultCompleter.completeError(
+            const SpinifyConnectionException(
+              message: 'Unexpected reply received',
+            ),
+          );
+        }
+      };
+
+      ws.stream.transform<SpinifyReply>(StreamTransformer.fromHandlers(
+        handleData: (data, sink) {
+          _metrics
+            ..bytesReceived += data.length
+            ..chunksReceived += 1;
+          for (final reply in _codec.decoder.convert(data)) {
+            _metrics.repliesDecoded += 1;
+            sink.add(reply);
+          }
+        },
+      )).listen(
+        (reply) {
+          assert(() {
+            if (!identical(ws, _transport)) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'wrong_transport_error',
+                'Reply received on different and not active transport',
+                <String, Object?>{
+                  'transport': ws,
+                  'reply': reply,
+                },
+              );
+            }
+            return true;
+          }(), '...');
+
+          handleReply(reply); // Handle replies
+        },
+        onError: (error, stackTrace) {},
+        cancelOnError: false,
+      );
+
+      await _sendCommandAsync(request);
+      final result = await connectResultCompleter.future;
+
+      if (!state.isConnecting) {
+        throw const SpinifyConnectionException(
+          message: 'Connection is not in connecting state',
+        );
+      } else if (!identical(ws, _transport)) {
+        throw const SpinifyConnectionException(
+          message: 'Transport is not the same as created',
+        );
+      }
+
+      _setState(SpinifyState$Connected(
+        url: url,
+        client: result.client,
+        version: result.version,
+        expires: result.expires,
+        ttl: result.ttl,
+        node: result.node,
+        pingInterval: result.pingInterval,
+        sendPong: result.sendPong,
+        session: result.session,
+        data: result.data,
+      ));
+
+      handleReply = _onReply; // Switch to normal reply handler
 
       _setUpRefreshConnection();
-    } on Object catch (error, stackTrace) {
-      // TODO: Handle error.
-      // Mike Matiunin <plugfox@gmail.com>, 24 October 2024
+
+      // Notify ready.
+      if (readyCompleter.isCompleted) {
+        throw const SpinifyConnectionException(
+          message: 'Ready completer is already completed. Why so?',
+        );
+      } else {
+        readyCompleter.complete();
+      }
+
+      _readyCompleter = null;
+
+      _log(
+        const SpinifyLogLevel.config(),
+        'connected',
+        'Connected to server with $url successfully',
+        <String, Object?>{
+          'url': url,
+          'request': request,
+          'result': result,
+        },
+      );
+    } on Object catch ($error, stackTrace) {
+      final SpinifyConnectionException error;
+      if ($error is SpinifyConnectionException) {
+        error = $error;
+      } else {
+        error = SpinifyConnectionException(
+          message: 'Error connecting to server $url',
+          error: $error,
+        );
+      }
+      if (!readyCompleter.isCompleted)
+        readyCompleter.completeError(error, stackTrace);
+      _readyCompleter = null;
+      _log(
+        const SpinifyLogLevel.error(),
+        'connect_error',
+        'Error connecting to server $url',
+        <String, Object?>{
+          'url': url,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      _transport?.close();
+
+      switch ($error) {
+        case SpinifyErrorResult result:
+          if (result.code == 109) {
+            // Token expired error.
+            _setUpReconnectTimer(); // Retry resubscribe
+          } else if (result.temporary) {
+            // Temporary error.
+            _setUpReconnectTimer(); // Retry resubscribe
+          } else {
+            // Disable resubscribe timer
+            _setState(SpinifyState$Disconnected(temporary: false));
+          }
+        case SpinifyConnectionException _:
+          _setUpReconnectTimer(); // Some spinify exception - retry resubscribe
+        default:
+          _setUpReconnectTimer(); // Unknown error - retry resubscribe
+      }
+
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
@@ -577,10 +747,14 @@ final class Spinify implements ISpinify {
       assert(_transport != null, 'Transport is not connected');
       assert(!state.isClosed, 'State is closed');
       // coverage:ignore-end
-      // TODO: Encode command to binary format.
-      // TODO: Check that transport is not closed and exists.
-      // TODO: Send command to the server.
-      //await _transport?.send(command);
+      final bytes = _codec.encoder.convert(command);
+      _metrics.commandsEncoded += 1;
+      if (_transport == null)
+        throw const SpinifySendException(message: 'Transport is not connected');
+      _transport?.add(bytes);
+      _metrics
+        ..bytesSent += bytes.length
+        ..chunksSent += 1;
       _log(
         const SpinifyLogLevel.config(),
         'send_command_async_success',
@@ -600,15 +774,21 @@ final class Spinify implements ISpinify {
           'stackTrace': stackTrace,
         },
       );
-      Error.throwWithStackTrace(
-        SpinifySendException(
-          message: 'Failed to send command ${command.type}{id: ${command.id}}',
-        ),
-        stackTrace,
-      );
+      if (error is SpinifySendException)
+        rethrow;
+      else
+        Error.throwWithStackTrace(
+          SpinifySendException(
+            message:
+                'Failed to send command ${command.type}{id: ${command.id}}',
+          ),
+          stackTrace,
+        );
     }
   }
 
+  @unsafe
+  @Throws([SpinifySendException])
   Future<R> _sendCommand<R extends SpinifyReply>(SpinifyCommand command) async {
     _log(
       const SpinifyLogLevel.debug(),
@@ -625,11 +805,15 @@ final class Spinify implements ISpinify {
       assert(_transport != null, 'Transport is not connected');
       assert(!state.isClosed, 'State is closed');
       // coverage:ignore-end
-      final pr = _replies[command.id] = _PendingReply<R>(command);
       final bytes = _codec.encoder.convert(command);
+      _metrics.commandsEncoded += 1;
+      final pr = _replies[command.id] = _PendingReply<R>(command);
       if (_transport == null)
         throw const SpinifySendException(message: 'Transport is not connected');
-      _transport?.add(bytes); // await _sendCommandAsync(command);
+      _transport?.add(bytes);
+      _metrics
+        ..bytesSent += bytes.length
+        ..chunksSent += 1;
       final result = await pr.future.timeout(config.timeout);
       _log(
         const SpinifyLogLevel.config(),
@@ -771,7 +955,7 @@ final class Spinify implements ISpinify {
   /// Called when [SpinifyReply] received from the server.
   @safe
   @sideEffect
-  Future<void> _onReply(SpinifyReply reply) async {
+  void _onReply(SpinifyReply reply) {
     try {
       // coverage:ignore-start
       if (reply.id < 0 || reply.id > _metrics.commandId) {

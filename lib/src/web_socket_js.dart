@@ -96,7 +96,7 @@ Future<WebSocket> $webSocketConnect({
 @internal
 class WebSocket$JS implements WebSocket {
   WebSocket$JS({required web.WebSocket socket}) : _socket = socket {
-    final controller = StreamController<web.MessageEvent>();
+    final controller = StreamController<web.MessageEvent>(sync: true);
 
     stream = controller.stream.asyncMap(_codec.read).transform<List<int>>(
           StreamTransformer<List<int>, List<int>>.fromHandlers(

@@ -192,7 +192,7 @@ void main() {
                       0,
                     ),
                     isA<SpinifyMetrics>().having(
-                      (m) => m.messagesReceived,
+                      (m) => m.chunksReceived,
                       'messagesReceived',
                       equals(Int64.ZERO),
                     ),
@@ -228,7 +228,7 @@ void main() {
                       0,
                     ),
                     isA<SpinifyMetrics>().having(
-                      (m) => m.messagesReceived,
+                      (m) => m.chunksReceived,
                       'messagesReceived',
                       greaterThan(Int64.ZERO),
                     ),
