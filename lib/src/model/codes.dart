@@ -101,6 +101,7 @@ extension type const SpinifyDisconnectCode(int code) implements int {
   const SpinifyDisconnectCode.unrecoverablePosition() : code = 112;
 
   /// Normalize disconnect code and reason.
+  @experimental
   static ({SpinifyDisconnectCode code, String reason, bool reconnect})
       normalize([int? code, String? reason]) => switch (code ?? 1) {
             // --- Client error codes --- //
