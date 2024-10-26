@@ -104,6 +104,10 @@ extension type const SpinifyDisconnectCode(int code) implements int {
   @literal
   const SpinifyDisconnectCode.normalClosure() : code = 1000;
 
+  /// Abnormal closure.
+  @literal
+  const SpinifyDisconnectCode.abnormalClosure() : code = 1006;
+
   /// Normalize disconnect code and reason.
   @experimental
   static ({SpinifyDisconnectCode code, String reason, bool reconnect})
@@ -241,6 +245,13 @@ extension type const SpinifyDisconnectCode(int code) implements int {
             1000 => (
                 code: const SpinifyDisconnectCode(1000),
                 reason: reason ?? 'normal closure',
+                reconnect: true,
+              ),
+
+            /// Abnormal closure.
+            1006 => (
+                code: const SpinifyDisconnectCode(1006),
+                reason: reason ?? 'abnormal closure',
                 reconnect: true,
               ),
 

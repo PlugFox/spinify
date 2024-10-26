@@ -247,6 +247,14 @@ final class Spinify implements ISpinify {
               warning(
                   'Health check failed: refresh timer set but not connected');
             }
+            if (_transport != null || _replySubscription != null) {
+              warning('Health check failed: transport is not closed');
+              _internalDisconnect(
+                code: const SpinifyDisconnectCode.abnormalClosure(),
+                reason: 'abnormal closure',
+                reconnect: false,
+              );
+            }
           case SpinifyState$Connecting _:
             if (_refreshTimer != null) {
               warning('Health check failed: refresh timer set during connect');
