@@ -69,9 +69,6 @@ sealed class SpinifyState extends _$SpinifyStateBase {
   /// Permanently closed
   /// {@macro state}
   factory SpinifyState.closed({DateTime? timestamp}) = SpinifyState$Closed;
-
-  @override
-  String toString() => type;
 }
 
 /// Disconnected
@@ -132,6 +129,9 @@ final class SpinifyState$Disconnected extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Disconnected &&
           other.timestamp.isAtSameMomentAs(timestamp));
+
+  @override
+  String toString() => 'SpinifyState\$Disconnected{temporary: $temporary}';
 }
 
 /// Connecting
@@ -181,6 +181,9 @@ final class SpinifyState$Connecting extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Connecting &&
           other.timestamp.isAtSameMomentAs(timestamp));
+
+  @override
+  String toString() => 'SpinifyState\$Connecting{url: $url}';
 }
 
 /// Connected
@@ -271,6 +274,9 @@ final class SpinifyState$Connected extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Connected &&
           other.timestamp.isAtSameMomentAs(timestamp));
+
+  @override
+  String toString() => 'SpinifyState\$Connected{url: $url}';
 }
 
 /// Permanently closed
@@ -320,6 +326,9 @@ final class SpinifyState$Closed extends SpinifyState {
       identical(this, other) ||
       (other is SpinifyState$Closed &&
           other.timestamp.isAtSameMomentAs(timestamp));
+
+  @override
+  String toString() => r'SpinifyState$Closed{}';
 }
 
 /// Pattern matching for [SpinifyState].

@@ -13,12 +13,11 @@ void main() {
   group('Spinify', () {
     final buffer = SpinifyLogBuffer(size: 10);
 
-    Spinify createFakeClient([WebSocket Function(String)? transport]) =>
+    Spinify createFakeClient([Future<WebSocket> Function(String)? transport]) =>
         Spinify(
           config: SpinifyConfig(
             transportBuilder: ({required url, headers, protocols}) =>
-                Future<WebSocket>.value(
-                    transport?.call(url) ?? WebSocket$Fake()),
+                transport?.call(url) ?? Future.value(WebSocket$Fake()),
             logger: buffer.add,
           ),
         );
@@ -41,7 +40,7 @@ void main() {
 
     test('Change_client_state', () async {
       final transport = WebSocket$Fake(); // ignore: close_sinks
-      final client = createFakeClient((_) => transport..reset());
+      final client = createFakeClient((_) async => transport..reset());
       expect(transport.isClosed, isFalse);
       expect(client.state, isA<SpinifyState$Disconnected>());
       await client.connect('ws://localhost:8000/connection/websocket');
@@ -65,7 +64,7 @@ void main() {
 
     test('Change_client_states', () {
       final transport = WebSocket$Fake(); // ignore: close_sinks
-      final client = createFakeClient((_) => transport..reset());
+      final client = createFakeClient((_) async => transport..reset());
       Stream.fromIterable([
         () => client.connect('ws://localhost:8000/connection/websocket'),
         client.disconnect,
@@ -91,7 +90,7 @@ void main() {
         'Reconnect_after_disconnected_transport',
         () => fakeAsync((async) {
               final transport = WebSocket$Fake();
-              final client = createFakeClient((_) => transport..reset());
+              final client = createFakeClient((_) async => transport..reset());
               unawaited(
                 client.connect('ws://localhost:8000/connection/websocket'),
               );
@@ -109,15 +108,15 @@ void main() {
                       2));
               expect(client.state, isA<SpinifyState$Disconnected>());
               async.elapse(client.config.connectionRetryInterval.max);
-              // TODO: Implement reconnecting
               expect(client.state, isA<SpinifyState$Connected>());
-              client.close();
               expectLater(
                   client.states,
                   emitsInOrder([
                     isA<SpinifyState$Disconnected>(),
-                    isA<SpinifyState$Closed>()
+                    isA<SpinifyState$Closed>(),
+                    emitsDone,
                   ]));
+              client.close();
               async.elapse(client.config.connectionRetryInterval.max);
               expect(client.state, isA<SpinifyState$Closed>());
             }));

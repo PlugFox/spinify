@@ -6,6 +6,7 @@ import 'model/channel_event.dart';
 import 'model/channel_events.dart';
 import 'model/client_info.dart';
 import 'model/codec.dart';
+import 'model/codes.dart';
 import 'model/command.dart';
 import 'model/config.dart';
 import 'model/constant.dart';
@@ -22,6 +23,7 @@ import 'model/transport_interface.dart';
 import 'protobuf/protobuf_codec.dart';
 import 'spinify_interface.dart';
 import 'subscription_interface.dart';
+import 'util/backoff.dart';
 import 'web_socket_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.js_interop) 'web_socket_js.dart'
@@ -286,8 +288,57 @@ final class Spinify implements ISpinify {
   @safe
   void _setUpReconnectTimer() {
     _tearDownReconnectTimer();
-    // TODO: Implement reconnect timer.
-    // Mike Matiunin <plugfox@gmail.com>, 25 October 2024
+    final lastUrl = _metrics.reconnectUrl;
+    if (lastUrl == null) return;
+    final attempt = _metrics.reconnectAttempts ?? 0;
+    final delay = Backoff.nextDelay(
+      attempt,
+      config.connectionRetryInterval.min.inMilliseconds,
+      config.connectionRetryInterval.max.inMilliseconds,
+    );
+    _metrics.nextReconnectAt = DateTime.now().add(delay);
+    config.logger?.call(
+      const SpinifyLogLevel.debug(),
+      'reconnect_delayed',
+      'Setting up reconnect timer to $lastUrl '
+          'after ${delay.inMilliseconds} ms.',
+      {
+        'url': lastUrl,
+        'delay': delay,
+        'attempt': attempt,
+      },
+    );
+    _reconnectTimer = Timer(
+      delay,
+      () {
+        //_nextReconnectionAttempt = null;
+        if (!state.isDisconnected) return;
+        _metrics.reconnectAttempts = attempt + 1;
+        config.logger?.call(
+          const SpinifyLogLevel.config(),
+          'reconnect_attempt',
+          'Reconnecting to $lastUrl after ${delay.inMilliseconds} ms.',
+          {
+            'url': lastUrl,
+            'delay': delay,
+          },
+        );
+        try {
+          _internalReconnect(lastUrl);
+        } on Object catch (error, stackTrace) {
+          _log(
+            const SpinifyLogLevel.error(),
+            'reconnect_error',
+            'Error reconnecting to $lastUrl',
+            <String, Object?>{
+              'url': lastUrl,
+              'error': error,
+              'stackTrace': stackTrace,
+            },
+          );
+        }
+      },
+    );
   }
 
   /// Tear down reconnect timer.
@@ -501,73 +552,23 @@ final class Spinify implements ISpinify {
           return true;
         }(), '...');
         var WebSocket(:int? closeCode, :String? closeReason) = ws;
-        var reconnect = true;
-        switch (closeCode) {
-          case null || <= 0:
-            closeCode = closeCode;
-            closeReason = closeReason;
-            reconnect = true;
-          case 1009:
-            // reconnect is true by default
-            closeCode = 3; // disconnectCodeMessageSizeLimit;
-            closeReason = 'message size limit exceeded';
-            reconnect = true;
-          case < 3000:
-            // We expose codes defined by Centrifuge protocol,
-            // hiding details about transport-specific error codes.
-            // We may have extra optional transportCode field in the future.
-            // reconnect is true by default
-            closeCode = 1; // connectingCodeTransportClosed;
-            closeReason = closeReason;
-            reconnect = true;
-          case >= 3000 && <= 3499:
-            // reconnect is true by default
-            closeCode = closeCode;
-            closeReason = closeReason;
-            reconnect = true;
-          case >= 3500 && <= 3999:
-            // application terminal codes
-            closeCode = closeCode;
-            closeReason = closeReason ?? 'application terminal code';
-            reconnect = false;
-          case >= 4000 && <= 4499:
-            // custom disconnect codes
-            // reconnect is true by default
-            closeCode = closeCode;
-            closeReason = closeReason;
-            reconnect = true;
-          case >= 4500 && <= 4999:
-            // custom disconnect codes
-            // application terminal codes
-            closeCode = closeCode;
-            closeReason = closeReason ?? 'application terminal code';
-            reconnect = false;
-          case >= 5000:
-            // reconnect is true by default
-            closeCode = closeCode;
-            closeReason = closeReason;
-            reconnect = true;
-          default:
-            closeCode = closeCode;
-            closeReason = closeReason;
-            reconnect = false;
-        }
+        final close = SpinifyDisconnectCode.normalize(closeCode, closeReason);
         _log(
           const SpinifyLogLevel.transport(),
           'transport_disconnect',
           'Transport disconnected '
-              '${reconnect ? 'temporarily' : 'permanently'} '
-              'with reason: $closeReason',
+              '${close.reconnect ? 'temporarily' : 'permanently'} '
+              'with reason: ${close.reason}',
           <String, Object?>{
-            'code': closeCode,
-            'reason': closeReason,
-            'reconnect': reconnect,
+            'code': close.code,
+            'reason': close.reason,
+            'reconnect': close.reconnect,
           },
         );
         _internalDisconnect(
-          code: closeCode ?? 1,
-          reason: closeReason ?? 'transport closed',
-          reconnect: reconnect,
+          code: close.code,
+          reason: close.reason,
+          reconnect: close.reconnect,
         );
       }
 
@@ -700,7 +701,7 @@ final class Spinify implements ISpinify {
             // Temporary error.
             _setUpReconnectTimer(); // Retry resubscribe
           } else {
-            // Disable resubscribe timer
+            // Disable resubscribe timer on permanent errors.
             _setState(SpinifyState$Disconnected(temporary: false));
           }
         case SpinifyConnectionException _:
@@ -745,6 +746,10 @@ final class Spinify implements ISpinify {
       _transport?.close(code, reason);
       _transport = null;
 
+      // Update metrics.
+      _metrics.lastDisconnectAt = DateTime.now();
+      _metrics.disconnects++;
+
       // Close all pending replies with error.
       const error = SpinifyReplyException(
         replyCode: 0,
@@ -775,6 +780,9 @@ final class Spinify implements ISpinify {
       if (_readyCompleter case Completer<void> c when !c.isCompleted) {
         c.completeError(error, stackTrace);
       }
+
+      // Reconnect if [reconnect] is true and we have reconnect URL.
+      if (reconnect && _metrics.reconnectUrl != null) _setUpReconnectTimer();
     } on Object catch (error, stackTrace) {
       _log(
         const SpinifyLogLevel.warning(),
