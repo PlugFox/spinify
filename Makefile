@@ -79,7 +79,7 @@ coverage: get ## Generate the coverage report
 		--platform vm --compiler=kernel --coverage=coverage \
 		--reporter=expanded --file-reporter=json:coverage/tests.json \
 		--timeout=10m --concurrency=12 --color \
-			test/unit_test.dart test/smoke_test.dart
+			test/unit_test.dart
 #	@dart test --concurrency=6 --platform vm --coverage=coverage test/
 #	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 	@mv coverage/lcov.info coverage/lcov.base.info
