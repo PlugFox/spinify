@@ -408,7 +408,7 @@ final class Spinify implements ISpinify {
   Future<void> connect(String url) async {
     try {
       await _interactiveConnect(url);
-    } on SpinifyConnectionException catch (error, stackTrace) {
+    } on SpinifyConnectionException {
       rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
