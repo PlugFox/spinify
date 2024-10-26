@@ -747,6 +747,7 @@ final class Spinify implements ISpinify {
         data: result.data,
       ));
 
+      _onReply(result); // Handle connect reply
       handleReply = _onReply; // Switch to normal reply handler
 
       _setUpRefreshConnection();
@@ -1310,11 +1311,15 @@ final class Spinify implements ISpinify {
       if (reply.isResult) {
         if (reply.id case int id when id > 0) {
           final completer = _replies.remove(id);
-          if (completer == null || completer.isCompleted) {
+          if (completer == null) {
+            // Thats okay, we can send some commands asynchronously
+            // and do not wait for reply.
+            // E.g. connection command or ping command.
+          } else if (completer.isCompleted) {
             _log(
               const SpinifyLogLevel.warning(),
               'reply_completer_error',
-              'Reply completer not found or already completed',
+              'Reply completer already completed',
               <String, Object?>{
                 'reply': reply,
               },
