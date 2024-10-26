@@ -57,8 +57,8 @@ sealed class SpinifyReply implements Comparable<SpinifyReply> {
 }
 
 /// Reply result of a command.
-base mixin SpinifyReplyResult<T extends SpinifyCommand> on SpinifyReply {
-  @override
+base mixin SpinifyReplyResult<T extends SpinifyCommand> {
+  /// This is a result of a command.
   bool get isResult => true;
 }
 

@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:fixnum/fixnum.dart' as fixnum;
+import 'package:meta/meta.dart';
+
 import 'model/annotations.dart';
 import 'model/channel_event.dart';
 import 'model/channel_events.dart';
@@ -19,6 +22,8 @@ import 'model/state.dart';
 import 'model/states_stream.dart';
 import 'model/stream_position.dart';
 import 'model/subscription_config.dart';
+import 'model/subscription_state.dart';
+import 'model/subscription_states.dart';
 import 'model/transport_interface.dart';
 import 'protobuf/protobuf_codec.dart';
 import 'spinify_interface.dart';
@@ -115,14 +120,15 @@ final class Spinify implements ISpinify {
   Timer? _refreshTimer;
   Timer? _reconnectTimer;
   Timer? _healthTimer;
+  Timer? _pingTimer;
 
   /// Registry of client subscriptions.
-  final Map<String, SpinifyClientSubscription> _clientSubscriptionRegistry =
-      <String, SpinifyClientSubscription>{};
+  final Map<String, _SpinifyClientSubscriptionImpl>
+      _clientSubscriptionRegistry = <String, _SpinifyClientSubscriptionImpl>{};
 
   /// Registry of server subscriptions.
-  final Map<String, SpinifyServerSubscription> _serverSubscriptionRegistry =
-      <String, SpinifyServerSubscription>{};
+  final Map<String, _SpinifyServerSubscriptionImpl>
+      _serverSubscriptionRegistry = <String, _SpinifyServerSubscriptionImpl>{};
 
   @override
   ({
@@ -142,6 +148,8 @@ final class Spinify implements ISpinify {
 
   /// Log an event with the given [level], [event], [message] and [context].
   @safe
+  @protected
+  @nonVirtual
   void _log(
     SpinifyLogLevel level,
     String event,
@@ -155,6 +163,8 @@ final class Spinify implements ISpinify {
 
   /// Set a new state and notify listeners via [states].
   @safe
+  @protected
+  @nonVirtual
   void _setState(SpinifyState state) {
     if (isClosed) return; // Client is closed, do not notify about states.
     final prev = _metrics.state, next = state;
@@ -188,6 +198,8 @@ final class Spinify implements ISpinify {
 
   /// Counter for command messages.
   @safe
+  @protected
+  @nonVirtual
   int _getNextCommandId() {
     if (_metrics.commandId == kMaxInt) _metrics.commandId = 1;
     return _metrics.commandId++;
@@ -197,6 +209,8 @@ final class Spinify implements ISpinify {
 
   /// Initialization from constructor
   @safe
+  @protected
+  @nonVirtual
   void _init() {
     _setUpHealthCheckTimer();
     _log(
@@ -213,6 +227,8 @@ final class Spinify implements ISpinify {
 
   /// Set up health check timer.
   @safe
+  @protected
+  @nonVirtual
   void _setUpHealthCheckTimer() {
     _tearDownHealthCheckTimer();
 
@@ -273,6 +289,8 @@ final class Spinify implements ISpinify {
 
   /// Tear down health check timer.
   @safe
+  @protected
+  @nonVirtual
   void _tearDownHealthCheckTimer() {
     _healthTimer?.cancel();
     _healthTimer = null;
@@ -280,6 +298,8 @@ final class Spinify implements ISpinify {
 
   /// Set up refresh connection timer.
   @safe
+  @protected
+  @nonVirtual
   void _setUpRefreshConnection() {
     _tearDownRefreshConnection();
     // TODO: Implement refresh connection timer.
@@ -288,6 +308,8 @@ final class Spinify implements ISpinify {
 
   /// Tear down refresh connection timer.
   @safe
+  @protected
+  @nonVirtual
   void _tearDownRefreshConnection() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
@@ -295,6 +317,8 @@ final class Spinify implements ISpinify {
 
   /// Set up reconnect timer.
   @safe
+  @protected
+  @nonVirtual
   void _setUpReconnectTimer() {
     _tearDownReconnectTimer();
     final lastUrl = _metrics.reconnectUrl;
@@ -306,7 +330,7 @@ final class Spinify implements ISpinify {
       config.connectionRetryInterval.max.inMilliseconds,
     );
     _metrics.nextReconnectAt = DateTime.now().add(delay);
-    config.logger?.call(
+    _log(
       const SpinifyLogLevel.debug(),
       'reconnect_delayed',
       'Setting up reconnect timer to $lastUrl '
@@ -323,7 +347,7 @@ final class Spinify implements ISpinify {
         //_nextReconnectionAttempt = null;
         if (!state.isDisconnected) return;
         _metrics.reconnectAttempts = attempt + 1;
-        config.logger?.call(
+        _log(
           const SpinifyLogLevel.config(),
           'reconnect_attempt',
           'Reconnecting to $lastUrl after ${delay.inMilliseconds} ms.',
@@ -352,9 +376,67 @@ final class Spinify implements ISpinify {
 
   /// Tear down reconnect timer.
   @safe
+  @protected
+  @nonVirtual
   void _tearDownReconnectTimer() {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+  }
+
+  /// Start or restart keepalive timer,
+  /// you should restart it after each received ping message.
+  /// Or connection will be closed by timeout.
+  @safe
+  @protected
+  @nonVirtual
+  void _setUpPingTimer() {
+    _tearDownPingTimer();
+    // coverage:ignore-start
+    if (isClosed || !state.isConnected) return;
+    // coverage:ignore-end
+    if (state case SpinifyState$Connected(:Duration? pingInterval)
+        when pingInterval != null && pingInterval > Duration.zero) {
+      _pingTimer = Timer(
+        pingInterval + config.serverPingDelay,
+        () async {
+          // Reconnect if no pong received.
+          if (state case SpinifyState$Connected(:String url)) {
+            config.logger?.call(
+              const SpinifyLogLevel.warning(),
+              'no_pong_reconnect',
+              'No pong from server - reconnecting',
+              <String, Object?>{
+                'url': url,
+                'pingInterval': pingInterval,
+                'serverPingDelay': config.serverPingDelay,
+              },
+            );
+            try {
+              _internalDisconnect(
+                code: const SpinifyDisconnectCode.noPingFromServer(),
+                reason: 'no ping from server',
+                reconnect: true,
+              );
+            } finally {
+              _internalReconnect(url).ignore();
+            }
+          }
+          /* disconnect(
+            SpinifyConnectingCode.noPing,
+            'No ping from server',
+          ); */
+        },
+      );
+    }
+  }
+
+  /// Tear down ping timer.
+  @safe
+  @protected
+  @nonVirtual
+  void _tearDownPingTimer() {
+    _pingTimer?.cancel();
+    _pingTimer = null;
   }
 
   // --- Ready --- //
@@ -385,6 +467,7 @@ final class Spinify implements ISpinify {
 
   /// Plan to do action when client is connected.
   @unsafe
+  @nonVirtual
   Future<T> _doOnReady<T>(Future<T> Function() action) => switch (state) {
         SpinifyState$Connected _ => action(),
         SpinifyState$Connecting _ => ready().then<T>((_) => action()),
@@ -400,6 +483,9 @@ final class Spinify implements ISpinify {
 
   // --- Connection --- //
 
+  @unsafe
+  @protected
+  @nonVirtual
   Future<WebSocket> _webSocketConnect({
     required String url,
     Map<String, String>? headers,
@@ -413,6 +499,7 @@ final class Spinify implements ISpinify {
 
   @unsafe
   @override
+  @nonVirtual
   @Throws([SpinifyConnectionException])
   Future<void> connect(String url) async {
     try {
@@ -432,6 +519,8 @@ final class Spinify implements ISpinify {
 
   /// User initiated connect.
   @unsafe
+  @protected
+  @nonVirtual
   Future<void> _interactiveConnect(String url) async {
     if (isClosed)
       throw const SpinifyConnectionException(
@@ -444,6 +533,8 @@ final class Spinify implements ISpinify {
 
   /// Library initiated connect.
   @unsafe
+  @protected
+  @nonVirtual
   Future<void> _internalReconnect(String url) async {
     final readyCompleter = _readyCompleter = switch (_readyCompleter) {
       Completer<void> value when !value.isCompleted => value,
@@ -734,12 +825,16 @@ final class Spinify implements ISpinify {
 
   @safe
   @override
+  @nonVirtual
   Future<void> disconnect() => _interactiveDisconnect();
 
   /// User initiated disconnect.
   @safe
+  @protected
+  @nonVirtual
   Future<void> _interactiveDisconnect() async {
     _tearDownReconnectTimer();
+    _tearDownPingTimer();
     _metrics.reconnectUrl = null;
     _internalDisconnect(
       code: const SpinifyDisconnectCode.normalClosure(),
@@ -750,6 +845,8 @@ final class Spinify implements ISpinify {
 
   /// Library initiated disconnect.
   @safe
+  @protected
+  @nonVirtual
   void _internalDisconnect({
     required int code,
     required String reason,
@@ -830,6 +927,7 @@ final class Spinify implements ISpinify {
 
   @safe
   @override
+  @nonVirtual
   Future<void> close() async {
     if (state.isClosed) return;
     try {
@@ -857,6 +955,8 @@ final class Spinify implements ISpinify {
   // --- Send --- //
 
   @unsafe
+  @protected
+  @nonVirtual
   @Throws([SpinifySendException])
   Future<void> _sendCommandAsync(SpinifyCommand command) async {
     _log(
@@ -914,6 +1014,8 @@ final class Spinify implements ISpinify {
   }
 
   @unsafe
+  @protected
+  @nonVirtual
   @Throws([SpinifySendException])
   Future<R> _sendCommand<R extends SpinifyReply>(SpinifyCommand command) async {
     _log(
@@ -990,6 +1092,7 @@ final class Spinify implements ISpinify {
 
   @unsafe
   @override
+  @nonVirtual
   @Throws([SpinifySendException])
   Future<void> send(List<int> data) async {
     try {
@@ -1008,7 +1111,9 @@ final class Spinify implements ISpinify {
 
   // --- Remote Procedure Call --- //
 
+  @unsafe
   @override
+  @nonVirtual
   Future<List<int>> rpc(String method, [List<int>? data]) => _doOnReady(
         () => _sendCommand<SpinifyRPCResult>(
           SpinifyRPCRequest(
@@ -1024,21 +1129,26 @@ final class Spinify implements ISpinify {
 
   @safe
   @override
+  @nonVirtual
   SpinifySubscription? getSubscription(String channel) =>
       _clientSubscriptionRegistry[channel] ??
       _serverSubscriptionRegistry[channel];
 
   @safe
   @override
+  @nonVirtual
   SpinifyClientSubscription? getClientSubscription(String channel) =>
       _clientSubscriptionRegistry[channel];
 
   @safe
   @override
+  @nonVirtual
   SpinifyServerSubscription? getServerSubscription(String channel) =>
       _serverSubscriptionRegistry[channel];
 
+  @safe
   @override
+  @nonVirtual
   SpinifyClientSubscription newSubscription(
     String channel, {
     SpinifySubscriptionConfig? config,
@@ -1054,6 +1164,7 @@ final class Spinify implements ISpinify {
 
   // --- Publish --- //
 
+  @unsafe
   @override
   Future<void> publish(String channel, List<int> data) {
     throw UnimplementedError();
@@ -1061,19 +1172,25 @@ final class Spinify implements ISpinify {
 
   // --- Presence --- //
 
+  @unsafe
   @override
+  @nonVirtual
   Future<Map<String, SpinifyClientInfo>> presence(String channel) {
     throw UnimplementedError();
   }
 
+  @unsafe
   @override
+  @nonVirtual
   Future<SpinifyPresenceStats> presenceStats(String channel) {
     throw UnimplementedError();
   }
 
   // --- History --- //
 
+  @unsafe
   @override
+  @nonVirtual
   Future<SpinifyHistory> history(
     String channel, {
     int? limit,
@@ -1085,38 +1202,125 @@ final class Spinify implements ISpinify {
 
   // --- Replies --- //
 
+  @safe
+  @sideEffect
+  @nonVirtual
+  void _onEvent(SpinifyChannelEvent event) {
+    _eventController.add(event); // Add event to the broadcast stream.
+    _log(
+      const SpinifyLogLevel.debug(),
+      'push_received',
+      'Push ${event.type} received',
+      <String, Object?>{
+        'event': event,
+      },
+    );
+    switch (event) {
+      case SpinifyChannelEvent(channel: ''):
+        /* ignore push without channel */
+        break;
+      case SpinifyDisconnect disconnect:
+        _internalDisconnect(
+          code: disconnect.code,
+          reason: disconnect.reason,
+          reconnect: disconnect.reconnect,
+        );
+      case SpinifySubscribe _:
+        // Add server subscription to the registry on subscribe event.
+        _serverSubscriptionRegistry.putIfAbsent(
+            event.channel,
+            () => _SpinifyServerSubscriptionImpl(
+                  client: this,
+                  channel: event.channel,
+                  recoverable: event.recoverable,
+                  epoch: event.since.epoch,
+                  offset: event.since.offset,
+                ))
+          ..onEvent(event)
+          .._setState(SpinifySubscriptionState.subscribed(data: event.data));
+      case SpinifyUnsubscribe _:
+        // Remove server subscription from the registry.
+        _serverSubscriptionRegistry.remove(event.channel)
+          ?..onEvent(event)
+          .._setState(SpinifySubscriptionState.unsubscribed());
+        // Unsubscribe client subscription on unsubscribe event.
+        if (_clientSubscriptionRegistry[event.channel]
+            case _SpinifyClientSubscriptionImpl subscription) {
+          subscription.onEvent(event);
+          if (event.code < 2500) {
+            // Unsubscribe client subscription on unsubscribe event.
+            subscription
+                ._unsubscribe(
+                  code: event.code,
+                  reason: event.reason,
+                  sendUnsubscribe: false,
+                )
+                .ignore();
+          } else {
+            // Resubscribe client subscription on unsubscribe event.
+            subscription._resubscribe().ignore();
+          }
+        }
+      default:
+        // Notify subscription about new event.
+        final sub = _serverSubscriptionRegistry[event.channel] ??
+            _clientSubscriptionRegistry[event.channel];
+        if (sub != null) {
+          sub.onEvent(event);
+          if (event is SpinifyPublication && sub.recoverable) {
+            // Update subscription offset on publication.
+            if (event.offset case fixnum.Int64 newOffset when newOffset > 0)
+              sub.offset = newOffset;
+          }
+        } else {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'subscription_not_found_error',
+            'Subscription ${event.channel} not found for event',
+            <String, Object?>{
+              'channel': event.channel,
+              'event': event,
+            },
+          );
+        }
+    }
+  }
+
   /// Called when [SpinifyReply] received from the server.
   @safe
   @sideEffect
+  @nonVirtual
   void _onReply(SpinifyReply reply) {
     try {
       // coverage:ignore-start
       if (reply.id < 0 || reply.id > _metrics.commandId) {
-        assert(
-            reply.id >= 0 && reply.id <= _metrics.commandId,
-            'Reply ID should be greater or equal to 0 '
-            'and less or equal than command ID');
+        _log(
+          const SpinifyLogLevel.warning(),
+          'reply_id_error',
+          'Reply ID out of range',
+          <String, Object?>{
+            'reply': reply,
+          },
+        );
         return;
       }
       // coverage:ignore-end
+
+      // If reply is a result then find pending reply and complete it.
       if (reply.isResult) {
-        // If reply is a result then find pending reply and complete it.
         if (reply.id case int id when id > 0) {
           final completer = _replies.remove(id);
-          // coverage:ignore-start
           if (completer == null || completer.isCompleted) {
-            assert(
-              completer != null,
-              'Reply completer not found',
-            );
-            assert(
-              completer?.isCompleted == false,
-              'Reply completer already completed',
+            _log(
+              const SpinifyLogLevel.warning(),
+              'reply_completer_error',
+              'Reply completer not found or already completed',
+              <String, Object?>{
+                'reply': reply,
+              },
             );
             return;
-          }
-          // coverage:ignore-end
-          if (reply is SpinifyErrorResult) {
+          } else if (reply is SpinifyErrorResult) {
             completer.completeError(
               SpinifyReplyException(
                 replyCode: reply.code,
@@ -1129,17 +1333,113 @@ final class Spinify implements ISpinify {
             completer.complete(reply);
           }
         }
-      } else if (reply is SpinifyPush) {
-        switch (reply.event) {
-          case SpinifyDisconnect disconnect:
-            _internalDisconnect(
-              code: disconnect.code,
-              reason: disconnect.reason,
-              reconnect: disconnect.reconnect,
-            );
-          default:
-          // TODO: Handle other push events.
-        }
+      }
+
+      // Handle different types of replies.
+      switch (reply) {
+        case SpinifyPush push:
+          _onEvent(push.event);
+        case SpinifyServerPing _:
+          final command = SpinifyPingRequest(timestamp: DateTime.now());
+          _metrics
+            ..lastPingAt = command.timestamp
+            ..receivedPings = _metrics.receivedPings + 1;
+          if (state case SpinifyState$Connected(:bool sendPong) when sendPong) {
+            // No need to handle error in a special way -
+            // if pong can't be sent but connection is closed anyway.
+            _sendCommandAsync(command).ignore();
+          }
+          _log(
+            const SpinifyLogLevel.debug(),
+            'server_ping_received',
+            'Ping from server received, pong sent',
+            <String, Object?>{
+              'ping': reply,
+              'pong': command,
+            },
+          );
+          _setUpPingTimer();
+        case SpinifyConnectResult _:
+          // Update server subscriptions.
+          final newServerSubs =
+              reply.subs ?? <String, SpinifySubscribeResult>{};
+          for (final entry in newServerSubs.entries) {
+            final MapEntry<String, SpinifySubscribeResult>(
+              key: channel,
+              value: value
+            ) = entry;
+            final sub = _serverSubscriptionRegistry.putIfAbsent(
+                channel,
+                () => _SpinifyServerSubscriptionImpl(
+                      client: this,
+                      channel: channel,
+                      recoverable: value.recoverable,
+                      epoch: value.since.epoch,
+                      offset: value.since.offset,
+                    ))
+              .._setState(
+                  SpinifySubscriptionState.subscribed(data: value.data));
+
+            // Notify about new publications.
+            for (var publication in value.publications) {
+              // If publication has wrong channel, fix it.
+              // Thats a workaround because we do not have channel
+              // in the publication in this server SpinifyConnectResult reply.
+              if (publication.channel != channel) {
+                // coverage:ignore-start
+                assert(
+                  publication.channel.isEmpty,
+                  'Publication contains wrong channel',
+                );
+                // coverage:ignore-end
+                publication = publication.copyWith(channel: channel);
+              }
+              _eventController.add(publication);
+              sub.onEvent(publication);
+              // Update subscription offset on publication.
+              if (sub.recoverable) {
+                if (publication.offset case fixnum.Int64 newOffset
+                    when newOffset > sub.offset) {
+                  sub.offset = newOffset;
+                }
+              }
+            }
+          }
+
+          // Remove server subscriptions that are not in the new list.
+          final currentServerSubs = _serverSubscriptionRegistry.keys.toSet();
+          for (final key in currentServerSubs) {
+            if (newServerSubs.containsKey(key)) continue;
+            _serverSubscriptionRegistry.remove(key)
+              ?.._setState(SpinifySubscriptionState.unsubscribed())
+              ..close();
+          }
+
+          // We should resubscribe client subscriptions here.
+          for (final subscription in _clientSubscriptionRegistry.values)
+            subscription._resubscribe().ignore();
+        case SpinifyErrorResult _:
+          break;
+        case SpinifySubscribeResult _:
+          break;
+        case SpinifyUnsubscribeResult _:
+          break;
+        case SpinifyPublishResult _:
+          break;
+        case SpinifyPresenceResult _:
+          break;
+        case SpinifyPresenceStatsResult _:
+          break;
+        case SpinifyHistoryResult _:
+          break;
+        case SpinifyPingResult _:
+          break;
+        case SpinifyRPCResult _:
+          break;
+        case SpinifyRefreshResult _:
+          break;
+        case SpinifySubRefreshResult _:
+          break;
       }
 
       _log(
@@ -1180,4 +1480,661 @@ class _PendingReply<R extends SpinifyReply> {
 
   void completeError(SpinifyReplyException error, StackTrace stackTrace) =>
       _completer.completeError(error, stackTrace);
+}
+
+abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
+  _SpinifySubscriptionBase({
+    required Spinify client,
+    required this.channel,
+    required this.recoverable,
+    required this.epoch,
+    required this.offset,
+  })  : _clientWR = WeakReference<Spinify>(client),
+        _clientConfig = client.config {
+    _metrics = _client._metrics.channels
+        .putIfAbsent(channel, SpinifyMetrics$Channel$Mutable.new);
+  }
+
+  @override
+  final String channel;
+
+  /// Spinify client weak reference.
+  final WeakReference<Spinify> _clientWR;
+
+  /// Spinify client
+  Spinify get _client {
+    final target = _clientWR.target;
+    // coverage:ignore-start
+    if (target == null) {
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Spinify client is do not exist anymore',
+      );
+    }
+    // coverage:ignore-end
+    return target;
+  }
+
+  /// Spinify channel metrics.
+  late final SpinifyMetrics$Channel$Mutable _metrics;
+
+  /// Spinify client configuration.
+  final SpinifyConfig _clientConfig;
+
+  /// Spinify logger.
+  SpinifyLogger? get _logger => _clientConfig.logger;
+
+  final StreamController<SpinifySubscriptionState> _stateController =
+      StreamController<SpinifySubscriptionState>.broadcast();
+
+  final StreamController<SpinifyChannelEvent> _eventController =
+      StreamController<SpinifyChannelEvent>.broadcast();
+
+  Future<T> _sendCommand<T extends SpinifyReply>(
+    SpinifyCommand Function(int nextId) builder,
+  ) =>
+      _client._doOnReady(
+        () => _client._sendCommand<T>(
+          builder(_client._getNextCommandId()),
+        ),
+      );
+
+  @override
+  bool recoverable;
+
+  @override
+  String epoch;
+
+  @override
+  fixnum.Int64 offset;
+
+  @override
+  SpinifySubscriptionState get state => _metrics.state;
+
+  @override
+  SpinifySubscriptionStates get states =>
+      SpinifySubscriptionStates(_stateController.stream);
+
+  @override
+  SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
+      SpinifyChannelEvents(_eventController.stream);
+
+  @sideEffect
+  @mustCallSuper
+  void onEvent(SpinifyChannelEvent event) {
+    // coverage:ignore-start
+    assert(
+      event.channel == channel,
+      'Subscription "$channel" received event for another channel',
+    );
+    // coverage:ignore-end
+    _eventController.add(event);
+    _logger?.call(
+      const SpinifyLogLevel.debug(),
+      'subscription_event_received',
+      'Subscription "$channel" received ${event.type} event',
+      <String, Object?>{
+        'channel': channel,
+        'subscription': this,
+        'event': event,
+        if (event is SpinifyPublication) 'publication': event,
+      },
+    );
+  }
+
+  @mustCallSuper
+  void _setState(SpinifySubscriptionState state) {
+    final previous = _metrics.state;
+    if (previous == state) return;
+    _stateController.add(_metrics.state = state);
+    _logger?.call(
+      const SpinifyLogLevel.config(),
+      'subscription_state_changed',
+      'Subscription "$channel" state changed to ${state.type}',
+      <String, Object?>{
+        'channel': channel,
+        'subscription': this,
+        'previous': previous,
+        'state': state,
+      },
+    );
+  }
+
+  @mustCallSuper
+  @interactive
+  void close() {
+    _stateController.close().ignore();
+    _eventController.close().ignore();
+    // coverage:ignore-start
+    assert(state.isUnsubscribed,
+        'Subscription "$channel" is not unsubscribed before closing');
+    // coverage:ignore-end
+  }
+
+  @override
+  @interactive
+  Future<void> ready() async {
+    if (_client.isClosed)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Client is closed',
+      );
+    if (_metrics.state.isSubscribed) return;
+    if (_stateController.isClosed)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription is closed permanently',
+      );
+    final state = await _stateController.stream
+        .firstWhere((state) => !state.isSubscribing);
+    if (!state.isSubscribed)
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription failed to subscribe',
+      );
+  }
+
+  @override
+  @interactive
+  Future<SpinifyHistory> history({
+    int? limit,
+    SpinifyStreamPosition? since,
+    bool? reverse,
+  }) =>
+      _sendCommand<SpinifyHistoryResult>(
+        (id) => SpinifyHistoryRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+          limit: limit,
+          since: since,
+          reverse: reverse,
+        ),
+      ).then<SpinifyHistory>(
+        (reply) => SpinifyHistory(
+          publications: List<SpinifyPublication>.unmodifiable(
+              reply.publications.map((pub) => pub.copyWith(channel: channel))),
+          since: reply.since,
+        ),
+      );
+
+  @override
+  @interactive
+  Future<Map<String, SpinifyClientInfo>> presence() =>
+      _sendCommand<SpinifyPresenceResult>(
+        (id) => SpinifyPresenceRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+        ),
+      ).then<Map<String, SpinifyClientInfo>>((reply) => reply.presence);
+
+  @override
+  @interactive
+  Future<SpinifyPresenceStats> presenceStats() =>
+      _sendCommand<SpinifyPresenceStatsResult>(
+        (id) => SpinifyPresenceStatsRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+        ),
+      ).then<SpinifyPresenceStats>(
+        (reply) => SpinifyPresenceStats(
+          channel: channel,
+          clients: reply.numClients,
+          users: reply.numUsers,
+        ),
+      );
+
+  @override
+  @interactive
+  Future<void> publish(List<int> data) => _sendCommand<SpinifyPublishResult>(
+        (id) => SpinifyPublishRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+          data: data,
+        ),
+      );
+}
+
+final class _SpinifyServerSubscriptionImpl extends _SpinifySubscriptionBase
+    implements SpinifyServerSubscription {
+  _SpinifyServerSubscriptionImpl({
+    required super.client,
+    required super.channel,
+    required super.recoverable,
+    required super.epoch,
+    required super.offset,
+  });
+
+  @override
+  SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
+      _client.stream.filter(channel: channel);
+}
+
+final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
+    implements SpinifyClientSubscription {
+  _SpinifyClientSubscriptionImpl({
+    required super.client,
+    required super.channel,
+    required this.config,
+  }) : super(
+          recoverable: config.recoverable,
+          epoch: config.since?.epoch ?? '',
+          offset: config.since?.offset ?? fixnum.Int64.ZERO,
+        );
+
+  @override
+  final SpinifySubscriptionConfig config;
+
+  /// Whether the subscription should recover.
+  bool _recover = false;
+
+  /// Interactively subscribes to the channel.
+  @override
+  @interactive
+  Future<void> subscribe() async {
+    // Check if the client is connected
+    switch (_client.state) {
+      case SpinifyState$Connected _:
+        break;
+      case SpinifyState$Connecting _:
+      case SpinifyState$Disconnected _:
+        await _client.ready();
+      case SpinifyState$Closed _:
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Client is closed',
+        );
+    }
+
+    // Check if the subscription is already subscribed
+    switch (state) {
+      case SpinifySubscriptionState$Subscribed _:
+        return;
+      case SpinifySubscriptionState$Subscribing _:
+        await ready();
+      case SpinifySubscriptionState$Unsubscribed _:
+        await _resubscribe();
+    }
+  }
+
+  /// Interactively unsubscribes from the channel.
+  @override
+  @interactive
+  Future<void> unsubscribe([
+    int code = 0,
+    String reason = 'unsubscribe called',
+  ]) =>
+      _unsubscribe(
+        code: code,
+        reason: reason,
+        sendUnsubscribe: true,
+      );
+
+  /// Unsubscribes from the channel.
+  Future<void> _unsubscribe({
+    required int code,
+    required String reason,
+    required bool sendUnsubscribe,
+  }) async {
+    final currentState = _metrics.state;
+    _tearDownResubscribeTimer();
+    _tearDownRefreshSubscriptionTimer();
+    if (currentState.isUnsubscribed) return;
+    _setState(SpinifySubscriptionState$Unsubscribed());
+    _metrics.lastUnsubscribeAt = DateTime.now();
+    _metrics.unsubscribes++;
+    try {
+      if (sendUnsubscribe &&
+          currentState.isSubscribed &&
+          _client.state.isConnected) {
+        await _sendCommand<SpinifyUnsubscribeResult>(
+          (id) => SpinifyUnsubscribeRequest(
+            id: id,
+            channel: channel,
+            timestamp: DateTime.now(),
+          ),
+        );
+      }
+    } on Object catch (error, stackTrace) {
+      _logger?.call(
+        const SpinifyLogLevel.error(),
+        'subscription_unsubscribe_error',
+        'Subscription "$channel" failed to unsubscribe',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': this,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      _client._transport?.close(4, 'unsubscribe error');
+      if (error is SpinifyException) rethrow;
+      Error.throwWithStackTrace(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Error while unsubscribing',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
+
+  /// `SubscriptionImpl{}._resubscribe()` from `centrifuge` package
+  Future<void> _resubscribe() async {
+    if (!_metrics.state.isUnsubscribed) return;
+    try {
+      _setState(SpinifySubscriptionState$Subscribing());
+
+      final token = await config.getToken?.call();
+      // Token can be null if it is not required for subscription.
+      if (token != null && token.length <= 5) {
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription token is empty',
+        );
+      }
+
+      final data = await config.getPayload?.call();
+
+      final recover =
+          _recover && offset > fixnum.Int64.ZERO && epoch.isNotEmpty;
+
+      final result = await _sendCommand<SpinifySubscribeResult>(
+        (id) => SpinifySubscribeRequest(
+          id: id,
+          channel: channel,
+          timestamp: DateTime.now(),
+          token: token,
+          recoverable: recoverable,
+          recover: recover,
+          offset: recover ? offset : null,
+          epoch: recover ? epoch : null,
+          positioned: config.positioned,
+          joinLeave: config.joinLeave,
+          data: data,
+        ),
+      );
+
+      if (state.isUnsubscribed) {
+        _logger?.call(
+          const SpinifyLogLevel.debug(),
+          'subscription_resubscribe_skipped',
+          'Subscription "$channel" resubscribe skipped, '
+              'subscription is unsubscribed.',
+          <String, Object?>{
+            'channel': channel,
+            'subscription': this,
+          },
+        );
+        await _unsubscribe(
+          code: 0,
+          reason: 'resubscribe skipped',
+          sendUnsubscribe: false,
+        );
+      }
+
+      // If subscription is recoverable and server sends recoverable flag
+      // then we should update epoch and offset values.
+      if (result.recoverable) {
+        _recover = true;
+        epoch = result.since.epoch;
+        offset = result.since.offset;
+      }
+
+      _setState(SpinifySubscriptionState$Subscribed(data: result.data));
+
+      // Set up refresh subscription timer if needed.
+      if (result.expires) {
+        if (result.ttl case DateTime ttl when ttl.isAfter(DateTime.now())) {
+          _setUpRefreshSubscriptionTimer(ttl: ttl);
+        } else {
+          // coverage:ignore-start
+          assert(
+            false,
+            'Subscription "$channel" has invalid TTL: ${result.ttl}',
+          );
+          // coverage:ignore-end
+        }
+      }
+
+      // Handle received publications and update offset.
+      for (final pub in result.publications) {
+        _client._eventController.add(pub);
+        onEvent(pub);
+        if (pub.offset case fixnum.Int64 value when value > offset) {
+          offset = value;
+        }
+      }
+
+      _onSubscribed(); // Successful subscription completed
+
+      _logger?.call(
+        const SpinifyLogLevel.config(),
+        'subscription_subscribed',
+        'Subscription "$channel" subscribed',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': this,
+        },
+      );
+    } on Object catch (error, stackTrace) {
+      _logger?.call(
+        const SpinifyLogLevel.error(),
+        'subscription_resubscribe_error',
+        'Subscription "$channel" failed to resubscribe',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': this,
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      switch (error) {
+        case SpinifyErrorResult result:
+          if (result.code == 109) {
+            _setUpResubscribeTimer(); // Token expired error, retry resubscribe
+          } else if (result.temporary) {
+            _setUpResubscribeTimer(); // Temporary error, retry resubscribe
+          } else {
+            // Disable resubscribe timer and unsubscribe
+            _unsubscribe(
+              code: result.code,
+              reason: result.message,
+              sendUnsubscribe: false,
+            ).ignore();
+          }
+        case SpinifySubscriptionException _:
+          _setUpResubscribeTimer(); // Some spinify exception, retry resubscribe
+          rethrow;
+        default:
+          _setUpResubscribeTimer(); // Unknown error, retry resubscribe
+      }
+      Error.throwWithStackTrace(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Failed to resubscribe to "$channel"',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
+
+  /// Successful subscription completed.
+  void _onSubscribed() {
+    _tearDownResubscribeTimer();
+    _metrics.lastSubscribeAt = DateTime.now();
+    _metrics.subscribes++;
+  }
+
+  /// Resubscribe timer.
+  Timer? _resubscribeTimer;
+
+  /// Set up resubscribe timer.
+  void _setUpResubscribeTimer() {
+    _resubscribeTimer?.cancel();
+    final attempt = _metrics.resubscribeAttempts ?? 0;
+    final delay = Backoff.nextDelay(
+      attempt,
+      _client.config.connectionRetryInterval.min.inMilliseconds,
+      _client.config.connectionRetryInterval.max.inMilliseconds,
+    );
+    _metrics.resubscribeAttempts = attempt + 1;
+    if (delay <= Duration.zero) {
+      if (!state.isUnsubscribed) return;
+      _logger?.call(
+        const SpinifyLogLevel.config(),
+        'subscription_resubscribe_attempt',
+        'Resubscibing to $channel immediately.',
+        {
+          'channel': channel,
+          'delay': delay,
+          'subscription': this,
+          'attempts': attempt,
+        },
+      );
+      Future<void>.sync(subscribe).ignore();
+      return;
+    }
+    _logger?.call(
+      const SpinifyLogLevel.debug(),
+      'subscription_resubscribe_delayed',
+      'Setting up resubscribe timer for $channel '
+          'after ${delay.inMilliseconds} ms.',
+      {
+        'channel': channel,
+        'delay': delay,
+        'subscription': this,
+        'attempts': attempt,
+      },
+    );
+    _metrics.nextResubscribeAt = DateTime.now().add(delay);
+    _resubscribeTimer = Timer(delay, () {
+      if (!state.isUnsubscribed) return;
+      _logger?.call(
+        const SpinifyLogLevel.debug(),
+        'subscription_resubscribe_attempt',
+        'Resubscribing to $channel after ${delay.inMilliseconds} ms.',
+        {
+          'channel': channel,
+          'subscription': this,
+          'attempts': attempt,
+        },
+      );
+      Future<void>.sync(_resubscribe).ignore();
+    });
+  }
+
+  /// Tear down resubscribe timer.
+  void _tearDownResubscribeTimer() {
+    _metrics
+      ..resubscribeAttempts = 0
+      ..nextResubscribeAt = null;
+    _resubscribeTimer?.cancel();
+    _resubscribeTimer = null;
+  }
+
+  /// Refresh subscription timer.
+  Timer? _refreshTimer;
+
+  /// Set up refresh subscription timer.
+  void _setUpRefreshSubscriptionTimer({required DateTime ttl}) {
+    _tearDownRefreshSubscriptionTimer();
+    _metrics.ttl = ttl;
+    _refreshTimer = Timer(ttl.difference(DateTime.now()), _refreshToken);
+  }
+
+  /// Tear down refresh subscription timer.
+  void _tearDownRefreshSubscriptionTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    _metrics.ttl = null;
+  }
+
+  /// Refresh subscription token.
+  void _refreshToken() => runZonedGuarded<void>(
+        () async {
+          _tearDownRefreshSubscriptionTimer();
+          if (!state.isSubscribed || !_client.state.isConnected) return;
+          final token = await config.getToken?.call();
+          if (token == null || token.isEmpty) {
+            throw SpinifySubscriptionException(
+              channel: channel,
+              message: 'Token is empty',
+            );
+          }
+          final result = await _sendCommand<SpinifyRefreshResult>(
+            (id) => SpinifySubRefreshRequest(
+              id: id,
+              channel: channel,
+              timestamp: DateTime.now(),
+              token: token,
+            ),
+          );
+
+          DateTime? newTtl;
+          if (result.expires) {
+            if (result.ttl case DateTime ttl when ttl.isAfter(DateTime.now())) {
+              newTtl = ttl;
+              _setUpRefreshSubscriptionTimer(ttl: ttl);
+            } else {
+              // coverage:ignore-start
+              assert(
+                false,
+                'Subscription "$channel" has invalid TTL: ${result.ttl}',
+              );
+              // coverage:ignore-end
+            }
+          }
+
+          _logger?.call(
+            const SpinifyLogLevel.debug(),
+            'subscription_refresh_token',
+            'Subscription "$channel" token refreshed',
+            <String, Object?>{
+              'channel': channel,
+              'subscription': this,
+              if (newTtl != null) 'ttl': newTtl,
+            },
+          );
+        },
+        (error, stackTrace) {
+          _logger?.call(
+            const SpinifyLogLevel.error(),
+            'subscription_refresh_token_error',
+            'Subscription "$channel" failed to refresh token',
+            <String, Object?>{
+              'channel': channel,
+              'subscription': this,
+              'error': error,
+              'stackTrace': stackTrace,
+            },
+          );
+
+          // Calculate new TTL for refresh subscription timer
+          late final ttl =
+              DateTime.now().add(Backoff.nextDelay(0, 5 * 1000, 10 * 1000));
+          switch (error) {
+            case SpinifyErrorResult result:
+              if (result.temporary) {
+                _setUpRefreshSubscriptionTimer(ttl: ttl);
+              } else {
+                // Disable refresh subscription timer and unsubscribe
+                _unsubscribe(
+                  code: result.code,
+                  reason: result.message,
+                  sendUnsubscribe: true,
+                ).ignore();
+              }
+            case SpinifySubscriptionException _:
+              _setUpRefreshSubscriptionTimer(ttl: ttl);
+            default:
+              _setUpRefreshSubscriptionTimer(ttl: ttl);
+          }
+        },
+      );
 }

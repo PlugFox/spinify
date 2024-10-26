@@ -343,6 +343,10 @@ void main() {
           expect(client.subscriptions, hasLength(2));
           expect(client.getServerSubscription('public:chat'), isNotNull);
           expect(client.getServerSubscription('personal:user#42'), isNotNull);
+          expect(client.getSubscription('public:chat'), isNotNull);
+          expect(client.getSubscription('personal:user#42'), isNotNull);
+          expect(client.getServerSubscription('unknown'), isNull);
+          expect(client.getSubscription('unknown'), isNull);
           client.close();
         },
       ),

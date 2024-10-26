@@ -26,11 +26,17 @@ import 'package:meta/meta.dart';
 /// Library users supposed to use codes in range 4000..4999 for creating custom
 /// disconnects.
 extension type const SpinifyDisconnectCode(int code) implements int {
-  // --- 0..2999 Internal client-side and transport specific codes --- //
+  // --- 0..99 Internal client-side and transport specific codes --- //
 
   /// Disconnect called explicitly by the client.
   @literal
   const SpinifyDisconnectCode.disconnect() : code = 0;
+
+  /// Disconnect due to omitted ping from the server.
+  @literal
+  const SpinifyDisconnectCode.noPingFromServer() : code = 99;
+
+  // --- 0..99 Internal server-side transport specific codes --- //
 
   /// Error Internal means server error,
   /// if returned this is a signal that something went wrong with the server
@@ -100,6 +106,8 @@ extension type const SpinifyDisconnectCode(int code) implements int {
   @literal
   const SpinifyDisconnectCode.unrecoverablePosition() : code = 112;
 
+  // --- Web socket closures --- //
+
   /// Normal closure.
   @literal
   const SpinifyDisconnectCode.normalClosure() : code = 1000;
@@ -125,6 +133,13 @@ extension type const SpinifyDisconnectCode(int code) implements int {
             2 => (
                 code: const SpinifyDisconnectCode(2),
                 reason: reason ?? 'bad protocol',
+                reconnect: true,
+              ),
+
+            /// Disconnect due to omitted ping from the server.
+            99 => (
+                code: const SpinifyDisconnectCode(99),
+                reason: reason ?? 'no ping from server',
                 reconnect: true,
               ),
 
