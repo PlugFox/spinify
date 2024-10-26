@@ -4,13 +4,16 @@ import 'dart:convert';
 import 'package:fake_async/fake_async.dart';
 import 'package:mockito/annotations.dart';
 import 'package:spinify/spinify.dart';
+import 'package:spinify/src/protobuf/client.pb.dart' as pb;
 import 'package:test/test.dart';
 
+import 'codecs.dart';
 import 'web_socket_fake.dart';
 
 @GenerateNiceMocks([MockSpec<WebSocket>(as: #MockWebSocket)])
 void main() {
   group('Spinify', () {
+    const url = 'ws://localhost:8000/connection/websocket';
     final buffer = SpinifyLogBuffer(size: 10);
 
     Spinify createFakeClient([Future<WebSocket> Function(String)? transport]) =>
@@ -22,70 +25,82 @@ void main() {
           ),
         );
 
-    test('Create_and_close_client', () async {
-      final client = createFakeClient();
-      expect(client.isClosed, isFalse);
-      expect(client.state, isA<SpinifyState$Disconnected>());
-      await client.close();
-      expect(client.state, isA<SpinifyState$Closed>());
-      expect(client.isClosed, isTrue);
-    });
+    test(
+      'Create_and_close_client',
+      () async {
+        final client = createFakeClient();
+        expect(client.isClosed, isFalse);
+        expect(client.state, isA<SpinifyState$Disconnected>());
+        await client.close();
+        expect(client.state, isA<SpinifyState$Closed>());
+        expect(client.isClosed, isTrue);
+      },
+    );
 
-    test('Create_and_close_multiple_clients', () async {
-      final clients = List.generate(10, (_) => createFakeClient());
-      expect(clients.every((client) => !client.isClosed), isTrue);
-      await Future.wait(clients.map((client) => client.close()));
-      expect(clients.every((client) => client.isClosed), isTrue);
-    });
+    test(
+      'Create_and_close_multiple_clients',
+      () async {
+        final clients = List.generate(10, (_) => createFakeClient());
+        expect(clients.every((client) => !client.isClosed), isTrue);
+        await Future.wait(clients.map((client) => client.close()));
+        expect(clients.every((client) => client.isClosed), isTrue);
+      },
+    );
 
-    test('Change_client_state', () async {
-      final transport = WebSocket$Fake(); // ignore: close_sinks
-      final client = createFakeClient((_) async => transport..reset());
-      expect(transport.isClosed, isFalse);
-      expect(client.state, isA<SpinifyState$Disconnected>());
-      await client.connect('ws://localhost:8000/connection/websocket');
-      expect(client.state, isA<SpinifyState$Connected>());
-      await client.disconnect();
-      expect(
-        client.state,
-        isA<SpinifyState$Disconnected>().having(
-          (s) => s.temporary,
-          'temporary',
-          isFalse,
-        ),
-      );
-      await client.connect('ws://localhost:8000/connection/websocket');
-      expect(client.state, isA<SpinifyState$Connected>());
-      await client.close();
-      expect(client.state, isA<SpinifyState$Closed>());
-      expect(client.isClosed, isTrue);
-      expect(transport.isClosed, isTrue);
-      expect(transport.closeCode, equals(1000));
-    });
+    test(
+      'Change_client_state',
+      () async {
+        final transport = WebSocket$Fake(); // ignore: close_sinks
+        final client = createFakeClient((_) async => transport..reset());
+        expect(transport.isClosed, isFalse);
+        expect(client.state, isA<SpinifyState$Disconnected>());
+        await client.connect(url);
+        expect(client.state, isA<SpinifyState$Connected>());
+        await client.disconnect();
+        expect(
+          client.state,
+          isA<SpinifyState$Disconnected>().having(
+            (s) => s.temporary,
+            'temporary',
+            isFalse,
+          ),
+        );
+        await client.connect(url);
+        expect(client.state, isA<SpinifyState$Connected>());
+        await client.close();
+        expect(client.state, isA<SpinifyState$Closed>());
+        expect(client.isClosed, isTrue);
+        expect(transport.isClosed, isTrue);
+        expect(transport.closeCode, equals(1000));
+      },
+    );
 
-    test('Change_client_states', () {
-      final transport = WebSocket$Fake(); // ignore: close_sinks
-      final client = createFakeClient((_) async => transport..reset());
-      Stream.fromIterable([
-        () => client.connect('ws://localhost:8000/connection/websocket'),
-        client.disconnect,
-        () => client.connect('ws://localhost:8000/connection/websocket'),
-        client.disconnect,
-        client.close,
-      ]).asyncMap(Future.new).drain<void>();
-      expect(client.state, isA<SpinifyState$Disconnected>());
-      expectLater(
-          client.states,
-          emitsInOrder([
-            isA<SpinifyState$Connecting>(),
-            isA<SpinifyState$Connected>(),
-            isA<SpinifyState$Disconnected>(),
-            isA<SpinifyState$Connecting>(),
-            isA<SpinifyState$Connected>(),
-            isA<SpinifyState$Disconnected>(),
-            isA<SpinifyState$Closed>()
-          ]));
-    });
+    test(
+      'Change_client_states',
+      () {
+        final transport = WebSocket$Fake(); // ignore: close_sinks
+        final client = createFakeClient((_) async => transport..reset());
+        Stream.fromIterable([
+          () => client.connect(url),
+          client.disconnect,
+          () => client.connect(url),
+          client.disconnect,
+          client.close,
+        ]).asyncMap(Future.new).drain<void>();
+        expect(client.state, isA<SpinifyState$Disconnected>());
+        expectLater(
+            client.states,
+            emitsInOrder([
+              isA<SpinifyState$Connecting>(),
+              isA<SpinifyState$Connected>(),
+              isA<SpinifyState$Disconnected>(),
+              isA<SpinifyState$Connecting>(),
+              isA<SpinifyState$Connected>(),
+              isA<SpinifyState$Disconnected>(),
+              isA<SpinifyState$Closed>()
+            ]));
+      },
+    );
 
     test(
       'Reconnect_after_disconnected_transport',
@@ -93,7 +108,6 @@ void main() {
         (async) {
           final transport = WebSocket$Fake();
           final client = createFakeClient((_) async => transport..reset());
-          const url = 'ws://localhost:8000/connection/websocket';
           unawaited(client.connect(url));
           expect(
             client.state,
@@ -167,68 +181,178 @@ void main() {
     );
 
     test(
-        'Rpc_requests',
-        () => fakeAsync((async) {
-              final client = createFakeClient()
-                ..connect('ws://localhost:8000/connection/websocket');
-              expect(client.state, isA<SpinifyState$Connecting>());
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Connected>());
+      'Rpc_requests',
+      () => fakeAsync(
+        (async) {
+          final ws = WebSocket$Fake(); // ignore: close_sinks
+          final client = createFakeClient((_) async => ws..reset())
+            ..connect(url);
+          expect(client.state, isA<SpinifyState$Connecting>());
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
 
-              // Send a request
-              expect(
-                client.rpc('echo', utf8.encode('Hello, World!')),
-                completion(isA<List<int>>().having(
-                  (data) => utf8.decode(data),
-                  'data',
-                  equals('Hello, World!'),
-                )),
-              );
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Connected>());
+          // Intercept the onAdd callback for echo RPC
+          var fn = ws.onAdd;
+          ws.onAdd = (bytes, sink) {
+            final command = ProtobufCodec.decode(pb.Command(), bytes);
+            if (command.hasRpc()) {
+              expect(command.rpc.method, anyOf('echo', 'getCurrentYear'));
+              switch (command.rpc.method) {
+                case 'echo':
+                  final data = utf8.decode(command.rpc.data);
+                  final reply = pb.Reply(
+                    id: command.id,
+                    rpc: pb.RPCResult(
+                      data: utf8.encode(data),
+                    ),
+                  );
+                  scheduleMicrotask(
+                      () => sink.add(ProtobufCodec.encode(reply)));
+                default:
+                  return fn(bytes, sink);
+              }
+            } else {
+              fn(bytes, sink);
+            }
+          };
 
-              // Send 1000 requests
-              for (var i = 0; i < 1000; i++) {
-                expect(
-                  client.rpc('echo', utf8.encode(i.toString())),
-                  completion(isA<List<int>>().having(
-                    (data) => utf8.decode(data),
-                    'data',
-                    equals(i.toString()),
-                  )),
+          // Send a request
+          expect(
+            client.rpc('echo', utf8.encode('Hello, World!')),
+            completion(isA<List<int>>().having(
+              (data) => utf8.decode(data),
+              'data',
+              equals('Hello, World!'),
+            )),
+          );
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+
+          // Send 1000 requests
+          for (var i = 0; i < 1000; i++) {
+            expect(
+              client.rpc('echo', utf8.encode(i.toString())),
+              completion(isA<List<int>>().having(
+                (data) => utf8.decode(data),
+                'data',
+                equals(i.toString()),
+              )),
+            );
+          }
+
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+          client.disconnect();
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Disconnected>());
+          client.connect(url);
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+
+          // Intercept the onAdd callback for getCurrentYear RPC
+          ws.onAdd = (bytes, sink) {
+            final command = ProtobufCodec.decode(pb.Command(), bytes);
+            if (command.hasRpc()) {
+              expect(command.rpc.method, anyOf('echo', 'getCurrentYear'));
+              switch (command.rpc.method) {
+                case 'getCurrentYear':
+                  final reply = pb.Reply(
+                    id: command.id,
+                    rpc: pb.RPCResult(
+                      data: utf8
+                          .encode(jsonEncode({'year': DateTime.now().year})),
+                    ),
+                  );
+                  scheduleMicrotask(
+                      () => sink.add(ProtobufCodec.encode(reply)));
+                default:
+                  return fn(bytes, sink);
+              }
+            } else {
+              fn(bytes, sink);
+            }
+          };
+
+          // Another request
+          expect(
+            client.rpc('getCurrentYear', <int>[]),
+            completion(isA<List<int>>().having(
+              (data) => jsonDecode(utf8.decode(data))['year'],
+              'year',
+              DateTime.now().year,
+            )),
+          );
+          async.elapse(client.config.timeout);
+
+          expect(client.state, isA<SpinifyState$Connected>());
+          client.close();
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Closed>());
+        },
+      ),
+    );
+
+    test(
+      'Server_subscriptions',
+      () => fakeAsync(
+        (async) {
+          final ws = WebSocket$Fake(); // ignore: close_sinks
+          final client = createFakeClient((_) async => ws..reset());
+
+          ws.onAdd = (bytes, sink) {
+            final command = ProtobufCodec.decode(pb.Command(), bytes);
+            scheduleMicrotask(() {
+              if (command.hasConnect()) {
+                sink.add(
+                  ProtobufCodec.encode(
+                    pb.Reply(
+                      id: command.id,
+                      connect: pb.ConnectResult(
+                        client: 'fake',
+                        version: '0.0.1',
+                        expires: false,
+                        ttl: null,
+                        data: null,
+                        subs: <String, pb.SubscribeResult>{
+                          'public:chat': pb.SubscribeResult(
+                            expires: false,
+                            ttl: null,
+                            data: [],
+                          ),
+                          'personal:user#42': pb.SubscribeResult(
+                            expires: false,
+                            ttl: null,
+                            data: [],
+                          ),
+                        },
+                        ping: 600,
+                        pong: false,
+                        session: 'fake',
+                        node: 'fake',
+                      ),
+                    ),
+                  ),
                 );
               }
+            });
+          };
 
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Connected>());
-              client.disconnect();
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Disconnected>());
-              client.connect('ws://localhost:8000/connection/websocket');
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Connected>());
-
-              // Another request
-              expect(
-                client.rpc('getCurrentYear', <int>[]),
-                completion(isA<List<int>>().having(
-                  (data) => jsonDecode(utf8.decode(data))['year'],
-                  'year',
-                  DateTime.now().year,
-                )),
-              );
-              async.elapse(client.config.timeout);
-
-              expect(client.state, isA<SpinifyState$Connected>());
-              client.close();
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Closed>());
-            }));
+          client.connect(url);
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+          expect(client.subscriptions, hasLength(2));
+          expect(client.getServerSubscription('public:chat'), isNotNull);
+          expect(client.getServerSubscription('personal:user#42'), isNotNull);
+          client.close();
+        },
+      ),
+    );
 
     test(
         'Metrics',
         () => fakeAsync((async) {
-              final client = createFakeClient();
+              final ws = WebSocket$Fake(); // ignore: close_sinks
+              final client = createFakeClient((_) async => ws..reset());
               expect(() => client.metrics, returnsNormally);
               expect(
                   client.metrics,
@@ -264,7 +388,7 @@ void main() {
                       equals(Int64.ZERO),
                     ),
                   ]));
-              client.connect('ws://localhost:8000/connection/websocket');
+              client.connect(url);
               async.elapse(client.config.timeout);
               expect(
                   client.metrics,

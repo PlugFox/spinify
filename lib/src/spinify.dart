@@ -667,9 +667,11 @@ final class Spinify implements ISpinify {
         );
       } else {
         readyCompleter.complete();
+        _readyCompleter = null;
       }
 
-      _readyCompleter = null;
+      _metrics.lastConnectAt = DateTime.now();
+      _metrics.connects++;
 
       _log(
         const SpinifyLogLevel.config(),
@@ -756,9 +758,11 @@ final class Spinify implements ISpinify {
     try {
       _tearDownRefreshConnection();
 
-      // Close transport.
+      // Unsuscribe from reply messages.
+      // To ignore last messages and done event from transport.
       _replySubscription?.cancel().ignore();
       _replySubscription = null;
+      // Close transport.
       _transport?.close(code, reason);
       _transport = null;
 
@@ -1005,9 +1009,16 @@ final class Spinify implements ISpinify {
   // --- Remote Procedure Call --- //
 
   @override
-  Future<List<int>> rpc(String method, [List<int>? data]) {
-    throw UnimplementedError();
-  }
+  Future<List<int>> rpc(String method, [List<int>? data]) => _doOnReady(
+        () => _sendCommand<SpinifyRPCResult>(
+          SpinifyRPCRequest(
+            id: _getNextCommandId(),
+            timestamp: DateTime.now(),
+            method: method,
+            data: data ?? const <int>[],
+          ),
+        ).then<List<int>>((reply) => reply.data),
+      );
 
   // --- Subscriptions and Channels --- //
 
