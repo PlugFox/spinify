@@ -60,6 +60,7 @@ void main() {
       expect(client.state, isA<SpinifyState$Closed>());
       expect(client.isClosed, isTrue);
       expect(transport.isClosed, isTrue);
+      expect(transport.closeCode, equals(1000));
     });
 
     test('Change_client_states', () {
@@ -87,39 +88,83 @@ void main() {
     });
 
     test(
-        'Reconnect_after_disconnected_transport',
-        () => fakeAsync((async) {
-              final transport = WebSocket$Fake();
-              final client = createFakeClient((_) async => transport..reset());
-              unawaited(
-                client.connect('ws://localhost:8000/connection/websocket'),
-              );
-              expect(client.state, isA<SpinifyState$Connecting>());
-              async.elapse(client.config.timeout);
-              expect(client.state, isA<SpinifyState$Connected>());
-              expect(transport, isNotNull);
-              expect(transport, isA<WebSocket$Fake>());
-              transport.close();
-              async.elapse(const Duration(milliseconds: 50));
-              expect(client.state, isA<SpinifyState$Disconnected>());
-              async.elapse(Duration(
-                  milliseconds: client
-                          .config.connectionRetryInterval.min.inMilliseconds ~/
+      'Reconnect_after_disconnected_transport',
+      () => fakeAsync(
+        (async) {
+          final transport = WebSocket$Fake();
+          final client = createFakeClient((_) async => transport..reset());
+          const url = 'ws://localhost:8000/connection/websocket';
+          unawaited(client.connect(url));
+          expect(
+            client.state,
+            isA<SpinifyState$Connecting>().having(
+              (s) => s.url,
+              'url',
+              equals(url),
+            ),
+          );
+          async.elapse(client.config.timeout);
+          expect(
+            client.state,
+            isA<SpinifyState$Connected>().having(
+              (s) => s.url,
+              'url',
+              equals(url),
+            ),
+          );
+          expect(transport, isNotNull);
+          expect(transport, isA<WebSocket$Fake>());
+          transport.close();
+          async.elapse(const Duration(milliseconds: 50));
+          expect(
+            client.state,
+            isA<SpinifyState$Disconnected>().having(
+              (s) => s.temporary,
+              'temporary',
+              isTrue,
+            ),
+          );
+          async.elapse(Duration(
+              milliseconds:
+                  client.config.connectionRetryInterval.min.inMilliseconds ~/
                       2));
-              expect(client.state, isA<SpinifyState$Disconnected>());
-              async.elapse(client.config.connectionRetryInterval.max);
-              expect(client.state, isA<SpinifyState$Connected>());
-              expectLater(
-                  client.states,
-                  emitsInOrder([
-                    isA<SpinifyState$Disconnected>(),
-                    isA<SpinifyState$Closed>(),
-                    emitsDone,
-                  ]));
-              client.close();
-              async.elapse(client.config.connectionRetryInterval.max);
-              expect(client.state, isA<SpinifyState$Closed>());
-            }));
+          expect(
+            client.state,
+            isA<SpinifyState$Disconnected>().having(
+              (s) => s.temporary,
+              'temporary',
+              isTrue,
+            ),
+          );
+          async.elapse(client.config.connectionRetryInterval.max);
+          expect(
+            client.state,
+            isA<SpinifyState$Connected>().having(
+              (s) => s.url,
+              'url',
+              equals(url),
+            ),
+          );
+          expectLater(
+            client.states,
+            emitsInOrder(
+              [
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
+                isA<SpinifyState$Closed>(),
+                emitsDone,
+              ],
+            ),
+          );
+          client.close();
+          async.elapse(client.config.connectionRetryInterval.max);
+          expect(client.state, isA<SpinifyState$Closed>());
+        },
+      ),
+    );
 
     test(
         'Rpc_requests',

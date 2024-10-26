@@ -131,6 +131,7 @@ class WebSocket$Fake implements WebSocket {
   void close([int? code, String? reason]) {
     _closeCode = code;
     _closeReason = reason;
+    _isClosed = true;
     _socket!.close().ignore();
   }
 

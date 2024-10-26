@@ -100,6 +100,10 @@ extension type const SpinifyDisconnectCode(int code) implements int {
   @literal
   const SpinifyDisconnectCode.unrecoverablePosition() : code = 112;
 
+  /// Normal closure.
+  @literal
+  const SpinifyDisconnectCode.normalClosure() : code = 1000;
+
   /// Normalize disconnect code and reason.
   @experimental
   static ({SpinifyDisconnectCode code, String reason, bool reconnect})
@@ -230,6 +234,13 @@ extension type const SpinifyDisconnectCode(int code) implements int {
             112 => (
                 code: const SpinifyDisconnectCode(112),
                 reason: reason ?? 'unrecoverable position',
+                reconnect: true,
+              ),
+
+            /// Normal closure.
+            1000 => (
+                code: const SpinifyDisconnectCode(1000),
+                reason: reason ?? 'normal closure',
                 reconnect: true,
               ),
 

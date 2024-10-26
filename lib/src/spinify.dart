@@ -83,6 +83,7 @@ final class Spinify implements ISpinify {
 
   /// Current WebSocket transport.
   WebSocket? _transport;
+  StreamSubscription<SpinifyReply>? _replySubscription;
 
   /// Internal mutable metrics. Also it's container for Spinify's state.
   final SpinifyMetrics$Mutable _metrics = SpinifyMetrics$Mutable();
@@ -442,8 +443,8 @@ final class Spinify implements ISpinify {
     };
     if (state.isConnected || state.isConnecting) {
       _internalDisconnect(
-        code: 0,
-        reason: 'reconnect called while already connected or connecting',
+        code: const SpinifyDisconnectCode.normalClosure(),
+        reason: 'normal closure',
         reconnect: false,
       );
     }
@@ -466,6 +467,10 @@ final class Spinify implements ISpinify {
       assert(
         _transport == null,
         'Transport should be null',
+      );
+      assert(
+        _replySubscription == null,
+        'Reply subscription should be null',
       );
       _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
       assert(state.isConnecting, 'State should be connecting');
@@ -572,7 +577,8 @@ final class Spinify implements ISpinify {
         );
       }
 
-      ws.stream.transform<SpinifyReply>(StreamTransformer.fromHandlers(
+      _replySubscription =
+          ws.stream.transform<SpinifyReply>(StreamTransformer.fromHandlers(
         handleData: (data, sink) {
           _metrics
             ..bytesReceived += data.length
@@ -726,8 +732,8 @@ final class Spinify implements ISpinify {
     _tearDownReconnectTimer();
     _metrics.reconnectUrl = null;
     _internalDisconnect(
-      code: 0,
-      reason: 'disconnect interactively called by client',
+      code: const SpinifyDisconnectCode.normalClosure(),
+      reason: 'normal closure',
       reconnect: false,
     );
   }
@@ -743,6 +749,8 @@ final class Spinify implements ISpinify {
       _tearDownRefreshConnection();
 
       // Close transport.
+      _replySubscription?.cancel().ignore();
+      _replySubscription = null;
       _transport?.close(code, reason);
       _transport = null;
 
@@ -815,8 +823,8 @@ final class Spinify implements ISpinify {
     try {
       _tearDownHealthCheckTimer();
       _internalDisconnect(
-        code: 0,
-        reason: 'close interactively called by client',
+        code: const SpinifyDisconnectCode.normalClosure(),
+        reason: 'normal closure',
         reconnect: false,
       );
       _setState(SpinifyState$Closed());
