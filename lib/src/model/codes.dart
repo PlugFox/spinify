@@ -29,6 +29,7 @@ extension type const SpinifyDisconnectCode(int code) implements int {
   // --- 0..2999 Internal client-side and transport specific codes --- //
 
   /// Disconnect called explicitly by the client.
+  @literal
   const SpinifyDisconnectCode.disconnect() : code = 0;
 
   /// Error Internal means server error,
