@@ -460,6 +460,7 @@ final class SpinifyProtobufReplyDecoder
         pingInterval = Duration(seconds: ping);
       } else {
         assert(false, 'Ping interval is invalid'); // coverage:ignore-line
+        pingInterval = const Duration(seconds: 25);
       }
       return SpinifyConnectResult(
         id: id,

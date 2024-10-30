@@ -164,81 +164,117 @@ void main() {
 
     test(
       'Reconnect_after_disconnected_transport',
-      () => fakeAsync(
-        (async) {
-          final transport = WebSocket$Fake();
-          final client =
-              createFakeClient(transport: (_) async => transport..reset());
-          unawaited(client.connect(url));
-          expect(
-            client.state,
-            isA<SpinifyState$Connecting>().having(
-              (s) => s.url,
-              'url',
-              equals(url),
-            ),
-          );
-          async.elapse(client.config.timeout);
-          expect(
-            client.state,
-            isA<SpinifyState$Connected>().having(
-              (s) => s.url,
-              'url',
-              equals(url),
-            ),
-          );
-          expect(transport, isNotNull);
-          expect(transport, isA<WebSocket$Fake>());
-          transport.close();
-          async.elapse(const Duration(milliseconds: 50));
-          expect(
-            client.state,
-            isA<SpinifyState$Disconnected>().having(
-              (s) => s.temporary,
-              'temporary',
-              isTrue,
-            ),
-          );
-          async.elapse(Duration(
-              milliseconds:
-                  client.config.connectionRetryInterval.min.inMilliseconds ~/
-                      2));
-          expect(
-            client.state,
-            isA<SpinifyState$Disconnected>().having(
-              (s) => s.temporary,
-              'temporary',
-              isTrue,
-            ),
-          );
-          async.elapse(client.config.connectionRetryInterval.max);
-          expect(
-            client.state,
-            isA<SpinifyState$Connected>().having(
-              (s) => s.url,
-              'url',
-              equals(url),
-            ),
-          );
-          expectLater(
-            client.states,
-            emitsInOrder(
-              [
-                isA<SpinifyState$Disconnected>().having(
-                  (s) => s.temporary,
-                  'temporary',
-                  isFalse,
-                ),
-                isA<SpinifyState$Closed>(),
-                emitsDone,
-              ],
-            ),
-          );
-          client.close();
-          async.elapse(client.config.connectionRetryInterval.max);
-          expect(client.state, isA<SpinifyState$Closed>());
-        },
-      ),
+      () {
+        late WebSocket$Fake transport;
+        final client = createFakeClient(
+            transport: (_) async => transport = WebSocket$Fake()
+              ..onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                scheduleMicrotask(() {
+                  if (command.hasConnect()) {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      connect: pb.ConnectResult(
+                        client: 'fake',
+                        version: '0.0.1',
+                        expires: false,
+                        ttl: null,
+                        data: null,
+                        subs: <String, pb.SubscribeResult>{
+                          'notifications:index': pb.SubscribeResult(
+                              expires: false,
+                              ttl: null,
+                              data: <int>[
+                                0
+                              ],
+                              publications: [
+                                pb.Publication(
+                                  info: pb.ClientInfo(
+                                    user: 'fake',
+                                    client: 'fake',
+                                    chanInfo: [1, 2, 3],
+                                    connInfo: [1, 2, 3],
+                                  ),
+                                  data: [1, 2, 3],
+                                )
+                              ]),
+                        },
+                        ping: 600,
+                        pong: false,
+                        session: 'fake',
+                        node: 'fake',
+                      ),
+                    );
+                    final bytes = ProtobufCodec.encode(reply);
+                    sink.add(bytes);
+                  }
+                });
+              });
+        return fakeAsync(
+          (async) {
+            unawaited(client.connect(url));
+            async.elapse(client.config.timeout);
+            expect(
+              client.state,
+              isA<SpinifyState$Connected>().having(
+                (s) => s.url,
+                'url',
+                equals(url),
+              ),
+            );
+            expect(transport, isNotNull);
+            expect(transport, isA<WebSocket$Fake>());
+            transport.close();
+            async.elapse(const Duration(milliseconds: 50));
+            expect(
+              client.state,
+              isA<SpinifyState$Disconnected>().having(
+                (s) => s.temporary,
+                'temporary',
+                isTrue,
+              ),
+            );
+            async.elapse(Duration(
+                milliseconds:
+                    client.config.connectionRetryInterval.min.inMilliseconds ~/
+                        2));
+            expect(
+              client.state,
+              isA<SpinifyState$Disconnected>().having(
+                (s) => s.temporary,
+                'temporary',
+                isTrue,
+              ),
+            );
+            async.elapse(client.config.connectionRetryInterval.max);
+            expect(
+              client.state,
+              isA<SpinifyState$Connected>().having(
+                (s) => s.url,
+                'url',
+                equals(url),
+              ),
+            );
+            expectLater(
+              client.states,
+              emitsInOrder(
+                [
+                  isA<SpinifyState$Disconnected>().having(
+                    (s) => s.temporary,
+                    'temporary',
+                    isFalse,
+                  ),
+                  isA<SpinifyState$Closed>(),
+                  emitsDone,
+                ],
+              ),
+            );
+            client.close();
+            async.elapse(client.config.connectionRetryInterval.max);
+            expect(client.state, isA<SpinifyState$Closed>());
+          },
+        );
+      },
     );
 
     test(
