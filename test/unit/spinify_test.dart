@@ -773,5 +773,60 @@ void main() {
       );
       client.close();
     });
+
+    test('Auto_refresh', () {
+      late Timer pingTimer;
+      return fakeAsync((async) {
+        final client = createFakeClient(
+          (_) async => WebSocket$Fake()
+            ..onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: true,
+                      ttl: 3600,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: true,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                  pingTimer = Timer.periodic(
+                    Duration(milliseconds: reply.connect.ping),
+                    (_) {
+                      sink.add(ProtobufCodec.encode(pb.Reply()));
+                    },
+                  );
+                } else if (command.hasRefresh()) {
+                  final reply = pb.RefreshResult(
+                    client: 'fake',
+                    version: '0.0.1',
+                    expires: true,
+                    ttl: 3600,
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                }
+              });
+            }
+            ..onDone = () {
+              pingTimer.cancel();
+            },
+        );
+
+        client.connect(url);
+        async.elapse(const Duration(hours: 1));
+        client.close();
+      });
+    });
   });
 }

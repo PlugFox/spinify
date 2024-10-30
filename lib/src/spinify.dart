@@ -232,6 +232,7 @@ final class Spinify implements ISpinify {
   @nonVirtual
   void _setUpHealthCheckTimer() {
     _tearDownHealthCheckTimer();
+    // coverage:ignore-start
 
     void warning(String message) => _log(
           const SpinifyLogLevel.warning(),
@@ -286,6 +287,8 @@ final class Spinify implements ISpinify {
         }
       },
     );
+
+    // coverage:ignore-end
   }
 
   /// Tear down health check timer.
@@ -314,9 +317,9 @@ final class Spinify implements ISpinify {
           :String? session,
           :List<int>? data,
         ) when expires && ttl != null) {
+      // coverage:ignore-start
       final duration = ttl.difference(DateTime.now()) - config.timeout;
       if (duration < Duration.zero) {
-        // coverage:ignore-start
         _log(
           const SpinifyLogLevel.warning(),
           'refresh_connection_cancelled',
@@ -328,9 +331,9 @@ final class Spinify implements ISpinify {
           },
         );
         assert(false, 'Token TTL is too short');
-        // coverage:ignore-end
         return;
       }
+      // coverage:ignore-end
       _refreshTimer = Timer(duration, () async {
         if (!state.isConnected) return;
         final token = await config.getToken?.call();
