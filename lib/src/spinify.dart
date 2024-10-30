@@ -1554,10 +1554,10 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
   late final SpinifyMetrics$Channel$Mutable _metrics;
 
   final StreamController<SpinifySubscriptionState> _stateController =
-      StreamController<SpinifySubscriptionState>.broadcast();
+      StreamController<SpinifySubscriptionState>.broadcast(sync: true);
 
   final StreamController<SpinifyChannelEvent> _eventController =
-      StreamController<SpinifyChannelEvent>.broadcast();
+      StreamController<SpinifyChannelEvent>.broadcast(sync: true);
 
   Future<T> _sendCommand<T extends SpinifyReply>(
     SpinifyCommand Function(int nextId) builder,
