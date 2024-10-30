@@ -1260,9 +1260,15 @@ final class Spinify implements ISpinify {
 
   @unsafe
   @override
-  Future<void> publish(String channel, List<int> data) {
-    throw UnimplementedError();
-  }
+  Future<void> publish(String channel, List<int> data) =>
+      getSubscription(channel)?.publish(data) ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 
   // --- Presence --- //
 
