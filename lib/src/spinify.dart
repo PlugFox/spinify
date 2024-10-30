@@ -1155,6 +1155,26 @@ final class Spinify implements ISpinify {
     SpinifySubscriptionConfig? config,
     bool subscribe = false,
   }) {
+    assert(
+      channel.isNotEmpty,
+      'Channel should not be empty',
+    );
+    assert(
+      !_clientSubscriptionRegistry.containsKey(channel),
+      'Client subscription already exists',
+    );
+    assert(
+      channel.trim() == channel,
+      'Channel should not have leading or trailing spaces',
+    );
+    assert(
+      channel.length <= 255,
+      'Channel should not be longer than 255 characters',
+    );
+    assert(
+      channel.codeUnits.every((code) => code >= 0 || code <= 0x7f),
+      'Channel should contain only ASCII characters',
+    );
     throw UnimplementedError();
   }
 
