@@ -1217,8 +1217,43 @@ final class Spinify implements ISpinify {
   }
 
   @override
-  Future<void> removeSubscription(SpinifyClientSubscription subscription) {
-    throw UnimplementedError();
+  Future<void> removeSubscription(
+      SpinifyClientSubscription subscription) async {
+    final subFromRegistry =
+        _clientSubscriptionRegistry.remove(subscription.channel);
+    try {
+      await subFromRegistry?.unsubscribe();
+      // coverage:ignore-start
+      assert(
+        subFromRegistry != null,
+        'Subscription not found in the registry',
+      );
+      assert(
+        identical(subFromRegistry, subscription),
+        'Subscription should be the same instance as in the registry',
+      );
+      // coverage:ignore-end
+    } on Object catch (error, stackTrace) {
+      _log(
+        const SpinifyLogLevel.warning(),
+        'subscription_remove_error',
+        'Error removing subscription',
+        <String, Object?>{
+          'channel': subscription.channel,
+          'subscription': subscription,
+        },
+      );
+      Error.throwWithStackTrace(
+        SpinifySubscriptionException(
+          channel: subscription.channel,
+          message: 'Error while unsubscribing',
+          error: error,
+        ),
+        stackTrace,
+      );
+    } finally {
+      subFromRegistry?.close();
+    }
   }
 
   // --- Publish --- //
