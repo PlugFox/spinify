@@ -210,6 +210,7 @@ final class SpinifyProtobufReplyDecoder
           );
         }
       } on Object catch (error, stackTrace) {
+        // coverage:ignore-start
         logger?.call(
           const SpinifyLogLevel.warning(),
           'protobuf_reply_decoder_error',
@@ -220,6 +221,7 @@ final class SpinifyProtobufReplyDecoder
             'input': input,
           },
         );
+        // coverage:ignore-end
       }
     }
 

@@ -171,7 +171,17 @@ void main() => group('Codec', () {
             ..subscribe.recovered = true
             ..subscribe.data = [1, 2, 3]
             ..subscribe.positioned = true
-            ..subscribe.wasRecovering = true,
+            ..subscribe.wasRecovering = true
+            ..subscribe.publications.addAll(<pb.Publication>{
+              pb.Publication()
+                ..data = [1, 2, 3]
+                ..offset = Int64.ZERO
+                ..tags.addAll(<String, String>{'tag': 'tag'})
+                ..info = pb.ClientInfo()
+                ..info.client = 'client'
+                ..info.user = 'user'
+                ..info.chanInfo = [1, 2, 3]
+            }),
           pb.Reply()
             ..id = 1
             ..unsubscribe = pb.UnsubscribeResult(),
