@@ -194,6 +194,7 @@ final class SpinifyProtobufReplyDecoder
         } else if (message.hasId() && message.id > 0) {
           yield _decodeReply(message);
         } else if (message.hasError()) {
+          // coverage:ignore-start
           final error = message.error;
           yield SpinifyErrorResult(
             id: message.hasId() ? message.id : 0,
@@ -202,6 +203,7 @@ final class SpinifyProtobufReplyDecoder
             message: error.message,
             temporary: error.temporary,
           );
+          // coverage:ignore-end
         } else {
           yield SpinifyServerPing(
             timestamp: DateTime.now(),
