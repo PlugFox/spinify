@@ -1196,30 +1196,55 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  Future<Map<String, SpinifyClientInfo>> presence(String channel) {
-    throw UnimplementedError();
-  }
+  @Throws([SpinifySubscriptionException])
+  Future<Map<String, SpinifyClientInfo>> presence(String channel) =>
+      getSubscription(channel)?.presence() ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 
   @unsafe
   @override
   @nonVirtual
-  Future<SpinifyPresenceStats> presenceStats(String channel) {
-    throw UnimplementedError();
-  }
+  @Throws([SpinifySubscriptionException])
+  Future<SpinifyPresenceStats> presenceStats(String channel) =>
+      getSubscription(channel)?.presenceStats() ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 
   // --- History --- //
 
   @unsafe
   @override
   @nonVirtual
+  @Throws([SpinifySubscriptionException])
   Future<SpinifyHistory> history(
     String channel, {
     int? limit,
     SpinifyStreamPosition? since,
     bool? reverse,
-  }) {
-    throw UnimplementedError();
-  }
+  }) =>
+      getSubscription(channel)?.history(
+        limit: limit,
+        since: since,
+        reverse: reverse,
+      ) ??
+      Future.error(
+        SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        ),
+        StackTrace.current,
+      );
 
   // --- Replies --- //
 
@@ -1514,8 +1539,7 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
     required this.recoverable,
     required this.epoch,
     required this.offset,
-  })  : _clientWR = WeakReference<Spinify>(client),
-        _clientConfig = client.config {
+  }) : _client = client {
     _metrics = _client._metrics.channels
         .putIfAbsent(channel, SpinifyMetrics$Channel$Mutable.new);
   }
@@ -1523,31 +1547,11 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
   @override
   final String channel;
 
-  /// Spinify client weak reference.
-  final WeakReference<Spinify> _clientWR;
-
   /// Spinify client
-  Spinify get _client {
-    final target = _clientWR.target;
-    // coverage:ignore-start
-    if (target == null) {
-      throw SpinifySubscriptionException(
-        channel: channel,
-        message: 'Spinify client is do not exist anymore',
-      );
-    }
-    // coverage:ignore-end
-    return target;
-  }
+  final Spinify _client;
 
   /// Spinify channel metrics.
   late final SpinifyMetrics$Channel$Mutable _metrics;
-
-  /// Spinify client configuration.
-  final SpinifyConfig _clientConfig;
-
-  /// Spinify logger.
-  SpinifyLogger? get _logger => _clientConfig.logger;
 
   final StreamController<SpinifySubscriptionState> _stateController =
       StreamController<SpinifySubscriptionState>.broadcast();
@@ -1594,7 +1598,7 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
     );
     // coverage:ignore-end
     _eventController.add(event);
-    _logger?.call(
+    _client._log(
       const SpinifyLogLevel.debug(),
       'subscription_event_received',
       'Subscription "$channel" received ${event.type} event',
@@ -1612,7 +1616,7 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
     final previous = _metrics.state;
     if (previous == state) return;
     _stateController.add(_metrics.state = state);
-    _logger?.call(
+    _client._log(
       const SpinifyLogLevel.config(),
       'subscription_state_changed',
       'Subscription "$channel" state changed to ${state.type}',
@@ -1824,7 +1828,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
         );
       }
     } on Object catch (error, stackTrace) {
-      _logger?.call(
+      _client._log(
         const SpinifyLogLevel.error(),
         'subscription_unsubscribe_error',
         'Subscription "$channel" failed to unsubscribe',
@@ -1885,7 +1889,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
       );
 
       if (state.isUnsubscribed) {
-        _logger?.call(
+        _client._log(
           const SpinifyLogLevel.debug(),
           'subscription_resubscribe_skipped',
           'Subscription "$channel" resubscribe skipped, '
@@ -1937,7 +1941,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
 
       _onSubscribed(); // Successful subscription completed
 
-      _logger?.call(
+      _client._log(
         const SpinifyLogLevel.config(),
         'subscription_subscribed',
         'Subscription "$channel" subscribed',
@@ -1947,7 +1951,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
         },
       );
     } on Object catch (error, stackTrace) {
-      _logger?.call(
+      _client._log(
         const SpinifyLogLevel.error(),
         'subscription_resubscribe_error',
         'Subscription "$channel" failed to resubscribe',
@@ -2011,7 +2015,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
     _metrics.resubscribeAttempts = attempt + 1;
     if (delay <= Duration.zero) {
       if (!state.isUnsubscribed) return;
-      _logger?.call(
+      _client._log(
         const SpinifyLogLevel.config(),
         'subscription_resubscribe_attempt',
         'Resubscibing to $channel immediately.',
@@ -2025,7 +2029,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
       Future<void>.sync(subscribe).ignore();
       return;
     }
-    _logger?.call(
+    _client._log(
       const SpinifyLogLevel.debug(),
       'subscription_resubscribe_delayed',
       'Setting up resubscribe timer for $channel '
@@ -2040,7 +2044,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
     _metrics.nextResubscribeAt = DateTime.now().add(delay);
     _resubscribeTimer = Timer(delay, () {
       if (!state.isUnsubscribed) return;
-      _logger?.call(
+      _client._log(
         const SpinifyLogLevel.debug(),
         'subscription_resubscribe_attempt',
         'Resubscribing to $channel after ${delay.inMilliseconds} ms.',
@@ -2116,7 +2120,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
             }
           }
 
-          _logger?.call(
+          _client._log(
             const SpinifyLogLevel.debug(),
             'subscription_refresh_token',
             'Subscription "$channel" token refreshed',
@@ -2128,7 +2132,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
           );
         },
         (error, stackTrace) {
-          _logger?.call(
+          _client._log(
             const SpinifyLogLevel.error(),
             'subscription_refresh_token_error',
             'Subscription "$channel" failed to refresh token',
