@@ -400,7 +400,7 @@ final class Spinify implements ISpinify {
         () async {
           // Reconnect if no pong received.
           if (state case SpinifyState$Connected(:String url)) {
-            config.logger?.call(
+            _log(
               const SpinifyLogLevel.warning(),
               'no_pong_reconnect',
               'No pong from server - reconnecting',

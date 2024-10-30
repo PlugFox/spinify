@@ -466,5 +466,40 @@ void main() {
                   isA<SpinifyMetrics$Channel>().having((c) => c.toString(),
                       'subscriptions', equals(r'SpinifyMetrics$Channel{}'))); */
             }));
+
+    test(
+      'Ping_pong',
+      () => fakeAsync(
+        (async) {
+          late WebSocket$Fake ws; // ignore: close_sinks
+          var serverPingCount = 0;
+          var serverPongCount = 0;
+          final client = createFakeClient((_) async {
+            ws = WebSocket$Fake();
+            final fn = ws.onAdd;
+            ws.onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              if (command.hasPing()) {
+                serverPingCount++;
+                scheduleMicrotask(() {
+                  sink.add(ProtobufCodec.encode(pb.Reply(id: command.id)));
+                  serverPongCount++;
+                });
+              } else {
+                fn(bytes, sink);
+              }
+            };
+            return ws;
+          });
+          unawaited(client.connect(url));
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+          async.elapse(client.config.serverPingDelay * 10);
+          expect(serverPingCount, greaterThan(0));
+          expect(serverPongCount, equals(serverPingCount));
+          client.close();
+        },
+      ),
+    );
   });
 }

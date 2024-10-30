@@ -28,6 +28,7 @@ class WebSocket$Fake implements WebSocket {
       ),
     );
     onAdd = _defaultOnAddCallback;
+    onDone = _defaultOnDoneCallback;
   }
 
   // Default callbacks to handle connects and disconnects.
@@ -58,6 +59,8 @@ class WebSocket$Fake implements WebSocket {
     });
   }
 
+  static void _defaultOnDoneCallback() {}
+
   StreamController<List<int>>? _socket;
 
   Stream<List<int>>? _stream;
@@ -87,7 +90,7 @@ class WebSocket$Fake implements WebSocket {
   void _doneHandler(EventSink<List<int>> sink) {
     sink.close();
     _isClosed = true;
-    _onDoneCallback?.call();
+    onDone.call();
   }
 
   @override
@@ -111,12 +114,8 @@ class WebSocket$Fake implements WebSocket {
   void Function(List<int> bytes, Sink<List<int>> sink) onAdd =
       _defaultOnAddCallback;
 
-  void Function()? _onDoneCallback;
-
   /// Add callback to handle socket close event.
-  void onDone(void Function()? callback) {
-    _onDoneCallback = callback;
-  }
+  void Function() onDone = _defaultOnDoneCallback;
 
   /// Send asynchroniously a reply to the client.
   void reply(List<int> bytes) {
@@ -136,7 +135,6 @@ class WebSocket$Fake implements WebSocket {
     _closeCode = null;
     _closeReason = null;
     _isClosed = false;
-    _onDoneCallback = null;
     _init();
   }
 }
