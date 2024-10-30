@@ -678,11 +678,11 @@ void main() {
       );
       expectLater(
         client.send([1, 2, 3]),
-        throwsA(isA<SpinifyConnectionException>()),
+        throwsA(isA<SpinifySendException>()),
       );
       expectLater(
         client.rpc('echo', [1, 2, 3]),
-        throwsA(isA<SpinifyConnectionException>()),
+        throwsA(isA<SpinifyRPCException>()),
       );
       client.close();
     });
