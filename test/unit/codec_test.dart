@@ -1,7 +1,6 @@
 import 'package:protobuf/protobuf.dart' as pb;
 import 'package:spinify/spinify.dart';
 import 'package:spinify/src/protobuf/client.pb.dart' as pb;
-import 'package:spinify/src/protobuf/protobuf_codec.dart';
 import 'package:test/test.dart';
 
 void main() => group('Codec', () {
