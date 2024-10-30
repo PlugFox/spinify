@@ -25,6 +25,11 @@ void main() {
           ),
         );
 
+    test('Constructor', () {
+      expect(Spinify.new, returnsNormally);
+      expect(() => Spinify(config: SpinifyConfig()), returnsNormally);
+    });
+
     test(
       'Create_and_close_client',
       () async {
@@ -34,6 +39,55 @@ void main() {
         await client.close();
         expect(client.state, isA<SpinifyState$Closed>());
         expect(client.isClosed, isTrue);
+      },
+    );
+
+    test(
+      'Connect',
+      () => fakeAsync((async) {
+        final client = Spinify.connect(
+          url,
+          config: SpinifyConfig(
+            transportBuilder: ({required url, headers, protocols}) async =>
+                WebSocket$Fake(),
+            logger: buffer.add,
+          ),
+        );
+        expect(client.state, isA<SpinifyState$Connecting>());
+        async.elapse(client.config.timeout);
+        expect(client.state, isA<SpinifyState$Connected>());
+        client.close();
+      }),
+    );
+
+    test(
+      'Disconnect_disconnected',
+      () {
+        final client = createFakeClient();
+        expectLater(
+          client.states,
+          emitsInOrder(
+            [
+              isA<SpinifyState$Closed>(),
+              emitsDone,
+            ],
+          ),
+        );
+        return fakeAsync((async) {
+          expect(client.state.isDisconnected, isTrue);
+          expect(client.state.isClosed, isFalse);
+          async.elapse(client.config.timeout);
+          expect(client.state.isDisconnected, isTrue);
+          for (var i = 0; i < 10; i++) {
+            client.disconnect();
+            async.elapse(client.config.timeout);
+            expect(client.state.isDisconnected, isTrue);
+          }
+          client.close();
+          expect(client.state.isClosed, isTrue);
+          client.close();
+          expect(client.state.isClosed, isTrue);
+        });
       },
     );
 

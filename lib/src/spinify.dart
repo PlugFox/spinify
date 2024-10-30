@@ -168,6 +168,7 @@ final class Spinify implements ISpinify {
   void _setState(SpinifyState state) {
     if (isClosed) return; // Client is closed, do not notify about states.
     final prev = _metrics.state, next = state;
+    // coverage:ignore-start
     if (prev.type == next.type) {
       // Should we notify about the same state?
       switch ((prev, next)) {
@@ -183,6 +184,7 @@ final class Spinify implements ISpinify {
           break; // Notify about other states changes.
       }
     }
+    // coverage:ignore-end
     _statesController.add(_metrics.state = next);
     _log(
       const SpinifyLogLevel.config(),
@@ -301,8 +303,96 @@ final class Spinify implements ISpinify {
   @nonVirtual
   void _setUpRefreshConnection() {
     _tearDownRefreshConnection();
-    // TODO: Implement refresh connection timer.
-    // Mike Matiunin <plugfox@gmail.com>, 25 October 2024
+    if (state
+        case SpinifyState$Connected(
+          :String url,
+          :bool expires,
+          :DateTime? ttl,
+          :String? node,
+          :Duration? pingInterval,
+          :bool? sendPong,
+          :String? session,
+          :List<int>? data,
+        ) when expires && ttl != null) {
+      final duration = ttl.difference(DateTime.now()) - config.timeout;
+      if (duration < Duration.zero) {
+        // coverage:ignore-start
+        _log(
+          const SpinifyLogLevel.warning(),
+          'refresh_connection_cancelled',
+          'Spinify token TTL is too short for refresh connection',
+          <String, Object?>{
+            'url': url,
+            'duration': duration,
+            'ttl': ttl,
+          },
+        );
+        assert(false, 'Token TTL is too short');
+        // coverage:ignore-end
+        return;
+      }
+      _refreshTimer = Timer(duration, () async {
+        if (!state.isConnected) return;
+        final token = await config.getToken?.call();
+        if (token == null || token.isEmpty) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'refresh_connection_cancelled',
+            'Spinify token is null or empty for refresh connection',
+            <String, Object?>{
+              'url': url,
+              'token': token,
+            },
+          );
+          return;
+        }
+        final request = SpinifyRefreshRequest(
+          id: _getNextCommandId(),
+          timestamp: DateTime.now(),
+          token: token,
+        );
+        final SpinifyRefreshResult result;
+        try {
+          result = await _sendCommand<SpinifyRefreshResult>(request);
+          _setState(SpinifyState$Connected(
+            url: url,
+            client: result.client,
+            version: result.version,
+            expires: result.expires,
+            ttl: result.ttl,
+            node: node,
+            pingInterval: pingInterval,
+            sendPong: sendPong,
+            session: session,
+            data: data,
+          ));
+        } on Object catch (error, stackTrace) {
+          _log(
+            const SpinifyLogLevel.error(),
+            'refresh_connection_error',
+            'Error refreshing connection',
+            <String, Object?>{
+              'url': url,
+              'command': request,
+              'error': error,
+              'stackTrace': stackTrace,
+            },
+          );
+          return;
+        } finally {
+          if (state.isConnected) _setUpRefreshConnection();
+        }
+        _log(
+          const SpinifyLogLevel.config(),
+          'refresh_connection_success',
+          'Successfully refreshed connection to $url',
+          <String, Object?>{
+            'request': request,
+            'result': result,
+          },
+        );
+      });
+    }
   }
 
   /// Tear down refresh connection timer.
