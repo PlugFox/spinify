@@ -654,5 +654,37 @@ void main() {
         },
       ),
     );
+
+    test(
+      'ready',
+      () => fakeAsync((async) {
+        final client = createFakeClient();
+        expectLater(client.ready(), completes);
+        client.connect(url);
+        //expectLater(client.ready(), completes);
+        async.elapse(client.config.timeout);
+        expect(client.state, isA<SpinifyState$Connected>());
+        expectLater(client.ready(), completes);
+        async.elapse(client.config.timeout);
+        client.close();
+      }),
+    );
+
+    test('do_not_ready', () {
+      final client = createFakeClient();
+      expectLater(
+        client.ready(),
+        throwsA(isA<SpinifyConnectionException>()),
+      );
+      expectLater(
+        client.send([1, 2, 3]),
+        throwsA(isA<SpinifyConnectionException>()),
+      );
+      expectLater(
+        client.rpc('echo', [1, 2, 3]),
+        throwsA(isA<SpinifyConnectionException>()),
+      );
+      client.close();
+    });
   });
 }

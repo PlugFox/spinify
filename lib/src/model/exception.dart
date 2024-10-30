@@ -126,6 +126,20 @@ final class SpinifySendException extends SpinifyException {
 
 /// {@macro exception}
 /// {@category Exception}
+final class SpinifyRPCException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyRPCException({
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_rpc_exception',
+          message ?? 'Failed to call remote procedure',
+          error,
+        );
+}
+
+/// {@macro exception}
+/// {@category Exception}
 final class SpinifyFetchException extends SpinifyException {
   /// {@macro exception}
   const SpinifyFetchException({

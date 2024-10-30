@@ -1115,7 +1115,24 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  Future<List<int>> rpc(String method, [List<int>? data]) => _doOnReady(
+  @Throws([SpinifyRPCException])
+  Future<List<int>> rpc(String method, [List<int>? data]) async {
+    try {
+      return await _doOnReady(() => _sendCommand<SpinifyRPCResult>(
+            SpinifyRPCRequest(
+              id: _getNextCommandId(),
+              timestamp: DateTime.now(),
+              method: method,
+              data: data ?? const <int>[],
+            ),
+          )).then<List<int>>((reply) => reply.data);
+    } on SpinifyRPCException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(SpinifyRPCException(error: error), stackTrace);
+    }
+  }
+  /*  => _doOnReady(
         () => _sendCommand<SpinifyRPCResult>(
           SpinifyRPCRequest(
             id: _getNextCommandId(),
@@ -1124,7 +1141,7 @@ final class Spinify implements ISpinify {
             data: data ?? const <int>[],
           ),
         ).then<List<int>>((reply) => reply.data),
-      );
+      ); */
 
   // --- Subscriptions and Channels --- //
 
@@ -1196,7 +1213,7 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  @Throws([SpinifySubscriptionException])
+  @Throws([SpinifyConnectionException, SpinifySubscriptionException])
   Future<Map<String, SpinifyClientInfo>> presence(String channel) =>
       getSubscription(channel)?.presence() ??
       Future.error(
@@ -1210,7 +1227,7 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  @Throws([SpinifySubscriptionException])
+  @Throws([SpinifyConnectionException, SpinifySubscriptionException])
   Future<SpinifyPresenceStats> presenceStats(String channel) =>
       getSubscription(channel)?.presenceStats() ??
       Future.error(
@@ -1226,7 +1243,7 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  @Throws([SpinifySubscriptionException])
+  @Throws([SpinifyConnectionException, SpinifySubscriptionException])
   Future<SpinifyHistory> history(
     String channel, {
     int? limit,
@@ -1632,8 +1649,8 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
     );
   }
 
-  @mustCallSuper
   @interactive
+  @mustCallSuper
   void close() {
     _stateController.close().ignore();
     _eventController.close().ignore();
@@ -1643,6 +1660,7 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
     // coverage:ignore-end
   }
 
+  @unsafe
   @override
   @interactive
   Future<void> ready() async {
