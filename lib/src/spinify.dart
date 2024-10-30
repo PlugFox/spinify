@@ -1177,10 +1177,6 @@ final class Spinify implements ISpinify {
       'Channel should not be empty',
     );
     assert(
-      !_clientSubscriptionRegistry.containsKey(channel),
-      'Client subscription already exists',
-    );
-    assert(
       channel.trim() == channel,
       'Channel should not have leading or trailing spaces',
     );
@@ -1189,10 +1185,35 @@ final class Spinify implements ISpinify {
       'Channel should not be longer than 255 characters',
     );
     assert(
-      channel.codeUnits.every((code) => code >= 0 || code <= 0x7f),
+      channel.codeUnits.every((code) => code >= 0 && code <= 0x7f),
       'Channel should contain only ASCII characters',
     );
-    throw UnimplementedError();
+
+    final sub = _clientSubscriptionRegistry[channel] ??
+        _serverSubscriptionRegistry[channel];
+    if (sub != null) {
+      _log(
+        const SpinifyLogLevel.warning(),
+        'subscription_exists_error',
+        'Subscription already exists',
+        <String, Object?>{
+          'channel': channel,
+          'subscription': sub,
+        },
+      );
+      throw SpinifySubscriptionException(
+        channel: channel,
+        message: 'Subscription already exists',
+      );
+    }
+    final newSub =
+        _clientSubscriptionRegistry[channel] = _SpinifyClientSubscriptionImpl(
+      client: this,
+      channel: channel,
+      config: config ?? const SpinifySubscriptionConfig.byDefault(),
+    );
+    if (subscribe) newSub.subscribe();
+    return newSub;
   }
 
   @override

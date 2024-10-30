@@ -686,5 +686,38 @@ void main() {
       );
       client.close();
     });
+
+    test('subscribtion_asserts', () {
+      final client = createFakeClient();
+      expect(
+        () => client.newSubscription(''),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => client.newSubscription(' '),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => client.newSubscription(String.fromCharCode(0x7f + 1)),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => client.newSubscription('😀, 🌍, 🎉, 👋'),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => client.newSubscription('channel' * 100),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => client.newSubscription('channel'),
+        returnsNormally,
+      );
+      expect(
+        () => client.newSubscription('channel'),
+        throwsA(isA<SpinifySubscriptionException>()),
+      );
+      client.close();
+    });
   });
 }
