@@ -749,7 +749,8 @@ final class Spinify implements ISpinify {
       _onReply(result); // Handle connect reply
       handleReply = _onReply; // Switch to normal reply handler
 
-      _setUpRefreshConnection();
+      _setUpRefreshConnection(); // Start refresh connection timer
+      _setUpPingTimer(); // Start expecting ping messages
 
       // Notify ready.
       if (readyCompleter.isCompleted) {

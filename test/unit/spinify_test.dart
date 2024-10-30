@@ -577,5 +577,82 @@ void main() {
         },
       ),
     );
+
+    test(
+      'Missing_pings',
+      () => fakeAsync(
+        (async) {
+          final webSockets = <WebSocket$Fake>[];
+          var serverPingCount = 0, serverPongCount = 0;
+          final client = createFakeClient((_) async {
+            final ws = WebSocket$Fake()
+              ..onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: true,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  scheduleMicrotask(() {
+                    sink.add(ProtobufCodec.encode(reply));
+                  });
+                } else if (command.hasPing()) {
+                  serverPongCount++;
+                }
+              }
+              ..onDone = () {};
+            webSockets.add(ws);
+            return ws;
+          });
+          expectLater(
+            client.states,
+            emitsInOrder(
+              [
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Connected>(),
+                isA<SpinifyState$Disconnected>(),
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Connected>(),
+                isA<SpinifyState$Disconnected>(),
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Connected>(),
+                isA<SpinifyState$Disconnected>(),
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Connected>(),
+                isA<SpinifyState$Disconnected>(),
+              ],
+            ),
+          );
+          unawaited(client.connect(url));
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+          final pingInterval =
+              (client.state as SpinifyState$Connected).pingInterval!;
+          async.elapse(
+            (pingInterval +
+                    client.config.timeout +
+                    client.config.serverPingDelay) *
+                10,
+          );
+          expect(webSockets.length, greaterThan(1));
+          expect(serverPingCount, isZero);
+          expect(serverPongCount, isZero);
+          client.close();
+          async.elapse(const Duration(seconds: 1));
+          expect(webSockets.every((ws) => ws.isClosed), isTrue);
+        },
+      ),
+    );
   });
 }
