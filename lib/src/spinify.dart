@@ -198,7 +198,6 @@ final class Spinify implements ISpinify {
 
   /// Counter for command messages.
   @safe
-  @protected
   @nonVirtual
   int _getNextCommandId() {
     if (_metrics.commandId == kMaxInt) _metrics.commandId = 1;
@@ -1588,6 +1587,9 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
   SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
       SpinifyChannelEvents(_eventController.stream);
 
+  /// Receives notification about new event from the client.
+  /// Available only for internal use.
+  @internal
   @sideEffect
   @mustCallSuper
   void onEvent(SpinifyChannelEvent event) {
