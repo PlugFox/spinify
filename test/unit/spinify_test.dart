@@ -16,9 +16,13 @@ void main() {
     const url = 'ws://localhost:8000/connection/websocket';
     final buffer = SpinifyLogBuffer(size: 10);
 
-    Spinify createFakeClient([Future<WebSocket> Function(String)? transport]) =>
+    Spinify createFakeClient({
+      Future<WebSocket> Function(String)? transport,
+      Future<String?> Function()? getToken,
+    }) =>
         Spinify(
           config: SpinifyConfig(
+            getToken: getToken,
             transportBuilder: ({required url, headers, protocols}) =>
                 transport?.call(url) ?? Future.value(WebSocket$Fake()),
             logger: buffer.add,
@@ -105,7 +109,8 @@ void main() {
       'Change_client_state',
       () async {
         final transport = WebSocket$Fake(); // ignore: close_sinks
-        final client = createFakeClient((_) async => transport..reset());
+        final client =
+            createFakeClient(transport: (_) async => transport..reset());
         expect(transport.isClosed, isFalse);
         expect(client.state, isA<SpinifyState$Disconnected>());
         await client.connect(url);
@@ -133,7 +138,8 @@ void main() {
       'Change_client_states',
       () {
         final transport = WebSocket$Fake(); // ignore: close_sinks
-        final client = createFakeClient((_) async => transport..reset());
+        final client =
+            createFakeClient(transport: (_) async => transport..reset());
         Stream.fromIterable([
           () => client.connect(url),
           client.disconnect,
@@ -161,7 +167,8 @@ void main() {
       () => fakeAsync(
         (async) {
           final transport = WebSocket$Fake();
-          final client = createFakeClient((_) async => transport..reset());
+          final client =
+              createFakeClient(transport: (_) async => transport..reset());
           unawaited(client.connect(url));
           expect(
             client.state,
@@ -239,7 +246,7 @@ void main() {
       () => fakeAsync(
         (async) {
           final ws = WebSocket$Fake(); // ignore: close_sinks
-          final client = createFakeClient((_) async => ws..reset())
+          final client = createFakeClient(transport: (_) async => ws..reset())
             ..connect(url);
           expect(client.state, isA<SpinifyState$Connecting>());
           async.elapse(client.config.timeout);
@@ -351,7 +358,7 @@ void main() {
       () => fakeAsync(
         (async) {
           final ws = WebSocket$Fake(); // ignore: close_sinks
-          final client = createFakeClient((_) async => ws);
+          final client = createFakeClient(transport: (_) async => ws);
 
           ws.onAdd = (bytes, sink) {
             final command = ProtobufCodec.decode(pb.Command(), bytes);
@@ -410,7 +417,8 @@ void main() {
         'Metrics',
         () => fakeAsync((async) {
               final ws = WebSocket$Fake(); // ignore: close_sinks
-              final client = createFakeClient((_) async => ws..reset());
+              final client =
+                  createFakeClient(transport: (_) async => ws..reset());
               expect(() => client.metrics, returnsNormally);
               expect(
                   client.metrics,
@@ -527,7 +535,7 @@ void main() {
         (async) {
           var serverPingCount = 0;
           var serverPongCount = 0;
-          final client = createFakeClient((_) async {
+          final client = createFakeClient(transport: (_) async {
             Timer? pingTimer;
             return WebSocket$Fake()
               ..onAdd = (bytes, sink) {
@@ -582,7 +590,7 @@ void main() {
       () => fakeAsync(
         (async) {
           var serverPingCount = 0, serverPongCount = 0;
-          final client = createFakeClient((_) async {
+          final client = createFakeClient(transport: (_) async {
             Timer? pingTimer;
             return WebSocket$Fake()
               ..onAdd = (bytes, sink) {
@@ -638,7 +646,7 @@ void main() {
         (async) {
           final webSockets = <WebSocket$Fake>[];
           var serverPingCount = 0, serverPongCount = 0;
-          final client = createFakeClient((_) async {
+          final client = createFakeClient(transport: (_) async {
             final ws = WebSocket$Fake()
               ..onAdd = (bytes, sink) {
                 final command = ProtobufCodec.decode(pb.Command(), bytes);
@@ -776,56 +784,67 @@ void main() {
 
     test('Auto_refresh', () {
       late Timer pingTimer;
-      return fakeAsync((async) {
-        final client = createFakeClient(
-          (_) async => WebSocket$Fake()
-            ..onAdd = (bytes, sink) {
-              final command = ProtobufCodec.decode(pb.Command(), bytes);
-              scheduleMicrotask(() {
-                if (command.hasConnect()) {
-                  final reply = pb.Reply(
-                    id: command.id,
-                    connect: pb.ConnectResult(
-                      client: 'fake',
-                      version: '0.0.1',
-                      expires: true,
-                      ttl: 3600,
-                      data: null,
-                      subs: <String, pb.SubscribeResult>{},
-                      ping: 600,
-                      pong: true,
-                      session: 'fake',
-                      node: 'fake',
-                    ),
-                  );
-                  final bytes = ProtobufCodec.encode(reply);
-                  sink.add(bytes);
-                  pingTimer = Timer.periodic(
-                    Duration(milliseconds: reply.connect.ping),
-                    (_) {
-                      sink.add(ProtobufCodec.encode(pb.Reply()));
-                    },
-                  );
-                } else if (command.hasRefresh()) {
-                  final reply = pb.RefreshResult(
+      var pings = 0, refreshes = 0;
+      final client = createFakeClient(
+        getToken: () async => 'token',
+        transport: (_) async => WebSocket$Fake()
+          ..onAdd = (bytes, sink) {
+            final command = ProtobufCodec.decode(pb.Command(), bytes);
+            scheduleMicrotask(() {
+              if (command.hasConnect()) {
+                final reply = pb.Reply(
+                  id: command.id,
+                  connect: pb.ConnectResult(
                     client: 'fake',
                     version: '0.0.1',
                     expires: true,
-                    ttl: 3600,
+                    ttl: 600,
+                    data: null,
+                    subs: <String, pb.SubscribeResult>{},
+                    ping: 120,
+                    pong: true,
+                    session: 'fake',
+                    node: 'fake',
+                  ),
+                );
+                final bytes = ProtobufCodec.encode(reply);
+                sink.add(bytes);
+                pingTimer = Timer.periodic(
+                  Duration(milliseconds: reply.connect.ping),
+                  (_) {
+                    sink.add(ProtobufCodec.encode(pb.Reply()));
+                    pings++;
+                  },
+                );
+              } else if (command.hasRefresh()) {
+                if (command.refresh.token.isEmpty) return;
+                final reply = pb.Reply()
+                  ..id = command.id
+                  ..refresh = pb.RefreshResult(
+                    client: 'fake',
+                    version: '0.0.1',
+                    expires: true,
+                    ttl: 600,
                   );
-                  final bytes = ProtobufCodec.encode(reply);
-                  sink.add(bytes);
-                }
-              });
-            }
-            ..onDone = () {
-              pingTimer.cancel();
-            },
-        );
-
+                final bytes = ProtobufCodec.encode(reply);
+                sink.add(bytes);
+                refreshes++;
+              }
+            });
+          }
+          ..onDone = () {
+            pingTimer.cancel();
+          },
+      );
+      return fakeAsync((async) {
         client.connect(url);
-        async.elapse(const Duration(hours: 1));
+        async.elapse(const Duration(hours: 3));
+        expect(client.state.isConnected, isTrue);
+        expect(client.isClosed, isFalse);
         client.close();
+        expect(client.state.isClosed, isTrue);
+        expect(pings, greaterThanOrEqualTo(3 * 60 * 60 ~/ 120));
+        expect(refreshes, greaterThanOrEqualTo(3 * 60 * 60 ~/ 600));
       });
     });
   });
