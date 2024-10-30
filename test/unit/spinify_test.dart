@@ -471,25 +471,46 @@ void main() {
       'Ping_pong',
       () => fakeAsync(
         (async) {
-          late WebSocket$Fake ws; // ignore: close_sinks
           var serverPingCount = 0;
           var serverPongCount = 0;
           final client = createFakeClient((_) async {
-            ws = WebSocket$Fake();
-            final fn = ws.onAdd;
-            ws.onAdd = (bytes, sink) {
-              final command = ProtobufCodec.decode(pb.Command(), bytes);
-              if (command.hasPing()) {
-                serverPingCount++;
-                scheduleMicrotask(() {
-                  sink.add(ProtobufCodec.encode(pb.Reply(id: command.id)));
+            Timer? pingTimer;
+            return WebSocket$Fake()
+              ..onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: true,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  scheduleMicrotask(() {
+                    sink.add(ProtobufCodec.encode(reply));
+                    pingTimer = Timer.periodic(
+                      Duration(milliseconds: reply.connect.ping),
+                      (_) {
+                        serverPingCount++;
+                        sink.add(ProtobufCodec.encode(pb.Reply()));
+                      },
+                    );
+                  });
+                } else if (command.hasPing()) {
                   serverPongCount++;
-                });
-              } else {
-                fn(bytes, sink);
+                }
               }
-            };
-            return ws;
+              ..onDone = () {
+                pingTimer?.cancel();
+              };
           });
           unawaited(client.connect(url));
           async.elapse(client.config.timeout);
@@ -497,6 +518,61 @@ void main() {
           async.elapse(client.config.serverPingDelay * 10);
           expect(serverPingCount, greaterThan(0));
           expect(serverPongCount, equals(serverPingCount));
+          client.close();
+        },
+      ),
+    );
+
+    test(
+      'Ping_without_pong',
+      () => fakeAsync(
+        (async) {
+          var serverPingCount = 0, serverPongCount = 0;
+          final client = createFakeClient((_) async {
+            Timer? pingTimer;
+            return WebSocket$Fake()
+              ..onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: false,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  scheduleMicrotask(() {
+                    sink.add(ProtobufCodec.encode(reply));
+                    pingTimer = Timer.periodic(
+                      Duration(milliseconds: reply.connect.ping),
+                      (_) {
+                        serverPingCount++;
+                        sink.add(ProtobufCodec.encode(pb.Reply()));
+                      },
+                    );
+                  });
+                } else if (command.hasPing()) {
+                  serverPongCount++;
+                }
+              }
+              ..onDone = () {
+                pingTimer?.cancel();
+              };
+          });
+          unawaited(client.connect(url));
+          async.elapse(client.config.timeout);
+          expect(client.state, isA<SpinifyState$Connected>());
+          async.elapse(client.config.serverPingDelay * 10);
+          expect(serverPingCount, greaterThan(0));
+          expect(serverPongCount, isZero);
           client.close();
         },
       ),
