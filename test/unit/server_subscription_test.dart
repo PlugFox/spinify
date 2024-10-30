@@ -89,6 +89,18 @@ void main() {
           expect(client.subscriptions.server, isNotEmpty);
           expect(client.subscriptions.server['notification:index'], isNotNull);
           expect(
+            client.getServerSubscription('notification:index'),
+            same(client.subscriptions.server['notification:index']),
+          );
+          expect(
+            client.getClientSubscription('notification:index'),
+            isNull,
+          );
+          expect(
+            client.subscriptions.client['notification:index'],
+            isNull,
+          );
+          expect(
             client.subscriptions.server,
             isA<Map<String, SpinifyServerSubscription>>()
                 .having(
