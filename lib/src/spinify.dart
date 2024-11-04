@@ -234,12 +234,15 @@ final class Spinify implements ISpinify {
     _tearDownHealthCheckTimer();
     // coverage:ignore-start
 
-    void warning(String message) => _log(
-          const SpinifyLogLevel.warning(),
-          'health_check_error',
-          message,
-          <String, Object?>{},
-        );
+    void warning(String message) {
+      //debugger();
+      _log(
+        const SpinifyLogLevel.warning(),
+        'health_check_error',
+        message,
+        <String, Object?>{},
+      );
+    }
 
     _healthTimer = Timer.periodic(
       const Duration(seconds: 15),
@@ -891,7 +894,10 @@ final class Spinify implements ISpinify {
           'stackTrace': stackTrace,
         },
       );
-      _transport?.close();
+
+      final transport = _transport; // Close transport
+      if (transport != null && !transport.isClosed) transport.close();
+      _transport = null;
 
       switch ($error) {
         case SpinifyErrorResult result:

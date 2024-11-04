@@ -119,7 +119,7 @@ class WebSocket$Fake implements WebSocket {
 
   /// Send asynchroniously a reply to the client.
   void reply(List<int> bytes) {
-    _socket!.sink.add(bytes);
+    _socket?.sink.add(bytes);
   }
 
   @override
@@ -127,7 +127,11 @@ class WebSocket$Fake implements WebSocket {
     _closeCode = code;
     _closeReason = reason;
     _isClosed = true;
-    _socket!.close().ignore();
+    final socket = _socket;
+    if (socket != null && !socket.isClosed) {
+      _socket?.close().ignore();
+      _socket = null;
+    }
   }
 
   /// Reset the WebSocket client.
