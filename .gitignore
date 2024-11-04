@@ -77,6 +77,8 @@ coverage/
 .coverage/
 /test/**/*.json
 /test/.test_coverage.dart
+reports/
+.reports/
 
 # Centifuge
 centrifugo-config.json
