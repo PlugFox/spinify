@@ -709,6 +709,18 @@ final class Spinify implements ISpinify {
         protocols: <String>[_codec.protocol],
       );
 
+      if (isClosed) {
+        _log(
+          const SpinifyLogLevel.warning(),
+          'closed_during_connect_error',
+          'Client is closed during connect',
+          <String, Object?>{},
+        );
+        throw const SpinifyConnectionException(
+          message: 'Client is closed during connect',
+        );
+      }
+
       // Create handler for connect reply.
       final connectResultCompleter = Completer<SpinifyConnectResult>();
 

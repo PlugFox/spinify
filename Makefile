@@ -1,19 +1,14 @@
-ifeq ($(OS),Windows_NT)
-	SHELL = cmd
-    RM = del /Q
-    MKDIR = mkdir
-    PWD = $(shell $(PWD))
-else
-	SHELL = /bin/bash -e -o pipefail
-    RM = rm -f
-    MKDIR = mkdir -p
-    PWD = pwd
-endif
+SHELL :=/bin/bash -e -o pipefail
+PWD   :=$(shell pwd)
 
 .DEFAULT_GOAL := all
 .PHONY: all
 all: ## build pipeline
 all: generate format check test
+
+.PHONY: ci
+ci: ## CI build pipeline
+ci: all
 
 .PHONY: precommit
 precommit: ## validate the branch before commit

@@ -886,6 +886,7 @@ void main() {
         });
       });
 
+      // Retry connection after temporary error
       test(
         'Connection_error_retry',
         () => fakeAsync(
@@ -967,26 +968,25 @@ void main() {
               client.connect(url),
               completion(throwsA(isA<SpinifyException>())),
             );
-            client.states.forEach((s) => print(' *** State: $s'));
+            //client.states.forEach((s) => print(' *** State: $s'));
             /* async.elapse(client.config.timeout);
-        expect(
-            client.state,
-            isA<SpinifyState$Disconnected>().having(
-              (s) => s.temporary,
-              'temporary',
-              isTrue,
+            expect(
+              client.state,
+              isA<SpinifyState$Disconnected>().having(
+                (s) => s.temporary,
+                'temporary',
+                isTrue,
             )); */
-            async.elapse(const Duration(hours: 3));
+            //async.elapse(const Duration(hours: 3));
             /* expect(client.state.isConnected, isTrue);
-        expect(client.isClosed, isFalse); */
+            expect(client.isClosed, isFalse); */
             client.close();
             async.elapse(const Duration(minutes: 1));
             expect(client.state.isClosed, isTrue);
             /* expect(pings, greaterThanOrEqualTo(1));
-        expect(retries, equals(2)); */
+            expect(retries, equals(2)); */
           },
         ),
-        skip: true,
       );
     },
   );
