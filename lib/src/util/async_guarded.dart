@@ -4,8 +4,13 @@ import 'package:meta/meta.dart';
 
 /// Runs the given [callback] in a zone that catches uncaught errors and
 /// forwards them to the returned future.
+///
+/// [ignore] is used to ignore the errors and not throw them.
 @internal
-Future<void> asyncGuarded(Future<void> Function() callback) {
+Future<void> asyncGuarded(
+  Future<void> Function() callback, {
+  bool ignore = false,
+}) {
   final completer = Completer<void>.sync();
 
   var completed = false;
@@ -19,7 +24,11 @@ Future<void> asyncGuarded(Future<void> Function() callback) {
   void completeError(Object error, StackTrace stackTrace) {
     if (completed) return;
     completed = true;
-    completer.completeError(error, stackTrace);
+    if (ignore) {
+      completer.complete();
+    } else {
+      completer.completeError(error, stackTrace);
+    }
   }
 
   runZonedGuarded<void>(
