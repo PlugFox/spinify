@@ -928,7 +928,6 @@ void main() {
             print('Wat?');
           }
         },
-        skip: true,
       );
 
       // Retry connection after temporary error

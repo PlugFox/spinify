@@ -28,6 +28,7 @@ import 'model/transport_interface.dart';
 import 'protobuf/protobuf_codec.dart';
 import 'spinify_interface.dart';
 import 'subscription_interface.dart';
+import 'util/async_guarded.dart';
 import 'util/backoff.dart';
 import 'web_socket_stub.dart'
     // ignore: uri_does_not_exist
@@ -539,26 +540,26 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @Throws([SpinifyConnectionException])
-  Future<void> ready() async {
-    const error = SpinifyConnectionException(
-      message: 'Connection is closed permanently',
-    );
-    if (state.isConnected) return;
-    if (state.isClosed) throw error;
-    try {
-      await (_readyCompleter ??= Completer<void>()).future;
-    } on SpinifyConnectionException {
-      rethrow;
-    } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        SpinifyConnectionException(
-          message: 'Failed to wait for connection',
-          error: error,
-        ),
-        stackTrace,
-      );
-    }
-  }
+  Future<void> ready() => asyncGuarded(() async {
+        const error = SpinifyConnectionException(
+          message: 'Connection is closed permanently',
+        );
+        if (state.isConnected) return;
+        if (state.isClosed) throw error;
+        try {
+          await (_readyCompleter ??= Completer<void>()).future;
+        } on SpinifyConnectionException {
+          rethrow;
+        } on Object catch (error, stackTrace) {
+          Error.throwWithStackTrace(
+            SpinifyConnectionException(
+              message: 'Failed to wait for connection',
+              error: error,
+            ),
+            stackTrace,
+          );
+        }
+      });
 
   /// Plan to do action when client is connected.
   @unsafe
@@ -630,376 +631,377 @@ final class Spinify implements ISpinify {
   @unsafe
   @protected
   @nonVirtual
-  Future<void> _internalReconnect(String url) async {
-    if (state.isConnected || state.isConnecting) {
-      _internalDisconnect(
-        code: const SpinifyDisconnectCode.normalClosure(),
-        reason: 'normal closure',
-        reconnect: false,
-      );
-    }
-    final readyCompleter = _readyCompleter = switch (_readyCompleter) {
-      Completer<void> value when !value.isCompleted => value,
-      _ => Completer<void>(),
-    };
-    try {
-      if (!state.isDisconnected) {
-        _log(
-          const SpinifyLogLevel.warning(),
-          'reconnect_error',
-          'Failed to reconnect: state is not disconnected',
-          <String, Object?>{
-            'state': state,
-          },
-        );
-        assert(
-          false,
-          'State should be disconnected',
-        );
-        return;
-      }
-      assert(
-        _transport == null,
-        'Transport should be null',
-      );
-      assert(
-        _replySubscription == null,
-        'Reply subscription should be null',
-      );
-      _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
-      assert(state.isConnecting, 'State should be connecting');
-
-      void checkStillConnecting() {
-        // coverage:ignore-start
-        if (isClosed) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'closed_during_connect_error',
-            'Client is closed during connect',
-            <String, Object?>{},
-          );
-          throw const SpinifyConnectionException(
-            message: 'Client is closed during connect',
-          );
-        } else if (!state.isConnecting) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'state_changed_during_connect_error',
-            'State changed during connect',
-            <String, Object?>{
-              'state': state,
-            },
-          );
-          throw const SpinifyConnectionException(
-            message: 'State changed during connect',
-          );
-        } else if (!identical(url, _metrics.reconnectUrl)) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'url_changed_during_connect_error',
-            'URL changed during connect',
-            <String, Object?>{
-              'url': url,
-              'reconnectUrl': _metrics.reconnectUrl,
-            },
-          );
-          throw const SpinifyConnectionException(
-            message: 'URL changed during connect',
-          );
-        } else if (readyCompleter.isCompleted) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'ready_completer_completed_error',
-            'Ready completer is already completed',
-            <String, Object?>{
-              'readyCompleter': readyCompleter,
-            },
-          );
-          throw const SpinifyConnectionException(
-            message: 'Ready completer is already completed',
-          );
-        } else if (!identical(_readyCompleter, readyCompleter)) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'ready_completer_changed_error',
-            'Ready completer changed during connect',
-            <String, Object?>{
-              'readyCompleter': _readyCompleter,
-              'newReadyCompleter': readyCompleter,
-            },
-          );
-          throw const SpinifyConnectionException(
-            message: 'Ready completer changed during connect',
+  Future<void> _internalReconnect(String url) => asyncGuarded(() async {
+        if (state.isConnected || state.isConnecting) {
+          _internalDisconnect(
+            code: const SpinifyDisconnectCode.normalClosure(),
+            reason: 'normal closure',
+            reconnect: false,
           );
         }
-        // coverage:ignore-end
-      }
-
-      checkStillConnecting();
-
-      // Prepare connect request.
-      final SpinifyConnectRequest request;
-      {
-        final token = await config.getToken?.call();
-        final payload = await config.getPayload?.call();
-
-        checkStillConnecting();
-
-        final id = _getNextCommandId();
-        final now = DateTime.now();
-        request = SpinifyConnectRequest(
-          id: id,
-          timestamp: now,
-          token: token,
-          data: payload,
-          subs: <String, SpinifySubscribeRequest>{
-            for (final sub in _serverSubscriptionRegistry.values)
-              sub.channel: SpinifySubscribeRequest(
-                id: id,
-                timestamp: now,
-                channel: sub.channel,
-                recover: sub.recoverable,
-                epoch: sub.epoch,
-                offset: sub.offset,
-                token: null,
-                data: null,
-                positioned: null,
-                recoverable: null,
-                joinLeave: null,
-              ),
-          },
-          name: config.client.name,
-          version: config.client.version,
-        );
-      }
-
-      checkStillConnecting();
-
-      // Create a new transport
-      final ws = _transport = await _webSocketConnect(
-        url: url,
-        headers: config.headers,
-        protocols: <String>[_codec.protocol],
-      );
-
-      checkStillConnecting();
-
-      // Create handler for connect reply.
-      final connectResultCompleter = Completer<SpinifyConnectResult>();
-
-      // ignore: omit_local_variable_types
-      void Function(SpinifyReply reply) handleReply = (reply) {
-        if (connectResultCompleter.isCompleted) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'connect_result_error',
-            'Connect result completer is already completed',
-            <String, Object?>{
-              'reply': reply,
-            },
-          );
-        } else if (reply is SpinifyConnectResult) {
-          connectResultCompleter.complete(reply);
-        } else if (reply is SpinifyErrorResult) {
-          connectResultCompleter.completeError(reply);
-        } else {
-          connectResultCompleter.completeError(
-            const SpinifyConnectionException(
-              message: 'Unexpected reply received',
-            ),
-          );
-        }
-      };
-
-      void handleDone() {
-        assert(() {
-          if (!identical(ws, _transport)) {
+        final readyCompleter = _readyCompleter = switch (_readyCompleter) {
+          Completer<void> value when !value.isCompleted => value,
+          _ => Completer<void>(),
+        };
+        try {
+          if (!state.isDisconnected) {
             _log(
               const SpinifyLogLevel.warning(),
-              'transport_closed_error',
-              'Transport closed on different and not active transport',
+              'reconnect_error',
+              'Failed to reconnect: state is not disconnected',
               <String, Object?>{
-                'transport': ws,
+                'state': state,
               },
             );
+            assert(
+              false,
+              'State should be disconnected',
+            );
+            return;
           }
-          return true;
-        }(), '...');
-        var WebSocket(:int? closeCode, :String? closeReason) = ws;
-        final close = SpinifyDisconnectCode.normalize(closeCode, closeReason);
-        _log(
-          const SpinifyLogLevel.transport(),
-          'transport_disconnect',
-          'Transport disconnected '
-              '${close.reconnect ? 'temporarily' : 'permanently'} '
-              'with reason: ${close.reason}',
-          <String, Object?>{
-            'code': close.code,
-            'reason': close.reason,
-            'reconnect': close.reconnect,
-          },
-        );
-        _internalDisconnect(
-          code: close.code,
-          reason: close.reason,
-          reconnect: close.reconnect,
-        );
-      }
+          assert(
+            _transport == null,
+            'Transport should be null',
+          );
+          assert(
+            _replySubscription == null,
+            'Reply subscription should be null',
+          );
+          _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
+          assert(state.isConnecting, 'State should be connecting');
 
-      _replySubscription =
-          ws.stream.transform<SpinifyReply>(StreamTransformer.fromHandlers(
-        handleData: (data, sink) {
-          _metrics
-            ..bytesReceived += data.length
-            ..chunksReceived += 1;
-          for (final reply in _codec.decoder.convert(data)) {
-            _metrics.repliesDecoded += 1;
-            sink.add(reply);
-          }
-        },
-      )).listen(
-        (reply) {
-          assert(() {
-            if (!identical(ws, _transport)) {
+          void checkStillConnecting() {
+            // coverage:ignore-start
+            if (isClosed) {
               _log(
                 const SpinifyLogLevel.warning(),
-                'wrong_transport_error',
-                'Reply received on different and not active transport',
+                'closed_during_connect_error',
+                'Client is closed during connect',
+                <String, Object?>{},
+              );
+              throw const SpinifyConnectionException(
+                message: 'Client is closed during connect',
+              );
+            } else if (!state.isConnecting) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'state_changed_during_connect_error',
+                'State changed during connect',
                 <String, Object?>{
-                  'transport': ws,
+                  'state': state,
+                },
+              );
+              throw const SpinifyConnectionException(
+                message: 'State changed during connect',
+              );
+            } else if (!identical(url, _metrics.reconnectUrl)) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'url_changed_during_connect_error',
+                'URL changed during connect',
+                <String, Object?>{
+                  'url': url,
+                  'reconnectUrl': _metrics.reconnectUrl,
+                },
+              );
+              throw const SpinifyConnectionException(
+                message: 'URL changed during connect',
+              );
+            } else if (readyCompleter.isCompleted) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'ready_completer_completed_error',
+                'Ready completer is already completed',
+                <String, Object?>{
+                  'readyCompleter': readyCompleter,
+                },
+              );
+              throw const SpinifyConnectionException(
+                message: 'Ready completer is already completed',
+              );
+            } else if (!identical(_readyCompleter, readyCompleter)) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'ready_completer_changed_error',
+                'Ready completer changed during connect',
+                <String, Object?>{
+                  'readyCompleter': _readyCompleter,
+                  'newReadyCompleter': readyCompleter,
+                },
+              );
+              throw const SpinifyConnectionException(
+                message: 'Ready completer changed during connect',
+              );
+            }
+            // coverage:ignore-end
+          }
+
+          checkStillConnecting();
+
+          // Prepare connect request.
+          final SpinifyConnectRequest request;
+          {
+            final token = await config.getToken?.call();
+            final payload = await config.getPayload?.call();
+
+            checkStillConnecting();
+
+            final id = _getNextCommandId();
+            final now = DateTime.now();
+            request = SpinifyConnectRequest(
+              id: id,
+              timestamp: now,
+              token: token,
+              data: payload,
+              subs: <String, SpinifySubscribeRequest>{
+                for (final sub in _serverSubscriptionRegistry.values)
+                  sub.channel: SpinifySubscribeRequest(
+                    id: id,
+                    timestamp: now,
+                    channel: sub.channel,
+                    recover: sub.recoverable,
+                    epoch: sub.epoch,
+                    offset: sub.offset,
+                    token: null,
+                    data: null,
+                    positioned: null,
+                    recoverable: null,
+                    joinLeave: null,
+                  ),
+              },
+              name: config.client.name,
+              version: config.client.version,
+            );
+          }
+
+          checkStillConnecting();
+
+          // Create a new transport
+          final ws = _transport = await _webSocketConnect(
+            url: url,
+            headers: config.headers,
+            protocols: <String>[_codec.protocol],
+          );
+
+          checkStillConnecting();
+
+          // Create handler for connect reply.
+          final connectResultCompleter = Completer<SpinifyConnectResult>();
+
+          // ignore: omit_local_variable_types
+          void Function(SpinifyReply reply) handleReply = (reply) {
+            if (connectResultCompleter.isCompleted) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'connect_result_error',
+                'Connect result completer is already completed',
+                <String, Object?>{
                   'reply': reply,
                 },
               );
+            } else if (reply is SpinifyConnectResult) {
+              connectResultCompleter.complete(reply);
+            } else if (reply is SpinifyErrorResult) {
+              connectResultCompleter.completeError(reply);
+            } else {
+              connectResultCompleter.completeError(
+                const SpinifyConnectionException(
+                  message: 'Unexpected reply received',
+                ),
+              );
             }
-            return true;
-          }(), '...');
+          };
 
-          handleReply(reply); // Handle replies
-        },
-        onDone: handleDone,
-        onError: (Object error, StackTrace stackTrace) {
+          void handleDone() {
+            assert(() {
+              if (!identical(ws, _transport)) {
+                _log(
+                  const SpinifyLogLevel.warning(),
+                  'transport_closed_error',
+                  'Transport closed on different and not active transport',
+                  <String, Object?>{
+                    'transport': ws,
+                  },
+                );
+              }
+              return true;
+            }(), '...');
+            var WebSocket(:int? closeCode, :String? closeReason) = ws;
+            final close =
+                SpinifyDisconnectCode.normalize(closeCode, closeReason);
+            _log(
+              const SpinifyLogLevel.transport(),
+              'transport_disconnect',
+              'Transport disconnected '
+                  '${close.reconnect ? 'temporarily' : 'permanently'} '
+                  'with reason: ${close.reason}',
+              <String, Object?>{
+                'code': close.code,
+                'reason': close.reason,
+                'reconnect': close.reconnect,
+              },
+            );
+            _internalDisconnect(
+              code: close.code,
+              reason: close.reason,
+              reconnect: close.reconnect,
+            );
+          }
+
+          _replySubscription =
+              ws.stream.transform<SpinifyReply>(StreamTransformer.fromHandlers(
+            handleData: (data, sink) {
+              _metrics
+                ..bytesReceived += data.length
+                ..chunksReceived += 1;
+              for (final reply in _codec.decoder.convert(data)) {
+                _metrics.repliesDecoded += 1;
+                sink.add(reply);
+              }
+            },
+          )).listen(
+            (reply) {
+              assert(() {
+                if (!identical(ws, _transport)) {
+                  _log(
+                    const SpinifyLogLevel.warning(),
+                    'wrong_transport_error',
+                    'Reply received on different and not active transport',
+                    <String, Object?>{
+                      'transport': ws,
+                      'reply': reply,
+                    },
+                  );
+                }
+                return true;
+              }(), '...');
+
+              handleReply(reply); // Handle replies
+            },
+            onDone: handleDone,
+            onError: (Object error, StackTrace stackTrace) {
+              _log(
+                const SpinifyLogLevel.warning(),
+                'reply_error',
+                'Error receiving reply',
+                <String, Object?>{
+                  'error': error,
+                  'stackTrace': stackTrace,
+                },
+              );
+            },
+            cancelOnError: false,
+          );
+
+          await _sendCommandAsync(request);
+
+          checkStillConnecting();
+
+          final result = await connectResultCompleter.future;
+
+          checkStillConnecting();
+
+          if (!state.isConnecting) {
+            throw const SpinifyConnectionException(
+              message: 'Connection is not in connecting state',
+            );
+          } else if (!identical(ws, _transport)) {
+            throw const SpinifyConnectionException(
+              message: 'Transport is not the same as created',
+            );
+          }
+
+          _setState(SpinifyState$Connected(
+            url: url,
+            client: result.client,
+            version: result.version,
+            expires: result.expires,
+            ttl: result.ttl,
+            node: result.node,
+            pingInterval: result.pingInterval,
+            sendPong: result.sendPong,
+            session: result.session,
+            data: result.data,
+          ));
+
+          _onReply(result); // Handle connect reply
+          handleReply = _onReply; // Switch to normal reply handler
+
+          _setUpRefreshConnection(); // Start refresh connection timer
+          _setUpPingTimer(); // Start expecting ping messages
+
+          // Notify ready.
+          if (readyCompleter.isCompleted) {
+            throw const SpinifyConnectionException(
+              message: 'Ready completer is already completed. Why so?',
+            );
+          } else {
+            readyCompleter.complete();
+            _readyCompleter = null;
+          }
+
+          _metrics.lastConnectAt = DateTime.now();
+          _metrics.connects++;
+
           _log(
-            const SpinifyLogLevel.warning(),
-            'reply_error',
-            'Error receiving reply',
+            const SpinifyLogLevel.config(),
+            'connected',
+            'Connected to server with $url successfully',
             <String, Object?>{
+              'url': url,
+              'request': request,
+              'result': result,
+            },
+          );
+        } on Object catch ($error, stackTrace) {
+          final SpinifyConnectionException error;
+          if ($error is SpinifyConnectionException) {
+            error = $error;
+          } else {
+            error = SpinifyConnectionException(
+              message: 'Error connecting to server $url',
+              error: $error,
+            );
+          }
+          if (!readyCompleter.isCompleted)
+            readyCompleter.completeError(error, stackTrace);
+          _readyCompleter = null;
+          _log(
+            const SpinifyLogLevel.error(),
+            'connect_error',
+            'Error connecting to server $url',
+            <String, Object?>{
+              'url': url,
               'error': error,
               'stackTrace': stackTrace,
             },
           );
-        },
-        cancelOnError: false,
-      );
 
-      await _sendCommandAsync(request);
+          final transport = _transport; // Close transport
+          if (transport != null && !transport.isClosed) transport.close();
+          _transport = null;
 
-      checkStillConnecting();
-
-      final result = await connectResultCompleter.future;
-
-      checkStillConnecting();
-
-      if (!state.isConnecting) {
-        throw const SpinifyConnectionException(
-          message: 'Connection is not in connecting state',
-        );
-      } else if (!identical(ws, _transport)) {
-        throw const SpinifyConnectionException(
-          message: 'Transport is not the same as created',
-        );
-      }
-
-      _setState(SpinifyState$Connected(
-        url: url,
-        client: result.client,
-        version: result.version,
-        expires: result.expires,
-        ttl: result.ttl,
-        node: result.node,
-        pingInterval: result.pingInterval,
-        sendPong: result.sendPong,
-        session: result.session,
-        data: result.data,
-      ));
-
-      _onReply(result); // Handle connect reply
-      handleReply = _onReply; // Switch to normal reply handler
-
-      _setUpRefreshConnection(); // Start refresh connection timer
-      _setUpPingTimer(); // Start expecting ping messages
-
-      // Notify ready.
-      if (readyCompleter.isCompleted) {
-        throw const SpinifyConnectionException(
-          message: 'Ready completer is already completed. Why so?',
-        );
-      } else {
-        readyCompleter.complete();
-        _readyCompleter = null;
-      }
-
-      _metrics.lastConnectAt = DateTime.now();
-      _metrics.connects++;
-
-      _log(
-        const SpinifyLogLevel.config(),
-        'connected',
-        'Connected to server with $url successfully',
-        <String, Object?>{
-          'url': url,
-          'request': request,
-          'result': result,
-        },
-      );
-    } on Object catch ($error, stackTrace) {
-      final SpinifyConnectionException error;
-      if ($error is SpinifyConnectionException) {
-        error = $error;
-      } else {
-        error = SpinifyConnectionException(
-          message: 'Error connecting to server $url',
-          error: $error,
-        );
-      }
-      if (!readyCompleter.isCompleted)
-        readyCompleter.completeError(error, stackTrace);
-      _readyCompleter = null;
-      _log(
-        const SpinifyLogLevel.error(),
-        'connect_error',
-        'Error connecting to server $url',
-        <String, Object?>{
-          'url': url,
-          'error': error,
-          'stackTrace': stackTrace,
-        },
-      );
-
-      final transport = _transport; // Close transport
-      if (transport != null && !transport.isClosed) transport.close();
-      _transport = null;
-
-      switch ($error) {
-        case SpinifyErrorResult result:
-          if (result.code == 109) {
-            // Token expired error.
-            _setUpReconnectTimer(); // Retry resubscribe
-          } else if (result.temporary) {
-            // Temporary error.
-            _setUpReconnectTimer(); // Retry resubscribe
-          } else {
-            // Disable resubscribe timer on permanent errors.
-            _setState(SpinifyState$Disconnected(temporary: false));
+          switch ($error) {
+            case SpinifyErrorResult result:
+              if (result.code == 109) {
+                // Token expired error.
+                _setUpReconnectTimer(); // Retry resubscribe
+              } else if (result.temporary) {
+                // Temporary error.
+                _setUpReconnectTimer(); // Retry resubscribe
+              } else {
+                // Disable resubscribe timer on permanent errors.
+                _setState(SpinifyState$Disconnected(temporary: false));
+              }
+            case SpinifyConnectionException _:
+              _setUpReconnectTimer(); // Some spinify exception - resubscribe
+            default:
+              _setUpReconnectTimer(); // Unknown error - resubscribe
           }
-        case SpinifyConnectionException _:
-          _setUpReconnectTimer(); // Some spinify exception - retry resubscribe
-        default:
-          _setUpReconnectTimer(); // Unknown error - retry resubscribe
-      }
 
-      Error.throwWithStackTrace(error, stackTrace);
-    }
-  }
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+      });
 
   // --- Disconnection --- //
 
@@ -1046,81 +1048,97 @@ final class Spinify implements ISpinify {
     required int code,
     required String reason,
     required bool reconnect,
-  }) {
-    try {
-      _tearDownRefreshConnection();
+  }) =>
+      runZonedGuarded<void>(
+        () {
+          try {
+            _tearDownRefreshConnection();
 
-      // Unsuscribe from reply messages.
-      // To ignore last messages and done event from transport.
-      _replySubscription?.cancel().ignore();
-      _replySubscription = null;
-      // Close transport.
-      _transport?.close(code, reason);
-      _transport = null;
+            // Unsuscribe from reply messages.
+            // To ignore last messages and done event from transport.
+            _replySubscription?.cancel().ignore();
+            _replySubscription = null;
+            // Close transport.
+            _transport?.close(code, reason);
+            _transport = null;
 
-      // Update metrics.
-      _metrics.lastDisconnectAt = DateTime.now();
-      _metrics.disconnects++;
+            // Update metrics.
+            _metrics.lastDisconnectAt = DateTime.now();
+            _metrics.disconnects++;
 
-      // Close all pending replies with error.
-      const error = SpinifyReplyException(
-        replyCode: 0,
-        replyMessage: 'Disconnected',
-        temporary: true,
-      );
-      const stackTrace = StackTrace.empty;
-      for (final completer in _replies.values) {
-        if (completer.isCompleted) continue;
-        completer.completeError(error, stackTrace);
-        _log(
-          const SpinifyLogLevel.warning(),
-          'disconnected_reply_error',
-          'Reply for command '
-              '${completer.command.type}{id: ${completer.command.id}} '
-              'error on disconnect',
-          <String, Object?>{
-            'command': completer.command,
-            'error': error,
-            'stackTrace': stackTrace,
-          },
-        );
-      }
-      _replies.clear();
+            // Close all pending replies with error.
+            const error = SpinifyReplyException(
+              replyCode: 0,
+              replyMessage: 'Disconnected',
+              temporary: true,
+            );
+            const stackTrace = StackTrace.empty;
+            for (final completer in _replies.values) {
+              if (completer.isCompleted) continue;
+              completer.completeError(error, stackTrace);
+              _log(
+                const SpinifyLogLevel.warning(),
+                'disconnected_reply_error',
+                'Reply for command '
+                    '${completer.command.type}{id: ${completer.command.id}} '
+                    'error on disconnect',
+                <String, Object?>{
+                  'command': completer.command,
+                  'error': error,
+                  'stackTrace': stackTrace,
+                },
+              );
+            }
+            _replies.clear();
 
-      // Complete ready completer with error,
-      // if we still waiting for connection.
-      if (_readyCompleter case Completer<void> c when !c.isCompleted) {
-        c.completeError(
-          const SpinifyConnectionException(
-            message: 'Disconnected during connection',
-          ),
-          stackTrace,
-        );
-      }
+            // Complete ready completer with error,
+            // if we still waiting for connection.
+            if (_readyCompleter case Completer<void> c when !c.isCompleted) {
+              c.completeError(
+                const SpinifyConnectionException(
+                  message: 'Disconnected during connection',
+                ),
+                stackTrace,
+              );
+            }
 
-      // Reconnect if [reconnect] is true and we have reconnect URL.
-      if (reconnect && _metrics.reconnectUrl != null) _setUpReconnectTimer();
-    } on Object catch (error, stackTrace) {
-      _log(
-        const SpinifyLogLevel.warning(),
-        'disconnected_error',
-        'Error on disconnect',
-        <String, Object?>{
-          'error': error,
-          'stackTrace': stackTrace,
+            // Reconnect if [reconnect] is true and we have reconnect URL.
+            if (reconnect && _metrics.reconnectUrl != null)
+              _setUpReconnectTimer();
+          } on Object catch (error, stackTrace) {
+            _log(
+              const SpinifyLogLevel.warning(),
+              'disconnected_error',
+              'Error on disconnect',
+              <String, Object?>{
+                'error': error,
+                'stackTrace': stackTrace,
+              },
+            );
+          }
+          _setState(SpinifyState$Disconnected(temporary: reconnect));
+          _log(
+            const SpinifyLogLevel.config(),
+            'disconnected',
+            'Disconnected from server '
+                '${reconnect ? 'temporarily' : 'permanent'}',
+            <String, Object?>{
+              'temporary': reconnect,
+            },
+          );
+        },
+        (error, stackTrace) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'disconnected_error',
+            'Error on disconnect',
+            <String, Object?>{
+              'error': error,
+              'stackTrace': stackTrace,
+            },
+          );
         },
       );
-    }
-    _setState(SpinifyState$Disconnected(temporary: reconnect));
-    _log(
-      const SpinifyLogLevel.config(),
-      'disconnected',
-      'Disconnected from server ${reconnect ? 'temporarily' : 'permanent'}',
-      <String, Object?>{
-        'temporary': reconnect,
-      },
-    );
-  }
 
   // --- Close --- //
 
