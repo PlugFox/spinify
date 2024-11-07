@@ -631,10 +631,6 @@ final class Spinify implements ISpinify {
   @protected
   @nonVirtual
   Future<void> _internalReconnect(String url) async {
-    final readyCompleter = _readyCompleter = switch (_readyCompleter) {
-      Completer<void> value when !value.isCompleted => value,
-      _ => Completer<void>(),
-    };
     if (state.isConnected || state.isConnecting) {
       _internalDisconnect(
         code: const SpinifyDisconnectCode.normalClosure(),
@@ -642,6 +638,10 @@ final class Spinify implements ISpinify {
         reconnect: false,
       );
     }
+    final readyCompleter = _readyCompleter = switch (_readyCompleter) {
+      Completer<void> value when !value.isCompleted => value,
+      _ => Completer<void>(),
+    };
     try {
       if (!state.isDisconnected) {
         _log(
@@ -669,11 +669,82 @@ final class Spinify implements ISpinify {
       _setState(SpinifyState$Connecting(url: _metrics.reconnectUrl = url));
       assert(state.isConnecting, 'State should be connecting');
 
+      void checkStillConnecting() {
+        // coverage:ignore-start
+        if (isClosed) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'closed_during_connect_error',
+            'Client is closed during connect',
+            <String, Object?>{},
+          );
+          throw const SpinifyConnectionException(
+            message: 'Client is closed during connect',
+          );
+        } else if (!state.isConnecting) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'state_changed_during_connect_error',
+            'State changed during connect',
+            <String, Object?>{
+              'state': state,
+            },
+          );
+          throw const SpinifyConnectionException(
+            message: 'State changed during connect',
+          );
+        } else if (!identical(url, _metrics.reconnectUrl)) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'url_changed_during_connect_error',
+            'URL changed during connect',
+            <String, Object?>{
+              'url': url,
+              'reconnectUrl': _metrics.reconnectUrl,
+            },
+          );
+          throw const SpinifyConnectionException(
+            message: 'URL changed during connect',
+          );
+        } else if (readyCompleter.isCompleted) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'ready_completer_completed_error',
+            'Ready completer is already completed',
+            <String, Object?>{
+              'readyCompleter': readyCompleter,
+            },
+          );
+          throw const SpinifyConnectionException(
+            message: 'Ready completer is already completed',
+          );
+        } else if (!identical(_readyCompleter, readyCompleter)) {
+          _log(
+            const SpinifyLogLevel.warning(),
+            'ready_completer_changed_error',
+            'Ready completer changed during connect',
+            <String, Object?>{
+              'readyCompleter': _readyCompleter,
+              'newReadyCompleter': readyCompleter,
+            },
+          );
+          throw const SpinifyConnectionException(
+            message: 'Ready completer changed during connect',
+          );
+        }
+        // coverage:ignore-end
+      }
+
+      checkStillConnecting();
+
       // Prepare connect request.
       final SpinifyConnectRequest request;
       {
         final token = await config.getToken?.call();
         final payload = await config.getPayload?.call();
+
+        checkStillConnecting();
+
         final id = _getNextCommandId();
         final now = DateTime.now();
         request = SpinifyConnectRequest(
@@ -702,6 +773,8 @@ final class Spinify implements ISpinify {
         );
       }
 
+      checkStillConnecting();
+
       // Create a new transport
       final ws = _transport = await _webSocketConnect(
         url: url,
@@ -709,17 +782,7 @@ final class Spinify implements ISpinify {
         protocols: <String>[_codec.protocol],
       );
 
-      if (isClosed) {
-        _log(
-          const SpinifyLogLevel.warning(),
-          'closed_during_connect_error',
-          'Client is closed during connect',
-          <String, Object?>{},
-        );
-        throw const SpinifyConnectionException(
-          message: 'Client is closed during connect',
-        );
-      }
+      checkStillConnecting();
 
       // Create handler for connect reply.
       final connectResultCompleter = Completer<SpinifyConnectResult>();
@@ -829,7 +892,12 @@ final class Spinify implements ISpinify {
       );
 
       await _sendCommandAsync(request);
+
+      checkStillConnecting();
+
       final result = await connectResultCompleter.future;
+
+      checkStillConnecting();
 
       if (!state.isConnecting) {
         throw const SpinifyConnectionException(
@@ -945,14 +1013,29 @@ final class Spinify implements ISpinify {
   @protected
   @nonVirtual
   Future<void> _interactiveDisconnect() async {
-    _tearDownReconnectTimer();
-    _tearDownPingTimer();
-    _metrics.reconnectUrl = null;
-    _internalDisconnect(
-      code: const SpinifyDisconnectCode.normalClosure(),
-      reason: 'normal closure',
-      reconnect: false,
-    );
+    try {
+      _tearDownReconnectTimer();
+      _tearDownPingTimer();
+      _metrics.reconnectUrl = null;
+      _internalDisconnect(
+        code: const SpinifyDisconnectCode.normalClosure(),
+        reason: 'normal closure',
+        reconnect: false,
+      );
+    } on Object catch (error, stackTrace) {
+      // coverage:ignore-start
+      // Normally we should not get here.
+      _log(
+        const SpinifyLogLevel.warning(),
+        'disconnect_error',
+        'Error on disconnect',
+        <String, Object?>{
+          'error': error,
+          'stackTrace': stackTrace,
+        },
+      );
+      // coverage:ignore-end
+    }
   }
 
   /// Library initiated disconnect.
@@ -982,10 +1065,10 @@ final class Spinify implements ISpinify {
       // Close all pending replies with error.
       const error = SpinifyReplyException(
         replyCode: 0,
-        replyMessage: 'Client is disconnected',
+        replyMessage: 'Disconnected',
         temporary: true,
       );
-      late final stackTrace = StackTrace.current;
+      const stackTrace = StackTrace.empty;
       for (final completer in _replies.values) {
         if (completer.isCompleted) continue;
         completer.completeError(error, stackTrace);
@@ -1007,7 +1090,12 @@ final class Spinify implements ISpinify {
       // Complete ready completer with error,
       // if we still waiting for connection.
       if (_readyCompleter case Completer<void> c when !c.isCompleted) {
-        c.completeError(error, stackTrace);
+        c.completeError(
+          const SpinifyConnectionException(
+            message: 'Disconnected during connection',
+          ),
+          stackTrace,
+        );
       }
 
       // Reconnect if [reconnect] is true and we have reconnect URL.
@@ -1022,17 +1110,16 @@ final class Spinify implements ISpinify {
           'stackTrace': stackTrace,
         },
       );
-    } finally {
-      _setState(SpinifyState$Disconnected(temporary: reconnect));
-      _log(
-        const SpinifyLogLevel.config(),
-        'disconnected',
-        'Disconnected from server ${reconnect ? 'temporarily' : 'permanent'}',
-        <String, Object?>{
-          'temporary': reconnect,
-        },
-      );
     }
+    _setState(SpinifyState$Disconnected(temporary: reconnect));
+    _log(
+      const SpinifyLogLevel.config(),
+      'disconnected',
+      'Disconnected from server ${reconnect ? 'temporarily' : 'permanent'}',
+      <String, Object?>{
+        'temporary': reconnect,
+      },
+    );
   }
 
   // --- Close --- //

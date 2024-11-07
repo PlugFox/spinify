@@ -32,9 +32,10 @@ class WebSocket$Fake implements WebSocket {
   }
 
   // Default callbacks to handle connects and disconnects.
-  static void _defaultOnAddCallback(List<int> bytes, Sink<List<int>> sink) {
+  void _defaultOnAddCallback(List<int> bytes, Sink<List<int>> sink) {
     final command = ProtobufCodec.decode(pb.Command(), bytes);
-    scheduleMicrotask(() {
+    Future<void>.delayed(const Duration(milliseconds: 5), () {
+      if (isClosed) return; // Connection is closed, ignore command processing.
       if (command.hasConnect()) {
         sink.add(
           ProtobufCodec.encode(
@@ -59,7 +60,7 @@ class WebSocket$Fake implements WebSocket {
     });
   }
 
-  static void _defaultOnDoneCallback() {}
+  void _defaultOnDoneCallback() {}
 
   StreamController<List<int>>? _socket;
 
@@ -111,11 +112,11 @@ class WebSocket$Fake implements WebSocket {
   }
 
   /// Add callback to handle sending data and allow to respond with reply.
-  void Function(List<int> bytes, Sink<List<int>> sink) onAdd =
+  late void Function(List<int> bytes, Sink<List<int>> sink) onAdd =
       _defaultOnAddCallback;
 
   /// Add callback to handle socket close event.
-  void Function() onDone = _defaultOnDoneCallback;
+  late void Function() onDone = _defaultOnDoneCallback;
 
   /// Send asynchroniously a reply to the client.
   void reply(List<int> bytes) {

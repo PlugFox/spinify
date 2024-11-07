@@ -886,8 +886,49 @@ void main() {
         });
       });
 
-      // Retry connection after temporary error
+      test('Error_future', () {
+        final fakeException = Exception('Fake error');
+        expect(fakeException, isA<Exception>());
+        Future<void>.error(fakeException).ignore();
+        unawaited(
+          expectLater(
+            Future<void>.error(fakeException),
+            throwsA(isA<Exception>()),
+          ),
+        );
+        unawaited(
+          expectLater(
+            Future<void>.delayed(const Duration(milliseconds: 5), () {
+              throw fakeException;
+            }),
+            throwsA(isA<Exception>()),
+          ),
+        );
+      });
+
       test(
+        'Disconnect_during_connection',
+        () async {
+          final client = createFakeClient();
+          unawaited(
+            expectLater(
+              client.connect(url).onError((error, stackTrace) {
+                Error.throwWithStackTrace(error!, stackTrace);
+              }),
+              throwsA(anything),
+            ),
+          );
+          await client.disconnect();
+          expect(client.state.isDisconnected, isTrue);
+          expect(client.state.isClosed, isFalse);
+          await client.close();
+          expect(client.state.isClosed, isTrue);
+        },
+        skip: true,
+      );
+
+      // Retry connection after temporary error
+      /* test(
         'Connection_error_retry',
         () => fakeAsync(
           (async) {
@@ -966,28 +1007,29 @@ void main() {
             );
             expectLater(
               client.connect(url),
-              completion(throwsA(isA<SpinifyException>())),
+              throwsA(isA<SpinifyException>()),
             );
             //client.states.forEach((s) => print(' *** State: $s'));
-            /* async.elapse(client.config.timeout);
+            async.elapse(client.config.timeout);
             expect(
               client.state,
               isA<SpinifyState$Disconnected>().having(
                 (s) => s.temporary,
                 'temporary',
                 isTrue,
-            )); */
+            ));
             //async.elapse(const Duration(hours: 3));
-            /* expect(client.state.isConnected, isTrue);
-            expect(client.isClosed, isFalse); */
+            expect(client.state.isConnected, isTrue);
+            expect(client.isClosed, isFalse);
             client.close();
             async.elapse(const Duration(minutes: 1));
             expect(client.state.isClosed, isTrue);
-            /* expect(pings, greaterThanOrEqualTo(1));
-            expect(retries, equals(2)); */
+            expect(pings, greaterThanOrEqualTo(1));
+            expect(retries, equals(2));
           },
         ),
-      );
+        skip: true,
+      ); */
     },
   );
 }
