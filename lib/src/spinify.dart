@@ -645,6 +645,8 @@ final class Spinify implements ISpinify {
         };
         // We need this just to not receive any errors at zone
         // if we are completeError before any future subscription.
+        //
+        // See more at [Completer.completeError] comments.
         readyCompleter.future.ignore();
         try {
           if (!state.isDisconnected) {
