@@ -909,24 +909,18 @@ void main() {
       test(
         'Disconnect_during_connection',
         () async {
-          try {
-            final client = createFakeClient();
-            unawaited(
-              expectLater(
-                client.connect(url).onError((error, stackTrace) {
-                  Error.throwWithStackTrace(error!, stackTrace);
-                }),
-                throwsA(anything),
-              ),
-            );
-            await client.disconnect();
-            expect(client.state.isDisconnected, isTrue);
-            expect(client.state.isClosed, isFalse);
-            await client.close();
-            expect(client.state.isClosed, isTrue);
-          } on Object {
-            print('Wat?');
-          }
+          final client = createFakeClient();
+          unawaited(
+            expectLater(
+              client.connect(url),
+              throwsA(anything),
+            ),
+          );
+          await client.disconnect();
+          expect(client.state.isDisconnected, isTrue);
+          expect(client.state.isClosed, isFalse);
+          await client.close();
+          expect(client.state.isClosed, isTrue);
         },
       );
 
