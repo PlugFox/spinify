@@ -1,3 +1,5 @@
+// ignore_for_file: cascade_invocations
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -904,6 +906,24 @@ void main() {
             throwsA(isA<Exception>()),
           ),
         );
+      });
+
+      test('Completer_without_future', () async {
+        var zoneHandler = 0;
+        runZonedGuarded<void>(() {
+          try {
+            final completer = Completer<void>();
+            /* completer.future.ignore() */
+            completer.completeError(
+              Exception('Fake error'),
+              StackTrace.empty,
+            );
+          } on Object {/* ignore */}
+        }, (error, stackTrace) {
+          zoneHandler++;
+        });
+        await Future<void>.delayed(Duration.zero);
+        expect(zoneHandler, equals(1));
       });
 
       test(

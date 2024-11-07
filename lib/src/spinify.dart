@@ -643,6 +643,9 @@ final class Spinify implements ISpinify {
           Completer<void> value when !value.isCompleted => value,
           _ => Completer<void>(),
         };
+        // We need this just to not receive any errors at zone
+        // if we are completeError before any future subscription.
+        readyCompleter.future.ignore();
         try {
           if (!state.isDisconnected) {
             _log(

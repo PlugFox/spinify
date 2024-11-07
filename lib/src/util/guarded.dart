@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:meta/meta.dart';
 
@@ -42,8 +43,8 @@ Future<void> asyncGuarded(
     },
     // ignore: unnecessary_lambdas
     (error, stackTrace) {
-      // This is called when an error is thrown outside of the `try` block.
-      //debugger();
+      // This should never be called.
+      debugger();
       completeError(error, stackTrace);
     },
   );
@@ -73,6 +74,8 @@ void guarded(
       }
     },
     (error, stackTrace) {
+      // This should never be called.
+      debugger();
       $error = error;
       $stackTrace = stackTrace;
     },
