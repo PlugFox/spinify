@@ -31,7 +31,7 @@ Future<void> asyncGuarded(
     }
   }
 
-  runZonedGuarded<void>(
+  runZonedGuarded<Future<void>>(
     () async {
       try {
         await callback();
@@ -49,4 +49,38 @@ Future<void> asyncGuarded(
   );
 
   return completer.future;
+}
+
+/// Runs the given [callback] in a zone that catches uncaught errors and
+/// rethrows them.
+///
+/// [ignore] is used to ignore the errors and not throw them.
+@internal
+void guarded(
+  void Function() callback, {
+  bool ignore = false,
+}) {
+  Object? $error;
+  StackTrace? $stackTrace;
+
+  runZonedGuarded<void>(
+    () {
+      try {
+        callback();
+      } on Object catch (error, stackTrace) {
+        $error = error;
+        $stackTrace = stackTrace;
+      }
+    },
+    (error, stackTrace) {
+      $error = error;
+      $stackTrace = stackTrace;
+    },
+  );
+
+  final error = $error;
+  final stackTrace = $stackTrace;
+  if (error == null) return;
+  if (ignore) return;
+  Error.throwWithStackTrace(error, stackTrace ?? StackTrace.empty);
 }

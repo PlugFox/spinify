@@ -28,8 +28,8 @@ import 'model/transport_interface.dart';
 import 'protobuf/protobuf_codec.dart';
 import 'spinify_interface.dart';
 import 'subscription_interface.dart';
-import 'util/async_guarded.dart';
 import 'util/backoff.dart';
+import 'util/guarded.dart';
 import 'web_socket_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.js_interop) 'web_socket_js.dart'
@@ -567,11 +567,11 @@ final class Spinify implements ISpinify {
   Future<T> _doOnReady<T>(Future<T> Function() action) => switch (state) {
         SpinifyState$Connected _ => action(),
         SpinifyState$Connecting _ => ready().then<T>((_) => action()),
-        SpinifyState$Disconnected _ => Future.error(
+        SpinifyState$Disconnected _ => Future<T>.error(
             const SpinifyConnectionException(message: 'Disconnected'),
             StackTrace.current,
           ),
-        SpinifyState$Closed _ => Future.error(
+        SpinifyState$Closed _ => Future<T>.error(
             const SpinifyConnectionException(message: 'Closed'),
             StackTrace.current,
           ),
@@ -1049,7 +1049,7 @@ final class Spinify implements ISpinify {
     required String reason,
     required bool reconnect,
   }) =>
-      runZonedGuarded<void>(
+      guarded(
         () {
           try {
             _tearDownRefreshConnection();
@@ -1127,17 +1127,7 @@ final class Spinify implements ISpinify {
             },
           );
         },
-        (error, stackTrace) {
-          _log(
-            const SpinifyLogLevel.warning(),
-            'disconnected_error',
-            'Error on disconnect',
-            <String, Object?>{
-              'error': error,
-              'stackTrace': stackTrace,
-            },
-          );
-        },
+        ignore: true,
       );
 
   // --- Close --- //
