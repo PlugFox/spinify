@@ -122,6 +122,12 @@ extension type const SpinifyDisconnectCode(int code) implements int {
       normalize([int? code, String? reason]) => switch (code ?? 1) {
             // --- Client error codes --- //
 
+            < 0 => (
+                code: SpinifyDisconnectCode(code!),
+                reason: reason ?? 'client error',
+                reconnect: false,
+              ),
+
             /// Disconnect called explicitly by the client.
             0 => (
                 code: const SpinifyDisconnectCode(0),
@@ -524,12 +530,14 @@ extension type const SpinifyDisconnectCode(int code) implements int {
                 reconnect: true,
               ),
 
-            /// Custom disconnect codes.
+            /// Custom disconnect codes (unreachable).
+            // coverage:ignore-start
             _ => (
                 code: SpinifyDisconnectCode(code ?? 0),
                 reason: reason ?? 'transport closed',
                 reconnect: false,
               ),
+            // coverage:ignore-end
           };
 
   /// Reconnect is needed due to specific transport close code.

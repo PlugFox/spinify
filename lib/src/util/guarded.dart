@@ -11,45 +11,31 @@ import 'package:meta/meta.dart';
 Future<void> asyncGuarded(
   Future<void> Function() callback, {
   bool ignore = false,
-}) {
-  final completer = Completer<void>.sync();
+}) async {
+  Object? $error;
+  StackTrace? $stackTrace;
 
-  var completed = false;
-
-  void complete() {
-    if (completed) return;
-    completed = true;
-    completer.complete();
-  }
-
-  void completeError(Object error, StackTrace stackTrace) {
-    if (completed) return;
-    completed = true;
-    if (ignore) {
-      completer.complete();
-    } else {
-      completer.completeError(error, stackTrace);
-    }
-  }
-
-  runZonedGuarded<Future<void>>(
+  await runZonedGuarded<Future<void>>(
     () async {
       try {
         await callback();
-        complete();
       } on Object catch (error, stackTrace) {
-        completeError(error, stackTrace);
+        $error = error;
+        $stackTrace = stackTrace;
       }
     },
-    // ignore: unnecessary_lambdas
     (error, stackTrace) {
       // This should never be called.
       debugger();
-      completeError(error, stackTrace);
+      $error = error;
+      $stackTrace = stackTrace;
     },
   );
 
-  return completer.future;
+  final error = $error;
+  if (error == null) return;
+  if (ignore) return;
+  Error.throwWithStackTrace(error, $stackTrace ?? StackTrace.empty);
 }
 
 /// Runs the given [callback] in a zone that catches uncaught errors and
@@ -82,8 +68,7 @@ void guarded(
   );
 
   final error = $error;
-  final stackTrace = $stackTrace;
   if (error == null) return;
   if (ignore) return;
-  Error.throwWithStackTrace(error, stackTrace ?? StackTrace.empty);
+  Error.throwWithStackTrace(error, $stackTrace ?? StackTrace.empty);
 }
