@@ -1236,6 +1236,36 @@ void main() {
           );
 
           expect(
+            s.map<state.SpinifyState>(
+              connected: (e) => state.SpinifyState$Connected(
+                expires: e.expires,
+                url: e.url,
+                client: e.client,
+                data: e.data,
+                node: e.node,
+                pingInterval: e.pingInterval,
+                sendPong: e.sendPong,
+                session: e.session,
+                timestamp: DateTime(0),
+                ttl: e.ttl,
+                version: e.version,
+              ),
+              connecting: (e) => state.SpinifyState$Connecting(
+                timestamp: DateTime(0),
+                url: e.url,
+              ),
+              disconnected: (e) => state.SpinifyState$Disconnected(
+                timestamp: DateTime(0),
+                temporary: e.temporary,
+              ),
+              closed: (e) => state.SpinifyState$Closed(
+                timestamp: DateTime(0),
+              ),
+            ),
+            isNot(equals(s)),
+          );
+
+          expect(
             s.maybeMap<Object?>(
               orElse: () => 1,
             ),
@@ -1271,6 +1301,8 @@ void main() {
             s.mapOrNull<String?>(
               connected: (e) => e.url,
               connecting: (e) => e.url,
+              closed: (e) => e.url,
+              disconnected: (e) => e.url,
             ),
             anyOf(
               isNull,
