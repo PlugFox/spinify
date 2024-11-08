@@ -12,6 +12,7 @@ import 'package:spinify/src/model/history.dart' as history;
 import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
 import 'package:spinify/src/model/reply.dart' as reply;
 import 'package:spinify/src/model/state.dart' as state;
+import 'package:spinify/src/model/states_stream.dart' as states_stream;
 import 'package:spinify/src/util/list_equals.dart';
 import 'package:test/test.dart';
 
@@ -1357,6 +1358,90 @@ void main() {
           state3.permanent,
           isNot(state3.temporary),
         );
+      });
+
+      test('Stream', () {
+        final timestamp = DateTime.now();
+        final states = <state.SpinifyState>[
+          state.SpinifyState.disconnected(
+            timestamp: timestamp,
+            temporary: false,
+          ),
+          state.SpinifyState.connecting(
+            timestamp: timestamp,
+            url: 'url',
+          ),
+          state.SpinifyState.connected(
+            timestamp: timestamp,
+            expires: true,
+            ttl: timestamp.add(const Duration(seconds: 10)),
+            url: 'url',
+            client: 'client',
+            data: const [1, 2, 3],
+            node: 'node',
+            pingInterval: const Duration(seconds: 5),
+            sendPong: true,
+            session: 'session',
+            version: 'version',
+          ),
+          state.SpinifyState.closed(
+            timestamp: timestamp,
+          ),
+        ];
+
+        for (var i = 0; i < states.length; i++) {
+          final s = states[i];
+          states_stream.SpinifyStatesStream stream() =>
+              states_stream.SpinifyStatesStream(Stream.value(s));
+
+          expect(
+            stream(),
+            allOf(
+              isA<Stream<state.SpinifyState>>(),
+              isA<states_stream.SpinifyStatesStream>(),
+            ),
+          );
+
+          expectLater(
+            stream(),
+            emitsInOrder([
+              same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().closed,
+            emitsInOrder([
+              if (s.isClosed) same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().connected,
+            emitsInOrder([
+              if (s.isConnected) same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().connecting,
+            emitsInOrder([
+              if (s.isConnecting) same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().disconnected,
+            emitsInOrder([
+              if (s.isDisconnected) same(s),
+              emitsDone,
+            ]),
+          );
+        }
       });
     });
   });
