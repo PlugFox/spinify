@@ -25,6 +25,9 @@ sealed class SpinifyReply implements Comparable<SpinifyReply> {
   /// For pushes it will have zero value.
   final int id;
 
+  /// Check if reply has ID.
+  abstract final bool hasId;
+
   /// Timestamp of reply.
   final DateTime timestamp;
 
@@ -77,6 +80,9 @@ final class SpinifyServerPing extends SpinifyReply {
   String get type => 'ServerPing';
 
   @override
+  bool get hasId => false;
+
+  @override
   bool get isResult => false;
 }
 
@@ -95,6 +101,9 @@ final class SpinifyPush extends SpinifyReply {
 
   @override
   String get type => 'Push';
+
+  @override
+  bool get hasId => false;
 
   @override
   bool get isResult => false;
@@ -127,6 +136,9 @@ final class SpinifyConnectResult extends SpinifyReply
 
   @override
   String get type => 'ConnectResult';
+
+  @override
+  bool get hasId => true;
 
   /// Unique client connection ID server issued to this connection
   final String client;
@@ -183,6 +195,9 @@ final class SpinifySubscribeResult extends SpinifyReply
   @override
   String get type => 'SubscribeResult';
 
+  @override
+  bool get hasId => true;
+
   /*
     bool expires = 1;
     uint32 ttl = 2;
@@ -236,6 +251,9 @@ final class SpinifyUnsubscribeResult extends SpinifyReply
 
   @override
   String get type => 'UnsubscribeResult';
+
+  @override
+  bool get hasId => true;
 }
 
 /// {@macro reply}
@@ -249,6 +267,9 @@ final class SpinifyPublishResult extends SpinifyReply
 
   @override
   String get type => 'PublishResult';
+
+  @override
+  bool get hasId => true;
 }
 
 /// {@macro reply}
@@ -263,6 +284,9 @@ final class SpinifyPresenceResult extends SpinifyReply
 
   @override
   String get type => 'PresenceResult';
+
+  @override
+  bool get hasId => true;
 
   /// Contains presence information - a map client IDs as keys
   /// and client information as values.
@@ -282,6 +306,9 @@ final class SpinifyPresenceStatsResult extends SpinifyReply
 
   @override
   String get type => 'PresenceStatsResult';
+
+  @override
+  bool get hasId => true;
 
   /// Number of clients
   final int numClients;
@@ -304,6 +331,9 @@ final class SpinifyHistoryResult extends SpinifyReply
   @override
   String get type => 'HistoryResult';
 
+  @override
+  bool get hasId => true;
+
   /// Offset
   final SpinifyStreamPosition since;
 
@@ -322,6 +352,9 @@ final class SpinifyPingResult extends SpinifyReply
 
   @override
   String get type => 'PingResult';
+
+  @override
+  bool get hasId => true;
 }
 
 /// {@macro reply}
@@ -336,6 +369,9 @@ final class SpinifyRPCResult extends SpinifyReply
 
   @override
   String get type => 'RPCResult';
+
+  @override
+  bool get hasId => true;
 
   /// Payload
   final List<int> data;
@@ -358,6 +394,9 @@ final class SpinifyRefreshResult extends SpinifyReply
 
   @override
   String get type => 'RefreshResult';
+
+  @override
+  bool get hasId => true;
 
   /// Unique client connection ID server issued to this connection
   final String client;
@@ -388,6 +427,9 @@ final class SpinifySubRefreshResult extends SpinifyReply
   @override
   String get type => 'SubRefreshResult';
 
+  @override
+  bool get hasId => true;
+
   /// Whether a server will expire subscription at some point
   final bool expires;
 
@@ -412,6 +454,9 @@ final class SpinifyErrorResult extends SpinifyReply
 
   @override
   String get type => 'ErrorResult';
+
+  @override
+  bool get hasId => true;
 
   /// Error code.
   final int code;

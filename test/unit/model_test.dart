@@ -10,6 +10,7 @@ import 'package:spinify/src/model/command.dart' as command;
 import 'package:spinify/src/model/exception.dart' as exception;
 import 'package:spinify/src/model/history.dart' as history;
 import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
+import 'package:spinify/src/model/reply.dart' as reply;
 import 'package:spinify/src/util/list_equals.dart';
 import 'package:test/test.dart';
 
@@ -910,6 +911,252 @@ void main() {
         final list = <Object>[];
         e.visitor(list.add);
         expect(list, hasLength(5));
+      });
+    });
+
+    group('Reply', () {
+      test('Instances', () {
+        const id = 1;
+        final timestamp = DateTime.now();
+        const channel = 'channel';
+        final replies = <reply.SpinifyReply>[
+          reply.SpinifyServerPing(
+            timestamp: timestamp,
+          ),
+          reply.SpinifyPush(
+            timestamp: timestamp,
+            event: channel_event.SpinifyPublication(
+              timestamp: timestamp,
+              channel: channel,
+              data: const [1, 2, 3],
+              offset: Int64(10),
+              info: client_info.SpinifyClientInfo(
+                channelInfo: const [1, 2, 3],
+                client: 'client',
+                connectionInfo: const [4, 5, 6],
+                user: 'user',
+              ),
+              tags: const {'key': 'value'},
+            ),
+          ),
+          reply.SpinifyConnectResult(
+            client: 'client',
+            version: 'version',
+            timestamp: timestamp,
+            id: id,
+            expires: true,
+            ttl: timestamp.add(const Duration(seconds: 10)),
+            data: const [1, 2, 3],
+            node: 'node',
+            pingInterval: const Duration(seconds: 5),
+            sendPong: true,
+            session: 'session',
+            subs: <String, reply.SpinifySubscribeResult>{
+              channel: reply.SpinifySubscribeResult(
+                data: const [1, 2, 3],
+                positioned: true,
+                recoverable: true,
+                id: id,
+                timestamp: timestamp,
+                expires: true,
+                publications: [
+                  channel_event.SpinifyPublication(
+                    timestamp: timestamp,
+                    channel: channel,
+                    data: const [1, 2, 3],
+                    offset: Int64(10),
+                    info: client_info.SpinifyClientInfo(
+                      channelInfo: const [1, 2, 3],
+                      client: 'client',
+                      connectionInfo: const [4, 5, 6],
+                      user: 'user',
+                    ),
+                    tags: const {'key': 'value'},
+                  ),
+                ],
+                recovered: true,
+                since: (epoch: 'epoch', offset: Int64(10)),
+                ttl: timestamp.add(const Duration(seconds: 10)),
+                wasRecovering: true,
+              ),
+            },
+          ),
+          reply.SpinifySubscribeResult(
+            id: id,
+            timestamp: timestamp,
+            expires: true,
+            ttl: timestamp.add(const Duration(seconds: 10)),
+            recoverable: true,
+            publications: [
+              channel_event.SpinifyPublication(
+                timestamp: timestamp,
+                channel: channel,
+                data: const [1, 2, 3],
+                offset: Int64(10),
+                info: client_info.SpinifyClientInfo(
+                  channelInfo: const [1, 2, 3],
+                  client: 'client',
+                  connectionInfo: const [4, 5, 6],
+                  user: 'user',
+                ),
+                tags: const {'key': 'value'},
+              ),
+            ],
+            recovered: true,
+            since: (epoch: 'epoch', offset: Int64(10)),
+            data: const [1, 2, 3],
+            positioned: true,
+            wasRecovering: true,
+          ),
+          reply.SpinifyUnsubscribeResult(
+            id: id,
+            timestamp: timestamp,
+          ),
+          reply.SpinifyPublishResult(
+            id: id,
+            timestamp: timestamp,
+          ),
+          reply.SpinifyPresenceResult(
+            id: id,
+            timestamp: timestamp,
+            presence: <String, client_info.SpinifyClientInfo>{
+              channel: client_info.SpinifyClientInfo(
+                channelInfo: const [1, 2, 3],
+                client: 'client',
+                user: 'user',
+                connectionInfo: const [4, 5, 6],
+              ),
+            },
+          ),
+          reply.SpinifyPresenceStatsResult(
+            id: id,
+            timestamp: timestamp,
+            numClients: 5,
+            numUsers: 3,
+          ),
+          reply.SpinifyHistoryResult(
+            id: id,
+            timestamp: timestamp,
+            publications: [
+              channel_event.SpinifyPublication(
+                timestamp: timestamp,
+                channel: channel,
+                data: const [1, 2, 3],
+                offset: Int64(10),
+                info: client_info.SpinifyClientInfo(
+                  channelInfo: const [1, 2, 3],
+                  client: 'client',
+                  connectionInfo: const [4, 5, 6],
+                  user: 'user',
+                ),
+                tags: const {'key': 'value'},
+              ),
+            ],
+            since: (epoch: 'epoch', offset: Int64(10)),
+          ),
+          reply.SpinifyPingResult(
+            id: id,
+            timestamp: timestamp,
+          ),
+          reply.SpinifyRPCResult(
+            id: id,
+            timestamp: timestamp,
+            data: const [1, 2, 3],
+          ),
+          reply.SpinifyRefreshResult(
+            id: id,
+            timestamp: timestamp,
+            client: 'client',
+            version: 'version',
+            expires: true,
+            ttl: timestamp.add(const Duration(seconds: 10)),
+          ),
+          reply.SpinifySubRefreshResult(
+            id: id,
+            timestamp: timestamp,
+            expires: true,
+            ttl: timestamp.add(const Duration(seconds: 10)),
+          ),
+          reply.SpinifyErrorResult(
+            id: id,
+            timestamp: timestamp,
+            code: 1000,
+            message: 'message',
+            temporary: true,
+          ),
+        ];
+
+        for (var i = 0; i < replies.length; i++) {
+          final r = replies[i];
+          expect(
+            r,
+            isA<reply.SpinifyReply>()
+                .having(
+                  (e) => e.id,
+                  'id',
+                  r.hasId ? equals(id) : equals(0),
+                )
+                .having(
+                  (e) => e.timestamp,
+                  'timestamp',
+                  same(timestamp),
+                )
+                .having(
+                  (e) => e.type,
+                  'type',
+                  isNotEmpty,
+                )
+                .having(
+                  (e) => e.hashCode,
+                  'hashCode',
+                  isPositive,
+                )
+                .having(
+                  (e) => e.toString(),
+                  'toString',
+                  startsWith(r.type),
+                ),
+          );
+
+          expect(r.isResult, r.hasId);
+
+          expect(
+            r,
+            anyOf(
+              isNot(isA<reply.SpinifyPush>()),
+              isA<reply.SpinifyPush>().having(
+                (e) => e.channel == e.event.channel,
+                'channel',
+                isTrue,
+              ),
+            ),
+          );
+
+          for (var j = 0; j < replies.length; j++) {
+            final other = replies[j];
+            expect(
+              r,
+              r.type != other.type ? isNot(same(other)) : same(other),
+            );
+            expect(
+              r,
+              r.type != other.type ? isNot(equals(other)) : equals(other),
+            );
+          }
+        }
+
+        expect(replies.sort, returnsNormally);
+
+        final ping1 = reply.SpinifyPingResult(
+          timestamp: DateTime(2000),
+          id: 1,
+        );
+        final ping2 = reply.SpinifyPingResult(
+          timestamp: DateTime(2001),
+          id: 1,
+        );
+        expect(ping1.compareTo(ping2), lessThan(0));
+        expect(ping1, isNot(equals(ping2)));
       });
     });
   });
