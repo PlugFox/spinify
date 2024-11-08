@@ -1,6 +1,8 @@
 import 'package:fixnum/fixnum.dart' as fixnum;
 import 'package:meta/meta.dart';
 
+import '../util/list_equals.dart';
+import '../util/map_equals.dart';
 import 'client_info.dart';
 import 'stream_position.dart';
 
@@ -196,6 +198,28 @@ final class SpinifyPublication extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        data,
+        offset,
+        info,
+        tags,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyPublication &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        offset == other.offset &&
+        info == other.info &&
+        mapEquals(tags, other.tags) &&
+        listEquals(data, other.data);
+  }
 }
 
 /// {@template channel_presence}

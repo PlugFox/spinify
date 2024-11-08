@@ -37,7 +37,7 @@ sealed class SpinifyException implements Exception {
   }
 
   @override
-  int get hashCode => code.hashCode;
+  int get hashCode => Object.hash(code, message, error);
 
   @override
   bool operator ==(Object other) => identical(this, other);
@@ -84,10 +84,10 @@ final class SpinifyReplyException extends SpinifyException {
 /// {@category Exception}
 final class SpinifyPingException extends SpinifyException {
   /// {@macro exception}
-  const SpinifyPingException([Object? error])
+  const SpinifyPingException({String? message, Object? error})
       : super(
           'spinify_ping_exception',
-          'Ping error',
+          message ?? 'Ping error',
           error,
         );
 }
