@@ -11,6 +11,7 @@ import 'package:spinify/src/model/exception.dart' as exception;
 import 'package:spinify/src/model/history.dart' as history;
 import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
 import 'package:spinify/src/model/reply.dart' as reply;
+import 'package:spinify/src/model/state.dart' as state;
 import 'package:spinify/src/util/list_equals.dart';
 import 'package:test/test.dart';
 
@@ -1157,6 +1158,173 @@ void main() {
         );
         expect(ping1.compareTo(ping2), lessThan(0));
         expect(ping1, isNot(equals(ping2)));
+      });
+    });
+
+    group('States', () {
+      test('Instances', () {
+        final timestamp = DateTime.now();
+        final states = <state.SpinifyState>[
+          state.SpinifyState.disconnected(
+            timestamp: timestamp,
+            temporary: false,
+          ),
+          state.SpinifyState.connecting(
+            timestamp: timestamp,
+            url: 'url',
+          ),
+          state.SpinifyState.connected(
+            timestamp: timestamp,
+            expires: true,
+            ttl: timestamp.add(const Duration(seconds: 10)),
+            url: 'url',
+            client: 'client',
+            data: const [1, 2, 3],
+            node: 'node',
+            pingInterval: const Duration(seconds: 5),
+            sendPong: true,
+            session: 'session',
+            version: 'version',
+          ),
+          state.SpinifyState.closed(
+            timestamp: timestamp,
+          ),
+        ];
+
+        for (var i = 0; i < states.length; i++) {
+          final s = states[i];
+          expect(
+            s,
+            isA<state.SpinifyState>()
+                .having(
+                  (e) => e.timestamp,
+                  'timestamp',
+                  same(timestamp),
+                )
+                .having(
+                  (e) => e.type,
+                  'type',
+                  isNotEmpty,
+                )
+                .having(
+                  (e) => e.hashCode,
+                  'hashCode',
+                  isPositive,
+                )
+                .having(
+                  (e) => e.toString(),
+                  'toString',
+                  isNotEmpty,
+                ),
+          );
+
+          expect(s.hashCode, isPositive);
+          expect(s, equals(s));
+
+          expect(
+            s.mapOrNull<Object?>(
+              connected: (e) => e,
+              connecting: (e) => e,
+              disconnected: (e) => e,
+              closed: (e) => e,
+            ),
+            allOf(
+              isNotNull,
+              isA<state.SpinifyState>(),
+              same(s),
+            ),
+          );
+
+          expect(
+            s.maybeMap<Object?>(
+              orElse: () => 1,
+            ),
+            equals(1),
+          );
+
+          expect(s.mapOrNull<Object?>(), isNull);
+
+          expect(
+            s.map<bool>(
+              closed: (e) => e.isClosed,
+              connected: (e) => e.isConnected,
+              connecting: (e) => e.isConnecting,
+              disconnected: (e) => e.isDisconnected,
+            ),
+            isTrue,
+          );
+
+          expect(s.isDisconnected, isA<bool>());
+          expect(s.isConnected, isA<bool>());
+          expect(s.isConnecting, isA<bool>());
+          expect(s.isClosed, isA<bool>());
+
+          expect(
+            s.url,
+            anyOf(
+              isNull,
+              'url',
+            ),
+          );
+
+          expect(
+            s.mapOrNull<String?>(
+              connected: (e) => e.url,
+              connecting: (e) => e.url,
+            ),
+            anyOf(
+              isNull,
+              'url',
+            ),
+          );
+
+          for (var j = 0; j < states.length; j++) {
+            final other = states[j];
+            expect(
+              s,
+              s.type != other.type ? isNot(same(other)) : same(other),
+            );
+            expect(
+              s,
+              s.type != other.type ? isNot(equals(other)) : equals(other),
+            );
+          }
+        }
+
+        expect(states.sort, returnsNormally);
+      });
+
+      test('Disconnected', () {
+        final timestamp = DateTime.now();
+        final state1 = state.SpinifyState$Disconnected(
+          timestamp: timestamp,
+          temporary: false,
+        );
+        final state2 = state.SpinifyState$Disconnected(
+          timestamp: timestamp,
+          temporary: false,
+        );
+        final state3 = state.SpinifyState$Disconnected(
+          timestamp: timestamp.add(const Duration(seconds: 1)),
+          temporary: true,
+        );
+        expect(state1, isA<state.SpinifyState>());
+        expect(state1.hashCode, isPositive);
+        expect(
+          state1.toString(),
+          isNotEmpty,
+        );
+        expect(state1, equals(state1));
+        expect(state1, equals(state2));
+        expect(state1, isNot(equals(state3)));
+        expect(
+          state1.permanent,
+          isNot(state1.temporary),
+        );
+        expect(
+          state3.permanent,
+          isNot(state3.temporary),
+        );
       });
     });
   });
