@@ -35,9 +35,6 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
     DateTime? timestamp,
   }) = SpinifySubscriptionState$Subscribed;
 
-  /// Converts this state to JSON.
-  Map<String, Object?> toJson();
-
   @override
   String toString() => type;
 }
@@ -79,12 +76,6 @@ final class SpinifySubscriptionState$Unsubscribed
         subscribed,
   }) =>
       unsubscribed(this);
-
-  @override
-  Map<String, Object?> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
 
   @override
   int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
@@ -133,12 +124,6 @@ final class SpinifySubscriptionState$Subscribing
         subscribed,
   }) =>
       subscribing(this);
-
-  @override
-  Map<String, Object?> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
 
   @override
   int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
@@ -193,12 +178,6 @@ final class SpinifySubscriptionState$Subscribed
       subscribed(this);
 
   @override
-  Map<String, Object?> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
-
-  @override
   int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
@@ -214,7 +193,8 @@ typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
     Function(S state);
 
 @immutable
-abstract base class _$SpinifySubscriptionStateBase {
+abstract base class _$SpinifySubscriptionStateBase
+    implements Comparable<_$SpinifySubscriptionStateBase> {
   const _$SpinifySubscriptionStateBase({
     required this.timestamp,
   });
@@ -277,4 +257,8 @@ abstract base class _$SpinifySubscriptionStateBase {
         subscribing: subscribing ?? (_) => null,
         subscribed: subscribed ?? (_) => null,
       );
+
+  @override
+  int compareTo(_$SpinifySubscriptionStateBase other) =>
+      timestamp.compareTo(other.timestamp);
 }

@@ -1,6 +1,6 @@
 // ignore_for_file: non_const_call_to_literal_constructor
 
-import 'package:fixnum/fixnum.dart';
+import 'package:spinify/spinify.dart';
 import 'package:spinify/src/model/annotations.dart' as annotations;
 import 'package:spinify/src/model/channel_event.dart' as channel_event;
 import 'package:spinify/src/model/channel_events.dart' as channel_events;
@@ -14,6 +14,12 @@ import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
 import 'package:spinify/src/model/reply.dart' as reply;
 import 'package:spinify/src/model/state.dart' as state;
 import 'package:spinify/src/model/states_stream.dart' as states_stream;
+import 'package:spinify/src/model/subscription_config.dart'
+    as subscription_config;
+import 'package:spinify/src/model/subscription_state.dart'
+    as subscription_state;
+import 'package:spinify/src/model/subscription_states.dart'
+    as subscription_states;
 import 'package:spinify/src/util/list_equals.dart';
 import 'package:test/test.dart';
 
@@ -800,6 +806,14 @@ void main() {
                 ),
           );
           expect(c == c, isTrue);
+          final encoder = SpinifyProtobufCodec().encoder;
+          expect(
+            encoder.convert(c),
+            allOf(
+              isA<List<int>>(),
+              isNotEmpty,
+            ),
+          );
           for (var j = 0; j < commands.length; j++) {
             final other = commands[j];
             expect(
@@ -1508,6 +1522,230 @@ void main() {
               endsWith('}'),
             ));
         expect(m.toJson, returnsNormally);
+      });
+    });
+
+    group('Subscription_state', () {
+      test('Instance', () {
+        final unsubscribed =
+            subscription_state.SpinifySubscriptionState$Unsubscribed();
+        final subscribing =
+            subscription_state.SpinifySubscriptionState$Subscribing();
+        final subscribed =
+            subscription_state.SpinifySubscriptionState$Subscribed();
+        final list = [unsubscribed, subscribing, subscribed];
+        for (var i = 0; i < list.length; i++) {
+          final s = list[i];
+          subscription_states.SpinifySubscriptionStates stream() =>
+              subscription_states.SpinifySubscriptionStates(Stream.value(s));
+          expect(
+            s,
+            isA<subscription_state.SpinifySubscriptionState>()
+                .having(
+                  (e) => e.hashCode,
+                  'hashCode',
+                  isPositive,
+                )
+                .having(
+                  (e) => e.toString(),
+                  'toString',
+                  isNotEmpty,
+                ),
+          );
+          expect(s, equals(s));
+          expect(s, isNot(equals(list[(i + 1) % list.length])));
+
+          expect(
+            s.maybeMap<Object?>(
+              orElse: () => 1,
+            ),
+            equals(1),
+          );
+
+          expect(s.mapOrNull<Object?>(), isNull);
+
+          expect(
+            s.map<bool>(
+              subscribed: (e) => e.isSubscribed,
+              subscribing: (e) => e.isSubscribing,
+              unsubscribed: (e) => e.isUnsubscribed,
+            ),
+            isTrue,
+          );
+
+          expect(s.isSubscribed, isA<bool>());
+          expect(s.isSubscribing, isA<bool>());
+          expect(s.isUnsubscribed, isA<bool>());
+
+          expect(
+            s.type,
+            allOf(
+              isNotNull,
+              isNotEmpty,
+            ),
+          );
+
+          expect(
+            s.mapOrNull<String?>(
+              subscribed: (e) => e.type,
+              subscribing: (e) => e.type,
+              unsubscribed: (e) => e.type,
+            ),
+            allOf(
+              isNotNull,
+              isNotEmpty,
+            ),
+          );
+
+          expect(
+            stream(),
+            allOf(
+              isA<Stream<subscription_state.SpinifySubscriptionState>>(),
+              isA<subscription_states.SpinifySubscriptionStates>(),
+            ),
+          );
+
+          expectLater(
+            stream(),
+            emitsInOrder([
+              same(s),
+              emitsDone,
+            ]),
+          );
+
+          for (var j = 0; j < list.length; j++) {
+            final other = list[j];
+            expect(
+              s,
+              s.type != other.type ? isNot(same(other)) : same(other),
+            );
+            expect(
+              s,
+              s.type != other.type ? isNot(equals(other)) : equals(other),
+            );
+          }
+        }
+
+        expect(list.sort, returnsNormally);
+      });
+
+      test('Equality', () {
+        final unsubscribed =
+            subscription_state.SpinifySubscriptionState.unsubscribed();
+        final subscribing =
+            subscription_state.SpinifySubscriptionState.subscribing();
+        final subscribed =
+            subscription_state.SpinifySubscriptionState.subscribed();
+
+        final unsubscribed2 =
+            subscription_state.SpinifySubscriptionState.unsubscribed(
+                timestamp: DateTime(0));
+        final subscribing2 =
+            subscription_state.SpinifySubscriptionState.subscribing(
+                timestamp: DateTime(0));
+        final subscribed2 =
+            subscription_state.SpinifySubscriptionState.subscribed(
+                timestamp: DateTime(0));
+        expect(unsubscribed, isNot(equals(unsubscribed2)));
+        expect(subscribing, isNot(equals(subscribing2)));
+        expect(subscribed, isNot(equals(subscribed2)));
+        expect(unsubscribed, equals(unsubscribed));
+        expect(subscribing, equals(subscribing));
+        expect(subscribed, equals(subscribed));
+      });
+
+      test('Stream', () {
+        final timestamp = DateTime.now();
+        final states = <subscription_state.SpinifySubscriptionState>[
+          subscription_state.SpinifySubscriptionState.unsubscribed(
+              timestamp: timestamp),
+          subscription_state.SpinifySubscriptionState.subscribing(
+              timestamp: timestamp),
+          subscription_state.SpinifySubscriptionState.subscribed(
+              timestamp: timestamp),
+        ];
+
+        for (var i = 0; i < states.length; i++) {
+          final s = states[i];
+          subscription_states.SpinifySubscriptionStates stream() =>
+              subscription_states.SpinifySubscriptionStates(Stream.value(s));
+
+          expect(
+            stream(),
+            allOf(
+              isA<Stream<subscription_state.SpinifySubscriptionState>>(),
+              isA<subscription_states.SpinifySubscriptionStates>(),
+            ),
+          );
+
+          expectLater(
+            stream(),
+            emitsInOrder([
+              same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().unsubscribed(),
+            emitsInOrder([
+              if (s.isUnsubscribed) same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().subscribing(),
+            emitsInOrder([
+              if (s.isSubscribing) same(s),
+              emitsDone,
+            ]),
+          );
+
+          expectLater(
+            stream().subscribed(),
+            emitsInOrder([
+              if (s.isSubscribed) same(s),
+              emitsDone,
+            ]),
+          );
+        }
+      });
+    });
+
+    group('Subscription_config', () {
+      test('ByDefault', () {
+        expect(
+          subscription_config.SpinifySubscriptionConfig.byDefault,
+          returnsNormally,
+        );
+      });
+
+      test('Instance', () {
+        final config = subscription_config.SpinifySubscriptionConfig(
+          getPayload: () async => [1, 2, 3],
+          getToken: () async => 'token',
+          resubscribeInterval: (min: Duration.zero, max: Duration.zero),
+          since: (epoch: 'epoch', offset: Int64(10)),
+          timeout: Duration.zero,
+          joinLeave: true,
+          positioned: true,
+          recoverable: true,
+        );
+        expect(
+          config,
+          isA<subscription_config.SpinifySubscriptionConfig>()
+              .having(
+                (e) => e.hashCode,
+                'hashCode',
+                isPositive,
+              )
+              .having(
+                (e) => e.toString(),
+                'toString',
+                isNotEmpty,
+              ),
+        );
       });
     });
   });
