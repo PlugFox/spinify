@@ -9,6 +9,7 @@ import 'package:spinify/src/model/codes.dart' as codes;
 import 'package:spinify/src/model/command.dart' as command;
 import 'package:spinify/src/model/exception.dart' as exception;
 import 'package:spinify/src/model/history.dart' as history;
+import 'package:spinify/src/model/metric.dart' as metric;
 import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
 import 'package:spinify/src/model/reply.dart' as reply;
 import 'package:spinify/src/model/state.dart' as state;
@@ -1442,6 +1443,71 @@ void main() {
             ]),
           );
         }
+      });
+    });
+
+    group('Metric', () {
+      test('Freeze', () {
+        final mutable = metric.SpinifyMetrics$Mutable();
+        expect(mutable.freeze, returnsNormally);
+      });
+
+      test('ToJson', () {
+        final mutable = metric.SpinifyMetrics$Mutable();
+        expect(mutable.toJson, returnsNormally);
+      });
+
+      test('ToString', () {
+        final mutable = metric.SpinifyMetrics$Mutable();
+        expect(
+          mutable.toString(),
+          allOf(
+            isA<String>(),
+            isNotEmpty,
+            startsWith('SpinifyMetrics{'),
+            endsWith('}'),
+          ),
+        );
+      });
+
+      test('CompareTo', () {
+        final list = [
+          metric.SpinifyMetrics$Mutable(),
+          metric.SpinifyMetrics$Mutable(),
+        ];
+        expect(
+          list.sort,
+          returnsNormally,
+        );
+        expect(
+          list.map((e) => e.freeze()).toList().sort,
+          returnsNormally,
+        );
+      });
+
+      test('Getters', () {
+        final metrics = metric.SpinifyMetrics$Mutable();
+        expect(metrics.messagesSent, isA<Int64>());
+        expect(metrics.messagesReceived, isA<Int64>());
+      });
+
+      test('Channels', () {
+        final m = metric.SpinifyMetrics$Mutable()
+          ..channels.addAll({
+            'channel': metric.SpinifyMetrics$Channel$Mutable(),
+          });
+        expect(m.channels, hasLength(1));
+        expect(m.freeze, returnsNormally);
+        expect(m.channels['channel'], isA<metric.SpinifyMetrics$Channel>());
+        expect(
+            m.channels['channel']!.toString(),
+            allOf(
+              isA<String>(),
+              isNotEmpty,
+              startsWith(r'SpinifyMetrics$Channel{'),
+              endsWith('}'),
+            ));
+        expect(m.toJson, returnsNormally);
       });
     });
   });
