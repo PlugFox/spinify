@@ -232,10 +232,10 @@ void main() => group('Util', () {
             unawaited(
               expectLater(
                 m.protect(() async {
-                  final value = copy.removeAt(0);
                   await Future<void>.delayed(
                     Duration(seconds: list.length - i),
                   );
+                  final value = copy.removeAt(0);
                   result.add(value);
                 }),
                 completes,
@@ -261,8 +261,8 @@ void main() => group('Util', () {
           final copy = list.toList();
           for (var i = 0; i < list.length; i++) {
             m.lock();
-            final value = copy.removeAt(0);
             Future<void>.delayed(Duration(seconds: list.length - i), m.unlock);
+            final value = copy.removeAt(0);
             result.add(value);
           }
           expect(m.locks, equals(list.length));
