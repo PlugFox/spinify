@@ -6,6 +6,7 @@ import 'package:spinify/src/util/event_queue.dart';
 import 'package:spinify/src/util/guarded.dart';
 import 'package:spinify/src/util/list_equals.dart';
 import 'package:spinify/src/util/map_equals.dart';
+import 'package:spinify/src/util/mutex.dart';
 import 'package:test/test.dart';
 
 void main() => group('Util', () {
@@ -134,5 +135,66 @@ void main() => group('Util', () {
         expect(mapEquals(null, {1: 2, 3: 4}), isFalse);
         expect(mapEquals({1: 2, 3: 4}, null), isFalse);
         expect(mapEquals<void, void>(null, null), isTrue);
+      });
+
+      test('Mutex', () async {
+        fakeAsync((async) {
+          final m = Mutex();
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+          unawaited(expectLater(m.lock(), completes));
+          expect(m.locks, equals(1));
+          expect(m.pending, isNotEmpty);
+          unawaited(expectLater(m.lock(), completes));
+          expect(m.locks, equals(2));
+          expect(m.pending, hasLength(2));
+          expect(m.unlock, returnsNormally);
+          expect(m.locks, equals(1));
+          expect(m.pending, hasLength(1));
+          expect(m.unlock, returnsNormally);
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+
+          unawaited(
+            expectLater(
+              m.protect(
+                () => Future.delayed(const Duration(hours: 1), () => 1),
+              ),
+              completion(equals(1)),
+            ),
+          );
+          async.flushMicrotasks();
+          expect(m.locks, equals(1));
+          async.flushTimers();
+          expect(m.locks, equals(0));
+        });
+
+        fakeAsync((async) {
+          final m = Mutex();
+          final list = <int>[for (var i = 0; i < 10; i++) i];
+          final result = <int>[];
+          for (var i = 0; i < 10; i++) {
+            unawaited(
+              expectLater(
+                m.protect(() async {
+                  final value = list[i];
+                  await Future<void>.delayed(Duration(seconds: 10 - i));
+                  result.add(value);
+                }),
+                completes,
+              ),
+            );
+          }
+          async.flushMicrotasks();
+          expect(m.locks, equals(list.length));
+          expect(m.pending, hasLength(list.length));
+          async.elapse(const Duration(seconds: 10));
+          expect(m.locks, equals(list.length - 1));
+          expect(m.pending, hasLength(list.length - 1));
+          async.flushTimers();
+          expect(listEquals(result, list), isTrue);
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+        });
       });
     });

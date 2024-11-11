@@ -141,12 +141,12 @@ class _MutexList extends _Base {
 class _MutexLinked extends _Base {
   _MutexLinked() : super('Linked');
 
-  _Node? _node;
+  _Mutex$Request? _node;
 
   @override
   Future<void> run() async {
     final prev = _node;
-    final current = _node = _Node.sync()..prev = prev;
+    final current = _node = _Mutex$Request.sync()..prev = prev;
     await prev?.future;
     final value = _counter;
     await Future<void>.delayed(Duration.zero);
@@ -263,7 +263,7 @@ class _MutexEncapsulated extends _Base {
       _counter = value + 1;
       //if (_counter < 50) print('$value -> $_counter');
     } finally {
-      _m.release();
+      _m.unlock();
     }
   }
 
@@ -275,36 +275,72 @@ class _MutexEncapsulated extends _Base {
   }
 }
 
-final class _Node {
-  _Node._(Completer<void> completer)
+/// A request for a mutex lock.
+class _Mutex$Request {
+  /// Creates a new mutex request.
+  _Mutex$Request._(Completer<void> completer)
       : _completer = completer,
         future = completer.future;
 
-  factory _Node.sync() => _Node._(Completer<void>.sync());
+  /// Creates a new mutex request with a synchronous completer.
+  factory _Mutex$Request.sync() => _Mutex$Request._(Completer<void>.sync());
 
-  final Completer<void> _completer;
-  void release() => _completer.complete();
-  final Future<void> future;
-  _Node? prev;
+  final Completer<void> _completer; // The completer for the request.
+  void release() => _completer.complete(); // Releases the lock.
+  final Future<void> future; // The future for the request.
+  _Mutex$Request? prev; // The previous request in the chain.
 }
 
+/// A mutual exclusion lock.
 class _Mutex {
+  /// Creates a new mutex.
   _Mutex();
 
-  _Node? _request; // The last requested block
-  _Node? _current; // The first and current running block
-  int _locks = 0;
+  _Mutex$Request? _last; // The last requested block
+  _Mutex$Request? _current; // The first and current running block
+  int _locks = 0; // The number of locks currently held
+
+  /// The number of locks currently held.
   int get locks => _locks;
 
-  Future<void> lock() async {
-    final prev = _request;
-    _locks++;
-    final current = _request = _Node.sync()..prev = prev;
-    await prev?.future;
-    _current = current..prev = null;
+  /// The list of pending locks.
+  List<Future<void>> get pending {
+    final pending = List<Future<void>>.filled(_locks, Future<void>.value(),
+        growable: false);
+    for (var i = _locks - 1, request = _last;
+        i >= 0;
+        i--, request = request?.prev) {
+      final future = request?.future;
+      if (future != null)
+        pending[i] = future;
+      else
+        assert(false, 'Invalid lock state');
+    }
+    return pending;
   }
 
-  void release() {
+  /// Protects a callback with the mutex.
+  Future<T> protect<T>(Future<T> Function() callback) async {
+    await lock();
+    try {
+      return await callback();
+    } finally {
+      unlock();
+    }
+  }
+
+  /// Locks the mutex.
+  Future<void> lock() async {
+    _locks++;
+    final prev = _last;
+    final current = _last = _Mutex$Request.sync()..prev = prev;
+    // Wait for the previous lock to be released.
+    if (prev != null) await prev.future;
+    _current = current..prev = null; // Set the current lock.
+  }
+
+  /// Unlocks the mutex.
+  void unlock() {
     final current = _current;
     if (current == null) return;
     _locks--;
