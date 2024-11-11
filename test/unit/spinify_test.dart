@@ -949,6 +949,102 @@ void main() {
         }),
       );
 
+      test(
+        'Few_connects_in_a_row',
+        () {
+          final client = createFakeClient();
+          expectLater(
+            client.states,
+            emitsInOrder(
+              [
+                isA<SpinifyState$Connecting>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url1'),
+                ),
+                isA<SpinifyState$Connected>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url1'),
+                ),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
+                isA<SpinifyState$Connecting>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url2'),
+                ),
+                isA<SpinifyState$Connected>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url2'),
+                ),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
+                isA<SpinifyState$Connecting>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url3'),
+                ),
+                isA<SpinifyState$Connected>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url3'),
+                ),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
+                isA<SpinifyState$Closed>(),
+                emitsDone,
+              ],
+            ),
+          );
+          return fakeAsync((async) {
+            client.connect('url1');
+            client.connect('url2');
+            client.connect('url3');
+            async.elapse(const Duration(seconds: 1));
+            expect(
+                client.state,
+                isA<SpinifyState$Connected>().having(
+                  (s) => s.url,
+                  'url',
+                  equals('url3'),
+                ));
+            client.close();
+            async.flushMicrotasks();
+          });
+        },
+      );
+
+      test('Closed_after_close', () {
+        final client = createFakeClient();
+        expectLater(
+          client.states,
+          emitsInOrder(
+            [
+              isA<SpinifyState$Connecting>(),
+              isA<SpinifyState$Connected>(),
+              isA<SpinifyState$Disconnected>(),
+              isA<SpinifyState$Closed>(),
+              emitsDone,
+            ],
+          ),
+        );
+        client.connect(url);
+        expect(client.isClosed, isFalse);
+        client.close();
+        expectLater(client.states.last, completion(isA<SpinifyState$Closed>()));
+      });
+
       // Retry connection after temporary error
       /* test(
         'Connection_error_retry',
