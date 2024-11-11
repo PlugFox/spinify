@@ -7,35 +7,43 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:isolate';
 
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:meta/meta.dart';
 
 void main() => Future<void>(() async {
       //final baseUs = await _WithoutMutex().measure();
-      final results = await Stream<AsyncBenchmarkBase>.fromIterable(
-        <AsyncBenchmarkBase>[
-          _WithoutMutex(),
-          _MutexList(),
-          _MutexQueue(),
-          _MutexLinked(),
-          _MutexLock(),
-          _MutexLast(),
-          _MutexWrap(),
-          _MutexEncapsulated(),
-        ],
-      )
-          .asyncMap((benchmark) async => (
-                name: benchmark.name,
-                score: await benchmark.measure(),
-              ))
-          .toList();
+      final benchmarks = <AsyncBenchmarkBase Function()>[
+        _WithoutMutex.new,
+        _MutexList.new,
+        _MutexQueue.new,
+        _MutexLinked.new,
+        _MutexLock.new,
+        _MutexLast.new,
+        _MutexWrap.new,
+        _MutexEncapsulated.new,
+      ];
+      final results =
+          await Stream<AsyncBenchmarkBase Function()>.fromIterable(benchmarks)
+              .asyncMap(
+                (constructor) async => await Isolate.run(
+                  () async {
+                    final benchmark = constructor();
+                    return (
+                      name: benchmark.name,
+                      score: await benchmark.measure()
+                    );
+                  },
+                ),
+              )
+              .toList();
       results.sort((a, b) => a.score.compareTo(b.score));
       final buffer = StringBuffer();
       for (final r in results) {
         buffer.writeln('${r.name.padLeft(12)} |'
             ' ${r.score.toStringAsPrecision(6).padRight(8)} us |'
-            ' ${(1000000 / r.score).round()} FPS');
+            ' ${1000000 ~/ r.score} FPS');
       }
       print(buffer.toString()); // ignore: avoid_print
     });
@@ -281,6 +289,8 @@ final class _Node {
 }
 
 class _Mutex {
+  _Mutex();
+
   _Node? _request; // The last requested block
   _Node? _current; // The first and current running block
   int _locks = 0;
