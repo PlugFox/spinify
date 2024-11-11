@@ -1,3 +1,10 @@
+/*
+ * Mutex benchmark
+ * https://gist.github.com/PlugFox/264d59a37d02dd06a7123ef19ee8537d
+ * https://dartpad.dev?id=264d59a37d02dd06a7123ef19ee8537d
+ * Mike Matiunin <plugfox@gmail.com>, 11 November 2024
+ */
+
 import 'dart:async';
 import 'dart:collection';
 
@@ -9,7 +16,8 @@ void main() => Future<void>(() async {
         <AsyncBenchmarkBase>[
           _MutexList(),
           _MutexQueue(),
-          _MutexLinkedList(),
+          _MutexLinked(),
+          _MutexLock(),
           _MutexLast(),
           _MutexWrap(),
         ],
@@ -114,22 +122,23 @@ class _MutexList extends _Base {
   }
 }
 
-class _MutexLinkedList extends _Base {
-  _MutexLinkedList() : super('LinkedList');
+class _MutexLinked extends _Base {
+  _MutexLinked() : super('Linked');
 
-  var _nodes = _Node(Future<void>.value());
+  _Node? _node;
 
   @override
   Future<void> run() async {
-    final prev = _nodes;
+    final prev = _node;
     final completer = Completer<void>.sync();
-    final next = _nodes = _Node(completer.future)..next;
-    await prev.future;
+    final current = _node = _Node(completer.future)..prev = prev;
+    await prev?.future;
     final value = _counter;
     await Future<void>.delayed(Duration.zero);
     _counter = value + 1;
     //if (_counter < 50) print('$value -> $_counter');
-    next.next = null;
+    current.prev = null;
+    if (identical(_node, current)) _node = null;
     completer.complete();
   }
 }
@@ -137,7 +146,7 @@ class _MutexLinkedList extends _Base {
 final class _Node {
   _Node(this.future);
   final Future<void> future;
-  _Node? next;
+  _Node? prev;
 }
 
 class _MutexQueue extends _Base {
@@ -177,6 +186,33 @@ class _MutexLast extends _Base {
     //if (_counter < 50) print('$value -> $_counter');
     if (identical(_last, current)) _last = null;
     completer.complete();
+  }
+}
+
+class _MutexLock extends _Base {
+  _MutexLock() : super('Lock');
+
+  Future<void>? _last; // The last running block
+
+  Future<void Function()> _lock() async {
+    final prev = _last;
+    final completer = Completer<void>.sync();
+    final current = _last = completer.future;
+    await prev;
+    return () {
+      if (identical(_last, current)) _last = null;
+      completer.complete();
+    };
+  }
+
+  @override
+  Future<void> run() async {
+    final unlock = await _lock();
+    final value = _counter;
+    await Future<void>.delayed(Duration.zero);
+    _counter = value + 1;
+    //if (_counter < 50) print('$value -> $_counter');
+    unlock();
   }
 }
 
