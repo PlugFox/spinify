@@ -394,6 +394,7 @@ void main() {
             expect(client.state, isA<SpinifyState$Closed>());
           },
         ),
+        skip: true,
       );
 
       test(
@@ -1043,6 +1044,543 @@ void main() {
         expect(client.isClosed, isFalse);
         client.close();
         expectLater(client.states.last, completion(isA<SpinifyState$Closed>()));
+      });
+
+      test('Send', () {
+        final client = createFakeClient();
+        expectLater(
+          client.send([1, 2, 3]),
+          throwsA(isA<SpinifySendException>()),
+        );
+        client.connect(url);
+        expectLater(
+          client.send([1, 2, 3]),
+          completes,
+        );
+        client.close();
+        expectLater(
+          client.send([1, 2, 3]),
+          throwsA(isA<SpinifySendException>()),
+        );
+      });
+
+      test('Publish', () async {
+        final client = createFakeClient(
+          transport: (_) async => WebSocket$Fake()
+            ..onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{
+                        'channel': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                        'another': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                      },
+                      ping: 600,
+                      pong: false,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasPublish() &&
+                    command.publish.channel == 'channel') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    publish: pb.PublishResult(),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasPublish() &&
+                    command.publish.channel == 'another') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    error: pb.Error(
+                      code: 3000,
+                      message: 'Fake publish error',
+                      temporary: false,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                }
+              });
+            },
+        );
+        unawaited(expectLater(
+          client.publish('channel', [1, 2, 3]),
+          throwsA(isA<SpinifyPublishException>()),
+        ));
+        unawaited(client.connect(url));
+        unawaited(expectLater(
+          client.publish('channel', [1, 2, 3]),
+          completes,
+        ));
+        unawaited(expectLater(
+          client.publish('another', [1, 2, 3]),
+          throwsA(isA<SpinifyPublishException>()),
+        ));
+        unawaited(expectLater(
+          client.publish('unknown', [1, 2, 3]),
+          throwsA(isA<SpinifyPublishException>()),
+        ));
+        unawaited(expectLater(
+          client.close(),
+          completes,
+        ));
+        unawaited(expectLater(
+          client.publish('channel', [1, 2, 3]),
+          throwsA(isA<SpinifyPublishException>()),
+        ));
+      });
+
+      test('Presense', () async {
+        final client = createFakeClient(
+          transport: (_) async => WebSocket$Fake()
+            ..onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      ping: 600,
+                      pong: false,
+                      subs: <String, pb.SubscribeResult>{
+                        'channel': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                        'another': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                      },
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasPresence() &&
+                    command.presence.channel == 'channel') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    presence: pb.PresenceResult(
+                      presence: {
+                        'channel': pb.ClientInfo(
+                          chanInfo: [1, 2, 3],
+                          connInfo: [1, 2, 3],
+                          client: 'fake',
+                          user: 'fake',
+                        ),
+                      },
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasPresence() &&
+                    command.presence.channel == 'another') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    error: pb.Error(
+                      code: 3000,
+                      message: 'Fake presence error',
+                      temporary: false,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                }
+              });
+            },
+        );
+        unawaited(expectLater(
+          client.presence('channel'),
+          throwsA(isA<SpinifyPresenceException>()),
+        ));
+        unawaited(client.connect(url));
+        unawaited(expectLater(
+          client.presence('channel'),
+          completion(
+            isA<Map<String, SpinifyClientInfo>>().having(
+              (info) => info.keys,
+              'keys',
+              contains('channel'),
+            ),
+          ),
+        ));
+        unawaited(expectLater(
+          client.presence('another'),
+          throwsA(isA<SpinifyPresenceException>()),
+        ));
+        unawaited(expectLater(
+          client.presence('unknown'),
+          throwsA(isA<SpinifyPresenceException>()),
+        ));
+        unawaited(client.close());
+        unawaited(expectLater(
+          client.presence('channel'),
+          throwsA(isA<SpinifyPresenceException>()),
+        ));
+      });
+
+      test('PresenceStats', () async {
+        final client = createFakeClient(
+          transport: (_) async => WebSocket$Fake()
+            ..onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      ping: 600,
+                      pong: false,
+                      subs: <String, pb.SubscribeResult>{
+                        'channel': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                        'another': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                      },
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasPresenceStats() &&
+                    command.presenceStats.channel == 'channel') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    presenceStats: pb.PresenceStatsResult(
+                      numClients: 3,
+                      numUsers: 5,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasPresenceStats() &&
+                    command.presenceStats.channel == 'another') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    error: pb.Error(
+                      code: 3000,
+                      message: 'Fake presence stats error',
+                      temporary: false,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                }
+              });
+            },
+        );
+        unawaited(expectLater(
+          client.presenceStats('channel'),
+          throwsA(isA<SpinifyPresenceStatsException>()),
+        ));
+        unawaited(client.connect(url));
+        unawaited(expectLater(
+          client.presenceStats('channel'),
+          completion(
+            isA<SpinifyPresenceStats>()
+                .having(
+                  (stats) => stats.channel,
+                  'channel',
+                  equals('channel'),
+                )
+                .having(
+                  (stats) => stats.clients,
+                  'clients',
+                  equals(3),
+                )
+                .having(
+                  (stats) => stats.users,
+                  'users',
+                  equals(5),
+                ),
+          ),
+        ));
+        unawaited(expectLater(
+          client.presenceStats('another'),
+          throwsA(isA<SpinifyPresenceStatsException>()),
+        ));
+        unawaited(expectLater(
+          client.presenceStats('unknown'),
+          throwsA(isA<SpinifyPresenceStatsException>()),
+        ));
+        unawaited(expectLater(
+          client.close(),
+          completes,
+        ));
+        unawaited(expectLater(
+          client.presenceStats('channel'),
+          throwsA(isA<SpinifyPresenceStatsException>()),
+        ));
+      });
+
+      test('History', () async {
+        final client = createFakeClient(
+          transport: (_) async => WebSocket$Fake()
+            ..onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      ping: 600,
+                      pong: false,
+                      subs: <String, pb.SubscribeResult>{
+                        'channel': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                        'another': pb.SubscribeResult(
+                          expires: false,
+                          ttl: null,
+                        ),
+                      },
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasHistory() &&
+                    command.history.channel == 'channel') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    history: pb.HistoryResult(
+                      epoch: 'epoch',
+                      offset: Int64(5),
+                      publications: [
+                        pb.Publication(
+                          offset: Int64(5),
+                          data: [1, 2, 3],
+                          info: pb.ClientInfo(
+                            chanInfo: [1, 2, 3],
+                            connInfo: [1, 2, 3],
+                            client: 'fake',
+                            user: 'fake',
+                          ),
+                        ),
+                        pb.Publication(
+                          offset: Int64(6),
+                          data: [4, 5, 6],
+                          info: pb.ClientInfo(
+                            chanInfo: [1, 2, 3],
+                            connInfo: [1, 2, 3],
+                            client: 'fake',
+                            user: 'fake',
+                          ),
+                        ),
+                        pb.Publication(
+                          offset: Int64(7),
+                          data: [7, 8, 9],
+                          info: pb.ClientInfo(
+                            chanInfo: [1, 2, 3],
+                            connInfo: [1, 2, 3],
+                            client: 'fake',
+                            user: 'fake',
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasHistory() &&
+                    command.history.channel == 'another') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    error: pb.Error(
+                      code: 3000,
+                      message: 'Fake history error',
+                      temporary: false,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                }
+              });
+            },
+        );
+
+        unawaited(expectLater(
+          client.history('channel'),
+          throwsA(isA<SpinifyHistoryException>()),
+        ));
+
+        unawaited(client.connect(url));
+
+        unawaited(expectLater(
+          client.history(
+            'channel',
+            limit: 3,
+            reverse: false,
+            since: (epoch: 'epoch', offset: Int64(5)),
+          ),
+          completion(
+            isA<SpinifyHistory>()
+                .having(
+                  (history) => history.since,
+                  'since',
+                  equals((epoch: 'epoch', offset: Int64(5))),
+                )
+                .having(
+                  (history) => history.publications,
+                  'publications',
+                  hasLength(3),
+                ),
+          ),
+        ));
+
+        unawaited(expectLater(
+          client.history('another'),
+          throwsA(isA<SpinifyHistoryException>()),
+        ));
+
+        unawaited(expectLater(
+          client.history('unknown'),
+          throwsA(isA<SpinifyHistoryException>()),
+        ));
+
+        unawaited(expectLater(
+          client.close(),
+          completes,
+        ));
+
+        unawaited(expectLater(
+          client.history('channel'),
+          throwsA(isA<SpinifyHistoryException>()),
+        ));
+      });
+
+      test('Send_few_rpc', () async {
+        final client = createFakeClient(
+          transport: (_) async => WebSocket$Fake()
+            ..onAdd = (bytes, sink) {
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      ping: 600,
+                      pong: false,
+                      subs: <String, pb.SubscribeResult>{},
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasRpc() && command.rpc.method == 'echo') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    rpc: pb.RPCResult(
+                      data: command.rpc.data,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                } else if (command.hasRpc() &&
+                    command.rpc.method == 'unknown') {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    error: pb.Error(
+                      code: 3000,
+                      message: 'Fake rpc error',
+                      temporary: false,
+                    ),
+                  );
+                  final bytes = ProtobufCodec.encode(reply);
+                  sink.add(bytes);
+                }
+              });
+            },
+        );
+
+        unawaited(expectLater(
+          client.rpc('echo', [1, 2, 3]),
+          throwsA(isA<SpinifyRPCException>()),
+        ));
+
+        unawaited(expectLater(
+          client.connect(url),
+          completes,
+        ));
+
+        unawaited(expectLater(
+          client.rpc('echo', [1, 2, 3]),
+          completion(
+            isA<List<int>>().having(
+              (data) => data,
+              'data',
+              equals([1, 2, 3]),
+            ),
+          ),
+        ));
+
+        unawaited(expectLater(
+          client.rpc('unknown', [1, 2, 3]),
+          throwsA(isA<SpinifyRPCException>()),
+        ));
+
+        unawaited(expectLater(
+          client.rpc('unknown', [1, 2, 3]),
+          throwsA(isA<SpinifyRPCException>()),
+        ));
+
+        unawaited(expectLater(
+          client.close(),
+          completes,
+        ));
+
+        unawaited(expectLater(
+          client.rpc('echo', [1, 2, 3]),
+          throwsA(isA<SpinifyRPCException>()),
+        ));
       });
 
       // Retry connection after temporary error

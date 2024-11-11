@@ -1159,10 +1159,16 @@ final class Spinify implements ISpinify {
   @safe
   @override
   @nonVirtual
-  Future<void> close() async {
+  Future<void> close({bool force = false}) async {
     if (state.isClosed) return;
-    await _mutex.wait();
+    await _mutex.lock();
     try {
+      if (!force) {
+        try {
+          await Future.wait(_replies.values.map((e) => e.future))
+              .timeout(config.timeout);
+        } on Object {/* ignore */}
+      }
       _tearDownHealthCheckTimer();
       _internalDisconnect(
         code: const SpinifyDisconnectCode.normalClosure(),
@@ -1171,6 +1177,7 @@ final class Spinify implements ISpinify {
       );
       _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
+      _mutex.unlock();
       _statesController.close().ignore();
       _eventController.close().ignore();
       _log(
@@ -1327,14 +1334,24 @@ final class Spinify implements ISpinify {
   @nonVirtual
   @Throws([SpinifySendException])
   Future<void> send(List<int> data) async {
-    await _mutex.wait();
+    await _mutex.lock();
+    Future<void> result;
     try {
-      await _doOnReady(() => _sendCommandAsync(
+      result = _doOnReady(() => _sendCommandAsync(
             SpinifySendRequest(
               timestamp: DateTime.now(),
               data: data,
             ),
           ));
+    } on SpinifySendException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(SpinifySendException(error: error), stackTrace);
+    } finally {
+      _mutex.unlock();
+    }
+    try {
+      return await result;
     } on SpinifySendException {
       rethrow;
     } on Object catch (error, stackTrace) {
@@ -1349,17 +1366,26 @@ final class Spinify implements ISpinify {
   @nonVirtual
   @Throws([SpinifyRPCException])
   Future<List<int>> rpc(String method, [List<int>? data]) async {
-    await _mutex.wait();
+    await _mutex.lock();
+    Future<SpinifyRPCResult> result;
     try {
-      final bytes = await _doOnReady(() => _sendCommand<SpinifyRPCResult>(
+      result = _doOnReady(() => _sendCommand<SpinifyRPCResult>(
             SpinifyRPCRequest(
               id: _getNextCommandId(),
               timestamp: DateTime.now(),
               method: method,
               data: data ?? const <int>[],
             ),
-          )).then<List<int>>((reply) => reply.data);
-      return bytes;
+          ));
+    } on SpinifyRPCException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(SpinifyRPCException(error: error), stackTrace);
+    } finally {
+      _mutex.unlock();
+    }
+    try {
+      return await result.then((value) => value.data);
     } on SpinifyRPCException {
       rethrow;
     } on Object catch (error, stackTrace) {
@@ -1486,16 +1512,55 @@ final class Spinify implements ISpinify {
 
   @unsafe
   @override
+  @Throws([SpinifyPublishException])
   Future<void> publish(String channel, List<int> data) async {
-    await _mutex.wait();
-    return getSubscription(channel)?.publish(data) ??
-        Future.error(
-          SpinifySubscriptionException(
-            channel: channel,
-            message: 'Subscription not found',
-          ),
-          StackTrace.current,
+    await _mutex.lock();
+    Future<void> result;
+    try {
+      final sub = getSubscription(channel);
+      if (sub == null) {
+        _log(
+          const SpinifyLogLevel.warning(),
+          'subscription_not_found_error',
+          'Subscription not found',
+          <String, Object?>{
+            'channel': channel,
+          },
         );
+        throw SpinifyPublishException(
+          channel: channel,
+          message: 'Subscription not found',
+        );
+      }
+      result = sub.publish(data);
+    } on SpinifyPublishException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPublishException(
+          channel: channel,
+          message: 'Failed to publish data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    } finally {
+      _mutex.unlock();
+    }
+    try {
+      return await result;
+    } on SpinifyPublishException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPublishException(
+          channel: channel,
+          message: 'Failed to publish data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
   }
 
   // --- Presence --- //
@@ -1503,33 +1568,109 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  @Throws([SpinifyConnectionException, SpinifySubscriptionException])
+  @Throws([SpinifyPresenceException])
   Future<Map<String, SpinifyClientInfo>> presence(String channel) async {
-    await _mutex.wait();
-    return getSubscription(channel)?.presence() ??
-        Future.error(
-          SpinifySubscriptionException(
-            channel: channel,
-            message: 'Subscription not found',
-          ),
-          StackTrace.current,
+    await _mutex.lock();
+    Future<Map<String, SpinifyClientInfo>> result;
+    try {
+      final sub = getSubscription(channel);
+      if (sub == null) {
+        _log(
+          const SpinifyLogLevel.warning(),
+          'subscription_not_found_error',
+          'Subscription not found',
+          <String, Object?>{
+            'channel': channel,
+          },
         );
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        );
+      }
+      result = sub.presence();
+    } on SpinifyPresenceException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceException(
+          channel: channel,
+          message: 'Failed to get presence data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    } finally {
+      _mutex.unlock();
+    }
+    try {
+      return await result;
+    } on SpinifyPresenceException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceException(
+          channel: channel,
+          message: 'Failed to get presence data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
   }
 
   @unsafe
   @override
   @nonVirtual
-  @Throws([SpinifyConnectionException, SpinifySubscriptionException])
+  @Throws([SpinifyPresenceStatsException])
   Future<SpinifyPresenceStats> presenceStats(String channel) async {
-    await _mutex.wait();
-    return getSubscription(channel)?.presenceStats() ??
-        Future.error(
-          SpinifySubscriptionException(
-            channel: channel,
-            message: 'Subscription not found',
-          ),
-          StackTrace.current,
+    await _mutex.lock();
+    Future<SpinifyPresenceStats> result;
+    try {
+      final sub = getSubscription(channel);
+      if (sub == null) {
+        _log(
+          const SpinifyLogLevel.warning(),
+          'subscription_not_found_error',
+          'Subscription not found',
+          <String, Object?>{
+            'channel': channel,
+          },
         );
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        );
+      }
+      result = sub.presenceStats();
+    } on SpinifyPresenceStatsException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceStatsException(
+          channel: channel,
+          message: 'Failed to get presence stats',
+          error: error,
+        ),
+        stackTrace,
+      );
+    } finally {
+      _mutex.unlock();
+    }
+    try {
+      return await result;
+    } on SpinifyPresenceStatsException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceStatsException(
+          channel: channel,
+          message: 'Failed to get presence stats',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
   }
 
   // --- History --- //
@@ -1537,26 +1678,64 @@ final class Spinify implements ISpinify {
   @unsafe
   @override
   @nonVirtual
-  @Throws([SpinifyConnectionException, SpinifySubscriptionException])
+  @Throws([SpinifyHistoryException])
   Future<SpinifyHistory> history(
     String channel, {
     int? limit,
     SpinifyStreamPosition? since,
     bool? reverse,
   }) async {
-    await _mutex.wait();
-    return getSubscription(channel)?.history(
-          limit: limit,
-          since: since,
-          reverse: reverse,
-        ) ??
-        Future.error(
-          SpinifySubscriptionException(
-            channel: channel,
-            message: 'Subscription not found',
-          ),
-          StackTrace.current,
+    await _mutex.lock();
+    Future<SpinifyHistory> result;
+    try {
+      final sub = getSubscription(channel);
+      if (sub == null) {
+        _log(
+          const SpinifyLogLevel.warning(),
+          'subscription_not_found_error',
+          'Subscription not found',
+          <String, Object?>{
+            'channel': channel,
+          },
         );
+        throw SpinifySubscriptionException(
+          channel: channel,
+          message: 'Subscription not found',
+        );
+      }
+      result = sub.history(
+        limit: limit,
+        since: since,
+        reverse: reverse,
+      );
+    } on SpinifyHistoryException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyHistoryException(
+          channel: channel,
+          message: 'Failed to get history data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    } finally {
+      _mutex.unlock();
+    }
+    try {
+      return await result;
+    } on SpinifyHistoryException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyHistoryException(
+          channel: channel,
+          message: 'Failed to get history data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
   }
 
   // --- Replies --- //

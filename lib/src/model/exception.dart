@@ -126,6 +126,78 @@ final class SpinifySendException extends SpinifyException {
 
 /// {@macro exception}
 /// {@category Exception}
+final class SpinifyPublishException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyPublishException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_publish_exception',
+          message ?? 'Failed to publish message to channel',
+          error,
+        );
+
+  /// Publish channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyPresenceException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyPresenceException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_presence_exception',
+          message ?? 'Failed to get presence info for channel',
+          error,
+        );
+
+  /// Presence channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyPresenceStatsException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyPresenceStatsException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_presence_stats_exception',
+          message ?? 'Failed to get presence stats for channel',
+          error,
+        );
+
+  /// Presence channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyHistoryException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyHistoryException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_history_exception',
+          message ?? 'Failed to get history for channel',
+          error,
+        );
+
+  /// Presence channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
 final class SpinifyRPCException extends SpinifyException {
   /// {@macro exception}
   const SpinifyRPCException({

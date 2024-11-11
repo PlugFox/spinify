@@ -18,7 +18,14 @@ class _Mutex$Request {
   final Completer<void> _completer; // The completer for the request.
   bool get isCompleted => _completer.isCompleted; // Is completed?
   bool get isNotCompleted => !_completer.isCompleted; // Is not completed?
-  void release() => _completer.complete(); // Releases the lock.
+
+  // Releases the lock.
+  void release() {
+    final completer = _completer;
+    if (completer.isCompleted) return;
+    completer.complete();
+  }
+
   final Future<void> future; // The future for the request.
   _Mutex$Request? prev; // The previous request in the chain.
 }
