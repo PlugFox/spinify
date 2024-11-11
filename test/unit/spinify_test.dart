@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:mockito/annotations.dart';
@@ -466,43 +467,44 @@ void main() {
             var serverPingCount = 0;
             var serverPongCount = 0;
             final client = createFakeClient(transport: (_) async {
-              Timer? pingTimer;
-              return WebSocket$Fake()
-                ..onAdd = (bytes, sink) {
-                  final command = ProtobufCodec.decode(pb.Command(), bytes);
-                  if (command.hasConnect()) {
-                    final reply = pb.Reply(
-                      id: command.id,
-                      connect: pb.ConnectResult(
-                        client: 'fake',
-                        version: '0.0.1',
-                        expires: false,
-                        ttl: null,
-                        data: null,
-                        subs: <String, pb.SubscribeResult>{},
-                        ping: 600,
-                        pong: true,
-                        session: 'fake',
-                        node: 'fake',
-                      ),
+              final ws = WebSocket$Fake();
+              ws.onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: true,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  scheduleMicrotask(() {
+                    sink.add(ProtobufCodec.encode(reply));
+                    Timer.periodic(
+                      Duration(milliseconds: reply.connect.ping),
+                      (timer) {
+                        if (ws.isClosed) {
+                          timer.cancel();
+                          return;
+                        }
+                        serverPingCount++;
+                        sink.add(ProtobufCodec.encode(pb.Reply()));
+                      },
                     );
-                    scheduleMicrotask(() {
-                      sink.add(ProtobufCodec.encode(reply));
-                      pingTimer = Timer.periodic(
-                        Duration(milliseconds: reply.connect.ping),
-                        (_) {
-                          serverPingCount++;
-                          sink.add(ProtobufCodec.encode(pb.Reply()));
-                        },
-                      );
-                    });
-                  } else if (command.hasPing()) {
-                    serverPongCount++;
-                  }
+                  });
+                } else if (command.hasPing()) {
+                  serverPongCount++;
                 }
-                ..onDone = () {
-                  pingTimer?.cancel();
-                };
+              };
+              return ws;
             });
             unawaited(client.connect(url));
             async.elapse(client.config.timeout);
@@ -521,43 +523,44 @@ void main() {
           (async) {
             var serverPingCount = 0, serverPongCount = 0;
             final client = createFakeClient(transport: (_) async {
-              Timer? pingTimer;
-              return WebSocket$Fake()
-                ..onAdd = (bytes, sink) {
-                  final command = ProtobufCodec.decode(pb.Command(), bytes);
-                  if (command.hasConnect()) {
-                    final reply = pb.Reply(
-                      id: command.id,
-                      connect: pb.ConnectResult(
-                        client: 'fake',
-                        version: '0.0.1',
-                        expires: false,
-                        ttl: null,
-                        data: null,
-                        subs: <String, pb.SubscribeResult>{},
-                        ping: 600,
-                        pong: false,
-                        session: 'fake',
-                        node: 'fake',
-                      ),
+              final ws = WebSocket$Fake();
+              ws.onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: false,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  scheduleMicrotask(() {
+                    sink.add(ProtobufCodec.encode(reply));
+                    Timer.periodic(
+                      Duration(milliseconds: reply.connect.ping),
+                      (timer) {
+                        if (ws.isClosed) {
+                          timer.cancel();
+                          return;
+                        }
+                        serverPingCount++;
+                        sink.add(ProtobufCodec.encode(pb.Reply()));
+                      },
                     );
-                    scheduleMicrotask(() {
-                      sink.add(ProtobufCodec.encode(reply));
-                      pingTimer = Timer.periodic(
-                        Duration(milliseconds: reply.connect.ping),
-                        (_) {
-                          serverPingCount++;
-                          sink.add(ProtobufCodec.encode(pb.Reply()));
-                        },
-                      );
-                    });
-                  } else if (command.hasPing()) {
-                    serverPongCount++;
-                  }
+                  });
+                } else if (command.hasPing()) {
+                  serverPongCount++;
                 }
-                ..onDone = () {
-                  pingTimer?.cancel();
-                };
+              };
+              return ws;
             });
             unawaited(client.connect(url));
             async.elapse(client.config.timeout);
@@ -602,8 +605,7 @@ void main() {
                   } else if (command.hasPing()) {
                     serverPongCount++;
                   }
-                }
-                ..onDone = () {};
+                };
               webSockets.add(ws);
               return ws;
             });
@@ -713,12 +715,12 @@ void main() {
       });
 
       test('Auto_refresh', () {
-        late Timer pingTimer;
         var pings = 0, refreshes = 0;
         final client = createFakeClient(
           getToken: () async => 'token',
-          transport: (_) async => WebSocket$Fake()
-            ..onAdd = (bytes, sink) {
+          transport: (_) async {
+            final ws = WebSocket$Fake();
+            ws.onAdd = (bytes, sink) {
               final command = ProtobufCodec.decode(pb.Command(), bytes);
               scheduleMicrotask(() {
                 if (command.hasConnect()) {
@@ -739,9 +741,13 @@ void main() {
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
-                  pingTimer = Timer.periodic(
+                  Timer.periodic(
                     Duration(milliseconds: reply.connect.ping),
-                    (_) {
+                    (timer) {
+                      if (ws.isClosed) {
+                        timer.cancel();
+                        return;
+                      }
                       sink.add(ProtobufCodec.encode(pb.Reply()));
                       pings++;
                     },
@@ -761,10 +767,9 @@ void main() {
                   refreshes++;
                 }
               });
-            }
-            ..onDone = () {
-              pingTimer.cancel();
-            },
+            };
+            return ws;
+          },
         );
         return fakeAsync((async) {
           client.connect(url);
@@ -947,6 +952,34 @@ void main() {
         expectLater(
           client.send([1, 2, 3]),
           throwsA(isA<SpinifySendException>()),
+        );
+      });
+
+      test('Send_and_close', () async {
+        final builder = BytesBuilder();
+        final client = createFakeClient(
+          transport: (_) async {
+            final ws = WebSocket$Fake();
+            final onAdd = ws.onAdd;
+            ws.onAdd = (bytes, sink) {
+              onAdd(bytes, sink);
+              final command = ProtobufCodec.decode(pb.Command(), bytes);
+              scheduleMicrotask(() {
+                if (command.hasSend()) {
+                  builder.add(command.send.data);
+                }
+              });
+            };
+            return ws;
+          },
+        );
+        await client.connect(url);
+        await client.send([1, 2, 3]);
+        await client.send([4, 5, 6]);
+        await client.close();
+        expect(
+          builder.takeBytes(),
+          equals(Uint8List.fromList([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])),
         );
       });
 

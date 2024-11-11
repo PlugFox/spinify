@@ -24,11 +24,11 @@ class WebSocket$Fake implements WebSocket {
       StreamTransformer<List<int>, List<int>>.fromHandlers(
         handleData: _dataHandler,
         handleError: _errorHandler,
-        handleDone: _doneHandler,
+        /* handleDone: _doneHandler, */
       ),
     );
     onAdd = _defaultOnAddCallback;
-    onDone = _defaultOnDoneCallback;
+    /* onDone = _defaultOnDoneCallback; */
   }
 
   // Default callbacks to handle connects and disconnects.
@@ -60,7 +60,7 @@ class WebSocket$Fake implements WebSocket {
     });
   }
 
-  void _defaultOnDoneCallback() {}
+  /* void _defaultOnDoneCallback() {} */
 
   StreamController<List<int>>? _socket;
 
@@ -87,12 +87,12 @@ class WebSocket$Fake implements WebSocket {
         stackTrace,
       );
 
-  /// Handle socket close.
+  /* /// Handle socket close.
   void _doneHandler(EventSink<List<int>> sink) {
     sink.close();
     _isClosed = true;
     onDone.call();
-  }
+  } */
 
   @override
   int? get closeCode => _closeCode;
@@ -115,8 +115,8 @@ class WebSocket$Fake implements WebSocket {
   late void Function(List<int> bytes, Sink<List<int>> sink) onAdd =
       _defaultOnAddCallback;
 
-  /// Add callback to handle socket close event.
-  late void Function() onDone = _defaultOnDoneCallback;
+  /* /// Add callback to handle socket close event.
+  late void Function() onDone = _defaultOnDoneCallback; */
 
   /// Send asynchroniously a reply to the client.
   void reply(List<int> bytes) {
