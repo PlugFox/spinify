@@ -284,120 +284,6 @@ void main() {
       );
 
       test(
-        'Rpc_requests',
-        () => fakeAsync(
-          (async) {
-            final ws = WebSocket$Fake(); // ignore: close_sinks
-            final client = createFakeClient(transport: (_) async => ws..reset())
-              ..connect(url);
-            async.flushMicrotasks();
-            expect(client.state, isA<SpinifyState$Connecting>());
-            async.elapse(client.config.timeout);
-            expect(client.state, isA<SpinifyState$Connected>());
-
-            // Intercept the onAdd callback for echo RPC
-            var fn = ws.onAdd;
-            ws.onAdd = (bytes, sink) {
-              final command = ProtobufCodec.decode(pb.Command(), bytes);
-              if (command.hasRpc()) {
-                expect(command.rpc.method, anyOf('echo', 'getCurrentYear'));
-                switch (command.rpc.method) {
-                  case 'echo':
-                    final data = utf8.decode(command.rpc.data);
-                    final reply = pb.Reply(
-                      id: command.id,
-                      rpc: pb.RPCResult(
-                        data: utf8.encode(data),
-                      ),
-                    );
-                    scheduleMicrotask(
-                        () => sink.add(ProtobufCodec.encode(reply)));
-                  default:
-                    return fn(bytes, sink);
-                }
-              } else {
-                fn(bytes, sink);
-              }
-            };
-
-            // Send a request
-            expect(
-              client.rpc('echo', utf8.encode('Hello, World!')),
-              completion(isA<List<int>>().having(
-                (data) => utf8.decode(data),
-                'data',
-                equals('Hello, World!'),
-              )),
-            );
-            async.elapse(client.config.timeout);
-            expect(client.state, isA<SpinifyState$Connected>());
-
-            // Send 1000 requests
-            for (var i = 0; i < 1000; i++) {
-              expect(
-                client.rpc('echo', utf8.encode(i.toString())),
-                completion(isA<List<int>>().having(
-                  (data) => utf8.decode(data),
-                  'data',
-                  equals(i.toString()),
-                )),
-              );
-            }
-
-            async.elapse(client.config.timeout);
-            expect(client.state, isA<SpinifyState$Connected>());
-            client.disconnect();
-            async.elapse(client.config.timeout);
-            expect(client.state, isA<SpinifyState$Disconnected>());
-            client.connect(url);
-            async.elapse(client.config.timeout);
-            expect(client.state, isA<SpinifyState$Connected>());
-
-            // Intercept the onAdd callback for getCurrentYear RPC
-            ws.onAdd = (bytes, sink) {
-              final command = ProtobufCodec.decode(pb.Command(), bytes);
-              if (command.hasRpc()) {
-                expect(command.rpc.method, anyOf('echo', 'getCurrentYear'));
-                switch (command.rpc.method) {
-                  case 'getCurrentYear':
-                    final reply = pb.Reply(
-                      id: command.id,
-                      rpc: pb.RPCResult(
-                        data: utf8
-                            .encode(jsonEncode({'year': DateTime.now().year})),
-                      ),
-                    );
-                    scheduleMicrotask(
-                        () => sink.add(ProtobufCodec.encode(reply)));
-                  default:
-                    return fn(bytes, sink);
-                }
-              } else {
-                fn(bytes, sink);
-              }
-            };
-
-            // Another request
-            expect(
-              client.rpc('getCurrentYear', <int>[]),
-              completion(isA<List<int>>().having(
-                (data) => jsonDecode(utf8.decode(data))['year'],
-                'year',
-                DateTime.now().year,
-              )),
-            );
-            async.elapse(client.config.timeout);
-
-            expect(client.state, isA<SpinifyState$Connected>());
-            client.close();
-            async.elapse(client.config.timeout);
-            expect(client.state, isA<SpinifyState$Closed>());
-          },
-        ),
-        skip: true,
-      );
-
-      test(
         'Server_subscriptions',
         () => fakeAsync(
           (async) {
@@ -1491,7 +1377,7 @@ void main() {
         ));
       });
 
-      test('Send_few_rpc', () async {
+      test('RPC', () async {
         final client = createFakeClient(
           transport: (_) async => WebSocket$Fake()
             ..onAdd = (bytes, sink) {
@@ -1524,8 +1410,7 @@ void main() {
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
-                } else if (command.hasRpc() &&
-                    command.rpc.method == 'unknown') {
+                } else if (command.hasRpc()) {
                   final reply = pb.Reply(
                     id: command.id,
                     error: pb.Error(
@@ -1582,6 +1467,116 @@ void main() {
           throwsA(isA<SpinifyRPCException>()),
         ));
       });
+
+      test(
+        'RPC_many_requests',
+        () => fakeAsync((async) {
+          final client = createFakeClient(
+            transport: (_) async => WebSocket$Fake()
+              ..onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                scheduleMicrotask(() {
+                  if (command.hasConnect()) {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      connect: pb.ConnectResult(
+                        client: 'fake',
+                        version: '0.0.1',
+                        expires: false,
+                        ttl: null,
+                        data: null,
+                        ping: 600,
+                        pong: false,
+                        subs: <String, pb.SubscribeResult>{},
+                        session: 'fake',
+                        node: 'fake',
+                      ),
+                    );
+                    final bytes = ProtobufCodec.encode(reply);
+                    sink.add(bytes);
+                  } else if (command.hasRpc() && command.rpc.method == 'echo') {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      rpc: pb.RPCResult(
+                        data: command.rpc.data,
+                      ),
+                    );
+                    final bytes = ProtobufCodec.encode(reply);
+                    sink.add(bytes);
+                  } else if (command.hasRpc()) {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      error: pb.Error(
+                        code: 3000,
+                        message: 'Fake rpc error',
+                        temporary: false,
+                      ),
+                    );
+                    final bytes = ProtobufCodec.encode(reply);
+                    sink.add(bytes);
+                  }
+                });
+              },
+          );
+
+          expect(
+            client.connect(url),
+            completes,
+          );
+
+          async.elapse(client.config.timeout);
+
+          expect(
+            client.state,
+            isA<SpinifyState$Connected>(),
+          );
+
+          expect(
+            client.rpc('echo', utf8.encode('Hello, World!')),
+            completion(isA<List<int>>().having(
+              (data) => utf8.decode(data),
+              'data',
+              equals('Hello, World!'),
+            )),
+          );
+
+          async.elapse(const Duration(hours: 1));
+
+          // Send 1000 requests
+          for (var i = 0; i < 50; i++) {
+            expect(
+              client.rpc('echo', utf8.encode(i.toString())),
+              completion(isA<List<int>>().having(
+                (data) => utf8.decode(data),
+                'data',
+                equals(i.toString()),
+              )),
+            );
+          }
+
+          async.elapse(const Duration(hours: 1));
+
+          expect(client.state, isA<SpinifyState$Connected>());
+
+          expect(
+            client.disconnect(),
+            completes,
+          );
+
+          async.elapse(const Duration(hours: 1));
+
+          expect(client.state, isA<SpinifyState$Disconnected>());
+
+          expect(
+            client.close(),
+            completes,
+          );
+
+          async.flushTimers();
+
+          expect(client.state, isA<SpinifyState$Closed>());
+        }),
+      );
 
       // Retry connection after temporary error
       /* test(

@@ -1161,13 +1161,15 @@ final class Spinify implements ISpinify {
   @nonVirtual
   Future<void> close({bool force = false}) async {
     if (state.isClosed) return;
-    await _mutex.lock();
     try {
       if (!force) {
-        try {
-          await Future.wait(_replies.values.map((e) => e.future))
-              .timeout(config.timeout);
-        } on Object {/* ignore */}
+        await _mutex.lock();
+        if (_replies.isNotEmpty) {
+          try {
+            await Future.wait(_replies.values.map((e) => e.future))
+                .timeout(config.timeout);
+          } on Object {/* ignore */}
+        }
       }
       _tearDownHealthCheckTimer();
       _internalDisconnect(
@@ -1466,11 +1468,13 @@ final class Spinify implements ISpinify {
     return newSub;
   }
 
+  @unsafe
   @override
+  @Throws([SpinifySubscriptionException])
   Future<void> removeSubscription(
     SpinifyClientSubscription subscription,
   ) async {
-    await _mutex.wait();
+    await _mutex.lock();
     final subFromRegistry =
         _clientSubscriptionRegistry.remove(subscription.channel);
     try {
@@ -1495,15 +1499,19 @@ final class Spinify implements ISpinify {
           'subscription': subscription,
         },
       );
-      Error.throwWithStackTrace(
-        SpinifySubscriptionException(
-          channel: subscription.channel,
-          message: 'Error while unsubscribing',
-          error: error,
-        ),
-        stackTrace,
-      );
+      if (error is SpinifySubscriptionException)
+        rethrow;
+      else
+        Error.throwWithStackTrace(
+          SpinifySubscriptionException(
+            channel: subscription.channel,
+            message: 'Error while unsubscribing',
+            error: error,
+          ),
+          stackTrace,
+        );
     } finally {
+      _mutex.unlock();
       subFromRegistry?.close();
     }
   }

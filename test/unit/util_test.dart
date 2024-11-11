@@ -250,5 +250,22 @@ void main() => group('Util', () {
           expect(m.locks, equals(0));
           expect(m.pending, isEmpty);
         });
+
+        fakeAsync((async) {
+          final m = MutexImpl();
+          final list = <int>[for (var i = 0; i < 10; i++) i];
+          final result = <int>[];
+          for (var i = 0; i < list.length; i++) {
+            m.lock();
+            Future<void>.delayed(Duration(seconds: list.length - i), m.unlock);
+            result.add(list[i]);
+          }
+          expect(m.locks, equals(list.length));
+          expect(m.pending, hasLength(list.length));
+          async.flushTimers();
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+          expect(listEquals(result, list), isTrue);
+        });
       });
     });
