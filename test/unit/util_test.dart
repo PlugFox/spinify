@@ -227,12 +227,15 @@ void main() => group('Util', () {
           final m = MutexImpl();
           final list = <int>[for (var i = 0; i < 10; i++) i];
           final result = <int>[];
-          for (var i = 0; i < 10; i++) {
+          final copy = list.toList();
+          for (var i = 0; i < list.length; i++) {
             unawaited(
               expectLater(
                 m.protect(() async {
-                  final value = list[i];
-                  await Future<void>.delayed(Duration(seconds: 10 - i));
+                  final value = copy.removeAt(0);
+                  await Future<void>.delayed(
+                    Duration(seconds: list.length - i),
+                  );
                   result.add(value);
                 }),
                 completes,
@@ -255,10 +258,12 @@ void main() => group('Util', () {
           final m = MutexImpl();
           final list = <int>[for (var i = 0; i < 10; i++) i];
           final result = <int>[];
+          final copy = list.toList();
           for (var i = 0; i < list.length; i++) {
             m.lock();
+            final value = copy.removeAt(0);
             Future<void>.delayed(Duration(seconds: list.length - i), m.unlock);
-            result.add(list[i]);
+            result.add(value);
           }
           expect(m.locks, equals(list.length));
           expect(m.pending, hasLength(list.length));
