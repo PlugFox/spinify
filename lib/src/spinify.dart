@@ -30,6 +30,7 @@ import 'spinify_interface.dart';
 import 'subscription_interface.dart';
 import 'util/backoff.dart';
 import 'util/guarded.dart';
+import 'util/mutex.dart';
 import 'web_socket_stub.dart'
     // ignore: uri_does_not_exist
     if (dart.library.js_interop) 'web_socket_js.dart'
@@ -63,7 +64,8 @@ final class Spinify implements ISpinify {
   @safe
   Spinify({SpinifyConfig? config})
       : config = config ?? SpinifyConfig.byDefault(),
-        _codec = config?.codec ?? SpinifyProtobufCodec() {
+        _codec = config?.codec ?? SpinifyProtobufCodec(),
+        _mutex = MutexImpl() /* MutexDisabled() */ {
     /// Client initialization (from constructor).
     _init();
   }
@@ -79,6 +81,9 @@ final class Spinify implements ISpinify {
   @safe
   @override
   final SpinifyConfig config;
+
+  /// Mutex to protect client interactive operations.
+  final IMutex _mutex;
 
   @safe
   @override
@@ -114,6 +119,7 @@ final class Spinify implements ISpinify {
   @override
   late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
       SpinifyChannelEvents<SpinifyChannelEvent>(_eventController.stream);
+
   final StreamController<SpinifyChannelEvent> _eventController =
       StreamController<SpinifyChannelEvent>.broadcast(sync: true);
 
@@ -599,6 +605,7 @@ final class Spinify implements ISpinify {
   @Throws([SpinifyConnectionException])
   Future<void> connect(String url) async {
     try {
+      await _mutex.lock();
       await _interactiveConnect(url);
     } on SpinifyConnectionException {
       rethrow;
@@ -610,6 +617,8 @@ final class Spinify implements ISpinify {
         ),
         stackTrace,
       );
+    } finally {
+      _mutex.unlock();
     }
   }
 
@@ -832,24 +841,27 @@ final class Spinify implements ISpinify {
               return true;
             }(), '...');
             var WebSocket(:int? closeCode, :String? closeReason) = ws;
-            final close =
-                SpinifyDisconnectCode.normalize(closeCode, closeReason);
+            closeCode ??= 1000;
+            closeReason ??= 'no reason';
+            final code = SpinifyDisconnectCode(closeCode);
+            final reason = closeReason;
+            final reconnect = code.reconnect;
             _log(
               const SpinifyLogLevel.transport(),
               'transport_disconnect',
               'Transport disconnected '
-                  '${close.reconnect ? 'temporarily' : 'permanently'} '
-                  'with reason: ${close.reason}',
+                  '${reconnect ? 'temporarily' : 'permanently'} '
+                  'with reason: $reason',
               <String, Object?>{
-                'code': close.code,
-                'reason': close.reason,
-                'reconnect': close.reconnect,
+                'code': code,
+                'reason': reason,
+                'reconnect': reconnect,
               },
             );
             _internalDisconnect(
-              code: close.code,
-              reason: close.reason,
-              reconnect: close.reconnect,
+              code: code,
+              reason: reason,
+              reconnect: reconnect,
             );
           }
 
@@ -1013,7 +1025,14 @@ final class Spinify implements ISpinify {
   @safe
   @override
   @nonVirtual
-  Future<void> disconnect() => _interactiveDisconnect();
+  Future<void> disconnect() async {
+    await _mutex.lock();
+    try {
+      await _interactiveDisconnect();
+    } finally {
+      _mutex.unlock();
+    }
+  }
 
   /// User initiated disconnect.
   @safe
@@ -1142,6 +1161,7 @@ final class Spinify implements ISpinify {
   @nonVirtual
   Future<void> close() async {
     if (state.isClosed) return;
+    await _mutex.wait();
     try {
       _tearDownHealthCheckTimer();
       _internalDisconnect(
@@ -1307,6 +1327,7 @@ final class Spinify implements ISpinify {
   @nonVirtual
   @Throws([SpinifySendException])
   Future<void> send(List<int> data) async {
+    await _mutex.wait();
     try {
       await _doOnReady(() => _sendCommandAsync(
             SpinifySendRequest(
@@ -1328,8 +1349,9 @@ final class Spinify implements ISpinify {
   @nonVirtual
   @Throws([SpinifyRPCException])
   Future<List<int>> rpc(String method, [List<int>? data]) async {
+    await _mutex.wait();
     try {
-      return await _doOnReady(() => _sendCommand<SpinifyRPCResult>(
+      final bytes = await _doOnReady(() => _sendCommand<SpinifyRPCResult>(
             SpinifyRPCRequest(
               id: _getNextCommandId(),
               timestamp: DateTime.now(),
@@ -1337,22 +1359,13 @@ final class Spinify implements ISpinify {
               data: data ?? const <int>[],
             ),
           )).then<List<int>>((reply) => reply.data);
+      return bytes;
     } on SpinifyRPCException {
       rethrow;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(SpinifyRPCException(error: error), stackTrace);
     }
   }
-  /*  => _doOnReady(
-        () => _sendCommand<SpinifyRPCResult>(
-          SpinifyRPCRequest(
-            id: _getNextCommandId(),
-            timestamp: DateTime.now(),
-            method: method,
-            data: data ?? const <int>[],
-          ),
-        ).then<List<int>>((reply) => reply.data),
-      ); */
 
   // --- Subscriptions and Channels --- //
 
@@ -1429,7 +1442,9 @@ final class Spinify implements ISpinify {
 
   @override
   Future<void> removeSubscription(
-      SpinifyClientSubscription subscription) async {
+    SpinifyClientSubscription subscription,
+  ) async {
+    await _mutex.wait();
     final subFromRegistry =
         _clientSubscriptionRegistry.remove(subscription.channel);
     try {
@@ -1471,15 +1486,17 @@ final class Spinify implements ISpinify {
 
   @unsafe
   @override
-  Future<void> publish(String channel, List<int> data) =>
-      getSubscription(channel)?.publish(data) ??
-      Future.error(
-        SpinifySubscriptionException(
-          channel: channel,
-          message: 'Subscription not found',
-        ),
-        StackTrace.current,
-      );
+  Future<void> publish(String channel, List<int> data) async {
+    await _mutex.wait();
+    return getSubscription(channel)?.publish(data) ??
+        Future.error(
+          SpinifySubscriptionException(
+            channel: channel,
+            message: 'Subscription not found',
+          ),
+          StackTrace.current,
+        );
+  }
 
   // --- Presence --- //
 
@@ -1487,29 +1504,33 @@ final class Spinify implements ISpinify {
   @override
   @nonVirtual
   @Throws([SpinifyConnectionException, SpinifySubscriptionException])
-  Future<Map<String, SpinifyClientInfo>> presence(String channel) =>
-      getSubscription(channel)?.presence() ??
-      Future.error(
-        SpinifySubscriptionException(
-          channel: channel,
-          message: 'Subscription not found',
-        ),
-        StackTrace.current,
-      );
+  Future<Map<String, SpinifyClientInfo>> presence(String channel) async {
+    await _mutex.wait();
+    return getSubscription(channel)?.presence() ??
+        Future.error(
+          SpinifySubscriptionException(
+            channel: channel,
+            message: 'Subscription not found',
+          ),
+          StackTrace.current,
+        );
+  }
 
   @unsafe
   @override
   @nonVirtual
   @Throws([SpinifyConnectionException, SpinifySubscriptionException])
-  Future<SpinifyPresenceStats> presenceStats(String channel) =>
-      getSubscription(channel)?.presenceStats() ??
-      Future.error(
-        SpinifySubscriptionException(
-          channel: channel,
-          message: 'Subscription not found',
-        ),
-        StackTrace.current,
-      );
+  Future<SpinifyPresenceStats> presenceStats(String channel) async {
+    await _mutex.wait();
+    return getSubscription(channel)?.presenceStats() ??
+        Future.error(
+          SpinifySubscriptionException(
+            channel: channel,
+            message: 'Subscription not found',
+          ),
+          StackTrace.current,
+        );
+  }
 
   // --- History --- //
 
@@ -1522,19 +1543,21 @@ final class Spinify implements ISpinify {
     int? limit,
     SpinifyStreamPosition? since,
     bool? reverse,
-  }) =>
-      getSubscription(channel)?.history(
-        limit: limit,
-        since: since,
-        reverse: reverse,
-      ) ??
-      Future.error(
-        SpinifySubscriptionException(
-          channel: channel,
-          message: 'Subscription not found',
-        ),
-        StackTrace.current,
-      );
+  }) async {
+    await _mutex.wait();
+    return getSubscription(channel)?.history(
+          limit: limit,
+          since: since,
+          reverse: reverse,
+        ) ??
+        Future.error(
+          SpinifySubscriptionException(
+            channel: channel,
+            message: 'Subscription not found',
+          ),
+          StackTrace.current,
+        );
+  }
 
   // --- Replies --- //
 
@@ -1809,17 +1832,18 @@ final class Spinify implements ISpinify {
 class _PendingReply<R extends SpinifyReply> {
   _PendingReply(this.command) : _completer = Completer<R>();
 
-  final SpinifyCommand command;
-  final Completer<R> _completer;
+  final SpinifyCommand command; // Command that was sent.
 
-  Future<R> get future => _completer.future;
+  final Completer<R> _completer; // Completer for the reply.
 
-  bool get isCompleted => _completer.isCompleted;
+  Future<R> get future => _completer.future; // Future for the reply.
 
-  void complete(R reply) => _completer.complete(reply);
+  bool get isCompleted => _completer.isCompleted; // Is reply received.
+
+  void complete(R reply) => _completer.complete(reply); // Complete reply.
 
   void completeError(SpinifyReplyException error, StackTrace stackTrace) =>
-      _completer.completeError(error, stackTrace);
+      _completer.completeError(error, stackTrace); // Complete with error.
 }
 
 abstract base class _SpinifySubscriptionBase implements SpinifySubscription {

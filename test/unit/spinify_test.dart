@@ -61,6 +61,7 @@ void main() {
               logger: buffer.add,
             ),
           );
+          async.flushMicrotasks();
           expect(client.state, isA<SpinifyState$Connecting>());
           async.elapse(client.config.timeout);
           expect(client.state, isA<SpinifyState$Connected>());
@@ -92,6 +93,7 @@ void main() {
               expect(client.state.isDisconnected, isTrue);
             }
             client.close();
+            async.flushMicrotasks();
             expect(client.state.isClosed, isTrue);
             client.close();
             expect(client.state.isClosed, isTrue);
@@ -288,6 +290,7 @@ void main() {
             final ws = WebSocket$Fake(); // ignore: close_sinks
             final client = createFakeClient(transport: (_) async => ws..reset())
               ..connect(url);
+            async.flushMicrotasks();
             expect(client.state, isA<SpinifyState$Connecting>());
             async.elapse(client.config.timeout);
             expect(client.state, isA<SpinifyState$Connected>());
@@ -882,6 +885,7 @@ void main() {
           expect(client.state.isConnected, isTrue);
           expect(client.isClosed, isFalse);
           client.close();
+          async.flushMicrotasks();
           expect(client.state.isClosed, isTrue);
           expect(pings, greaterThanOrEqualTo(3 * 60 * 60 ~/ 120));
           expect(refreshes, greaterThanOrEqualTo(3 * 60 * 60 ~/ 600));
@@ -928,20 +932,21 @@ void main() {
 
       test(
         'Disconnect_during_connection',
-        () async {
+        () => fakeAsync((async) {
           final client = createFakeClient();
-          unawaited(
-            expectLater(
-              client.connect(url),
-              throwsA(anything),
-            ),
-          );
-          await client.disconnect();
-          expect(client.state.isDisconnected, isTrue);
-          expect(client.state.isClosed, isFalse);
-          await client.close();
+          client.connect(url);
+          async.flushMicrotasks();
+          expect(client.state, isA<SpinifyState$Connecting>());
+          client.disconnect();
+          async.flushMicrotasks();
+          expect(client.state.isConnecting, isTrue); // Still connecting
+          async.elapse(client.config.timeout); // Wait for some time
+          expect(client.state.isDisconnected, isTrue); // Disconnected
+          expect(client.state.isClosed, isFalse); // Not closed
+          client.close();
+          async.flushMicrotasks();
           expect(client.state.isClosed, isTrue);
-        },
+        }),
       );
 
       // Retry connection after temporary error

@@ -138,15 +138,63 @@ void main() => group('Util', () {
       });
 
       test('Mutex', () async {
-        fakeAsync((async) {
-          final m = Mutex();
+        {
+          final m = MutexDisabled();
           expect(m.locks, equals(0));
           expect(m.pending, isEmpty);
-          unawaited(expectLater(m.lock(), completes));
+          unawaited(
+            expectLater(
+              m.protect(() => Future.value(1)),
+              completion(equals(1)),
+            ),
+          );
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+          unawaited(
+            expectLater(
+              m.lock(),
+              completes,
+            ),
+          );
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+          expect(
+            m.unlock,
+            returnsNormally,
+          );
+          unawaited(
+            expectLater(
+              m.wait(),
+              completes,
+            ),
+          );
+        }
+
+        fakeAsync((async) {
+          final m = MutexImpl();
+          expect(m.locks, equals(0));
+          expect(m.pending, isEmpty);
+          unawaited(
+            expectLater(
+              m.lock(),
+              completes,
+            ),
+          );
           expect(m.locks, equals(1));
           expect(m.pending, isNotEmpty);
-          unawaited(expectLater(m.lock(), completes));
+          unawaited(
+            expectLater(
+              m.lock(),
+              completes,
+            ),
+          );
           expect(m.locks, equals(2));
+          unawaited(
+            expectLater(
+              m.wait(),
+              completes,
+            ),
+          );
           expect(m.pending, hasLength(2));
           expect(m.unlock, returnsNormally);
           expect(m.locks, equals(1));
@@ -154,6 +202,12 @@ void main() => group('Util', () {
           expect(m.unlock, returnsNormally);
           expect(m.locks, equals(0));
           expect(m.pending, isEmpty);
+          unawaited(
+            expectLater(
+              m.wait(),
+              completes,
+            ),
+          );
 
           unawaited(
             expectLater(
@@ -170,7 +224,7 @@ void main() => group('Util', () {
         });
 
         fakeAsync((async) {
-          final m = Mutex();
+          final m = MutexImpl();
           final list = <int>[for (var i = 0; i < 10; i++) i];
           final result = <int>[];
           for (var i = 0; i < 10; i++) {

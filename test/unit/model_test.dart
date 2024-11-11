@@ -1,6 +1,6 @@
 // ignore_for_file: non_const_call_to_literal_constructor
 
-import 'package:spinify/spinify.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:spinify/src/model/annotations.dart' as annotations;
 import 'package:spinify/src/model/channel_event.dart' as channel_event;
 import 'package:spinify/src/model/channel_events.dart' as channel_events;
@@ -11,6 +11,7 @@ import 'package:spinify/src/model/exception.dart' as exception;
 import 'package:spinify/src/model/history.dart' as history;
 import 'package:spinify/src/model/metric.dart' as metric;
 import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
+import 'package:spinify/src/model/pubspec.yaml.g.dart' as pubspec;
 import 'package:spinify/src/model/reply.dart' as reply;
 import 'package:spinify/src/model/state.dart' as state;
 import 'package:spinify/src/model/states_stream.dart' as states_stream;
@@ -20,7 +21,8 @@ import 'package:spinify/src/model/subscription_state.dart'
     as subscription_state;
 import 'package:spinify/src/model/subscription_states.dart'
     as subscription_states;
-import 'package:spinify/src/util/list_equals.dart';
+import 'package:spinify/src/protobuf/protobuf_codec.dart' as protobuf_codec;
+import 'package:spinify/src/util/list_equals.dart' as list_equals;
 import 'package:test/test.dart';
 
 void main() {
@@ -106,7 +108,15 @@ void main() {
 
       test('Normalize', () {
         for (var i = -1; i <= 5000; i++) {
-          final tuple = codes.SpinifyDisconnectCode.normalize(i);
+          final code = codes.SpinifyDisconnectCode(i);
+          expect(
+            code.reconnect,
+            allOf(isA<bool>(), same(code.reconnect)),
+            reason: 'Code: $i should '
+                '${code.reconnect ? '' : 'not '}'
+                'reconnect',
+          );
+          /* final tuple = codes.SpinifyDisconnectCode.normalize(i);
           expect(
             tuple.code,
             allOf(isA<int>(), equals(i)),
@@ -121,7 +131,7 @@ void main() {
             reason: 'Code: $i should '
                 '${tuple.code.reconnect ? '' : 'not '}'
                 'reconnect',
-          );
+          ); */
         }
       });
     });
@@ -522,14 +532,14 @@ void main() {
         );
         expect(info == info, isTrue);
         expect(
-          listEquals(
+          list_equals.listEquals(
             info.channelInfo,
             info.channelInfo?.toList(growable: false),
           ),
           isTrue,
         );
         expect(
-          listEquals(
+          list_equals.listEquals(
             info.connectionInfo,
             info.connectionInfo?.toList(growable: false),
           ),
@@ -634,7 +644,7 @@ void main() {
           ),
         );
         expect(
-          listEquals(history1.publications, history2.publications),
+          list_equals.listEquals(history1.publications, history2.publications),
           isTrue,
         );
         expect(
@@ -806,7 +816,7 @@ void main() {
                 ),
           );
           expect(c == c, isTrue);
-          final encoder = SpinifyProtobufCodec().encoder;
+          final encoder = protobuf_codec.SpinifyProtobufCodec().encoder;
           expect(
             encoder.convert(c),
             allOf(
@@ -1746,6 +1756,15 @@ void main() {
                 isNotEmpty,
               ),
         );
+      });
+    });
+
+    group('Pubspec_yaml_g', () {
+      test('Instance', () {
+        final s = pubspec.Pubspec.source; // ignore: prefer_const_declarations
+        expect(s, isA<Map<String, Object?>>());
+        final t = pubspec.Pubspec.timestamp;
+        expect(t, isA<DateTime>());
       });
     });
   });

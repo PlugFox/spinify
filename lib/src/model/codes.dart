@@ -116,6 +116,7 @@ extension type const SpinifyDisconnectCode(int code) implements int {
   @literal
   const SpinifyDisconnectCode.abnormalClosure() : code = 1006;
 
+  /*
   /// Normalize disconnect code and reason.
   @experimental
   static ({SpinifyDisconnectCode code, String reason, bool reconnect})
@@ -532,13 +533,10 @@ extension type const SpinifyDisconnectCode(int code) implements int {
 
             /// Custom disconnect codes (unreachable).
             // coverage:ignore-start
-            _ => (
-                code: SpinifyDisconnectCode(code ?? 0),
-                reason: reason ?? 'transport closed',
-                reconnect: false,
-              ),
+            _ => throw ArgumentError('invalid disconnect code'),
             // coverage:ignore-end
           };
+  */
 
   /// Reconnect is needed due to specific transport close code.
   bool get reconnect => switch (code) {
