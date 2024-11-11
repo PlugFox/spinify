@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:collection';
 
@@ -7,20 +5,26 @@ import 'package:benchmark_harness/benchmark_harness.dart';
 
 void main() => Future<void>(() async {
       final baseUs = await _WithoutMutex().measure();
-      final scores = await Stream<AsyncBenchmarkBase>.fromIterable(
+      final results = await Stream<AsyncBenchmarkBase>.fromIterable(
         <AsyncBenchmarkBase>[
-          _MutexCompleterList(),
-          _MutexCompleterQueue(),
-          _MutexCompleterLinkedList(),
+          _MutexList(),
+          _MutexQueue(),
+          _MutexLinkedList(),
+          _MutexLast(),
+          _MutexWrap(),
         ],
       )
           .asyncMap((benchmark) async =>
               (name: benchmark.name, score: await benchmark.measure() - baseUs))
           .toList();
-      scores.sort((a, b) => a.score.compareTo(b.score));
-      for (final score in scores) {
-        print('${score.name}: ${score.score} us.');
+      results.sort((a, b) => a.score.compareTo(b.score));
+      final buffer = StringBuffer();
+      for (final r in results) {
+        buffer.writeln('${r.name.padLeft(12)} |'
+            ' ${r.score.toStringAsPrecision(6).padRight(8)} us |'
+            ' ${(1000000 / r.score).round()} FPS');
       }
+      print(buffer.toString()); // ignore: avoid_print
     });
 
 class _Base extends AsyncBenchmarkBase {
@@ -81,7 +85,7 @@ class _Base extends AsyncBenchmarkBase {
 }
 
 class _WithoutMutex extends _Base {
-  _WithoutMutex() : super('Without mutex');
+  _WithoutMutex() : super('Without');
 
   @override
   Future<void> run() => Future<void>.delayed(Duration.zero, () {
@@ -90,8 +94,8 @@ class _WithoutMutex extends _Base {
       });
 }
 
-class _MutexCompleterList extends _Base {
-  _MutexCompleterList() : super('Completers list');
+class _MutexList extends _Base {
+  _MutexList() : super('List');
 
   final _list = <Future<void>>[Future<void>.value()];
 
@@ -110,8 +114,8 @@ class _MutexCompleterList extends _Base {
   }
 }
 
-class _MutexCompleterLinkedList extends _Base {
-  _MutexCompleterLinkedList() : super('Completers linked list');
+class _MutexLinkedList extends _Base {
+  _MutexLinkedList() : super('LinkedList');
 
   var _nodes = _Node(Future<void>.value());
 
@@ -130,14 +134,14 @@ class _MutexCompleterLinkedList extends _Base {
   }
 }
 
-class _Node {
+final class _Node {
   _Node(this.future);
   final Future<void> future;
   _Node? next;
 }
 
-class _MutexCompleterQueue extends _Base {
-  _MutexCompleterQueue() : super('Completers queue');
+class _MutexQueue extends _Base {
+  _MutexQueue() : super('Queue');
 
   final _queue = Queue<Future<void>>()..add(Future<void>.value());
 
@@ -154,4 +158,48 @@ class _MutexCompleterQueue extends _Base {
     unawaited(_queue.removeFirst());
     completer.complete();
   }
+}
+
+class _MutexLast extends _Base {
+  _MutexLast() : super('Last');
+
+  Future<void>? _last; // The last running block
+
+  @override
+  Future<void> run() async {
+    final prev = _last;
+    final completer = Completer<void>.sync();
+    final current = _last = completer.future;
+    await prev;
+    final value = _counter;
+    await Future<void>.delayed(Duration.zero);
+    _counter = value + 1;
+    //if (_counter < 50) print('$value -> $_counter');
+    if (identical(_last, current)) _last = null;
+    completer.complete();
+  }
+}
+
+class _MutexWrap extends _Base {
+  _MutexWrap() : super('Wrap');
+
+  Future<void>? _last; // The last running block
+
+  Future<void> _wrap(Future<void> Function() fn) async {
+    final prev = _last;
+    final completer = Completer<void>.sync();
+    final current = _last = completer.future;
+    await prev;
+    await fn();
+    if (identical(_last, current)) _last = null;
+    completer.complete();
+  }
+
+  @override
+  Future<void> run() => _wrap(() async {
+        final value = _counter;
+        await Future<void>.delayed(Duration.zero);
+        _counter = value + 1;
+        //if (_counter < 50) print('$value -> $_counter');
+      });
 }
