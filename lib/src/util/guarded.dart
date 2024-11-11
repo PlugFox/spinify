@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:meta/meta.dart';
 
@@ -26,7 +25,7 @@ Future<void> asyncGuarded(
     },
     (error, stackTrace) {
       // This should never be called.
-      debugger();
+      //debugger();
       $error = error;
       $stackTrace = stackTrace;
     },
@@ -61,7 +60,7 @@ void guarded(
     },
     (error, stackTrace) {
       // This should never be called.
-      debugger();
+      //debugger();
       $error = error;
       $stackTrace = stackTrace;
     },
