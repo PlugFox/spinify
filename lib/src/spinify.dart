@@ -1025,12 +1025,21 @@ final class Spinify implements ISpinify {
   @safe
   @override
   @nonVirtual
-  Future<void> disconnect() async {
-    await _mutex.lock();
+  Future<void> disconnect({bool force = false}) async {
     try {
+      if (!force) {
+        await _mutex.lock();
+        if (_replies.isNotEmpty) {
+          try {
+            await Future.wait<void>(
+              _replies.values.map<Future<void>>((e) => e.future),
+            ).timeout(config.timeout);
+          } on Object {/* ignore */}
+        }
+      }
       await _interactiveDisconnect();
     } finally {
-      _mutex.unlock();
+      if (!force) _mutex.unlock();
     }
   }
 
@@ -1166,8 +1175,9 @@ final class Spinify implements ISpinify {
         await _mutex.lock();
         if (_replies.isNotEmpty) {
           try {
-            await Future.wait(_replies.values.map((e) => e.future))
-                .timeout(config.timeout);
+            await Future.wait<void>(
+              _replies.values.map<Future<void>>((e) => e.future),
+            ).timeout(config.timeout);
           } on Object {/* ignore */}
         }
       }
@@ -1179,7 +1189,7 @@ final class Spinify implements ISpinify {
       );
       _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
-      _mutex.unlock();
+      if (!force) _mutex.unlock();
       _statesController.close().ignore();
       _eventController.close().ignore();
       _log(
