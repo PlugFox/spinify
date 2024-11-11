@@ -12,9 +12,10 @@ import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:meta/meta.dart';
 
 void main() => Future<void>(() async {
-      final baseUs = await _WithoutMutex().measure();
+      //final baseUs = await _WithoutMutex().measure();
       final results = await Stream<AsyncBenchmarkBase>.fromIterable(
         <AsyncBenchmarkBase>[
+          _WithoutMutex(),
           _MutexList(),
           _MutexQueue(),
           _MutexLinked(),
@@ -24,8 +25,10 @@ void main() => Future<void>(() async {
           _MutexEncapsulated(),
         ],
       )
-          .asyncMap((benchmark) async =>
-              (name: benchmark.name, score: await benchmark.measure() - baseUs))
+          .asyncMap((benchmark) async => (
+                name: benchmark.name,
+                score: await benchmark.measure(),
+              ))
           .toList();
       results.sort((a, b) => a.score.compareTo(b.score));
       final buffer = StringBuffer();
