@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:benchmark_harness/benchmark_harness.dart';
+import 'package:meta/meta.dart';
 
 void main() => Future<void>(() async {
       final baseUs = await _WithoutMutex().measure();
@@ -20,6 +21,7 @@ void main() => Future<void>(() async {
           _MutexLock(),
           _MutexLast(),
           _MutexWrap(),
+          _MutexEncapsulated(),
         ],
       )
           .asyncMap((benchmark) async =>
@@ -41,6 +43,7 @@ class _Base extends AsyncBenchmarkBase {
   int _counter = 0;
 
   @override
+  @mustCallSuper
   Future<void> setup() async {
     _counter = 0;
     return super.setup();
@@ -68,6 +71,7 @@ class _Base extends AsyncBenchmarkBase {
 
   /// Measures the score for the benchmark and returns it.
   @override
+  @mustCallSuper
   Future<double> measure() async {
     await setup();
     try {
@@ -86,6 +90,7 @@ class _Base extends AsyncBenchmarkBase {
   }
 
   @override
+  @mustCallSuper
   Future<void> teardown() async {
     if (_counter == 0) throw StateError('Counter mismatch');
     return super.teardown();
@@ -130,8 +135,7 @@ class _MutexLinked extends _Base {
   @override
   Future<void> run() async {
     final prev = _node;
-    final completer = Completer<void>.sync();
-    final current = _node = _Node(completer.future)..prev = prev;
+    final current = _node = _Node.sync()..prev = prev;
     await prev?.future;
     final value = _counter;
     await Future<void>.delayed(Duration.zero);
@@ -139,14 +143,8 @@ class _MutexLinked extends _Base {
     //if (_counter < 50) print('$value -> $_counter');
     current.prev = null;
     if (identical(_node, current)) _node = null;
-    completer.complete();
+    current.release();
   }
-}
-
-final class _Node {
-  _Node(this.future);
-  final Future<void> future;
-  _Node? prev;
 }
 
 class _MutexQueue extends _Base {
@@ -238,4 +236,66 @@ class _MutexWrap extends _Base {
         _counter = value + 1;
         //if (_counter < 50) print('$value -> $_counter');
       });
+}
+
+class _MutexEncapsulated extends _Base {
+  _MutexEncapsulated() : super('Encapsulated');
+
+  final _Mutex _m = _Mutex();
+
+  @override
+  Future<void> run() async {
+    await _m.lock();
+    try {
+      final value = _counter;
+      await Future<void>.delayed(Duration.zero);
+      _counter = value + 1;
+      //if (_counter < 50) print('$value -> $_counter');
+    } finally {
+      _m.release();
+    }
+  }
+
+  @override
+  @mustCallSuper
+  Future<void> teardown() async {
+    if (_m.locks != 0) throw StateError('Lock mismatch');
+    return super.teardown();
+  }
+}
+
+final class _Node {
+  _Node._(Completer<void> completer)
+      : _completer = completer,
+        future = completer.future;
+
+  factory _Node.sync() => _Node._(Completer<void>.sync());
+
+  final Completer<void> _completer;
+  void release() => _completer.complete();
+  final Future<void> future;
+  _Node? prev;
+}
+
+class _Mutex {
+  _Node? _request; // The last requested block
+  _Node? _current; // The first and current running block
+  int _locks = 0;
+  int get locks => _locks;
+
+  Future<void> lock() async {
+    final prev = _request;
+    _locks++;
+    final current = _request = _Node.sync()..prev = prev;
+    await prev?.future;
+    _current = current..prev = null;
+  }
+
+  void release() {
+    final current = _current;
+    if (current == null) return;
+    _locks--;
+    _current = null;
+    current.release();
+  }
 }
