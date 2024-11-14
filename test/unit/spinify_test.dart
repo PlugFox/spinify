@@ -1778,9 +1778,16 @@ void main() {
               },
             );
             expect(client.state.isDisconnected, isTrue);
+
             expectLater(
               client.states,
               emitsInOrder([
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
                 isA<SpinifyState$Connecting>(),
                 isA<SpinifyState$Disconnected>().having(
                   (s) => s.temporary,
@@ -1795,17 +1802,26 @@ void main() {
               client.connect(url),
               throwsA(isA<SpinifyConnectionException>()),
             );
+            async.elapse(client.config.connectionRetryInterval.max);
 
-            async.elapse(client.config.connectionRetryInterval.max * 3);
+            expect(client.state.isDisconnected, isTrue);
+            expect(
+              client.connect(url),
+              throwsA(isA<SpinifyConnectionException>()),
+            );
+
+            async.elapse(client.config.connectionRetryInterval.max);
+
+            expect(client.state.isDisconnected, isTrue);
 
             client.close();
 
             async.elapse(const Duration(seconds: 5));
 
             expect(client.state.isClosed, isTrue);
-            expect(retries, equals(1));
+            expect(retries, equals(2));
             expect(client.metrics.connects, 0);
-            expect(client.metrics.disconnects, 2);
+            expect(client.metrics.disconnects, 3);
           },
         ),
       );
