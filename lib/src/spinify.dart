@@ -802,6 +802,7 @@ final class Spinify implements ISpinify {
           // Create handler for connect reply.
           final connectResultCompleter = Completer<SpinifyConnectResult>();
 
+          SpinifyErrorResult? errorConnectResult;
           // ignore: omit_local_variable_types
           void Function(SpinifyReply reply) handleReply = (reply) {
             if (connectResultCompleter.isCompleted) {
@@ -816,7 +817,7 @@ final class Spinify implements ISpinify {
             } else if (reply is SpinifyConnectResult) {
               connectResultCompleter.complete(reply);
             } else if (reply is SpinifyErrorResult) {
-              connectResultCompleter.completeError(reply);
+              connectResultCompleter.completeError(errorConnectResult = reply);
             } else {
               connectResultCompleter.completeError(
                 const SpinifyConnectionException(
@@ -843,9 +844,10 @@ final class Spinify implements ISpinify {
             var WebSocket(:int? closeCode, :String? closeReason) = ws;
             closeCode ??= 1000;
             closeReason ??= 'no reason';
-            final code = SpinifyDisconnectCode(closeCode);
-            final reason = closeReason;
-            final reconnect = code.reconnect;
+            final code =
+                SpinifyDisconnectCode(errorConnectResult?.code ?? closeCode);
+            final reason = errorConnectResult?.message ?? closeReason;
+            final reconnect = errorConnectResult?.temporary ?? code.reconnect;
             _log(
               const SpinifyLogLevel.transport(),
               'transport_disconnect',
@@ -865,18 +867,19 @@ final class Spinify implements ISpinify {
             );
           }
 
-          _replySubscription =
-              ws.stream.transform<SpinifyReply>(StreamTransformer.fromHandlers(
-            handleData: (data, sink) {
-              _metrics
-                ..bytesReceived += data.length
-                ..chunksReceived += 1;
-              for (final reply in _codec.decoder.convert(data)) {
-                _metrics.repliesDecoded += 1;
-                sink.add(reply);
-              }
-            },
-          )).listen(
+          _replySubscription = ws.stream.transform<SpinifyReply>(
+            StreamTransformer.fromHandlers(
+              handleData: (data, sink) {
+                _metrics
+                  ..bytesReceived += data.length
+                  ..chunksReceived += 1;
+                for (final reply in _codec.decoder.convert(data)) {
+                  _metrics.repliesDecoded += 1;
+                  sink.add(reply);
+                }
+              },
+            ),
+          ).listen(
             (reply) {
               assert(() {
                 if (!identical(ws, _transport)) {
@@ -944,6 +947,7 @@ final class Spinify implements ISpinify {
           _onReply(result); // Handle connect reply
           handleReply = _onReply; // Switch to normal reply handler
 
+          _tearDownReconnectTimer(); // Cancel reconnect timer
           _setUpRefreshConnection(); // Start refresh connection timer
           _setUpPingTimer(); // Start expecting ping messages
 
@@ -1008,6 +1012,7 @@ final class Spinify implements ISpinify {
                 _setUpReconnectTimer(); // Retry resubscribe
               } else {
                 // Disable resubscribe timer on permanent errors.
+                _tearDownReconnectTimer();
                 _setState(SpinifyState$Disconnected(temporary: false));
               }
             case SpinifyConnectionException _:

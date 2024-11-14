@@ -1611,17 +1611,17 @@ void main() {
         }),
       );
 
-      // Retry connection after temporary error
-      /* test(
-        'Connection_error_retry',
+      test(
+        'Connection_error_retry_temporary',
         () => fakeAsync(
           (async) {
-            late Timer pingTimer;
-            var pings = 0, retries = 0;
+            Timer? pingTimer;
+            var retries = 0;
             late final client = createFakeClient(
               getToken: () async => 'token',
               transport: (_) async {
-                late WebSocket$Fake ws;
+                pingTimer?.cancel();
+                late WebSocket$Fake ws; // ignore: close_sinks
                 return ws = WebSocket$Fake()
                   ..onAdd = (bytes, sink) {
                     final command = ProtobufCodec.decode(pb.Command(), bytes);
@@ -1638,7 +1638,6 @@ void main() {
                           );
                           final bytes = ProtobufCodec.encode(reply);
                           sink.add(bytes);
-                          retries++;
                         } else {
                           final reply = pb.Reply(
                             id: command.id,
@@ -1664,11 +1663,11 @@ void main() {
                                 timer.cancel();
                               } else {
                                 sink.add(ProtobufCodec.encode(pb.Reply()));
-                                pings++;
                               }
                             },
                           );
                         }
+                        retries++;
                       } else if (command.hasRefresh()) {
                         if (command.refresh.token.isEmpty) return;
                         final reply = pb.Reply()
@@ -1683,37 +1682,133 @@ void main() {
                         sink.add(bytes);
                       }
                     });
-                  }
-                  ..onDone = () {
-                    pingTimer.cancel();
                   };
               },
             );
+            expect(client.state.isDisconnected, isTrue);
             expectLater(
-              client.connect(url),
-              throwsA(isA<SpinifyException>()),
+              client.states,
+              emitsInOrder([
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isTrue,
+                ),
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isTrue,
+                ),
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Connected>(),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
+                isA<SpinifyState$Closed>(),
+                emitsDone,
+              ]),
             );
-            //client.states.forEach((s) => print(' *** State: $s'));
-            async.elapse(client.config.timeout);
+
             expect(
-              client.state,
-              isA<SpinifyState$Disconnected>().having(
-                (s) => s.temporary,
-                'temporary',
-                isTrue,
-            ));
-            //async.elapse(const Duration(hours: 3));
-            expect(client.state.isConnected, isTrue);
-            expect(client.isClosed, isFalse);
+              client.connect(url),
+              throwsA(isA<SpinifyConnectionException>()),
+            );
+
+            async.elapse(client.config.connectionRetryInterval.max * 3);
+
             client.close();
-            async.elapse(const Duration(minutes: 1));
+            pingTimer?.cancel();
+
+            async.elapse(const Duration(seconds: 5));
+
             expect(client.state.isClosed, isTrue);
-            expect(pings, greaterThanOrEqualTo(1));
-            expect(retries, equals(2));
+
+            expect(retries, equals(3));
+            expect(client.metrics.connects, 1);
+            expect(client.metrics.disconnects, 3);
           },
         ),
-        skip: true,
-      ); */
+      );
+
+      test(
+        'Connection_error_retry_permament',
+        () => fakeAsync(
+          (async) {
+            var retries = 0;
+            late final client = createFakeClient(
+              getToken: () async => 'token',
+              transport: (_) async {
+                late WebSocket$Fake
+                    ws; // ignore: close_sinks, unused_local_variable
+                return ws = WebSocket$Fake()
+                  ..onAdd = (bytes, sink) {
+                    final command = ProtobufCodec.decode(pb.Command(), bytes);
+                    scheduleMicrotask(() {
+                      if (command.hasConnect()) {
+                        final reply = pb.Reply(
+                          id: command.id,
+                          error: pb.Error(
+                            code: 3500,
+                            message: 'Fake connection error',
+                            temporary: false,
+                          ),
+                        );
+                        final bytes = ProtobufCodec.encode(reply);
+                        sink.add(bytes);
+                        retries++;
+                      } else if (command.hasRefresh()) {
+                        if (command.refresh.token.isEmpty) return;
+                        final reply = pb.Reply()
+                          ..id = command.id
+                          ..refresh = pb.RefreshResult(
+                            client: 'fake',
+                            version: '0.0.1',
+                            expires: true,
+                            ttl: 600,
+                          );
+                        final bytes = ProtobufCodec.encode(reply);
+                        sink.add(bytes);
+                      }
+                    });
+                  };
+              },
+            );
+            expect(client.state.isDisconnected, isTrue);
+            expectLater(
+              client.states,
+              emitsInOrder([
+                isA<SpinifyState$Connecting>(),
+                isA<SpinifyState$Disconnected>().having(
+                  (s) => s.temporary,
+                  'temporary',
+                  isFalse,
+                ),
+                isA<SpinifyState$Closed>(),
+                emitsDone,
+              ]),
+            );
+            expect(
+              client.connect(url),
+              throwsA(isA<SpinifyConnectionException>()),
+            );
+
+            async.elapse(client.config.connectionRetryInterval.max * 3);
+
+            client.close();
+
+            async.elapse(const Duration(seconds: 5));
+
+            expect(client.state.isClosed, isTrue);
+            expect(retries, equals(1));
+            expect(client.metrics.connects, 0);
+            expect(client.metrics.disconnects, 2);
+          },
+        ),
+      );
     },
   );
 }
