@@ -715,10 +715,12 @@ void main() {
       });
 
       test('Auto_refresh', () {
+        Timer? pingTimer;
         var pings = 0, refreshes = 0;
         final client = createFakeClient(
           getToken: () async => 'token',
           transport: (_) async {
+            pingTimer?.cancel();
             final ws = WebSocket$Fake();
             ws.onAdd = (bytes, sink) {
               final command = ProtobufCodec.decode(pb.Command(), bytes);
@@ -741,7 +743,7 @@ void main() {
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
-                  Timer.periodic(
+                  pingTimer = Timer.periodic(
                     Duration(milliseconds: reply.connect.ping),
                     (timer) {
                       if (ws.isClosed) {
@@ -777,6 +779,7 @@ void main() {
           expect(client.state.isConnected, isTrue);
           expect(client.isClosed, isFalse);
           client.close();
+          pingTimer?.cancel();
           async.flushMicrotasks();
           expect(client.state.isClosed, isTrue);
           expect(pings, greaterThanOrEqualTo(3 * 60 * 60 ~/ 120));

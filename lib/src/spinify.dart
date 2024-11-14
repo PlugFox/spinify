@@ -2256,10 +2256,6 @@ final class _SpinifyServerSubscriptionImpl extends _SpinifySubscriptionBase
     required super.epoch,
     required super.offset,
   });
-
-  @override
-  SpinifyChannelEvents<SpinifyChannelEvent> get stream =>
-      _client.stream.filter(channel: channel);
 }
 
 final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
