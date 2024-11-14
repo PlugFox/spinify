@@ -131,6 +131,7 @@ void main() {
                 transport: (_) async {
                   pingTimer?.cancel();
                   notificationTimer?.cancel();
+                  var offset = Int64.ZERO;
                   late WebSocket$Fake ws; // ignore: close_sinks
                   return ws = WebSocket$Fake()
                     ..onAdd = (bytes, sink) {
@@ -149,23 +150,11 @@ void main() {
                                 'notification:index': pb.SubscribeResult(
                                   data: utf8.encode('notification:index'),
                                   epoch: '...',
-                                  offset: Int64.ZERO,
+                                  offset: offset,
                                   expires: false,
                                   ttl: null,
                                   positioned: false,
-                                  publications: <pb.Publication>[
-                                    pb.Publication(
-                                      offset: Int64.ONE,
-                                      data: const <int>[1, 2, 3],
-                                      info: pb.ClientInfo(
-                                        client: 'fake',
-                                        user: 'fake',
-                                      ),
-                                      tags: const <String, String>{
-                                        'type': 'notification',
-                                      },
-                                    ),
-                                  ],
+                                  publications: [],
                                   recoverable: false,
                                   recovered: false,
                                   wasRecovering: false,
@@ -173,11 +162,23 @@ void main() {
                                 'echo:index': pb.SubscribeResult(
                                   data: utf8.encode('echo:index'),
                                   epoch: '...',
-                                  offset: Int64.ZERO,
+                                  offset: offset,
                                   expires: false,
                                   ttl: null,
                                   positioned: false,
-                                  publications: <pb.Publication>[],
+                                  publications: <pb.Publication>[
+                                    pb.Publication(
+                                      offset: offset,
+                                      data: const <int>[1, 2, 3],
+                                      info: pb.ClientInfo(
+                                        client: 'fake',
+                                        user: 'fake',
+                                      ),
+                                      tags: const <String, String>{
+                                        'type': 'echo',
+                                      },
+                                    ),
+                                  ],
                                   recoverable: false,
                                   recovered: false,
                                   wasRecovering: false,
@@ -231,6 +232,35 @@ void main() {
                             );
                           final bytes = ProtobufCodec.encode(reply);
                           sink.add(bytes);
+                        } else if (command.hasPublish() &&
+                            command.publish.channel == 'echo:index') {
+                          offset++;
+                          final reply = pb.Reply()
+                            ..id = command.id
+                            ..publish = pb.PublishResult();
+                          final bytes = ProtobufCodec.encode(reply);
+                          sink
+                            ..add(bytes)
+                            ..add(
+                              ProtobufCodec.encode(
+                                pb.Reply(
+                                  push: pb.Push(
+                                    channel: 'echo:index',
+                                    pub: pb.Publication(
+                                      offset: offset,
+                                      tags: const <String, String>{},
+                                      data: command.publish.data,
+                                      info: pb.ClientInfo(
+                                        client: 'fake',
+                                        chanInfo: [1, 2, 3],
+                                        connInfo: [4, 5, 6],
+                                        user: 'fake',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
                         }
                       });
                     };
@@ -247,6 +277,7 @@ void main() {
                 ]),
               );
               async.elapse(client.config.timeout);
+              expect(client.state.isConnected, isTrue);
               expectLater(
                 client.subscriptions.server['notification:index']?.stream
                     .message(),
@@ -263,13 +294,36 @@ void main() {
                     ),
                 ]),
               );
-              expect(client.state.isConnected, isTrue);
+              final echoEvents = <SpinifyChannelEvent>[];
+              client.subscriptions.server['echo:index']?.stream
+                  .forEach(echoEvents.add);
+              for (var i = 0; i < 10; i++) {
+                async.elapse(const Duration(minutes: 5));
+                client.publish('echo:index', utf8.encode(i.toString()));
+              }
               async.elapse(const Duration(days: 1));
               expect(client.state.isConnected, isTrue);
               expect(client.subscriptions.server, isNotEmpty);
               pingTimer?.cancel();
               client.close();
-              async.flushTimers();
+              async.elapse(client.config.timeout);
+              expect(
+                echoEvents,
+                equals([
+                  for (var i = 0; i < 10; i++)
+                    isA<SpinifyPublication>()
+                        .having(
+                          (m) => m.data,
+                          'data',
+                          equals(utf8.encode(i.toString())),
+                        )
+                        .having(
+                          (m) => m.offset,
+                          'offset',
+                          equals(Int64(i + 1)),
+                        ),
+                ]),
+              );
               expect(client.state.isConnected, isFalse);
               expect(client.isClosed, isTrue);
             }));
