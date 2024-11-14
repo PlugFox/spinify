@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:spinify/spinify.dart';
@@ -125,11 +126,12 @@ void main() {
     test(
         'Events',
         () => fakeAsync((async) {
-              Timer? pingTimer;
+              Timer? pingTimer, notificationTimer;
               final client = createFakeClient(
                 transport: (_) async {
                   pingTimer?.cancel();
-                  late WebSocket$Fake ws;
+                  notificationTimer?.cancel();
+                  late WebSocket$Fake ws; // ignore: close_sinks
                   return ws = WebSocket$Fake()
                     ..onAdd = (bytes, sink) {
                       final command = ProtobufCodec.decode(pb.Command(), bytes);
@@ -145,11 +147,11 @@ void main() {
                               data: null,
                               subs: <String, pb.SubscribeResult>{
                                 'notification:index': pb.SubscribeResult(
-                                  data: const <int>[1, 2, 3],
+                                  data: utf8.encode('notification:index'),
                                   epoch: '...',
                                   offset: Int64.ZERO,
-                                  expires: true,
-                                  ttl: 600,
+                                  expires: false,
+                                  ttl: null,
                                   positioned: false,
                                   publications: <pb.Publication>[
                                     pb.Publication(
@@ -164,6 +166,18 @@ void main() {
                                       },
                                     ),
                                   ],
+                                  recoverable: false,
+                                  recovered: false,
+                                  wasRecovering: false,
+                                ),
+                                'echo:index': pb.SubscribeResult(
+                                  data: utf8.encode('echo:index'),
+                                  epoch: '...',
+                                  offset: Int64.ZERO,
+                                  expires: false,
+                                  ttl: null,
+                                  positioned: false,
+                                  publications: <pb.Publication>[],
                                   recoverable: false,
                                   recovered: false,
                                   wasRecovering: false,
@@ -184,6 +198,25 @@ void main() {
                                 return;
                               }
                               sink.add(ProtobufCodec.encode(pb.Reply()));
+                            },
+                          );
+                          notificationTimer = Timer.periodic(
+                            const Duration(minutes: 5),
+                            (timer) {
+                              if (ws.isClosed) {
+                                timer.cancel();
+                                return;
+                              }
+                              sink.add(ProtobufCodec.encode(pb.Reply(
+                                push: pb.Push(
+                                  channel: 'notification:index',
+                                  message: pb.Message(
+                                    data: utf8.encode(DateTime.now()
+                                        .toUtc()
+                                        .toIso8601String()),
+                                  ),
+                                ),
+                              )));
                             },
                           );
                         } else if (command.hasRefresh()) {
@@ -214,6 +247,22 @@ void main() {
                 ]),
               );
               async.elapse(client.config.timeout);
+              expectLater(
+                client.subscriptions.server['notification:index']?.stream
+                    .message(),
+                emitsInOrder([
+                  for (var i = 0; i < 10; i++)
+                    isA<SpinifyMessage>().having(
+                      (m) => m.data,
+                      'data',
+                      isA<List<int>>().having(
+                        (bytes) => DateTime.parse(utf8.decode(bytes)),
+                        'DateTime.parse',
+                        isA<DateTime>(),
+                      ),
+                    ),
+                ]),
+              );
               expect(client.state.isConnected, isTrue);
               async.elapse(const Duration(days: 1));
               expect(client.state.isConnected, isTrue);
