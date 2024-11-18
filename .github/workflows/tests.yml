@@ -113,8 +113,8 @@ jobs:
     container:
       image: dart:stable
     env:
-      pub-cache-name: pub
       threshold: 50
+      pub-cache: pub
       PUB_CACHE: /github/home/.pub-cache
     timeout-minutes: 15
     steps:
@@ -128,6 +128,8 @@ jobs:
             lib
             test
             analysis_options.yaml
+            README.md
+            CHANGELOG.md
 
       #- name: 📂 Download Echo server
       #  id: download-echo-server
@@ -141,8 +143,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
+            /home/runner/.pub-cache
+          key: ${{ runner.os }}-pub-${{ env.pub-cache }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 👷 Install Dependencies
         id: install-dependencies
@@ -154,11 +156,12 @@ jobs:
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
+        if: steps.cache-pub-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
+            /home/runner/.pub-cache
+          key: ${{ steps.cache-pub-restore.outputs.cache-primary-key }}
 
       #- name: 📢 Run Echo server
       #  id: run-echo-server
