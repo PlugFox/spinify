@@ -19,6 +19,6 @@ abstract final class Backoff {
     if (minDelay >= maxDelay) return Duration(milliseconds: maxDelay);
     final val = math.min(maxDelay, minDelay * math.pow(2, step.clamp(0, 31)));
     final interval = _rnd.nextInt(val.toInt());
-    return Duration(milliseconds: math.min(maxDelay, minDelay + interval));
+    return Duration(milliseconds: (minDelay + interval).clamp(0, maxDelay));
   }
 }

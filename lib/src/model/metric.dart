@@ -49,10 +49,22 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
   abstract final fixnum.Int64 bytesReceived;
 
   /// The total number of messages sent.
-  abstract final fixnum.Int64 messagesSent;
+  abstract final fixnum.Int64 chunksSent;
+
+  /// The total number of messages sent.
+  fixnum.Int64 get messagesSent => chunksSent;
+
+  /// The total number of bytes chunks received.
+  abstract final fixnum.Int64 chunksReceived;
 
   /// The total number of messages received.
-  abstract final fixnum.Int64 messagesReceived;
+  fixnum.Int64 get messagesReceived => chunksReceived;
+
+  /// The total number of commands encoded.
+  abstract final fixnum.Int64 commandsEncoded;
+
+  /// The total number of replies decoded.
+  abstract final fixnum.Int64 repliesDecoded;
 
   /*
   /// The number of subscriptions.
@@ -112,8 +124,10 @@ sealed class SpinifyMetrics implements Comparable<SpinifyMetrics> {
         'state': state,
         'bytesSent': bytesSent.toString(),
         'bytesReceived': bytesReceived.toString(),
-        'messagesSent': messagesSent.toString(),
-        'messagesReceived': messagesReceived.toString(),
+        'chunksSent': chunksSent.toString(),
+        'chunksReceived': chunksReceived.toString(),
+        'commandsEncoded': commandsEncoded.toString(),
+        'repliesDecoded': repliesDecoded.toString(),
         'connects': connects,
         'lastConnectAt': lastConnectAt?.toUtc().toIso8601String(),
         'reconnectUrl': reconnectUrl,
@@ -211,8 +225,10 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
     required this.lastDisconnectAt,
     required this.bytesReceived,
     required this.bytesSent,
-    required this.messagesReceived,
-    required this.messagesSent,
+    required this.chunksReceived,
+    required this.commandsEncoded,
+    required this.repliesDecoded,
+    required this.chunksSent,
     required this.lastPingAt,
     required this.receivedPings,
     required this.channels,
@@ -258,10 +274,16 @@ final class SpinifyMetrics$Immutable extends SpinifyMetrics {
   final fixnum.Int64 bytesSent;
 
   @override
-  final fixnum.Int64 messagesReceived;
+  final fixnum.Int64 chunksReceived;
 
   @override
-  final fixnum.Int64 messagesSent;
+  final fixnum.Int64 commandsEncoded;
+
+  @override
+  final fixnum.Int64 repliesDecoded;
+
+  @override
+  final fixnum.Int64 chunksSent;
 
   @override
   final DateTime? lastPingAt;
@@ -365,10 +387,16 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
   fixnum.Int64 bytesSent = fixnum.Int64.ZERO;
 
   @override
-  fixnum.Int64 messagesReceived = fixnum.Int64.ZERO;
+  fixnum.Int64 chunksReceived = fixnum.Int64.ZERO;
 
   @override
-  fixnum.Int64 messagesSent = fixnum.Int64.ZERO;
+  fixnum.Int64 commandsEncoded = fixnum.Int64.ZERO;
+
+  @override
+  fixnum.Int64 repliesDecoded = fixnum.Int64.ZERO;
+
+  @override
+  fixnum.Int64 chunksSent = fixnum.Int64.ZERO;
 
   @override
   DateTime? lastPingAt;
@@ -395,8 +423,10 @@ final class SpinifyMetrics$Mutable extends SpinifyMetrics {
         lastDisconnectAt: lastDisconnectAt,
         bytesReceived: bytesReceived,
         bytesSent: bytesSent,
-        messagesReceived: messagesReceived,
-        messagesSent: messagesSent,
+        chunksReceived: chunksReceived,
+        commandsEncoded: commandsEncoded,
+        repliesDecoded: repliesDecoded,
+        chunksSent: chunksSent,
         lastPingAt: lastPingAt,
         receivedPings: receivedPings,
         channels: Map<String, SpinifyMetrics$Channel$Immutable>.unmodifiable(

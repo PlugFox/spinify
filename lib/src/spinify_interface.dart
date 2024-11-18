@@ -42,12 +42,16 @@ abstract interface class ISpinify
   Future<void> ready();
 
   /// Disconnect from the server.
-  Future<void> disconnect();
+  /// If [force] is true then client will be disconnected immediately,
+  /// otherwise client will wait for all operations to complete.
+  Future<void> disconnect({bool force = false});
 
   /// Client if not needed anymore.
   /// Permanent close connection to the server and
   /// free all allocated resources.
-  Future<void> close();
+  /// If [force] is true then client will be closed immediately,
+  /// otherwise client will wait for all operations to complete.
+  Future<void> close({bool force = false});
 }
 
 /// Spinify client state owner interface.

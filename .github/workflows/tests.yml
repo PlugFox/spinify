@@ -16,8 +16,9 @@ on:
       - "lib/**.dart"
       - "test/**.dart"
       - "example/**.dart"
-      - .github/workflows/*.yml
+      - ".github/workflows/*.yml"
       - "pubspec.yaml"
+      - "analysis_options.yaml"
   pull_request:
     branches:
       - "main"
@@ -32,78 +33,88 @@ on:
       - "lib/**.dart"
       - "test/**.dart"
       - "example/**.dart"
-      - .github/workflows/*.yml
+      - ".github/workflows/*.yml"
       - "pubspec.yaml"
+      - "analysis_options.yaml"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-echo:
-    name: "Build Echo server"
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
-    container:
-      image: golang:1.22
-    env:
-      echo-cache-name: echo
-    timeout-minutes: 5
-    steps:
-      - name: 🚂 Get latest code
-        id: checkout
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            .github
-            tool/echo
-
-      - name: 📤 Restore Go echo server
-        id: cache-echo-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/build/bin/echo
-          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
-
-      - name: 🦫 Build Go echo server
-        id: build-echo
-        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
-        working-directory: ./tool/echo
-        run: |
-          mkdir -p ~/build/bin/
-          go get
-          go build -o ~/build/bin/echo echo.go
-
-      - name: 📥 Save Go echo server
-        id: cache-echo-save
-        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/build/bin/echo
-          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
-
-      - name: 💾 Upload Go echo server
-        id: upload-echo-server
-        uses: actions/upload-artifact@v4
-        with:
-          name: echo-server
-          path: ~/build/bin/echo
-          compression-level: 6
-          overwrite: true
-          retention-days: 1
+  #  build-echo:
+  #    name: "Build Echo server"
+  #    runs-on: ubuntu-latest
+  #    defaults:
+  #      run:
+  #        working-directory: ./
+  #    container:
+  #      image: golang:1.22
+  #    env:
+  #      echo-cache-name: echo
+  #    timeout-minutes: 5
+  #    steps:
+  #      - name: 🚂 Get latest code
+  #        id: checkout
+  #        uses: actions/checkout@v4
+  #        with:
+  #          sparse-checkout: |
+  #            .github
+  #            tool/echo
+  #
+  #      - name: 📤 Restore Go echo server
+  #        id: cache-echo-restore
+  #        uses: actions/cache/restore@v4
+  #        with:
+  #          path: |
+  #            ~/build/bin/echo
+  #          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
+  #
+  #      - name: 🦫 Build Go echo server
+  #        id: build-echo
+  #        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+  #        working-directory: ./tool/echo
+  #        run: |
+  #          mkdir -p ~/build/bin/
+  #          go get
+  #          go build -o ~/build/bin/echo echo.go
+  #
+  #      - name: 📥 Save Go echo server
+  #        id: cache-echo-save
+  #        if: steps.cache-echo-restore.outputs.cache-hit != 'true'
+  #        uses: actions/cache/save@v4
+  #        with:
+  #          path: |
+  #            ~/build/bin/echo
+  #          key: ${{ runner.os }}-spinify-${{ env.echo-cache-name }}-${{ hashFiles('tool/echo/echo.go') }}
+  #
+  #      - name: 💾 Upload Go echo server
+  #        id: upload-echo-server
+  #        uses: actions/upload-artifact@v4
+  #        with:
+  #          name: echo-server
+  #          path: ~/build/bin/echo
+  #          compression-level: 6
+  #          overwrite: true
+  #          retention-days: 1
 
   tests:
     name: "Tests"
     runs-on: ubuntu-latest
-    needs: build-echo
+    #needs: build-echo
     defaults:
       run:
         working-directory: ./
     container:
       image: dart:stable
     env:
-      pub-cache-name: pub
       threshold: 50
+      pub-cache: pub
       PUB_CACHE: /github/home/.pub-cache
     timeout-minutes: 15
     steps:
@@ -117,21 +128,23 @@ jobs:
             lib
             test
             analysis_options.yaml
+            README.md
+            CHANGELOG.md
 
-      - name: 📂 Download Echo server
-        id: download-echo-server
-        uses: actions/download-artifact@v4
-        with:
-          name: echo-server
-          path: ~/build/bin/
+      #- name: 📂 Download Echo server
+      #  id: download-echo-server
+      #  uses: actions/download-artifact@v4
+      #  with:
+      #    name: echo-server
+      #    path: ~/build/bin/
 
       - name: 📤 Restore Pub modules
         id: cache-pub-restore
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
+            /home/runner/.pub-cache
+          key: ${{ runner.os }}-pub-${{ env.pub-cache }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 👷 Install Dependencies
         id: install-dependencies
@@ -143,22 +156,23 @@ jobs:
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
+        if: steps.cache-pub-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
+            /home/runner/.pub-cache
+          key: ${{ steps.cache-pub-restore.outputs.cache-primary-key }}
 
-      - name: 📢 Run Echo server
-        id: run-echo-server
-        timeout-minutes: 1
-        run: |
-          test -f ~/build/bin/echo
-          chmod +x ~/build/bin/echo
-          nohup ~/build/bin/echo > echo.log 2>&1 &
-          echo $! > echo_pid.txt
-        env:
-          PORT: 8000
+      #- name: 📢 Run Echo server
+      #  id: run-echo-server
+      #  timeout-minutes: 1
+      #  run: |
+      #    test -f ~/build/bin/echo
+      #    chmod +x ~/build/bin/echo
+      #    nohup ~/build/bin/echo > echo.log 2>&1 &
+      #    echo $! > echo_pid.txt
+      #  env:
+      #    PORT: 8000
 
       - name: 🧪 Run tests
         id: run-tests
@@ -167,29 +181,29 @@ jobs:
           dart pub global activate coverage
           dart pub global run coverage:test_with_coverage -fb -o coverage -- \
             --platform vm --compiler=kernel --coverage=coverage \
-            --reporter=github --file-reporter=json:coverage/tests.json \
+            --reporter=github --file-reporter=json:reports/tests.json \
             --timeout=10m --concurrency=12 --color \
-              test/unit_test.dart test/smoke_test.dart
+              test/unit_test.dart
 
-      - name: 🧾 Upload echo logs
-        id: upload-echo-logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-logs
-          path: echo.log
-          compression-level: 9
-          overwrite: true
-          retention-days: 1
+      #- name: 🧾 Upload echo logs
+      #  id: upload-echo-logs
+      #  if: always()
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: server-logs
+      #    path: echo.log
+      #    compression-level: 9
+      #    overwrite: true
+      #    retention-days: 1
 
-      - name: ✋ Stop echo server
-        id: stop-echo-server
-        timeout-minutes: 1
-        if: always()
-        run: |
-          kill $(cat echo_pid.txt) || true
-          rm -f echo_pid.txt || true
-          rm -f echo.log || true
+      #- name: ✋ Stop echo server
+      #  id: stop-echo-server
+      #  timeout-minutes: 1
+      #  if: always()
+      #  run: |
+      #    kill $(cat echo_pid.txt) || true
+      #    rm -f echo_pid.txt || true
+      #    rm -f echo.log || true
 
       - name: 🔍 Check coverage
         id: check-coverage
@@ -216,3 +230,10 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+
+      - name: 📥 Upload test report
+        uses: actions/upload-artifact@v4
+        if: (success() || failure()) && ${{ github.actor != 'dependabot[bot]' }}
+        with:
+          name: test-results
+          path: reports/tests.json

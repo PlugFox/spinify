@@ -1,5 +1,7 @@
 import 'package:meta/meta.dart';
 
+import '../util/list_equals.dart';
+
 /// {@template client_info}
 /// Client information.
 /// {@endtemplate}
@@ -39,13 +41,13 @@ final class SpinifyClientInfo {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is SpinifyClientInfo &&
-          user == other.client &&
+          user == other.user &&
           client == other.client &&
-          connectionInfo == other.connectionInfo &&
-          channelInfo == other.channelInfo;
+          listEquals(connectionInfo, other.connectionInfo) &&
+          listEquals(channelInfo, other.channelInfo);
 
   @override
-  String toString() => 'ClientInfo{'
+  String toString() => 'SpinifyClientInfo{'
       'user: $user, '
       'client: $client'
       '}';

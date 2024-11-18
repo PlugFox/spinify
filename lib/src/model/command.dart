@@ -25,6 +25,9 @@ sealed class SpinifyCommand implements Comparable<SpinifyCommand> {
   /// Command type.
   abstract final String type;
 
+  /// Check if command has ID.
+  abstract final bool hasId;
+
   /// Timestamp of command.
   final DateTime timestamp;
 
@@ -34,6 +37,7 @@ sealed class SpinifyCommand implements Comparable<SpinifyCommand> {
         0 => id.compareTo(other.id),
         int result => result,
       };
+
   @override
   int get hashCode => id ^ type.hashCode ^ timestamp.microsecondsSinceEpoch;
 
@@ -64,6 +68,9 @@ final class SpinifyConnectRequest extends SpinifyCommand {
 
   @override
   String get type => 'ConnectRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Token to authenticate.
   final String? token;
@@ -100,6 +107,9 @@ final class SpinifySubscribeRequest extends SpinifyCommand {
 
   @override
   String get type => 'SubscribeRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Channel to subscribe.
   final String channel;
@@ -146,6 +156,9 @@ final class SpinifyUnsubscribeRequest extends SpinifyCommand {
   @override
   String get type => 'UnsubscribeRequest';
 
+  @override
+  bool get hasId => true;
+
   /// Channel to unsubscribe.
   final String channel;
 }
@@ -162,6 +175,9 @@ final class SpinifyPublishRequest extends SpinifyCommand {
 
   @override
   String get type => 'PublishRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Channel to publish.
   final String channel;
@@ -182,6 +198,9 @@ final class SpinifyPresenceRequest extends SpinifyCommand {
   @override
   String get type => 'PresenceRequest';
 
+  @override
+  bool get hasId => true;
+
   /// Channel to get presence.
   final String channel;
 }
@@ -197,6 +216,9 @@ final class SpinifyPresenceStatsRequest extends SpinifyCommand {
 
   @override
   String get type => 'PresenceStatsRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Channel to get presence stats.
   final String channel;
@@ -216,6 +238,9 @@ final class SpinifyHistoryRequest extends SpinifyCommand {
 
   @override
   String get type => 'HistoryRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Channel to get history.
   final String? channel;
@@ -239,6 +264,9 @@ final class SpinifyPingRequest extends SpinifyCommand {
 
   @override
   String get type => 'PingRequest';
+
+  @override
+  bool get hasId => false;
 }
 
 /// {@macro command}
@@ -251,6 +279,9 @@ final class SpinifySendRequest extends SpinifyCommand {
 
   @override
   String get type => 'SendRequest';
+
+  @override
+  bool get hasId => false;
 
   /// Data to send.
   final List<int> data;
@@ -268,6 +299,9 @@ final class SpinifyRPCRequest extends SpinifyCommand {
 
   @override
   String get type => 'RPCRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Data to send.
   final List<int> data;
@@ -288,6 +322,9 @@ final class SpinifyRefreshRequest extends SpinifyCommand {
   @override
   String get type => 'RefreshRequest';
 
+  @override
+  bool get hasId => true;
+
   /// Token to refresh.
   /// Token should not be null or empty string.
   final String token;
@@ -305,6 +342,9 @@ final class SpinifySubRefreshRequest extends SpinifyCommand {
 
   @override
   String get type => 'SubRefreshRequest';
+
+  @override
+  bool get hasId => true;
 
   /// Channel to refresh.
   final String channel;

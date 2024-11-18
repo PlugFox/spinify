@@ -6,6 +6,23 @@ on:
     branches:
       - "main"
       - "master"
+      #- "dev"
+      #- "develop"
+      #- "feature/**"
+      #- "bugfix/**"
+      #- "hotfix/**"
+      #- "support/**"
+    paths:
+      - "lib/**.dart"
+      - "test/**.dart"
+      - "example/**.dart"
+      - ".github/workflows/*.yml"
+      - "pubspec.yaml"
+      - "analysis_options.yaml"
+  pull_request:
+    branches:
+      - "main"
+      - "master"
       - "dev"
       - "develop"
       - "feature/**"
@@ -16,8 +33,18 @@ on:
       - "lib/**.dart"
       - "test/**.dart"
       - "example/**.dart"
-      - .github/workflows/*.yml
+      - ".github/workflows/*.yml"
       - "pubspec.yaml"
+      - "analysis_options.yaml"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   checkout:
@@ -29,7 +56,7 @@ jobs:
     container:
       image: dart:stable
     env:
-      pub-cache-name: pub
+      pub-cache: pub
       PUB_CACHE: /github/home/.pub-cache
     timeout-minutes: 10
     steps:
@@ -51,8 +78,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
+            /home/runner/.pub-cache
+          key: ${{ runner.os }}-pub-${{ env.pub-cache }}-${{ hashFiles('pubspec.yaml') }}
 
       - name: 👷 Install Dependencies
         id: install-dependencies
@@ -63,16 +90,18 @@ jobs:
 
       - name: 📥 Save Pub modules
         id: cache-pub-save
+        if: steps.cache-pub-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-spinify-${{ env.pub-cache-name }}-${{ hashFiles('pubspec.yaml') }}
+            /home/runner/.pub-cache
+          key: ${{ steps.cache-pub-restore.outputs.cache-primary-key }}
 
-      - name: 🔎 Check format
+      - name: 🚦 Check code format
         id: check-format
         timeout-minutes: 1
-        run: dart format --set-exit-if-changed -l 80 -o none lib/ test/
+        run: |
+          find lib test -name "*.dart" ! -name "*.*.dart" -print0 | xargs -0 dart format --set-exit-if-changed --line-length 80 -o none lib/ test/
 
       - name: 📈 Check analyzer
         id: check-analyzer
@@ -99,5 +128,5 @@ jobs:
         timeout-minutes: 2
         run: |
           dart test --color --platform=vm --concurrency=12 \
-            --timeout=60s --reporter=github --file-reporter=json:coverage/tests.json \
+            --timeout=60s --reporter=github --file-reporter=json:reports/tests.json \
             --coverage=coverage -- test/unit_test.dart

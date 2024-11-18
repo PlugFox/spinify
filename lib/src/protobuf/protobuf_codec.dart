@@ -1,21 +1,38 @@
-@internal
 import 'dart:convert';
 
-import 'package:meta/meta.dart';
+import 'package:protobuf/protobuf.dart' as pb;
 
 import '../model/channel_event.dart';
 import '../model/client_info.dart';
+import '../model/codec.dart';
 import '../model/command.dart';
 import '../model/config.dart';
 import '../model/reply.dart';
 import '../model/stream_position.dart';
 import 'client.pb.dart' as pb;
 
-/// SpinifyCommand --> Protobuf Command encoder.
-final class ProtobufCommandEncoder
-    extends Converter<SpinifyCommand, pb.Command> {
+/// Default protobuf codec for Spinify.
+final class SpinifyProtobufCodec implements SpinifyCodec {
+  /// Default protobuf codec for Spinify.
+  SpinifyProtobufCodec([SpinifyLogger? logger])
+      : decoder = SpinifyProtobufReplyDecoder(logger),
+        encoder = SpinifyProtobufCommandEncoder(logger);
+
+  @override
+  String get protocol => 'centrifuge-protobuf';
+
+  @override
+  final Converter<List<int>, Iterable<SpinifyReply>> decoder;
+
+  @override
+  final Converter<SpinifyCommand, List<int>> encoder;
+}
+
+/// SpinifyCommand --> List<int> encoder.
+final class SpinifyProtobufCommandEncoder
+    extends Converter<SpinifyCommand, List<int>> {
   /// SpinifyCommand --> List<int> encoder.
-  const ProtobufCommandEncoder([this.logger]);
+  const SpinifyProtobufCommandEncoder([this.logger]);
 
   /// Logger function to use for logging.
   /// If not specified, the logger will be disabled.
@@ -34,7 +51,7 @@ final class ProtobufCommandEncoder
   final SpinifyLogger? logger;
 
   @override
-  pb.Command convert(SpinifyCommand input) {
+  List<int> convert(SpinifyCommand input) {
     final cmd = pb.Command(id: input.id);
     switch (input) {
       case SpinifySendRequest send:
@@ -125,29 +142,24 @@ final class ProtobufCommandEncoder
           token: subRefresh.token,
         );
     }
-    /* assert(() {
-      print('Command > ${cmd.toProto3Json()}');
-      return true;
-    }()); */
-
-    /* final buffer = pb.CodedBufferWriter();
-    pb.writeToCodedBufferWriter(buffer);
-    return buffer.toBuffer(); */
-
-    /* final commandData = cmd.writeToBuffer();
-    final length = commandData.lengthInBytes;
-    final writer = pb.CodedBufferWriter()
-      ..writeInt32NoTag(length); //..writeRawBytes(commandData);
-    return writer.toBuffer() + commandData; */
-
-    return cmd;
+    final commandData = cmd.writeToBuffer();
+    /* final writer = pb.CodedBufferWriter()
+      ..writeInt32NoTag(
+          commandData.lengthInBytes); //..writeRawBytes(commandData);
+    final bytes = writer.toBuffer() + commandData;
+    return bytes; */
+    return (pb.CodedBufferWriter()
+          ..writeInt32NoTag(commandData.lengthInBytes)
+          ..writeRawBytes(commandData))
+        .toBuffer();
   }
 }
 
-/// Protobuf Reply --> SpinifyReply decoder.
-final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
-  /// List<int> --> SpinifyCommand decoder.
-  const ProtobufReplyDecoder([this.logger]);
+/// Protobuf List<int> --> Iterable<SpinifyReply> decoder.
+final class SpinifyProtobufReplyDecoder
+    extends Converter<List<int>, Iterable<SpinifyReply>> {
+  /// List<int> --> Iterable<SpinifyReply> decoder.
+  const SpinifyProtobufReplyDecoder([this.logger]);
 
   /// Logger function to use for logging.
   /// If not specified, the logger will be disabled.
@@ -166,38 +178,54 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
   final SpinifyLogger? logger;
 
   @override
-  SpinifyReply convert(pb.Reply input) {
-    //final reader = pb.CodedBufferReader(input);
-    //while (!reader.isAtEnd()) {
-    //final reply = pb.Reply();
-    //reader.readMessage(reply, pb.ExtensionRegistry.EMPTY);
-    final reply = input;
-
-    /* assert(() {
-      print('Reply < ${reply.toProto3Json()}');
-      return true;
-    }()); */
-
-    if (reply.hasPush()) {
-      return _decodePush(reply.push);
-    } else if (reply.hasId() && reply.id > 0) {
-      return _decodeReply(reply);
-    } else if (reply.hasError()) {
-      final error = reply.error;
-      return SpinifyErrorResult(
-        id: reply.hasId() ? reply.id : 0,
-        timestamp: DateTime.now(),
-        code: error.code,
-        message: error.message,
-        temporary: error.temporary,
-      );
-    } else {
-      return SpinifyServerPing(
-        timestamp: DateTime.now(),
-      );
+  Iterable<SpinifyReply> convert(List<int> input) sync* {
+    if (input.isEmpty) return;
+    final reader = pb.CodedBufferReader(input);
+    while (!reader.isAtEnd()) {
+      try {
+        final message = pb.Reply();
+        reader.readMessage(message, pb.ExtensionRegistry.EMPTY);
+        /* assert(() {
+          print('Reply < ${message.toProto3Json()}');
+          return true;
+        }()); */
+        if (message.hasPush()) {
+          yield _decodePush(message.push);
+        } else if (message.hasId() && message.id > 0) {
+          yield _decodeReply(message);
+        } else if (message.hasError()) {
+          // coverage:ignore-start
+          final error = message.error;
+          yield SpinifyErrorResult(
+            id: message.hasId() ? message.id : 0,
+            timestamp: DateTime.now(),
+            code: error.code,
+            message: error.message,
+            temporary: error.temporary,
+          );
+          // coverage:ignore-end
+        } else {
+          yield SpinifyServerPing(
+            timestamp: DateTime.now(),
+          );
+        }
+      } on Object catch (error, stackTrace) {
+        // coverage:ignore-start
+        logger?.call(
+          const SpinifyLogLevel.warning(),
+          'protobuf_reply_decoder_error',
+          'Error decoding reply',
+          <String, Object?>{
+            'error': error,
+            'stackTrace': stackTrace,
+            'input': input,
+          },
+        );
+        // coverage:ignore-end
+      }
     }
-    //}
-    //assert(reader.isAtEnd(), 'Data is not fully consumed');
+
+    assert(reader.isAtEnd(), 'Data is not fully consumed');
   }
 
   /*
@@ -432,6 +460,7 @@ final class ProtobufReplyDecoder extends Converter<pb.Reply, SpinifyReply> {
         pingInterval = Duration(seconds: ping);
       } else {
         assert(false, 'Ping interval is invalid'); // coverage:ignore-line
+        pingInterval = const Duration(seconds: 25);
       }
       return SpinifyConnectResult(
         id: id,

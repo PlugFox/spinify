@@ -12,12 +12,10 @@ void main() {
 
     test('Fields', () {
       final logBuffer = SpinifyLogBuffer(size: 10);
-      Future<ISpinifyTransport> transportBuilder({
+      Future<WebSocket> transportBuilder({
         required String url,
-        required SpinifyConfig config,
-        required SpinifyMetrics metrics,
-        required Future<void> Function(SpinifyReply reply) onReply,
-        required Future<void> Function({required bool temporary}) onDisconnect,
+        Map<String, String>? headers,
+        Iterable<String>? protocols,
       }) =>
           throw UnimplementedError();
 

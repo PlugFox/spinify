@@ -34,12 +34,6 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
     List<int>? data,
     DateTime? timestamp,
   }) = SpinifySubscriptionState$Subscribed;
-
-  /// Converts this state to JSON.
-  Map<String, Object?> toJson();
-
-  @override
-  String toString() => type;
 }
 
 /// Unsubscribed state
@@ -81,12 +75,6 @@ final class SpinifySubscriptionState$Unsubscribed
       unsubscribed(this);
 
   @override
-  Map<String, Object?> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
-
-  @override
   int get hashCode => 0 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
@@ -94,6 +82,9 @@ final class SpinifySubscriptionState$Unsubscribed
       identical(this, other) ||
       other is SpinifySubscriptionState$Unsubscribed &&
           other.timestamp.isAtSameMomentAs(timestamp);
+
+  @override
+  String toString() => r'SpinifySubscriptionState$Unsubscribed{}';
 }
 
 /// Subscribing state
@@ -135,12 +126,6 @@ final class SpinifySubscriptionState$Subscribing
       subscribing(this);
 
   @override
-  Map<String, Object?> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
-
-  @override
   int get hashCode => 1 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
@@ -148,6 +133,9 @@ final class SpinifySubscriptionState$Subscribing
       identical(this, other) ||
       other is SpinifySubscriptionState$Subscribing &&
           other.timestamp.isAtSameMomentAs(timestamp);
+
+  @override
+  String toString() => r'SpinifySubscriptionState$Subscribing{}';
 }
 
 /// Subscribed state
@@ -193,12 +181,6 @@ final class SpinifySubscriptionState$Subscribed
       subscribed(this);
 
   @override
-  Map<String, Object?> toJson() => {
-        'type': type,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-      };
-
-  @override
   int get hashCode => 2 + timestamp.microsecondsSinceEpoch * 10;
 
   @override
@@ -206,6 +188,9 @@ final class SpinifySubscriptionState$Subscribed
       identical(this, other) ||
       other is SpinifySubscriptionState$Subscribed &&
           other.timestamp.isAtSameMomentAs(timestamp);
+
+  @override
+  String toString() => r'SpinifySubscriptionState$Subscribed{}';
 }
 
 /// Pattern matching for [SpinifySubscriptionState].
@@ -214,7 +199,8 @@ typedef SpinifySubscriptionStateMatch<R, S extends SpinifySubscriptionState> = R
     Function(S state);
 
 @immutable
-abstract base class _$SpinifySubscriptionStateBase {
+abstract base class _$SpinifySubscriptionStateBase
+    implements Comparable<_$SpinifySubscriptionStateBase> {
   const _$SpinifySubscriptionStateBase({
     required this.timestamp,
   });
@@ -277,4 +263,8 @@ abstract base class _$SpinifySubscriptionStateBase {
         subscribing: subscribing ?? (_) => null,
         subscribed: subscribed ?? (_) => null,
       );
+
+  @override
+  int compareTo(_$SpinifySubscriptionStateBase other) =>
+      timestamp.compareTo(other.timestamp);
 }

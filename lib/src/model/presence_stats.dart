@@ -23,5 +23,20 @@ final class SpinifyPresenceStats {
   final int users;
 
   @override
+  int get hashCode => Object.hash(
+        channel,
+        clients,
+        users,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SpinifyPresenceStats &&
+          channel == other.channel &&
+          clients == other.clients &&
+          users == other.users;
+
+  @override
   String toString() => 'SpinifyPresenceStats{channel: $channel}';
 }

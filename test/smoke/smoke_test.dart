@@ -206,37 +206,13 @@ void main() {
 
       notification!;
       await expectLater(
-        notification.history,
-        throwsA(
-          isA<SpinifyReplyException>()
-              .having(
-                (e) => e.replyCode,
-                'replyCode',
-                equals(108),
-              )
-              .having(
-                (e) => e.message.trim().toLowerCase(),
-                'message',
-                equals('not available'),
-              ),
-        ),
+        notification.history(),
+        throwsA(isA<SpinifyHistoryException>()), // Not available
       );
       await expectLater(notification.presence(), completes);
       await expectLater(
-        notification.presenceStats,
-        throwsA(
-          isA<SpinifyReplyException>()
-              .having(
-                (e) => e.replyCode,
-                'replyCode',
-                equals(108),
-              )
-              .having(
-                (e) => e.message.trim().toLowerCase(),
-                'message',
-                equals('not available'),
-              ),
-        ),
+        notification.presenceStats(),
+        throwsA(isA<SpinifyPresenceStatsException>()), // Not available
       );
       await client.close();
       expect(client.state, isA<SpinifyState$Closed>());

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
+import 'codec.dart';
 import 'pubspec.yaml.g.dart';
 import 'transport_interface.dart';
 
@@ -264,6 +265,7 @@ final class SpinifyConfig {
     Map<String, String>? headers,
     this.logger,
     this.transportBuilder,
+    this.codec,
   })  : headers = Map<String, String>.unmodifiable(
             headers ?? const <String, String>{}),
         client = client ??
@@ -340,6 +342,9 @@ final class SpinifyConfig {
 
   /// Callback to build Spinify transport.
   final SpinifyTransportBuilder? transportBuilder;
+
+  /// The Spinify codec to use for encoding and decoding messages.
+  final SpinifyCodec? codec;
 
   @override
   String toString() => 'SpinifyConfig{}';

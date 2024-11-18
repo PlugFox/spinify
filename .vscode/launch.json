@@ -2,6 +2,21 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "[Dart] Example (debug)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/example/echo",
+      "program": "main.dart",
+      "env": {
+        "ENVIRONMENT": "local"
+      },
+      "console": "debugConsole",
+      "runTestsOnDevice": false,
+      "toolArgs": [],
+      "args": []
+    },
+    {
       "name": "[Flutter] Benchmark (debug)",
       "request": "launch",
       "type": "dart",

@@ -22,8 +22,22 @@ sealed class SpinifyException implements Exception {
   /// Source error of exception if exists.
   final Object? error;
 
+  /// Visitor pattern for nested exceptions.
+  /// Callback for each nested exception, starting from the current one.
+  void visitor(void Function(Object error) fn) {
+    fn(this);
+    switch (error) {
+      case SpinifyException e:
+        e.visitor(fn);
+      case Object e:
+        fn(e);
+      case null:
+        break;
+    }
+  }
+
   @override
-  int get hashCode => code.hashCode;
+  int get hashCode => Object.hash(code, message, error);
 
   @override
   bool operator ==(Object other) => identical(this, other);
@@ -52,9 +66,11 @@ final class SpinifyReplyException extends SpinifyException {
     required this.replyCode,
     required String replyMessage,
     required this.temporary,
+    Object? error,
   }) : super(
           'spinify_reply_exception',
           replyMessage,
+          error,
         );
 
   /// Reply code.
@@ -68,10 +84,10 @@ final class SpinifyReplyException extends SpinifyException {
 /// {@category Exception}
 final class SpinifyPingException extends SpinifyException {
   /// {@macro exception}
-  const SpinifyPingException([Object? error])
+  const SpinifyPingException({String? message, Object? error})
       : super(
           'spinify_ping_exception',
-          'Ping error',
+          message ?? 'Ping error',
           error,
         );
 }
@@ -110,6 +126,92 @@ final class SpinifySendException extends SpinifyException {
 
 /// {@macro exception}
 /// {@category Exception}
+final class SpinifyPublishException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyPublishException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_publish_exception',
+          message ?? 'Failed to publish message to channel',
+          error,
+        );
+
+  /// Publish channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyPresenceException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyPresenceException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_presence_exception',
+          message ?? 'Failed to get presence info for channel',
+          error,
+        );
+
+  /// Presence channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyPresenceStatsException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyPresenceStatsException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_presence_stats_exception',
+          message ?? 'Failed to get presence stats for channel',
+          error,
+        );
+
+  /// Presence channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyHistoryException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyHistoryException({
+    required this.channel,
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_history_exception',
+          message ?? 'Failed to get history for channel',
+          error,
+        );
+
+  /// Presence channel.
+  final String channel;
+}
+
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyRPCException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyRPCException({
+    String? message,
+    Object? error,
+  }) : super(
+          'spinify_rpc_exception',
+          message ?? 'Failed to call remote procedure',
+          error,
+        );
+}
+
+/// {@macro exception}
+/// {@category Exception}
 final class SpinifyFetchException extends SpinifyException {
   /// {@macro exception}
   const SpinifyFetchException({
@@ -134,4 +236,24 @@ final class SpinifyRefreshException extends SpinifyException {
           message ?? 'Error while refreshing connection token',
           error,
         );
+}
+
+/// Problem relevant to transport layer, connection,
+/// data transfer or encoding/decoding issues.
+/// {@macro exception}
+/// {@category Exception}
+final class SpinifyTransportException extends SpinifyException {
+  /// {@macro exception}
+  const SpinifyTransportException({
+    required String message,
+    Object? error,
+    this.data,
+  }) : super(
+          'spinify_transport_exception',
+          message,
+          error,
+        );
+
+  /// Additional data related to the exception.
+  final Object? data;
 }

@@ -1,19 +1,14 @@
-ifeq ($(OS),Windows_NT)
-	SHELL = cmd
-    RM = del /Q
-    MKDIR = mkdir
-    PWD = $(shell $(PWD))
-else
-	SHELL = /bin/bash -e -o pipefail
-    RM = rm -f
-    MKDIR = mkdir -p
-    PWD = pwd
-endif
+SHELL :=/bin/bash -e -o pipefail
+PWD   :=$(shell pwd)
 
 .DEFAULT_GOAL := all
 .PHONY: all
 all: ## build pipeline
 all: generate format check test
+
+.PHONY: ci
+ci: ## CI build pipeline
+ci: all
 
 .PHONY: precommit
 precommit: ## validate the branch before commit
@@ -56,6 +51,14 @@ publish: generate ## Publish the package
 .PHONY: deploy
 deploy: publish
 
+.PHONY: echo-go
+echo-go: ## Start the echo server
+	@cd tool/echo && go run echo.go
+
+.PHONY: echo-dart
+echo-dart: ## Start the echo client
+	@cd example/echo && dart run main.dart
+
 .PHONY: echo-up
 echo-up: ## Start the echo server
 	@dart run tool/echo_up.dart
@@ -71,7 +74,7 @@ coverage: get ## Generate the coverage report
 		--platform vm --compiler=kernel --coverage=coverage \
 		--reporter=expanded --file-reporter=json:coverage/tests.json \
 		--timeout=10m --concurrency=12 --color \
-			test/unit_test.dart test/smoke_test.dart
+			test/unit_test.dart
 #	@dart test --concurrency=6 --platform vm --coverage=coverage test/
 #	@dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
 	@mv coverage/lcov.info coverage/lcov.base.info
@@ -105,6 +108,11 @@ gen: generate
 
 .PHONY: codegen
 codegen: generate
+
+.PHONY: dart-version
+dart-version: ## Show the Dart version
+	@dart --version
+	@which dart
 
 .PHONY: diff
 diff: ## git diff
