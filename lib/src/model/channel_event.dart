@@ -121,6 +121,9 @@ sealed class SpinifyChannelEvent implements Comparable<SpinifyChannelEvent> {
   /// Whether this is a refresh event
   abstract final bool isRefresh;
 
+  /// Copy this event with a new channel.
+  SpinifyChannelEvent copyWith({String? channel});
+
   @override
   int compareTo(SpinifyChannelEvent other) =>
       timestamp.compareTo(other.timestamp);
@@ -163,17 +166,15 @@ final class SpinifyPublication extends SpinifyChannelEvent {
   final Map<String, String>? tags;
 
   /// Copy this publication with a new channel.
-  SpinifyPublication copyWith({required String channel}) =>
-      channel == this.channel
-          ? this
-          : SpinifyPublication(
-              timestamp: timestamp,
-              channel: channel,
-              data: data,
-              offset: offset,
-              info: info,
-              tags: tags,
-            );
+  @override
+  SpinifyPublication copyWith({String? channel}) => SpinifyPublication(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        data: data,
+        offset: offset,
+        info: info,
+        tags: tags,
+      );
 
   @override
   bool get isConnect => false;
@@ -308,11 +309,35 @@ final class SpinifyJoin extends SpinifyPresence {
   @override
   String get type => 'Join';
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifyJoin copyWith({String? channel}) => SpinifyJoin(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        info: info,
+      );
+
   @override
   bool get isJoin => true;
 
   @override
   bool get isLeave => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        info,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyJoin &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        info == other.info;
+  }
 }
 
 /// Leave event
@@ -332,11 +357,35 @@ final class SpinifyLeave extends SpinifyPresence {
   @override
   String get type => 'Leave';
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifyLeave copyWith({String? channel}) => SpinifyLeave(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        info: info,
+      );
+
   @override
   bool get isJoin => false;
 
   @override
   bool get isLeave => true;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        info,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyLeave &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        info == other.info;
+  }
 }
 
 /// {@template unsubscribe}
@@ -363,6 +412,15 @@ final class SpinifyUnsubscribe extends SpinifyChannelEvent {
   /// Reason of unsubscribe.
   final String reason;
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifyUnsubscribe copyWith({String? channel}) => SpinifyUnsubscribe(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        code: code,
+        reason: reason,
+      );
+
   @override
   bool get isConnect => false;
 
@@ -386,6 +444,24 @@ final class SpinifyUnsubscribe extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => true;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        code,
+        reason,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyUnsubscribe &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        code == other.code &&
+        reason == other.reason;
+  }
 }
 
 /// {@template message}
@@ -407,6 +483,14 @@ final class SpinifyMessage extends SpinifyChannelEvent {
 
   /// Payload of message.
   final List<int> data;
+
+  /// Copy this event with a new channel.
+  @override
+  SpinifyMessage copyWith({String? channel}) => SpinifyMessage(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        data: data,
+      );
 
   @override
   bool get isConnect => false;
@@ -431,6 +515,22 @@ final class SpinifyMessage extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        data,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyMessage &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        listEquals(data, other.data);
+  }
 }
 
 /// {@template subscribe}
@@ -465,6 +565,17 @@ final class SpinifySubscribe extends SpinifyChannelEvent {
   /// Data attached to subscription.
   final List<int>? data;
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifySubscribe copyWith({String? channel}) => SpinifySubscribe(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        data: data,
+        positioned: positioned,
+        recoverable: recoverable,
+        since: since,
+      );
+
   @override
   bool get isConnect => false;
 
@@ -488,6 +599,28 @@ final class SpinifySubscribe extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        positioned,
+        recoverable,
+        since,
+        data,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifySubscribe &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        positioned == positioned &&
+        recoverable == recoverable &&
+        since == since &&
+        listEquals(data, other.data);
+  }
 }
 
 /// {@template connect}
@@ -545,6 +678,22 @@ final class SpinifyConnect extends SpinifyChannelEvent {
   /// Payload of connected push.
   final List<int>? data;
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifyConnect copyWith({String? channel}) => SpinifyConnect(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        data: data,
+        client: client,
+        version: version,
+        expires: expires,
+        ttl: ttl,
+        pingInterval: pingInterval,
+        sendPong: sendPong,
+        session: session,
+        node: node,
+      );
+
   @override
   bool get isConnect => true;
 
@@ -568,6 +717,38 @@ final class SpinifyConnect extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        client,
+        version,
+        expires,
+        ttl,
+        pingInterval,
+        sendPong,
+        session,
+        node,
+        data,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyConnect &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        client == other.client &&
+        version == other.version &&
+        expires == other.expires &&
+        ttl == other.ttl &&
+        pingInterval == other.pingInterval &&
+        sendPong == other.sendPong &&
+        session == other.session &&
+        node == other.node &&
+        listEquals(data, other.data);
+  }
 }
 
 /// {@template disconnect}
@@ -616,6 +797,16 @@ final class SpinifyDisconnect extends SpinifyChannelEvent {
   /// Reconnect flag.
   final bool reconnect;
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifyDisconnect copyWith({String? channel}) => SpinifyDisconnect(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        code: code,
+        reason: reason,
+        reconnect: reconnect,
+      );
+
   @override
   bool get isConnect => false;
 
@@ -639,6 +830,26 @@ final class SpinifyDisconnect extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        code,
+        reason,
+        reconnect,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyDisconnect &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        code == other.code &&
+        reason == other.reason &&
+        reconnect == other.reconnect;
+  }
 }
 
 /// {@template refresh}
@@ -665,6 +876,15 @@ final class SpinifyRefresh extends SpinifyChannelEvent {
   /// Time when connection will be expired
   final DateTime? ttl;
 
+  /// Copy this event with a new channel.
+  @override
+  SpinifyRefresh copyWith({String? channel}) => SpinifyRefresh(
+        timestamp: timestamp,
+        channel: channel ?? this.channel,
+        expires: expires,
+        ttl: ttl,
+      );
+
   @override
   bool get isConnect => false;
 
@@ -688,4 +908,22 @@ final class SpinifyRefresh extends SpinifyChannelEvent {
 
   @override
   bool get isUnsubscribe => false;
+
+  @override
+  int get hashCode => Object.hashAll([
+        timestamp,
+        channel,
+        expires,
+        ttl,
+      ]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SpinifyRefresh &&
+        channel == other.channel &&
+        timestamp == other.timestamp &&
+        expires == other.expires &&
+        ttl == other.ttl;
+  }
 }

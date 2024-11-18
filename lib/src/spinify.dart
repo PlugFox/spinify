@@ -2447,7 +2447,8 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
       }
 
       // Handle received publications and update offset.
-      for (final pub in result.publications) {
+      for (var pub in result.publications) {
+        if (pub.channel.isEmpty) pub = pub.copyWith(channel: channel);
         _client._eventController.add(pub);
         onEvent(pub);
         if (pub.offset case fixnum.Int64 value when value > offset) {

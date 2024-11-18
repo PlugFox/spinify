@@ -251,6 +251,64 @@ void main() {
           );
 
           expect(
+            event.copyWith(channel: event.channel),
+            allOf(
+              equals(event),
+              isNot(same(event)),
+              isA<channel_event.SpinifyChannelEvent>()
+                  .having(
+                    (e) => e.channel,
+                    'channel',
+                    same(event.channel),
+                  )
+                  .having(
+                    (e) => e.type,
+                    'type',
+                    same(event.type),
+                  )
+                  .having(
+                    (e) => e.timestamp,
+                    'timestamp',
+                    same(event.timestamp),
+                  )
+                  .having(
+                    (e) => e.hashCode,
+                    'hashCode',
+                    same(event.hashCode),
+                  ),
+            ),
+          );
+
+          expect(
+            event.copyWith(channel: 'another'),
+            allOf(
+              isNot(equals(event)),
+              isNot(same(event)),
+              isA<channel_event.SpinifyChannelEvent>()
+                  .having(
+                    (e) => e.channel,
+                    'channel',
+                    isNot(same(event.channel)),
+                  )
+                  .having(
+                    (e) => e.type,
+                    'type',
+                    same(event.type),
+                  )
+                  .having(
+                    (e) => e.timestamp,
+                    'timestamp',
+                    same(event.timestamp),
+                  )
+                  .having(
+                    (e) => e.hashCode,
+                    'hashCode',
+                    isNot(same(event.hashCode)),
+                  ),
+            ),
+          );
+
+          expect(
             event.toString(),
             equals('${event.type}{channel: $channel}'),
           );
