@@ -34,9 +34,6 @@ sealed class SpinifySubscriptionState extends _$SpinifySubscriptionStateBase {
     List<int>? data,
     DateTime? timestamp,
   }) = SpinifySubscriptionState$Subscribed;
-
-  @override
-  String toString() => type;
 }
 
 /// Unsubscribed state
@@ -85,6 +82,9 @@ final class SpinifySubscriptionState$Unsubscribed
       identical(this, other) ||
       other is SpinifySubscriptionState$Unsubscribed &&
           other.timestamp.isAtSameMomentAs(timestamp);
+
+  @override
+  String toString() => r'SpinifySubscriptionState$Unsubscribed{}';
 }
 
 /// Subscribing state
@@ -133,6 +133,9 @@ final class SpinifySubscriptionState$Subscribing
       identical(this, other) ||
       other is SpinifySubscriptionState$Subscribing &&
           other.timestamp.isAtSameMomentAs(timestamp);
+
+  @override
+  String toString() => r'SpinifySubscriptionState$Subscribing{}';
 }
 
 /// Subscribed state
@@ -185,6 +188,9 @@ final class SpinifySubscriptionState$Subscribed
       identical(this, other) ||
       other is SpinifySubscriptionState$Subscribed &&
           other.timestamp.isAtSameMomentAs(timestamp);
+
+  @override
+  String toString() => r'SpinifySubscriptionState$Subscribed{}';
 }
 
 /// Pattern matching for [SpinifySubscriptionState].

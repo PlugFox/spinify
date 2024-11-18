@@ -1096,6 +1096,7 @@ final class Spinify implements ISpinify {
             // To ignore last messages and done event from transport.
             _replySubscription?.cancel().ignore();
             _replySubscription = null;
+
             // Close transport.
             _transport?.close(code, reason);
             _transport = null;
@@ -1143,6 +1144,18 @@ final class Spinify implements ISpinify {
             // Reconnect if [reconnect] is true and we have reconnect URL.
             if (reconnect && _metrics.reconnectUrl != null)
               _setUpReconnectTimer();
+
+            // Unsuscribe from all subscriptions.
+            for (final sub in _clientSubscriptionRegistry.values) {
+              // Internal unsubscribe without sending message.
+              sub
+                  ._unsubscribe(
+                    code: code,
+                    reason: reason,
+                    sendUnsubscribe: false,
+                  )
+                  .ignore();
+            }
           } on Object catch (error, stackTrace) {
             _log(
               const SpinifyLogLevel.warning(),
@@ -1192,6 +1205,18 @@ final class Spinify implements ISpinify {
         reason: 'normal closure',
         reconnect: false,
       );
+      final subs = _clientSubscriptionRegistry.values.toList(growable: false);
+      for (final sub in subs) {
+        _clientSubscriptionRegistry.remove(sub.channel);
+        sub
+            ._unsubscribe(
+              code: const SpinifyDisconnectCode.normalClosure(),
+              reason: 'normal closure',
+              sendUnsubscribe: false,
+            )
+            .whenComplete(sub.close)
+            .ignore();
+      }
       _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
       if (!force) _mutex.unlock();
@@ -2319,6 +2344,8 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
       );
 
   /// Unsubscribes from the channel.
+  @unsafe
+  @Throws([SpinifySubscriptionException])
   Future<void> _unsubscribe({
     required int code,
     required String reason,
@@ -2356,7 +2383,7 @@ final class _SpinifyClientSubscriptionImpl extends _SpinifySubscriptionBase
         },
       );
       _client._transport?.close(4, 'unsubscribe error');
-      if (error is SpinifyException) rethrow;
+      if (error is SpinifySubscriptionException) rethrow;
       Error.throwWithStackTrace(
         SpinifySubscriptionException(
           channel: channel,
