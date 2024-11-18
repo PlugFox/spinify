@@ -1,3 +1,8 @@
+## 0.1.0-pre.1
+
+- Large scale refactoring
+- Test coverage increased to 88%
+
 ## 0.0.4
 
 - Update `SpinifyState$Disconnected` state and extend with `bool get temporary`

@@ -114,7 +114,7 @@ final class Spinify implements ISpinify {
 
   @safe
   final StreamController<SpinifyState> _statesController =
-      StreamController<SpinifyState>.broadcast(sync: true);
+      StreamController<SpinifyState>.broadcast(sync: false);
 
   @override
   late final SpinifyChannelEvents<SpinifyChannelEvent> stream =
@@ -422,8 +422,8 @@ final class Spinify implements ISpinify {
   @protected
   @nonVirtual
   void _setUpReconnectTimer() {
-    _tearDownReconnectTimer();
     final lastUrl = _metrics.reconnectUrl;
+    _tearDownReconnectTimer();
     if (lastUrl == null) return;
     final attempt = _metrics.reconnectAttempts ?? 0;
     final delay = Backoff.nextDelay(
@@ -1012,6 +1012,7 @@ final class Spinify implements ISpinify {
                 _setUpReconnectTimer(); // Retry resubscribe
               } else {
                 // Disable resubscribe timer on permanent errors.
+                _metrics.reconnectUrl = null;
                 _tearDownReconnectTimer();
                 _setState(SpinifyState$Disconnected(temporary: false));
               }
@@ -1142,8 +1143,13 @@ final class Spinify implements ISpinify {
             }
 
             // Reconnect if [reconnect] is true and we have reconnect URL.
-            if (reconnect && _metrics.reconnectUrl != null)
-              _setUpReconnectTimer();
+            if (_metrics.reconnectUrl != null) {
+              if (reconnect) {
+                _setUpReconnectTimer();
+              } else {
+                _metrics.reconnectUrl = null;
+              }
+            }
 
             // Unsuscribe from all subscriptions.
             for (final sub in _clientSubscriptionRegistry.values) {
@@ -1205,18 +1211,23 @@ final class Spinify implements ISpinify {
         reason: 'normal closure',
         reconnect: false,
       );
-      final subs = _clientSubscriptionRegistry.values.toList(growable: false);
-      for (final sub in subs) {
+
+      // Close all client subscriptions.
+      final clientSubs =
+          _clientSubscriptionRegistry.values.toList(growable: false);
+      for (final sub in clientSubs) {
+        sub.close();
         _clientSubscriptionRegistry.remove(sub.channel);
-        sub
-            ._unsubscribe(
-              code: const SpinifyDisconnectCode.normalClosure(),
-              reason: 'normal closure',
-              sendUnsubscribe: false,
-            )
-            .whenComplete(sub.close)
-            .ignore();
       }
+
+      // Close all server subscriptions.
+      final serverSubs =
+          _serverSubscriptionRegistry.values.toList(growable: false);
+      for (final sub in serverSubs) {
+        sub.close();
+        _serverSubscriptionRegistry.remove(sub.channel);
+      }
+
       _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
       if (!force) _mutex.unlock();
@@ -2095,7 +2106,7 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
   late final SpinifyMetrics$Channel$Mutable _metrics;
 
   final StreamController<SpinifySubscriptionState> _stateController =
-      StreamController<SpinifySubscriptionState>.broadcast(sync: true);
+      StreamController<SpinifySubscriptionState>.broadcast(sync: false);
 
   final StreamController<SpinifyChannelEvent> _eventController =
       StreamController<SpinifyChannelEvent>.broadcast(sync: true);
@@ -2158,7 +2169,7 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
   @mustCallSuper
   void _setState(SpinifySubscriptionState state) {
     final previous = _metrics.state;
-    if (previous == state) return;
+    if (previous.type == state.type) return;
     _stateController.add(_metrics.state = state);
     _client._log(
       const SpinifyLogLevel.config(),
@@ -2176,12 +2187,9 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
   @interactive
   @mustCallSuper
   void close() {
+    _setState(SpinifySubscriptionState$Unsubscribed());
     _stateController.close().ignore();
     _eventController.close().ignore();
-    // coverage:ignore-start
-    assert(state.isUnsubscribed,
-        'Subscription "$channel" is not unsubscribed before closing');
-    // coverage:ignore-end
   }
 
   @unsafe
@@ -2208,14 +2216,17 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
       );
   }
 
+  @unsafe
   @override
   @interactive
+  @Throws([SpinifyHistoryException])
   Future<SpinifyHistory> history({
     int? limit,
     SpinifyStreamPosition? since,
     bool? reverse,
-  }) =>
-      _sendCommand<SpinifyHistoryResult>(
+  }) async {
+    try {
+      final reply = await _sendCommand<SpinifyHistoryResult>(
         (id) => SpinifyHistoryRequest(
           id: id,
           channel: channel,
@@ -2224,45 +2235,95 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
           since: since,
           reverse: reverse,
         ),
-      ).then<SpinifyHistory>(
-        (reply) => SpinifyHistory(
-          publications: List<SpinifyPublication>.unmodifiable(
-              reply.publications.map((pub) => pub.copyWith(channel: channel))),
-          since: reply.since,
-        ),
       );
+      return SpinifyHistory(
+        publications: List<SpinifyPublication>.unmodifiable(
+          reply.publications.map<SpinifyPublication>(
+            (pub) =>
+                pub.channel != channel ? pub.copyWith(channel: channel) : pub,
+          ),
+        ),
+        since: reply.since,
+      );
+    } on SpinifyHistoryException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyHistoryException(
+          channel: channel,
+          message: 'Failed to get history data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
 
+  @unsafe
   @override
   @interactive
-  Future<Map<String, SpinifyClientInfo>> presence() =>
-      _sendCommand<SpinifyPresenceResult>(
+  @Throws([SpinifyPresenceException])
+  Future<Map<String, SpinifyClientInfo>> presence() async {
+    try {
+      final reply = await _sendCommand<SpinifyPresenceResult>(
         (id) => SpinifyPresenceRequest(
           id: id,
           channel: channel,
           timestamp: DateTime.now(),
         ),
-      ).then<Map<String, SpinifyClientInfo>>((reply) => reply.presence);
+      );
+      return reply.presence;
+    } on SpinifyPresenceException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceException(
+          channel: channel,
+          message: 'Failed to get presence data',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
 
+  @unsafe
   @override
-  @interactive
-  Future<SpinifyPresenceStats> presenceStats() =>
-      _sendCommand<SpinifyPresenceStatsResult>(
+  @nonVirtual
+  @Throws([SpinifyPresenceStatsException])
+  Future<SpinifyPresenceStats> presenceStats() async {
+    try {
+      final reply = await _sendCommand<SpinifyPresenceStatsResult>(
         (id) => SpinifyPresenceStatsRequest(
           id: id,
           channel: channel,
           timestamp: DateTime.now(),
         ),
-      ).then<SpinifyPresenceStats>(
-        (reply) => SpinifyPresenceStats(
-          channel: channel,
-          clients: reply.numClients,
-          users: reply.numUsers,
-        ),
       );
+      return SpinifyPresenceStats(
+        channel: channel,
+        clients: reply.numClients,
+        users: reply.numUsers,
+      );
+    } on SpinifyPresenceStatsException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceStatsException(
+          channel: channel,
+          message: 'Failed to get presence stats',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
 
   @override
   @interactive
-  Future<void> publish(List<int> data) => _sendCommand<SpinifyPublishResult>(
+  Future<void> publish(List<int> data) async {
+    try {
+      await _sendCommand<SpinifyPublishResult>(
         (id) => SpinifyPublishRequest(
           id: id,
           channel: channel,
@@ -2270,6 +2331,19 @@ abstract base class _SpinifySubscriptionBase implements SpinifySubscription {
           data: data,
         ),
       );
+    } on SpinifyPresenceStatsException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SpinifyPresenceStatsException(
+          channel: channel,
+          message: 'Failed to get presence stats',
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+  }
 }
 
 final class _SpinifyServerSubscriptionImpl extends _SpinifySubscriptionBase
