@@ -1,3 +1,7 @@
+## 0.1.0-pre.2
+
+- Support of custom HTTP client for WebSocket VM connection
+
 ## 0.1.0-pre.1
 
 - Large scale refactoring
