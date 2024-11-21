@@ -50,15 +50,15 @@ dependencies:
 - ✅ Package errors
 - ✅ Meta information about the library
 - ✅ Web transport via extension type
-- ❌ WASM compatibility
-- ❌ Run in separate isolate
+- ✅ Benchmarks
+- ✅ Performance comparison with other libraries
+- ✅ WASM compatibility
+- ❌ 95% test coverage
 - ❌ JSON codec support
 - ❌ Flutter package
 - ❌ DevTools extension
+- ❌ Run in separate isolate
 - ❌ Middleware support
-- ❌ 95% test coverage
-- ❌ Benchmarks
-- ❌ Performance comparison with other libraries
 - ❌ Batching API
 - ❌ Bidirectional WebSocket emulation
 - ❌ Optimistic subscriptions
