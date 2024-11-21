@@ -22,21 +22,31 @@ Future<WebSocket> $webSocketConnect({
   required String url, // e.g. 'ws://localhost:8000/connection/websocket'
   Map<String, String>? headers, // e.g. {'Authorization': 'Bearer <token>'}
   Iterable<String>? protocols, // e.g. {'centrifuge-protobuf'}
+  Map<String, Object?>? options, // Other options
 }) async {
   StreamSubscription<web.Event>? onOpen, onError;
   // ignore: close_sinks
   web.WebSocket? socket;
   try {
     final completer = Completer<WebSocket$JS>();
+    var future = completer.future;
+    future = switch (options?['timeout']) {
+      Duration timeout => future.timeout(timeout),
+      _ => future,
+    };
     final s = socket = web.WebSocket(
       url,
-      <String>{...?protocols}
-          .map<js.JSString>((e) => e.toJS)
-          .toList(growable: false)
-          .toJS,
+      <String>{
+        ...?protocols,
+        if (options?['protocols'] case Iterable<String> values) ...values,
+      }.map<js.JSString>((e) => e.toJS).toList(growable: false).toJS,
     )
       // Change binary type from "blob" to "arraybuffer"
-      ..binaryType = 'arraybuffer';
+      ..binaryType = switch (options?['binaryType']) {
+        'blob' || 'Blob' || 'BLOB' => 'blob',
+        'arraybuffer' || 'arrayBuffer' || 'ArrayBuffer' => 'arraybuffer',
+        _ => 'arraybuffer',
+      };
 
     // The socket API guarantees that only a single open event will be
     // emitted.
@@ -63,8 +73,17 @@ Future<WebSocket> $webSocketConnect({
       cancelOnError: false,
     );
 
-    if (s.readyState == web.WebSocket.OPEN) {
-      completer.complete(WebSocket$JS(socket: s));
+    if (completer.isCompleted) {
+      // The connection was already established or failed.
+    } else if (s.readyState == web.WebSocket.OPEN) {
+      final client = WebSocket$JS(socket: s);
+      try {
+        if (options?['afterConnect']
+            case void Function(WebSocket client) afterConnect) {
+          afterConnect(client);
+        }
+      } on Object {/* ignore */}
+      completer.complete(client);
     } else if (s.readyState == web.WebSocket.CLOSING ||
         s.readyState == web.WebSocket.CLOSED) {
       completer.completeError(
@@ -74,7 +93,8 @@ Future<WebSocket> $webSocketConnect({
         StackTrace.current,
       );
     }
-    return await completer.future; // Return the WebSocket instance.
+
+    return await future; // Return the WebSocket instance.
   } on SpinifyTransportException {
     socket?.close(1002, 'Protocol error during connection setup');
     rethrow;
