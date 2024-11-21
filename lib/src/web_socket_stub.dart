@@ -14,6 +14,7 @@ Future<WebSocket> $webSocketConnect({
   required String url, // e.g. 'ws://localhost:8000/connection/websocket'
   Map<String, String>? headers, // e.g. {'Authorization': 'Bearer <token>'}
   Iterable<String>? protocols, // e.g. {'centrifuge-protobuf'}
+  Map<String, Object?>? options, // Other options
 }) =>
     throw const SpinifyTransportException(
       message: 'WebSocket is not supported at current platform',

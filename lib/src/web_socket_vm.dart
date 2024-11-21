@@ -19,18 +19,45 @@ Future<WebSocket> $webSocketConnect({
   required String url, // e.g. 'ws://localhost:8000/connection/websocket'
   Map<String, String>? headers, // e.g. {'Authorization': 'Bearer <token>'}
   Iterable<String>? protocols, // e.g. {'centrifuge-protobuf'}
+  Map<String, Object?>? options, // Other options
 }) async {
   io.WebSocket? socket;
   try {
-    // ignore: close_sinks
-    final s = socket = await io.WebSocket.connect(
+    if (options?['userAgent'] case String userAgent) {
+      io.WebSocket.userAgent = userAgent;
+    }
+    var future = io.WebSocket.connect(
       url,
       headers: headers,
-      protocols: protocols,
-    )
+      protocols: <String>{
+        ...?protocols,
+        if (options?['protocols'] case Iterable<String> values) ...values,
+      },
+      compression: switch (options?['compression']) {
+        io.CompressionOptions compression => compression,
+        _ => io.CompressionOptions.compressionDefault,
+      },
+      customClient: switch (options?['customClient']) {
+        io.HttpClient customClient => customClient,
+        _ => null,
+      },
+    );
+    future = switch (options?['timeout']) {
+      Duration timeout => future.timeout(timeout),
+      _ => future,
+    };
+    // ignore: close_sinks
+    final s = socket = await future
       // Disable ping interval
       ..pingInterval = null;
-    return WebSocket$VM(socket: s);
+    final client = WebSocket$VM(socket: s);
+    try {
+      if (options?['afterConnect']
+          case void Function(WebSocket client) afterConnect) {
+        afterConnect(client);
+      }
+    } on Object {/* ignore */}
+    return client;
   } on SpinifyTransportException {
     socket?.close(1002, 'Protocol error during connection setup').ignore();
     rethrow;

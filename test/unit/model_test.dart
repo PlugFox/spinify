@@ -1,5 +1,7 @@
 // ignore_for_file: non_const_call_to_literal_constructor
 
+import 'dart:io' as io;
+
 import 'package:fixnum/fixnum.dart';
 import 'package:spinify/src/model/annotations.dart' as annotations;
 import 'package:spinify/src/model/channel_event.dart' as channel_event;
@@ -8,6 +10,7 @@ import 'package:spinify/src/model/client_info.dart' as client_info;
 import 'package:spinify/src/model/codes.dart' as codes;
 import 'package:spinify/src/model/command.dart' as command;
 import 'package:spinify/src/model/exception.dart' as exception;
+import 'package:spinify/src/model/exception.dart';
 import 'package:spinify/src/model/history.dart' as history;
 import 'package:spinify/src/model/metric.dart' as metric;
 import 'package:spinify/src/model/presence_stats.dart' as presence_stats;
@@ -21,7 +24,9 @@ import 'package:spinify/src/model/subscription_state.dart'
     as subscription_state;
 import 'package:spinify/src/model/subscription_states.dart'
     as subscription_states;
+import 'package:spinify/src/model/transport_interface.dart';
 import 'package:spinify/src/protobuf/protobuf_codec.dart' as protobuf_codec;
+import 'package:spinify/src/transport_adapter.dart';
 import 'package:spinify/src/util/list_equals.dart' as list_equals;
 import 'package:test/test.dart';
 
@@ -1824,6 +1829,77 @@ void main() {
         final t = pubspec.Pubspec.timestamp;
         expect(t, isA<DateTime>());
       });
+    });
+
+    group('TransportAdapter', () {
+      test(
+        'Instance',
+        () {
+          var common = SpinifyTransportAdapter.common();
+          common = SpinifyTransportAdapter.common(
+            afterConnect: (c) {},
+            protocols: ['protocol'],
+            timeout: const Duration(seconds: 5),
+          );
+          expect(
+            common,
+            isA<SpinifyTransportAdapter>().having(
+              (e) => e.call,
+              'call',
+              isA<SpinifyTransportBuilder>(),
+            ),
+          );
+          var js = SpinifyTransportAdapter.js();
+          js = SpinifyTransportAdapter.js(
+            afterConnect: (c) {},
+            protocols: ['protocol'],
+            timeout: const Duration(seconds: 5),
+            binaryType: 'binaryType',
+          );
+          expect(
+            js,
+            isA<SpinifyTransportAdapter>().having(
+              (e) => e.call,
+              'call',
+              isA<SpinifyTransportBuilder>(),
+            ),
+          );
+          var vm = SpinifyTransportAdapter.vm();
+          vm = SpinifyTransportAdapter.vm(
+            afterConnect: (c) {},
+            protocols: ['protocol'],
+            timeout: const Duration(seconds: 5),
+            compression: io.CompressionOptions.compressionDefault,
+            customClient: io.HttpClient(),
+            userAgent: 'userAgent',
+          );
+          var selector = SpinifyTransportAdapter.selector(
+            js: () => js,
+            vm: () => vm,
+          );
+          expect(
+            selector,
+            isA<SpinifyTransportAdapter>().having(
+              (e) => e.call,
+              'call',
+              isA<SpinifyTransportBuilder>(),
+            ),
+          );
+          expectLater(
+            selector.call(
+              url: 'url',
+              protocols: ['protocol'],
+              headers: <String, String>{
+                'key': 'value',
+              },
+            ),
+            throwsA(isA<SpinifyTransportException>()),
+          );
+        },
+        onPlatform: {
+          'browser': const Skip('Not supported in browser'),
+        },
+      );
     });
   });
 }
