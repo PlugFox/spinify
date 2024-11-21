@@ -25,8 +25,8 @@ sealed class SpinifyJWT {
   /// {@macro jwt}
   ///
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
-  const factory SpinifyJWT({
-    required String sub,
+  factory SpinifyJWT({
+    String? sub,
     String? channel,
     int? exp,
     int? iat,
@@ -39,6 +39,7 @@ sealed class SpinifyJWT {
     Map<String, Object?>? subs,
     Map<String, Object?>? meta,
     int? expireAt,
+    Map<String, Object?>? claims,
   }) = _SpinifyJWTImpl;
 
   /// {@macro jwt}
@@ -57,7 +58,7 @@ sealed class SpinifyJWT {
   /// but you want to let him connect anyway – you can use
   /// an empty string as a user ID in sub claim.
   /// This is called anonymous access.
-  abstract final String sub;
+  abstract final String? sub;
 
   /// Channel that client tries to subscribe to with this token (string).
   /// Required for channel token authorization.
@@ -233,6 +234,10 @@ sealed class SpinifyJWT {
   /// (but still check token exp claim).
   abstract final int? expireAt;
 
+  /// All other claims are optional and can be used to provide
+  /// additional information about the connection.
+  abstract final Map<String, Object?> claims;
+
   /// Creates JWT from [secret] (with HMAC-SHA256 algorithm)
   /// and current payload.
   String encode(String secret);
@@ -242,8 +247,8 @@ sealed class SpinifyJWT {
 }
 
 final class _SpinifyJWTImpl extends SpinifyJWT {
-  const _SpinifyJWTImpl({
-    required this.sub,
+  _SpinifyJWTImpl({
+    this.sub,
     this.channel,
     this.exp,
     this.iat,
@@ -256,7 +261,24 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
     this.subs,
     this.meta,
     this.expireAt,
-  }) : super._();
+    Map<String, Object?>? claims,
+  })  : claims = <String, Object?>{
+          if (claims != null) ...claims,
+          if (sub != null) 'sub': sub,
+          if (channel != null) 'channel': channel,
+          if (exp != null) 'exp': exp,
+          if (iat != null) 'iat': iat,
+          if (jti != null) 'jti': jti,
+          if (aud != null) 'aud': aud,
+          if (iss != null) 'iss': iss,
+          if (info != null) 'info': info,
+          if (b64info != null) 'b64info': b64info,
+          if (channels != null) 'channels': channels,
+          if (subs != null) 'subs': subs,
+          if (meta != null) 'meta': meta,
+          if (expireAt != null) 'expire_at': expireAt,
+        },
+        super._();
 
   factory _SpinifyJWTImpl.decode(String jwt, [String? secret]) {
     // Split token into parts
@@ -298,23 +320,45 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
           const FormatException('Can\'t decode token payload'), stackTrace);
       // coverage:ignore-end
     }
+
+    // coverage:ignore-start
+    // Extract value from payload by key and type
+    T? extract<T>(String key) => switch ((T, payload[key])) {
+          (_, null) => null,
+          (const (String), String value) => value as T,
+          (const (String), Object value) => value.toString() as T,
+          (const (int), int value) => value as T,
+          (const (int), num value) => value.toInt() as T,
+          (const (int), String value) => int.tryParse(value) as T?,
+          (const (Map<String, Object?>), Map<String, Object?> value) =>
+            value as T,
+          (const (Map<String, Object?>), Map<Object?, Object?> value) => {
+              for (final MapEntry(:key, :value) in value.entries)
+                if (key is String) key: value
+            } as T,
+          (const (List<String>), List<String> value) => value as T,
+          (const (List<String>), List<Object?> value) =>
+            value.whereType<String>().toList(growable: false) as T,
+          _ => null,
+        };
+    // coverage:ignore-end
+
     try {
       return _SpinifyJWTImpl(
-        sub: payload['sub'] as String,
-        channel: payload['channel'] as String?,
-        exp: payload['exp'] as int?,
-        iat: payload['iat'] as int?,
-        jti: payload['jti'] as String?,
-        aud: payload['aud'] as String?,
-        iss: payload['iss'] as String?,
-        info: payload['info'] as Map<String, Object?>?,
-        b64info: payload['b64info'] as String?,
-        channels: (payload['channels'] as Iterable<Object?>?)
-            ?.whereType<String>()
-            .toList(),
-        subs: payload['subs'] as Map<String, Object?>?,
-        meta: payload['meta'] as Map<String, Object?>?,
-        expireAt: payload['expire_at'] as int?,
+        sub: extract('sub'),
+        channel: extract('channel'),
+        exp: extract('exp'),
+        iat: extract('iat'),
+        jti: extract('jti'),
+        aud: extract('aud'),
+        iss: extract('iss'),
+        info: extract('info'),
+        b64info: extract('b64info'),
+        channels: extract('channels'),
+        subs: extract('subs'),
+        meta: extract('meta'),
+        expireAt: extract('expire_at'),
+        claims: payload,
       );
     } on Object catch (_, stackTrace) {
       // coverage:ignore-start
@@ -337,7 +381,7 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
   });
 
   @override
-  final String sub;
+  final String? sub;
 
   @override
   final String? channel;
@@ -376,11 +420,15 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
   final int? expireAt;
 
   @override
+  final Map<String, Object?> claims;
+
+  @override
   String encode(String secret) {
     // Encode header and payload
     final encodedHeader = _$headerHmacSha256;
     final encodedPayload = _$encoder.convert(<String, Object?>{
-      'sub': sub,
+      ...claims,
+      if (sub != null) 'sub': sub,
       if (channel != null) 'channel': channel,
       if (exp != null) 'exp': exp,
       if (iat != null) 'iat': iat,
@@ -413,7 +461,8 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
 
   @override
   Map<String, Object?> toJson() => <String, Object?>{
-        'sub': sub,
+        ...claims,
+        if (sub != null) 'sub': sub,
         if (channel != null) 'channel': channel,
         if (exp != null) 'exp': exp,
         if (iat != null) 'iat': iat,
@@ -429,7 +478,7 @@ final class _SpinifyJWTImpl extends SpinifyJWT {
       };
 
   @override
-  String toString() => 'SpinifyJWT{sub: $sub}';
+  String toString() => sub != null ? 'SpinifyJWT{sub: $sub}' : 'SpinifyJWT{}';
 }
 
 /// A converter that converts Base64-encoded strings
