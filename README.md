@@ -22,14 +22,26 @@ This library allows you to connect your Dart or Flutter applications to [Centrif
 - **Remote Procedure Calls (RPC)**: Perform server-side method invocations.
 - **Metrics**: Access metrics for client performance and statistics.
 - **Reconnecting**: Automatically reconnect to the server in case of a connection failure.
+- **Protobuf Transport**: Use Protobuf codec for data serialization.
+- **Custom Configuration**: Configure client settings, timeouts, and transport options.
+- **Error Handling**: Handle errors and exceptions gracefully.
+- **Logging**: Log events, errors, and messages for debugging purposes.
+- **Cross-Platform**: Run on Dart VM, Flutter, and Web platforms.
+- **Performance**: Achieve high throughput and low latency for real-time messaging.
 
 ## Installation
 
-Add the following dependency to your `pubspec.yaml` file:
+Add the following dependency to your `pubspec.yaml` file and specify the version:
 
 ```yaml
 dependencies:
-  spinify: <version>
+  spinify: ^X.Y.Z
+```
+
+Then fetch the package using:
+
+```bash
+flutter pub get
 ```
 
 ## Examples
@@ -104,7 +116,7 @@ Package centrifuge-dart v0.14.1
 The benchmark sends 10,000 messages of a certain size one after the other and measure the time.
 Each message is sent sequentially: the client waits for the server's response before sending the next message.
 
-### Windows
+### Windows (Dart VM)
 
 |       | Spinify             | Centrifuge-Dart     |
 | ----- | ------------------- | ------------------- |
@@ -121,7 +133,7 @@ Each message is sent sequentially: the client waits for the server's response be
 
 _\* Messages larger than 64 KB are not supported._
 
-### Browser
+### Browser (WASM and JS)
 
 |       | Spinify WASM        | Spinify JS          | Centrifuge-Dart JS  |
 | ----- | ------------------- | ------------------- | ------------------- |
