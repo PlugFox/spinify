@@ -29,10 +29,35 @@ await client.connect(url);
 await client.close();
 ```
 
-Add custom settings
+Add custom configuration:
 
 ```dart
+final httpClient = io.HttpClient(
+  context: io.SecurityContext(
+    withTrustedRoots: true,
+  )..setTrustedCertificatesBytes([/* bytes array */]),
+);
 
+final client = Spinify(
+  config: SpinifyConfig(
+    client: (name: 'app', version: '1.0.0'),
+    timeout: const Duration(seconds: 15),
+    serverPingDelay: const Duration(seconds: 8),
+    connectionRetryInterval: (
+      min: const Duration(milliseconds: 250),
+      max: const Duration(seconds: 15),
+    ),
+    getToken: () async => '<token>',
+    getPayload: () async => utf8.encode('Hello, World!'),
+    codec: SpinifyProtobufCodec(),
+    transportBuilder: SpinifyTransportAdapter.vm(
+      compression: io.CompressionOptions.compressionDefault,
+      customClient: httpClient,
+      userAgent: 'Dart',
+    ).call,
+    logger: (level, event, message, context) => print('[$event] $message'),
+  ),
+);
 ```
 
 ## Benchmarks
