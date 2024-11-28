@@ -7,7 +7,21 @@
 [![Linter](https://img.shields.io/badge/style-linter-40c4ff.svg)](https://pub.dev/packages/linter)
 [![GitHub stars](https://img.shields.io/github/stars/plugfox/spinify?style=social)](https://github.com/plugfox/spinify/)
 
-Websocket client for [Centrifugo server](https://github.com/centrifugal/centrifugo) and [Centrifuge library](https://github.com/centrifugal/centrifuge).
+Spinify is a Dart and Flutter library that provides an efficient client implementation for [Centrifugo](https://centrifugal.dev/), a scalable real-time messaging server.
+This library allows you to connect your Dart or Flutter applications to [Centrifugo server](https://github.com/centrifugal/centrifugo) and [Centrifuge library](https://github.com/centrifugal/centrifuge), enabling real-time updates, presence information, history fetching, and more.
+
+## Features
+
+- **Connection Management**: Establish, monitor, and close connections to Centrifugo servers.
+- **Subscriptions**: Create, manage, and remove client-side and server-side subscriptions.
+- **Event Streaming**: Stream channel events for real-time updates.
+- **Data Publishing**: Publish messages to specific channels.
+- **Asynchronous Messaging**: Send custom asynchronous messages to the server.
+- **Presence Management**: Retrieve presence and presence statistics for channels.
+- **History Retrieval**: Fetch publication history for specific channels.
+- **Remote Procedure Calls (RPC)**: Perform server-side method invocations.
+- **Metrics**: Access metrics for client performance and statistics.
+- **Reconnecting**: Automatically reconnect to the server in case of a connection failure.
 
 ## Installation
 
