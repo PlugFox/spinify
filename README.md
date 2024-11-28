@@ -155,8 +155,7 @@ _\* After message sizes exceed 15 KB, there is a noticeable performance drop._
 - ✅ Performance comparison with other libraries
 - ✅ WASM compatibility
 - ❌ 95% test coverage
-- ❌ JSON codec support
-- ❌ Flutter package
+- ❌ JSON codec support for transport
 - ❌ DevTools extension
 - ❌ Run in separate isolate
 - ❌ Middleware support
