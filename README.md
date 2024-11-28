@@ -54,17 +54,27 @@ final client = Spinify(
       compression: io.CompressionOptions.compressionDefault,
       customClient: httpClient,
       userAgent: 'Dart',
-    ).call,
+    ),
     logger: (level, event, message, context) => print('[$event] $message'),
   ),
 );
+```
+
+Subscribe to a channel:
+
+```dart
+final sub = client.newSubscription('notifications:index');
+sub.stream.publication().map((p) => utf8.decode(p.data)).listen(print);
+await sub.subscribe();
+await sub.publish(utf8.encode('Hello, World!'));
+await sub.unsubscribe();
 ```
 
 ## Benchmarks
 
 This benchmark measures the performance of the [spinify](https://pub.dev/packages/spinify) and [centrifuge-dart](https://pub.dev/packages/centrifuge) libraries by sending and receiving a series of messages to a Centrifugo server and tracking key performance metrics such as throughput and latency.
 
-**Environment:**
+Environment:
 
 ```
 Windows 11 Pro 64-bit
@@ -108,8 +118,6 @@ _\* Messages larger than 64 KB are not supported._
 | 16 KB | 39 msg/s (662KB/s)  | 39 msg/s (662KB/s)  | 39 msg/s (662KB/s)  |
 
 _\* After message sizes exceed 15 KB, there is a noticeable performance drop._
-
-### Chrome
 
 ## Features and Roadmap
 

@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, implicit_call_tearoffs
 
 import 'dart:async';
 import 'dart:io' as io;
@@ -34,7 +34,7 @@ void main(List<String> args) async {
         compression: io.CompressionOptions.compressionDefault,
         customClient: httpClient,
         userAgent: 'Dart',
-      ).call,
+      ),
       logger: (level, event, message, context) => print('[$event] $message'),
     ),
   );
