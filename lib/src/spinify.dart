@@ -287,8 +287,8 @@ final class Spinify implements ISpinify {
             if (_refreshTimer != null) {
               warning('Health check failed: refresh timer set during connect');
             }
-          case SpinifyState$Connected _:
-            if (_refreshTimer == null) {
+          case SpinifyState$Connected state:
+            if (state.expires && _refreshTimer == null) {
               warning('Health check failed: no refresh timer set');
               _setUpRefreshConnection();
             }

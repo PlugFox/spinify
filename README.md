@@ -20,6 +20,21 @@ dependencies:
 
 ## Examples
 
+Simple usage of the library:
+
+```dart
+final client = Spinify();
+await client.connect(url);
+// ...
+await client.close();
+```
+
+Add custom settings
+
+```dart
+
+```
+
 ## Benchmarks
 
 This benchmark measures the performance of the [spinify](https://pub.dev/packages/spinify) and [centrifuge-dart](https://pub.dev/packages/centrifuge) libraries by sending and receiving a series of messages to a Centrifugo server and tracking key performance metrics such as throughput and latency.
