@@ -22,6 +22,10 @@ dependencies:
 
 ## Benchmarks
 
+This benchmark measures the performance of the [spinify](https://pub.dev/packages/spinify) and [centrifuge-dart](https://pub.dev/packages/centrifuge) libraries by sending and receiving a series of messages to a Centrifugo server and tracking key performance metrics such as throughput and latency.
+
+**Environment:**
+
 ```
 Windows 11 Pro 64-bit
 CPU 13th Gen Intel Core i7-13700K
@@ -33,7 +37,8 @@ Package spinify v0.1.0
 Package centrifuge-dart v0.14.1
 ```
 
-We send 10,000 messages of a certain size one after the other and measure the time.
+The benchmark sends 10,000 messages of a certain size one after the other and measure the time.
+Each message is sent sequentially: the client waits for the server's response before sending the next message.
 
 ### Windows
 
@@ -50,7 +55,7 @@ We send 10,000 messages of a certain size one after the other and measure the ti
 | 50 KB | 1740 msg/s (85MB/s) | 967 msg/s (47MB/s)  |
 | 60 KB | 1583 msg/s (92MB/s) | 877 msg/s (51MB/s)  |
 
-\* Messages larger than 64 KB are not supported.
+_\* Messages larger than 64 KB are not supported._
 
 ### Browser
 
@@ -62,7 +67,7 @@ We send 10,000 messages of a certain size one after the other and measure the ti
 | 14 KB | 1670 msg/s (22MB/s) | 2890 msg/s (39MB/s) | 1287 msg/s (17MB/s) |
 | 16 KB | 39 msg/s (662KB/s)  | 39 msg/s (662KB/s)  | 39 msg/s (662KB/s)  |
 
-\* After message sizes exceed 15 KB, there is a noticeable performance drop.
+_\* After message sizes exceed 15 KB, there is a noticeable performance drop._
 
 ### Chrome
 
