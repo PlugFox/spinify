@@ -145,7 +145,7 @@ _\* Messages larger than 64 KB are not supported._
 
 _\* After message sizes exceed 15 KB, there is a noticeable performance drop._
 
-## Features and Roadmap
+## Roadmap
 
 - ✅ Connect to a server
 - ✅ Setting client configuration
