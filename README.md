@@ -26,9 +26,10 @@ dependencies:
 Windows 11 Pro 64-bit
 CPU 13th Gen Intel Core i7-13700K
 Chrome Version 131.0.6778.86 (Official Build) (64-bit)
-Flutter 3.24.5
-Dart 3.5.4
+Flutter 3.24.5 • Dart 3.5.4
 ```
+
+We send 10,000 messages of a certain size one after the other and measure the time.
 
 ### Windows
 
