@@ -2,8 +2,36 @@
 
 ## Build
 
+JS
+
 ```bash
-flutter build web --release --no-source-maps --pwa-strategy offline-first --web-renderer canvaskit --web-resources-cdn --base-href /
+flutter build web --release --no-source-maps --pwa-strategy offline-first --web-resources-cdn --base-href / --web-renderer canvaskit
+```
+
+WASM
+
+```bash
+flutter build web --release --no-source-maps --pwa-strategy offline-first --web-resources-cdn --base-href / --wasm
+```
+
+## Serve
+
+Windows
+
+```bash
+flutter run -d windows --release
+```
+
+JS
+
+```bash
+flutter run -d chrome --release --web-resources-cdn --web-renderer canvaskit
+```
+
+WASM
+
+```bash
+flutter run -d chrome --release --web-resources-cdn --wasm
 ```
 
 ## Deploy

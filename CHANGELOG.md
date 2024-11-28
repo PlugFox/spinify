@@ -1,3 +1,7 @@
+## 0.1.0
+
+- Add benchmark information to README
+
 ## 0.1.0-pre.2
 
 - Support of custom HTTP client for WebSocket VM connection
