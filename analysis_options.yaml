@@ -11,8 +11,6 @@ analyzer:
     - "lib/src/protobuf/client.pbjson.dart"
     - "lib/src/protobuf/client.pbserver.dart"
     - "lib/src/model/pubspec.yaml.g.dart"
-    - "lib/src.old/transport/protobuf/*"
-    - "lib/src.old/transport/pubspec.yaml.g.dart"
     # Tests
     - "test/**.mocks.dart"
     - ".test_coverage.dart"
