@@ -837,10 +837,10 @@ void main() {
           final channel = client.newSubscription('publications:index');
           expect(client.subscriptions.client['publications:index'], isNotNull);
           expect(channel.state.isSubscribed, isFalse);
-          channel.subscribe();
+          channel.subscribe(); // Start subscription
           async.elapse(client.config.timeout);
-          expect(channel.state.isSubscribed, isTrue);
-          final history = channel.history();
+          expect(channel.state.isSubscribed, isTrue); // Subscribed
+          final history = channel.history(); // Get history
           async.elapse(const Duration(seconds: 1));
           expect(
             history,
@@ -850,15 +850,14 @@ void main() {
                 'publications',
                 allOf(
                   isA<List<SpinifyPublication>>(),
-                  hasLength(256),
+                  hasLength(256), // 256 publications
                 ),
               ),
             ),
-          );
+          ); // History received
           async.elapse(client.config.timeout);
-          // ...
           pingTimer?.cancel();
-          client.close();
+          client.close(); // Close connection
           async.elapse(const Duration(seconds: 10));
           expect(client.state.isClosed, isTrue);
           expect(channel.state.isUnsubscribed, isTrue);

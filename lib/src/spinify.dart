@@ -1231,6 +1231,7 @@ final class Spinify implements ISpinify {
       _setState(SpinifyState$Closed());
     } on Object {/* ignore */} finally {
       if (!force) _mutex.unlock();
+      if (!state.isClosed) _setState(SpinifyState$Closed());
       _statesController.close().ignore();
       _eventController.close().ignore();
       _log(
