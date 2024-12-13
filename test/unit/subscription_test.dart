@@ -739,5 +739,131 @@ void main() {
         },
       ),
     );
+
+    test(
+      'History',
+      () => fakeAsync(
+        (async) {
+          Timer? pingTimer;
+          final client = createFakeClient(transport: (_) async {
+            pingTimer?.cancel();
+            late WebSocket$Fake ws; // ignore: close_sinks
+            return ws = WebSocket$Fake()
+              ..onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                scheduleMicrotask(() {
+                  if (command.hasConnect()) {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      connect: pb.ConnectResult(
+                        client: 'fake',
+                        version: '0.0.1',
+                        expires: false,
+                        ttl: null,
+                        data: null,
+                        subs: <String, pb.SubscribeResult>{},
+                        ping: 600,
+                        pong: false,
+                        session: 'fake',
+                        node: 'fake',
+                      ),
+                    );
+                    sink.add(ProtobufCodec.encode(reply));
+                    pingTimer = Timer.periodic(
+                      Duration(milliseconds: reply.connect.ping),
+                      (timer) {
+                        if (ws.isClosed) {
+                          timer.cancel();
+                          return;
+                        }
+                        sink.add(ProtobufCodec.encode(pb.Reply()));
+                      },
+                    );
+                  } else if (command.hasSubscribe() &&
+                      command.subscribe.channel == 'publications:index') {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      subscribe: pb.SubscribeResult(
+                        data: utf8.encode('publications:index'),
+                        epoch: '...',
+                        offset: Int64.ZERO,
+                        expires: false,
+                        ttl: null,
+                        positioned: false,
+                        publications: <pb.Publication>[],
+                        recoverable: false,
+                        recovered: false,
+                        wasRecovering: false,
+                      ),
+                    );
+                    sink.add(ProtobufCodec.encode(reply));
+                  } else if (command.hasHistory() &&
+                      command.history.channel == 'publications:index') {
+                    final reply = pb.Reply(
+                      id: command.id,
+                      history: pb.HistoryResult(
+                        epoch: '...',
+                        offset: Int64.ZERO,
+                        publications: <pb.Publication>[
+                          for (var i = 0; i < 256; i++)
+                            pb.Publication(
+                              offset: Int64(i),
+                              data: <int>[
+                                for (var j = 0; j < 256; j++) j & 0xFF,
+                              ],
+                              info: pb.ClientInfo(
+                                client: 'fake',
+                                user: 'fake',
+                              ),
+                              tags: const <String, String>{
+                                'type': 'notification',
+                              },
+                            ),
+                        ],
+                      ),
+                    );
+                    sink.add(ProtobufCodec.encode(reply));
+                  } else {
+                    debugger();
+                  }
+                });
+              };
+          })
+            ..connect(url);
+          async.elapse(client.config.timeout);
+          expect(client.state.isConnected, isTrue);
+          async.elapse(const Duration(days: 1));
+          expect(client.state.isConnected, isTrue);
+          final channel = client.newSubscription('publications:index');
+          expect(client.subscriptions.client['publications:index'], isNotNull);
+          expect(channel.state.isSubscribed, isFalse);
+          channel.subscribe();
+          async.elapse(client.config.timeout);
+          expect(channel.state.isSubscribed, isTrue);
+          final history = channel.history();
+          async.elapse(const Duration(seconds: 1));
+          expect(
+            history,
+            completion(
+              isA<SpinifyHistory>().having(
+                (h) => h.publications,
+                'publications',
+                allOf(
+                  isA<List<SpinifyPublication>>(),
+                  hasLength(256),
+                ),
+              ),
+            ),
+          );
+          async.elapse(client.config.timeout);
+          // ...
+          pingTimer?.cancel();
+          client.close();
+          async.elapse(const Duration(seconds: 10));
+          expect(client.state.isClosed, isTrue);
+          expect(channel.state.isUnsubscribed, isTrue);
+        },
+      ),
+    );
   });
 }
