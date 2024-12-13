@@ -1,3 +1,5 @@
+//ignore_for_file: unintended_html_in_doc_comment
+
 import 'dart:convert';
 
 import 'package:protobuf/protobuf.dart' as pb;

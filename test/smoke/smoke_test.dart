@@ -274,5 +274,43 @@ void main() {
       expect(client.state, isA<SpinifyState$Closed>());
       expect(sub.state.isUnsubscribed, isTrue);
     });
+
+    test('History', () async {
+      final client = $createClient();
+      await client.connect($url);
+      expect(client.state, isA<SpinifyState$Connected>());
+      final sub = client.newSubscription('history:index');
+      await expectLater(sub.subscribe(), completes);
+      final result = await sub.history();
+      expect(
+        result,
+        isA<SpinifyHistory>().having(
+          (h) => h.publications,
+          'publications',
+          allOf(
+            [
+              isA<List<SpinifyPublication>>(),
+              isNotEmpty,
+              hasLength(equals(2)),
+              containsAll([
+                isA<SpinifyPublication>().having(
+                  (p) => utf8.decode(p.data),
+                  'data',
+                  equals('{"input": "History message 1"}'),
+                ),
+                isA<SpinifyPublication>().having(
+                  (p) => utf8.decode(p.data),
+                  'data',
+                  equals('{"input": "History message 2"}'),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      );
+      await expectLater(sub.unsubscribe(), completes);
+      await client.close();
+      expect(client.state, isA<SpinifyState$Closed>());
+    });
   });
 }
