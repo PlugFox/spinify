@@ -50,7 +50,7 @@ func waitExitSignal(n *centrifuge.Node, s *http.Server, sigCh chan os.Signal) {
 	<-done
 }
 
-var channels = []string{"public:index", "chat:index"}
+var channels = []string{"public:index", "chat:index", "history:index"}
 
 // Check whether channel is allowed for subscribing. In real case permission
 // check will probably be more complex than in this example.
@@ -178,15 +178,30 @@ func Centrifuge() (*centrifuge.Node, error) {
 				return
 			}
 
-			cb(centrifuge.SubscribeReply{
-				Options: centrifuge.SubscribeOptions{
-					EnableRecovery: true,
-					EmitPresence:   true,
-					EmitJoinLeave:  true,
-					PushJoinLeave:  true,
-					Data:           []byte(`{"msg": "welcome"}`),
-				},
-			}, nil)
+			if (e.Channel == "history:index") {
+				cb(centrifuge.SubscribeReply{
+					Options: centrifuge.SubscribeOptions{
+						EnableRecovery: true,
+						EmitPresence:   true,
+						EmitJoinLeave:  true,
+						PushJoinLeave:  true,
+						Data:           []byte(`{"msg": "welcome"}`),
+						HistoryMetaTTL: 24 * time.Hour,
+						ChannelInfo:   []byte(`{"channel": "history:index"}`),
+						ExpireAt: 0,
+					},
+				}, nil)
+			} else {
+				cb(centrifuge.SubscribeReply{
+					Options: centrifuge.SubscribeOptions{
+						EnableRecovery: true,
+						EmitPresence:   true,
+						EmitJoinLeave:  true,
+						PushJoinLeave:  true,
+						Data:           []byte(`{"msg": "welcome"}`),
+					},
+				}, nil)
+			}
 		})
 
 		client.OnMessage(func(e centrifuge.MessageEvent) {
@@ -219,6 +234,51 @@ func Centrifuge() (*centrifuge.Node, error) {
 
 			cb(centrifuge.PublishReply{Result: &result}, err)
 		})
+
+		client.OnHistory(func(e centrifuge.HistoryEvent, cb centrifuge.HistoryCallback) {
+			log.Printf("[user %s] requests history for channel %s", client.UserID(), e.Channel)
+			if !client.IsSubscribed(e.Channel) {
+				log.Printf("[user %s] requests history for channel %s: permission denied", client.UserID(), e.Channel)
+				cb(centrifuge.HistoryReply{}, centrifuge.ErrorPermissionDenied)
+				return
+			} else if (e.Channel == "history:index") {
+				cb(centrifuge.HistoryReply{
+					Result: &centrifuge.HistoryResult{
+						Publications: []*centrifuge.Publication{
+							{
+								Offset: 1,
+								Data:   []byte(`{"input": "History message 1"}`),
+								Info: &centrifuge.ClientInfo{
+									ClientID: "server",
+									UserID:  "42",
+									ConnInfo: []byte(`{"user": "42"}`),
+									ChanInfo: []byte(`{"channel": "history:index"}`),
+								},
+								Tags: map[string]string{
+									"key": "value",
+								},
+							},
+							{
+								Offset: 2,
+								Data:   []byte(`{"input": "History message 2"}`),
+								Info: &centrifuge.ClientInfo{
+									ClientID: "server",
+									UserID:  "42",
+									ConnInfo: []byte(`{"user": "42"}`),
+									ChanInfo: []byte(`{"channel": "history:index"}`),
+								},
+								Tags: map[string]string{
+									"key": "value",
+								},
+							},
+						},
+					},
+				}, nil)
+			} else {
+				cb(centrifuge.HistoryReply{}, nil)
+			}
+		})
+
 
 		client.OnRPC(func(e centrifuge.RPCEvent, cb centrifuge.RPCCallback) {
 			log.Printf("[user %s] sent RPC, method: %s, data: %s", client.UserID(), e.Method, string(e.Data))
