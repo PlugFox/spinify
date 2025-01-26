@@ -91,6 +91,8 @@ final class SpinifyProtobufCommandEncoder
           },
           name: connect.name,
           version: connect.version,
+          // Headers emulation at the web platform.
+          headers: connect.headers,
         );
       case SpinifySubscribeRequest subscribe:
         cmd.subscribe = pb.SubscribeRequest(

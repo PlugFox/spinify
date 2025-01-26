@@ -778,6 +778,7 @@ void main() {
                 token: token,
               ),
             },
+            headers: const {'X-Key': 'Value'},
           ),
           command.SpinifySubscribeRequest(
             channel: channel,

@@ -340,9 +340,9 @@ class Command extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   /// ProtocolVersion2 client can send one of the following requests. Server will
-  /// only take the first non-null request out of these and may return an error
-  /// if client passed more than one request. We are not using oneof here due to
-  /// JSON interoperability concerns.
+  /// only take the first non-null request out of these and may return an error if
+  /// client passed more than one request. We are not using oneof here due to JSON
+  /// interoperability concerns.
   @$pb.TagNumber(4)
   ConnectRequest get connect => $_getN(1);
   @$pb.TagNumber(4)
@@ -651,8 +651,7 @@ class Reply extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearId() => clearField(1);
 
-  /// Error can only be set in replies to commands. For pushes it will have zero
-  /// value.
+  /// Error can only be set in replies to commands. For pushes it will have zero value.
   @$pb.TagNumber(2)
   Error get error => $_getN(1);
   @$pb.TagNumber(2)
@@ -667,8 +666,8 @@ class Reply extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   Error ensureError() => $_ensure(1);
 
-  /// ProtocolVersion2 server can send one of the following fields. We are not
-  /// using oneof here due to JSON interoperability concerns.
+  /// ProtocolVersion2 server can send one of the following fields. We are not using
+  /// oneof here due to JSON interoperability concerns.
   @$pb.TagNumber(4)
   Push get push => $_getN(2);
   @$pb.TagNumber(4)
@@ -838,10 +837,9 @@ class Reply extends $pb.GeneratedMessage {
   SubRefreshResult ensureSubRefresh() => $_ensure(13);
 }
 
-/// Push can be sent to a client as part of Reply in case of bidirectional
-/// transport or without additional wrapping in case of unidirectional
-/// transports. ProtocolVersion2 uses channel and one of the possible concrete
-/// push messages.
+/// Push can be sent to a client as part of Reply in case of bidirectional transport or
+/// without additional wrapping in case of unidirectional transports.
+/// ProtocolVersion2 uses channel and one of the possible concrete push messages.
 class Push extends $pb.GeneratedMessage {
   factory Push({
     $core.String? channel,
@@ -953,8 +951,8 @@ class Push extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearChannel() => clearField(2);
 
-  /// ProtocolVersion2 server can push one of the following fields to the client.
-  /// We are not using oneof here due to JSON interoperability concerns.
+  /// ProtocolVersion2 server can push one of the following fields to the client. We are
+  /// not using oneof here due to JSON interoperability concerns.
   @$pb.TagNumber(4)
   Publication get pub => $_getN(1);
   @$pb.TagNumber(4)
@@ -1201,6 +1199,9 @@ class Publication extends $pb.GeneratedMessage {
     ClientInfo? info,
     $fixnum.Int64? offset,
     $core.Map<$core.String, $core.String>? tags,
+    $core.bool? delta,
+    $fixnum.Int64? time,
+    $core.String? channel,
   }) {
     final $result = create();
     if (data != null) {
@@ -1214,6 +1215,15 @@ class Publication extends $pb.GeneratedMessage {
     }
     if (tags != null) {
       $result.tags.addAll(tags);
+    }
+    if (delta != null) {
+      $result.delta = delta;
+    }
+    if (time != null) {
+      $result.time = time;
+    }
+    if (channel != null) {
+      $result.channel = channel;
     }
     return $result;
   }
@@ -1241,6 +1251,9 @@ class Publication extends $pb.GeneratedMessage {
         keyFieldType: $pb.PbFieldType.OS,
         valueFieldType: $pb.PbFieldType.OS,
         packageName: const $pb.PackageName('centrifugal.centrifuge.protocol'))
+    ..aOB(8, _omitFieldNames ? '' : 'delta')
+    ..aInt64(9, _omitFieldNames ? '' : 'time')
+    ..aOS(10, _omitFieldNames ? '' : 'channel')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('Using this can add significant overhead to your binary. '
@@ -1305,6 +1318,42 @@ class Publication extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(7)
   $core.Map<$core.String, $core.String> get tags => $_getMap(3);
+
+  @$pb.TagNumber(8)
+  $core.bool get delta => $_getBF(4);
+  @$pb.TagNumber(8)
+  set delta($core.bool v) {
+    $_setBool(4, v);
+  }
+
+  @$pb.TagNumber(8)
+  $core.bool hasDelta() => $_has(4);
+  @$pb.TagNumber(8)
+  void clearDelta() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $fixnum.Int64 get time => $_getI64(5);
+  @$pb.TagNumber(9)
+  set time($fixnum.Int64 v) {
+    $_setInt64(5, v);
+  }
+
+  @$pb.TagNumber(9)
+  $core.bool hasTime() => $_has(5);
+  @$pb.TagNumber(9)
+  void clearTime() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get channel => $_getSZ(6);
+  @$pb.TagNumber(10)
+  set channel($core.String v) {
+    $_setString(6, v);
+  }
+
+  @$pb.TagNumber(10)
+  $core.bool hasChannel() => $_has(6);
+  @$pb.TagNumber(10)
+  void clearChannel() => clearField(10);
 }
 
 class Join extends $pb.GeneratedMessage {
@@ -1714,6 +1763,7 @@ class Connect extends $pb.GeneratedMessage {
     $core.bool? pong,
     $core.String? session,
     $core.String? node,
+    $fixnum.Int64? time,
   }) {
     final $result = create();
     if (client != null) {
@@ -1745,6 +1795,9 @@ class Connect extends $pb.GeneratedMessage {
     }
     if (node != null) {
       $result.node = node;
+    }
+    if (time != null) {
+      $result.time = time;
     }
     return $result;
   }
@@ -1778,6 +1831,7 @@ class Connect extends $pb.GeneratedMessage {
     ..aOB(8, _omitFieldNames ? '' : 'pong')
     ..aOS(9, _omitFieldNames ? '' : 'session')
     ..aOS(10, _omitFieldNames ? '' : 'node')
+    ..aInt64(11, _omitFieldNames ? '' : 'time')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('Using this can add significant overhead to your binary. '
@@ -1911,6 +1965,18 @@ class Connect extends $pb.GeneratedMessage {
   $core.bool hasNode() => $_has(9);
   @$pb.TagNumber(10)
   void clearNode() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $fixnum.Int64 get time => $_getI64(10);
+  @$pb.TagNumber(11)
+  set time($fixnum.Int64 v) {
+    $_setInt64(10, v);
+  }
+
+  @$pb.TagNumber(11)
+  $core.bool hasTime() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearTime() => clearField(11);
 }
 
 class Disconnect extends $pb.GeneratedMessage {
@@ -2091,6 +2157,7 @@ class ConnectRequest extends $pb.GeneratedMessage {
     $core.Map<$core.String, SubscribeRequest>? subs,
     $core.String? name,
     $core.String? version,
+    $core.Map<$core.String, $core.String>? headers,
   }) {
     final $result = create();
     if (token != null) {
@@ -2107,6 +2174,9 @@ class ConnectRequest extends $pb.GeneratedMessage {
     }
     if (version != null) {
       $result.version = version;
+    }
+    if (headers != null) {
+      $result.headers.addAll(headers);
     }
     return $result;
   }
@@ -2135,6 +2205,11 @@ class ConnectRequest extends $pb.GeneratedMessage {
         packageName: const $pb.PackageName('centrifugal.centrifuge.protocol'))
     ..aOS(4, _omitFieldNames ? '' : 'name')
     ..aOS(5, _omitFieldNames ? '' : 'version')
+    ..m<$core.String, $core.String>(6, _omitFieldNames ? '' : 'headers',
+        entryClassName: 'ConnectRequest.HeadersEntry',
+        keyFieldType: $pb.PbFieldType.OS,
+        valueFieldType: $pb.PbFieldType.OS,
+        packageName: const $pb.PackageName('centrifugal.centrifuge.protocol'))
     ..hasRequiredFields = false;
 
   @$core.Deprecated('Using this can add significant overhead to your binary. '
@@ -2210,6 +2285,9 @@ class ConnectRequest extends $pb.GeneratedMessage {
   $core.bool hasVersion() => $_has(4);
   @$pb.TagNumber(5)
   void clearVersion() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.Map<$core.String, $core.String> get headers => $_getMap(5);
 }
 
 class ConnectResult extends $pb.GeneratedMessage {
@@ -2224,6 +2302,7 @@ class ConnectResult extends $pb.GeneratedMessage {
     $core.bool? pong,
     $core.String? session,
     $core.String? node,
+    $fixnum.Int64? time,
   }) {
     final $result = create();
     if (client != null) {
@@ -2255,6 +2334,9 @@ class ConnectResult extends $pb.GeneratedMessage {
     }
     if (node != null) {
       $result.node = node;
+    }
+    if (time != null) {
+      $result.time = time;
     }
     return $result;
   }
@@ -2288,6 +2370,7 @@ class ConnectResult extends $pb.GeneratedMessage {
     ..aOB(8, _omitFieldNames ? '' : 'pong')
     ..aOS(9, _omitFieldNames ? '' : 'session')
     ..aOS(10, _omitFieldNames ? '' : 'node')
+    ..aInt64(11, _omitFieldNames ? '' : 'time')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('Using this can add significant overhead to your binary. '
@@ -2423,6 +2506,18 @@ class ConnectResult extends $pb.GeneratedMessage {
   $core.bool hasNode() => $_has(9);
   @$pb.TagNumber(10)
   void clearNode() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $fixnum.Int64 get time => $_getI64(10);
+  @$pb.TagNumber(11)
+  set time($fixnum.Int64 v) {
+    $_setInt64(10, v);
+  }
+
+  @$pb.TagNumber(11)
+  $core.bool hasTime() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearTime() => clearField(11);
 }
 
 class RefreshRequest extends $pb.GeneratedMessage {
@@ -2611,6 +2706,7 @@ class SubscribeRequest extends $pb.GeneratedMessage {
     $core.bool? positioned,
     $core.bool? recoverable,
     $core.bool? joinLeave,
+    $core.String? delta,
   }) {
     final $result = create();
     if (channel != null) {
@@ -2640,6 +2736,9 @@ class SubscribeRequest extends $pb.GeneratedMessage {
     if (joinLeave != null) {
       $result.joinLeave = joinLeave;
     }
+    if (delta != null) {
+      $result.delta = delta;
+    }
     return $result;
   }
   SubscribeRequest._() : super();
@@ -2666,6 +2765,7 @@ class SubscribeRequest extends $pb.GeneratedMessage {
     ..aOB(9, _omitFieldNames ? '' : 'positioned')
     ..aOB(10, _omitFieldNames ? '' : 'recoverable')
     ..aOB(11, _omitFieldNames ? '' : 'joinLeave')
+    ..aOS(12, _omitFieldNames ? '' : 'delta')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('Using this can add significant overhead to your binary. '
@@ -2798,6 +2898,18 @@ class SubscribeRequest extends $pb.GeneratedMessage {
   $core.bool hasJoinLeave() => $_has(8);
   @$pb.TagNumber(11)
   void clearJoinLeave() => clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.String get delta => $_getSZ(9);
+  @$pb.TagNumber(12)
+  set delta($core.String v) {
+    $_setString(9, v);
+  }
+
+  @$pb.TagNumber(12)
+  $core.bool hasDelta() => $_has(9);
+  @$pb.TagNumber(12)
+  void clearDelta() => clearField(12);
 }
 
 class SubscribeResult extends $pb.GeneratedMessage {
@@ -2812,6 +2924,7 @@ class SubscribeResult extends $pb.GeneratedMessage {
     $core.bool? positioned,
     $core.List<$core.int>? data,
     $core.bool? wasRecovering,
+    $core.bool? delta,
   }) {
     final $result = create();
     if (expires != null) {
@@ -2844,6 +2957,9 @@ class SubscribeResult extends $pb.GeneratedMessage {
     if (wasRecovering != null) {
       $result.wasRecovering = wasRecovering;
     }
+    if (delta != null) {
+      $result.delta = delta;
+    }
     return $result;
   }
   SubscribeResult._() : super();
@@ -2873,6 +2989,7 @@ class SubscribeResult extends $pb.GeneratedMessage {
     ..a<$core.List<$core.int>>(
         11, _omitFieldNames ? '' : 'data', $pb.PbFieldType.OY)
     ..aOB(12, _omitFieldNames ? '' : 'wasRecovering')
+    ..aOB(13, _omitFieldNames ? '' : 'delta')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('Using this can add significant overhead to your binary. '
@@ -3008,6 +3125,18 @@ class SubscribeResult extends $pb.GeneratedMessage {
   $core.bool hasWasRecovering() => $_has(9);
   @$pb.TagNumber(12)
   void clearWasRecovering() => clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.bool get delta => $_getBF(10);
+  @$pb.TagNumber(13)
+  set delta($core.bool v) {
+    $_setBool(10, v);
+  }
+
+  @$pb.TagNumber(13)
+  $core.bool hasDelta() => $_has(10);
+  @$pb.TagNumber(13)
+  void clearDelta() => clearField(13);
 }
 
 class SubRefreshRequest extends $pb.GeneratedMessage {

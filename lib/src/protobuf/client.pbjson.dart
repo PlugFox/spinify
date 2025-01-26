@@ -446,6 +446,9 @@ const Publication$json = {
       '6': '.centrifugal.centrifuge.protocol.Publication.TagsEntry',
       '10': 'tags'
     },
+    {'1': 'delta', '3': 8, '4': 1, '5': 8, '10': 'delta'},
+    {'1': 'time', '3': 9, '4': 1, '5': 3, '10': 'time'},
+    {'1': 'channel', '3': 10, '4': 1, '5': 9, '10': 'channel'},
   ],
   '3': [Publication_TagsEntry$json],
   '9': [
@@ -470,8 +473,10 @@ final $typed_data.Uint8List publicationDescriptor = $convert.base64Decode(
     'CgtQdWJsaWNhdGlvbhISCgRkYXRhGAQgASgMUgRkYXRhEj8KBGluZm8YBSABKAsyKy5jZW50cm'
     'lmdWdhbC5jZW50cmlmdWdlLnByb3RvY29sLkNsaWVudEluZm9SBGluZm8SFgoGb2Zmc2V0GAYg'
     'ASgEUgZvZmZzZXQSSgoEdGFncxgHIAMoCzI2LmNlbnRyaWZ1Z2FsLmNlbnRyaWZ1Z2UucHJvdG'
-    '9jb2wuUHVibGljYXRpb24uVGFnc0VudHJ5UgR0YWdzGjcKCVRhZ3NFbnRyeRIQCgNrZXkYASAB'
-    'KAlSA2tleRIUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6AjgBSgQIARACSgQIAhADSgQIAxAE');
+    '9jb2wuUHVibGljYXRpb24uVGFnc0VudHJ5UgR0YWdzEhQKBWRlbHRhGAggASgIUgVkZWx0YRIS'
+    'CgR0aW1lGAkgASgDUgR0aW1lEhgKB2NoYW5uZWwYCiABKAlSB2NoYW5uZWwaNwoJVGFnc0VudH'
+    'J5EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAFKBAgBEAJKBAgC'
+    'EANKBAgDEAQ=');
 
 @$core.Deprecated('Use joinDescriptor instead')
 const Join$json = {
@@ -585,6 +590,7 @@ const Connect$json = {
     {'1': 'pong', '3': 8, '4': 1, '5': 8, '10': 'pong'},
     {'1': 'session', '3': 9, '4': 1, '5': 9, '10': 'session'},
     {'1': 'node', '3': 10, '4': 1, '5': 9, '10': 'node'},
+    {'1': 'time', '3': 11, '4': 1, '5': 3, '10': 'time'},
   ],
   '3': [Connect_SubsEntry$json],
 };
@@ -613,9 +619,9 @@ final $typed_data.Uint8List connectDescriptor = $convert.base64Decode(
     'dHJpZnVnZS5wcm90b2NvbC5Db25uZWN0LlN1YnNFbnRyeVIEc3VicxIYCgdleHBpcmVzGAUgAS'
     'gIUgdleHBpcmVzEhAKA3R0bBgGIAEoDVIDdHRsEhIKBHBpbmcYByABKA1SBHBpbmcSEgoEcG9u'
     'ZxgIIAEoCFIEcG9uZxIYCgdzZXNzaW9uGAkgASgJUgdzZXNzaW9uEhIKBG5vZGUYCiABKAlSBG'
-    '5vZGUaaQoJU3Vic0VudHJ5EhAKA2tleRgBIAEoCVIDa2V5EkYKBXZhbHVlGAIgASgLMjAuY2Vu'
-    'dHJpZnVnYWwuY2VudHJpZnVnZS5wcm90b2NvbC5TdWJzY3JpYmVSZXN1bHRSBXZhbHVlOgI4AQ'
-    '==');
+    '5vZGUSEgoEdGltZRgLIAEoA1IEdGltZRppCglTdWJzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkS'
+    'RgoFdmFsdWUYAiABKAsyMC5jZW50cmlmdWdhbC5jZW50cmlmdWdlLnByb3RvY29sLlN1YnNjcm'
+    'liZVJlc3VsdFIFdmFsdWU6AjgB');
 
 @$core.Deprecated('Use disconnectDescriptor instead')
 const Disconnect$json = {
@@ -661,8 +667,16 @@ const ConnectRequest$json = {
     },
     {'1': 'name', '3': 4, '4': 1, '5': 9, '10': 'name'},
     {'1': 'version', '3': 5, '4': 1, '5': 9, '10': 'version'},
+    {
+      '1': 'headers',
+      '3': 6,
+      '4': 3,
+      '5': 11,
+      '6': '.centrifugal.centrifuge.protocol.ConnectRequest.HeadersEntry',
+      '10': 'headers'
+    },
   ],
-  '3': [ConnectRequest_SubsEntry$json],
+  '3': [ConnectRequest_SubsEntry$json, ConnectRequest_HeadersEntry$json],
 };
 
 @$core.Deprecated('Use connectRequestDescriptor instead')
@@ -682,14 +696,26 @@ const ConnectRequest_SubsEntry$json = {
   '7': {'7': true},
 };
 
+@$core.Deprecated('Use connectRequestDescriptor instead')
+const ConnectRequest_HeadersEntry$json = {
+  '1': 'HeadersEntry',
+  '2': [
+    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
+    {'1': 'value', '3': 2, '4': 1, '5': 9, '10': 'value'},
+  ],
+  '7': {'7': true},
+};
+
 /// Descriptor for `ConnectRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List connectRequestDescriptor = $convert.base64Decode(
     'Cg5Db25uZWN0UmVxdWVzdBIUCgV0b2tlbhgBIAEoCVIFdG9rZW4SEgoEZGF0YRgCIAEoDFIEZG'
     'F0YRJNCgRzdWJzGAMgAygLMjkuY2VudHJpZnVnYWwuY2VudHJpZnVnZS5wcm90b2NvbC5Db25u'
     'ZWN0UmVxdWVzdC5TdWJzRW50cnlSBHN1YnMSEgoEbmFtZRgEIAEoCVIEbmFtZRIYCgd2ZXJzaW'
-    '9uGAUgASgJUgd2ZXJzaW9uGmoKCVN1YnNFbnRyeRIQCgNrZXkYASABKAlSA2tleRJHCgV2YWx1'
-    'ZRgCIAEoCzIxLmNlbnRyaWZ1Z2FsLmNlbnRyaWZ1Z2UucHJvdG9jb2wuU3Vic2NyaWJlUmVxdW'
-    'VzdFIFdmFsdWU6AjgB');
+    '9uGAUgASgJUgd2ZXJzaW9uElYKB2hlYWRlcnMYBiADKAsyPC5jZW50cmlmdWdhbC5jZW50cmlm'
+    'dWdlLnByb3RvY29sLkNvbm5lY3RSZXF1ZXN0LkhlYWRlcnNFbnRyeVIHaGVhZGVycxpqCglTdW'
+    'JzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSRwoFdmFsdWUYAiABKAsyMS5jZW50cmlmdWdhbC5j'
+    'ZW50cmlmdWdlLnByb3RvY29sLlN1YnNjcmliZVJlcXVlc3RSBXZhbHVlOgI4ARo6CgxIZWFkZX'
+    'JzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ==');
 
 @$core.Deprecated('Use connectResultDescriptor instead')
 const ConnectResult$json = {
@@ -712,6 +738,7 @@ const ConnectResult$json = {
     {'1': 'pong', '3': 8, '4': 1, '5': 8, '10': 'pong'},
     {'1': 'session', '3': 9, '4': 1, '5': 9, '10': 'session'},
     {'1': 'node', '3': 10, '4': 1, '5': 9, '10': 'node'},
+    {'1': 'time', '3': 11, '4': 1, '5': 3, '10': 'time'},
   ],
   '3': [ConnectResult_SubsEntry$json],
 };
@@ -740,9 +767,9 @@ final $typed_data.Uint8List connectResultDescriptor = $convert.base64Decode(
     'CgRkYXRhGAUgASgMUgRkYXRhEkwKBHN1YnMYBiADKAsyOC5jZW50cmlmdWdhbC5jZW50cmlmdW'
     'dlLnByb3RvY29sLkNvbm5lY3RSZXN1bHQuU3Vic0VudHJ5UgRzdWJzEhIKBHBpbmcYByABKA1S'
     'BHBpbmcSEgoEcG9uZxgIIAEoCFIEcG9uZxIYCgdzZXNzaW9uGAkgASgJUgdzZXNzaW9uEhIKBG'
-    '5vZGUYCiABKAlSBG5vZGUaaQoJU3Vic0VudHJ5EhAKA2tleRgBIAEoCVIDa2V5EkYKBXZhbHVl'
-    'GAIgASgLMjAuY2VudHJpZnVnYWwuY2VudHJpZnVnZS5wcm90b2NvbC5TdWJzY3JpYmVSZXN1bH'
-    'RSBXZhbHVlOgI4AQ==');
+    '5vZGUYCiABKAlSBG5vZGUSEgoEdGltZRgLIAEoA1IEdGltZRppCglTdWJzRW50cnkSEAoDa2V5'
+    'GAEgASgJUgNrZXkSRgoFdmFsdWUYAiABKAsyMC5jZW50cmlmdWdhbC5jZW50cmlmdWdlLnByb3'
+    'RvY29sLlN1YnNjcmliZVJlc3VsdFIFdmFsdWU6AjgB');
 
 @$core.Deprecated('Use refreshRequestDescriptor instead')
 const RefreshRequest$json = {
@@ -785,6 +812,7 @@ const SubscribeRequest$json = {
     {'1': 'positioned', '3': 9, '4': 1, '5': 8, '10': 'positioned'},
     {'1': 'recoverable', '3': 10, '4': 1, '5': 8, '10': 'recoverable'},
     {'1': 'join_leave', '3': 11, '4': 1, '5': 8, '10': 'joinLeave'},
+    {'1': 'delta', '3': 12, '4': 1, '5': 9, '10': 'delta'},
   ],
   '9': [
     {'1': 4, '2': 5},
@@ -798,7 +826,8 @@ final $typed_data.Uint8List subscribeRequestDescriptor = $convert.base64Decode(
     'ABKAlSBXRva2VuEhgKB3JlY292ZXIYAyABKAhSB3JlY292ZXISFAoFZXBvY2gYBiABKAlSBWVw'
     'b2NoEhYKBm9mZnNldBgHIAEoBFIGb2Zmc2V0EhIKBGRhdGEYCCABKAxSBGRhdGESHgoKcG9zaX'
     'Rpb25lZBgJIAEoCFIKcG9zaXRpb25lZBIgCgtyZWNvdmVyYWJsZRgKIAEoCFILcmVjb3ZlcmFi'
-    'bGUSHQoKam9pbl9sZWF2ZRgLIAEoCFIJam9pbkxlYXZlSgQIBBAFSgQIBRAG');
+    'bGUSHQoKam9pbl9sZWF2ZRgLIAEoCFIJam9pbkxlYXZlEhQKBWRlbHRhGAwgASgJUgVkZWx0YU'
+    'oECAQQBUoECAUQBg==');
 
 @$core.Deprecated('Use subscribeResultDescriptor instead')
 const SubscribeResult$json = {
@@ -821,6 +850,7 @@ const SubscribeResult$json = {
     {'1': 'positioned', '3': 10, '4': 1, '5': 8, '10': 'positioned'},
     {'1': 'data', '3': 11, '4': 1, '5': 12, '10': 'data'},
     {'1': 'was_recovering', '3': 12, '4': 1, '5': 8, '10': 'wasRecovering'},
+    {'1': 'delta', '3': 13, '4': 1, '5': 8, '10': 'delta'},
   ],
   '9': [
     {'1': 4, '2': 5},
@@ -836,7 +866,7 @@ final $typed_data.Uint8List subscribeResultDescriptor = $convert.base64Decode(
     'JvdG9jb2wuUHVibGljYXRpb25SDHB1YmxpY2F0aW9ucxIcCglyZWNvdmVyZWQYCCABKAhSCXJl'
     'Y292ZXJlZBIWCgZvZmZzZXQYCSABKARSBm9mZnNldBIeCgpwb3NpdGlvbmVkGAogASgIUgpwb3'
     'NpdGlvbmVkEhIKBGRhdGEYCyABKAxSBGRhdGESJQoOd2FzX3JlY292ZXJpbmcYDCABKAhSDXdh'
-    'c1JlY292ZXJpbmdKBAgEEAVKBAgFEAY=');
+    'c1JlY292ZXJpbmcSFAoFZGVsdGEYDSABKAhSBWRlbHRhSgQIBBAFSgQIBRAG');
 
 @$core.Deprecated('Use subRefreshRequestDescriptor instead')
 const SubRefreshRequest$json = {

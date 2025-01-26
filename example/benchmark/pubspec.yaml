@@ -17,7 +17,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Centrifuge clients
-  centrifuge: ^0.14.0
+  centrifuge: ^0.15.0
   spinify:
     path: ../../
 

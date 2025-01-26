@@ -466,4 +466,7 @@ final class SpinifyErrorResult extends SpinifyReply
 
   /// Is error temporary.
   final bool temporary;
+
+  /// Is error permanent.
+  bool get permanent => !temporary;
 }
