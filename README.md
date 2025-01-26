@@ -121,10 +121,10 @@ Each message is sent sequentially: the client waits for the server's response be
 
 |       | Spinify             | Centrifuge-Dart     |
 | ----- | ------------------- | ------------------- |
-| 1 KB  | 5763 msg/s (7MB/s)  | 5361 msg/s (6MB/s)  |
-| 14 KB | 3305 msg/s (45MB/s) | 2564 msg/s (35MB/s) |
-| 30 KB | 2463 msg/s (72MB/s) | 1470 msg/s (43MB/s) |
-| 60 KB | 1583 msg/s (92MB/s) | 877 msg/s (51MB/s)  |
+| 1 KB  | 5396 msg/s (6MB/s)  | 5433 msg/s (6MB/s)  |
+| 14 KB | 3216 msg/s (46MB/s) | 3224 msg/s (46MB/s) |
+| 30 KB | 2371 msg/s (71MB/s) | 2352 msg/s (70MB/s) |
+| 60 KB | 1558 msg/s (92MB/s) | 1547 msg/s (91MB/s) |
 
 _\* Messages larger than 64 KB are not supported._
 
