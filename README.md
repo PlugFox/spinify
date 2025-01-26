@@ -122,14 +122,8 @@ Each message is sent sequentially: the client waits for the server's response be
 |       | Spinify             | Centrifuge-Dart     |
 | ----- | ------------------- | ------------------- |
 | 1 KB  | 5763 msg/s (7MB/s)  | 5361 msg/s (6MB/s)  |
-| 5 KB  | 4405 msg/s (22MB/s) | 3731 msg/s (18MB/s) |
-| 10 KB | 3717 msg/s (37MB/s) | 2857 msg/s (28MB/s) |
 | 14 KB | 3305 msg/s (45MB/s) | 2564 msg/s (35MB/s) |
-| 16 KB | 3091 msg/s (50MB/s) | 1982 msg/s (32MB/s) |
-| 20 KB | 2812 msg/s (56MB/s) | 1811 msg/s (36MB/s) |
 | 30 KB | 2463 msg/s (72MB/s) | 1470 msg/s (43MB/s) |
-| 40 KB | 1937 msg/s (76MB/s) | 1089 msg/s (42MB/s) |
-| 50 KB | 1740 msg/s (85MB/s) | 967 msg/s (47MB/s)  |
 | 60 KB | 1583 msg/s (92MB/s) | 877 msg/s (51MB/s)  |
 
 _\* Messages larger than 64 KB are not supported._
@@ -138,11 +132,10 @@ _\* Messages larger than 64 KB are not supported._
 
 |       | Spinify WASM        | Spinify JS          | Centrifuge-Dart JS  |
 | ----- | ------------------- | ------------------- | ------------------- |
-| 1 KB  | 3676 msg/s (4MB/s)  | 3502 msg/s (4MB/s)  | 3067 msg/s (3MB/s)  |
-| 5 KB  | 2659 msg/s (13MB/s) | 3484 msg/s (17MB/s) | 2207 msg/s (11MB/s) |
-| 10 KB | 1926 msg/s (19MB/s) | 3189 msg/s (31MB/s) | 1584 msg/s (15MB/s) |
-| 14 KB | 1670 msg/s (22MB/s) | 2890 msg/s (39MB/s) | 1287 msg/s (17MB/s) |
-| 16 KB | 39 msg/s (662KB/s)  | 39 msg/s (662KB/s)  | 39 msg/s (662KB/s)  |
+| 1 KB  | 3676 msg/s (4MB/s)  | 3590 msg/s (6MB/s)  | 3720 msg/s (6MB/s)  |
+| 5 KB  | 2659 msg/s (13MB/s) | 3227 msg/s (18MB/s) | 3223 msg/s (18MB/s) |
+| 10 KB | 1926 msg/s (19MB/s) | 3031 msg/s (32MB/s) | 3029 msg/s (32MB/s) |
+| 14 KB | 1670 msg/s (22MB/s) | 2750 msg/s (39MB/s) | 2830 msg/s (40MB/s) |
 
 _\* After message sizes exceed 15 KB, there is a noticeable performance drop._
 
