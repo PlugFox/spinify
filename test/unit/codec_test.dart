@@ -55,6 +55,7 @@ void main() => group('Codec', () {
                 token: 'token',
               ),
             },
+            headers: const {'X-Key': 'Value'},
           ),
           SpinifySubscribeRequest(
             channel: 'channel',

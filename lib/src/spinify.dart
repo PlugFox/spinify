@@ -785,6 +785,8 @@ final class Spinify implements ISpinify {
               },
               name: config.client.name,
               version: config.client.version,
+              headers:
+                  kIsWeb && config.headers.isNotEmpty ? config.headers : null,
             );
           }
 

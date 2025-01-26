@@ -64,6 +64,7 @@ final class SpinifyConnectRequest extends SpinifyCommand {
     required this.subs,
     required this.name,
     required this.version,
+    required this.headers,
   });
 
   @override
@@ -86,6 +87,10 @@ final class SpinifyConnectRequest extends SpinifyCommand {
 
   /// Version of client.
   final String version;
+
+  /// Headers to send.
+  /// Used for headers emulation at the web platform.
+  final Map<String, String>? headers;
 }
 
 /// {@macro command}

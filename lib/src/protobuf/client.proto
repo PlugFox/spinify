@@ -25,9 +25,9 @@ message Command {
   reserved 2, 3;
 
   // ProtocolVersion2 client can send one of the following requests. Server will
-  // only take the first non-null request out of these and may return an error
-  // if client passed more than one request. We are not using oneof here due to
-  // JSON interoperability concerns.
+  // only take the first non-null request out of these and may return an error if
+  // client passed more than one request. We are not using oneof here due to JSON
+  // interoperability concerns.
   ConnectRequest connect = 4;
   SubscribeRequest subscribe = 5;
   UnsubscribeRequest unsubscribe = 6;
@@ -48,14 +48,13 @@ message Reply {
   // Id will only be set to a value > 0 for replies to commands. For pushes
   // it will have zero value.
   uint32 id = 1;
-  // Error can only be set in replies to commands. For pushes it will have zero
-  // value.
+  // Error can only be set in replies to commands. For pushes it will have zero value.
   Error error = 2;
 
   reserved 3;
 
-  // ProtocolVersion2 server can send one of the following fields. We are not
-  // using oneof here due to JSON interoperability concerns.
+  // ProtocolVersion2 server can send one of the following fields. We are not using
+  // oneof here due to JSON interoperability concerns.
   Push push = 4;
   ConnectResult connect = 5;
   SubscribeResult subscribe = 6;
@@ -70,16 +69,15 @@ message Reply {
   SubRefreshResult sub_refresh = 15;
 }
 
-// Push can be sent to a client as part of Reply in case of bidirectional
-// transport or without additional wrapping in case of unidirectional
-// transports. ProtocolVersion2 uses channel and one of the possible concrete
-// push messages.
+// Push can be sent to a client as part of Reply in case of bidirectional transport or
+// without additional wrapping in case of unidirectional transports.
+// ProtocolVersion2 uses channel and one of the possible concrete push messages.
 message Push {
   reserved 1, 3;
   string channel = 2;
 
-  // ProtocolVersion2 server can push one of the following fields to the client.
-  // We are not using oneof here due to JSON interoperability concerns.
+  // ProtocolVersion2 server can push one of the following fields to the client. We are
+  // not using oneof here due to JSON interoperability concerns.
   Publication pub = 4;
   Join join = 5;
   Leave leave = 6;
@@ -104,11 +102,18 @@ message Publication {
   ClientInfo info = 5;
   uint64 offset = 6;
   map<string, string> tags = 7;
+  bool delta = 8;  // When set indicates that data in Publication is a delta from previous data.
+  int64 time = 9;  // Optional time of publication as Unix timestamp milliseconds.
+  string channel = 10; // Optional channel name if Publication relates to wildcard subscription.
 }
 
-message Join { ClientInfo info = 1; }
+message Join {
+  ClientInfo info = 1;
+}
 
-message Leave { ClientInfo info = 1; }
+message Leave {
+  ClientInfo info = 1;
+}
 
 message Unsubscribe {
   reserved 1;
@@ -125,7 +130,9 @@ message Subscribe {
   bytes data = 7;
 }
 
-message Message { bytes data = 1; }
+message Message {
+  bytes data = 1;
+}
 
 message Connect {
   string client = 1;
@@ -138,6 +145,7 @@ message Connect {
   bool pong = 8;
   string session = 9;
   string node = 10;
+  int64 time = 11; // Server time as Unix timestamp in milliseconds (not sent by default).
 }
 
 message Disconnect {
@@ -157,6 +165,7 @@ message ConnectRequest {
   map<string, SubscribeRequest> subs = 3;
   string name = 4;
   string version = 5;
+  map<string, string> headers = 6;
 }
 
 message ConnectResult {
@@ -170,9 +179,12 @@ message ConnectResult {
   bool pong = 8;
   string session = 9;
   string node = 10;
+  int64 time = 11; // Server time as Unix timestamp in milliseconds (not sent by default).
 }
 
-message RefreshRequest { string token = 1; }
+message RefreshRequest {
+  string token = 1;
+}
 
 message RefreshResult {
   string client = 1;
@@ -192,6 +204,7 @@ message SubscribeRequest {
   bool positioned = 9;
   bool recoverable = 10;
   bool join_leave = 11;
+  string delta = 12;
 }
 
 message SubscribeResult {
@@ -206,6 +219,7 @@ message SubscribeResult {
   bool positioned = 10;
   bytes data = 11;
   bool was_recovering = 12;
+  bool delta = 13;
 }
 
 message SubRefreshRequest {
@@ -218,7 +232,9 @@ message SubRefreshResult {
   uint32 ttl = 2;
 }
 
-message UnsubscribeRequest { string channel = 1; }
+message UnsubscribeRequest {
+  string channel = 1;
+}
 
 message UnsubscribeResult {}
 
@@ -229,11 +245,17 @@ message PublishRequest {
 
 message PublishResult {}
 
-message PresenceRequest { string channel = 1; }
+message PresenceRequest {
+  string channel = 1;
+}
 
-message PresenceResult { map<string, ClientInfo> presence = 1; }
+message PresenceResult {
+  map<string, ClientInfo> presence = 1;
+}
 
-message PresenceStatsRequest { string channel = 1; }
+message PresenceStatsRequest {
+  string channel = 1;
+}
 
 message PresenceStatsResult {
   uint32 num_clients = 1;
@@ -263,11 +285,15 @@ message PingRequest {}
 
 message PingResult {}
 
-message RPCRequest {
+message RPCRequest{
   bytes data = 1;
   string method = 2;
 }
 
-message RPCResult { bytes data = 1; }
+message RPCResult {
+  bytes data = 1 ;
+}
 
-message SendRequest { bytes data = 1; }
+message SendRequest{
+  bytes data = 1;
+}

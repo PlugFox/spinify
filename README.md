@@ -28,6 +28,7 @@ This library allows you to connect your Dart or Flutter applications to [Centrif
 - **Logging**: Log events, errors, and messages for debugging purposes.
 - **Cross-Platform**: Run on Dart VM, Flutter, and Web platforms.
 - **Performance**: Achieve high throughput and low latency for real-time messaging.
+- **Headers Emulation**: Emulate HTTP headers for WebSocket connections at the Web platform.
 
 ## Installation
 
@@ -180,6 +181,7 @@ _\* After message sizes exceed 15 KB, there is a noticeable performance drop._
 - ✅ Benchmarks
 - ✅ Performance comparison with other libraries
 - ✅ WASM compatibility
+- ✅ Headers emulation
 - ❌ 95% test coverage
 - ❌ JSON codec support for transport
 - ❌ DevTools extension

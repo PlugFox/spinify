@@ -316,8 +316,8 @@ final class SpinifyConfig {
   final ({String name, String version}) client;
 
   /// Headers that are set when connecting the web socket on dart:io platforms.
-  ///
-  /// Note that headers are ignored on the web platform.
+  /// At the web platform, headers will be set using the headers emulation
+  /// with connection request.
   final Map<String, String> headers;
 
   /// Maximum time to wait for the connection to be established.

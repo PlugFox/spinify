@@ -1,3 +1,7 @@
+## 0.2.0
+
+- Headers emulation
+
 ## 0.1.0
 
 - Add benchmark information to README
