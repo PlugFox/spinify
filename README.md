@@ -108,7 +108,7 @@ Windows 11 Pro 64-bit
 CPU 13th Gen Intel Core i7-13700K
 Chrome Version 131.0.6778.86 (Official Build) (64-bit)
 Docker version 27.1.1
-Docker image centrifugo/centrifugo:v5
+Docker image centrifugo/centrifugo:latest
 Flutter 3.24.5 • Dart 3.5.4
 Package spinify v0.1.0
 Package centrifuge-dart v0.14.1

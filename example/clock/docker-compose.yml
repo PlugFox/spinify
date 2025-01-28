@@ -1,17 +1,49 @@
-# Docker Compose configuration file for running Centrifugo benchmark.
+# Docker Compose configuration file for running Centrifugo powered clock application.
 # docker compose up -d
 # docker compose down
 # docker compose logs -f
 
 services:
-  centrifugo-benchmark:
-    container_name: centrifugo-benchmark
+  # Backend service
+  backend:
+    container_name: backend
+    restart: unless-stopped
+    command:
+    ports:
+      - 3080:80
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:80/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+  # Frontend service
+  frontend:
+    container_name: frontend
+    restart: unless-stopped
+    command:
+    ports:
+      - 3081:80
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:80/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+  # Centrifugo service
+  centrifugo:
+    container_name: centrifugo
     image: centrifugo/centrifugo:latest
     restart: unless-stopped
     command: centrifugo --client_insecure --admin
     tty: true
     ports:
-      - 8000:8000
+      - 3082:8000
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:8000/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
     environment:
       - "CENTRIFUGO_ADMIN=true"
       - "CENTRIFUGO_TOKEN_HMAC_SECRET_KEY=80e88856-fe08-4a01-b9fc-73d1d03c2eee"
@@ -30,11 +62,6 @@ services:
       - "CENTRIFUGO_ALLOW_PUBLISH_FOR_ANONYMOUS=true"
       - "CENTRIFUGO_ALLOW_USER_LIMITED_CHANNELS=true"
       - "CENTRIFUGO_LOG_LEVEL=debug"
-    healthcheck:
-      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:8000/health"]
-      interval: 3s
-      timeout: 3s
-      retries: 3
     ulimits:
       nofile:
         soft: 65535

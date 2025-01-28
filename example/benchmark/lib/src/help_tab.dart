@@ -157,7 +157,7 @@ const String _helpComposeContent = '''
 services:
   centrifugo-benchmark:
     container_name: centrifugo-benchmark
-    image: centrifugo/centrifugo:v5
+    image: centrifugo/centrifugo:latest
     restart: unless-stopped
     command: centrifugo --client_insecure --admin
     tty: true
