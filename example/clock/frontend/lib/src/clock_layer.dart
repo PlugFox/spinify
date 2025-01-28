@@ -185,15 +185,15 @@ class ClockLayer implements ResizableLayer {
   /// Создает вершины для циферблата
   td.Float32List _createCircleVertices(int segments) {
     final vertices = td.Float32List(segments * 4);
-
+    final radius = _radius * 0.9;
     for (var i = 0; i < segments; i++) {
       final angle1 = i * 2 * math.pi / segments;
       final angle2 = (i + 1) * 2 * math.pi / segments;
       vertices
-        ..[i * 4 + 0] = _centerX + _radius * math.cos(angle1)
-        ..[i * 4 + 1] = _centerY + _radius * math.sin(angle1)
-        ..[i * 4 + 2] = _centerX + _radius * math.cos(angle2)
-        ..[i * 4 + 3] = _centerY + _radius * math.sin(angle2);
+        ..[i * 4 + 0] = _centerX + radius * math.cos(angle1)
+        ..[i * 4 + 1] = _centerY + radius * math.sin(angle1)
+        ..[i * 4 + 2] = _centerX + radius * math.cos(angle2)
+        ..[i * 4 + 3] = _centerY + radius * math.sin(angle2);
     }
 
     return vertices;
@@ -282,11 +282,10 @@ class ClockLayer implements ResizableLayer {
     _drawLines(context, _secondVertices, _secondColors);
 
     // Рисуем деления часов
+    final outerRadius = _radius * 0.9;
+    final innerRadius = _radius * 0.8;
     for (var i = 0; i < 12; i++) {
       final angle = i * 2 * math.pi / 12;
-      final outerRadius = _radius;
-      final innerRadius = _radius * 0.9;
-
       final markVertices = td.Float32List(4)
         ..[0] = _centerX + innerRadius * math.cos(angle)
         ..[1] = _centerY + innerRadius * math.sin(angle)
@@ -306,11 +305,12 @@ class ClockLayer implements ResizableLayer {
       ..textBaseline = 'middle';
 
     // Draw roman numerals
+    final numbersRadius = _radius * 0.9;
     for (var i = 0; i < 12; i++) {
       final angle = i * 2 * math.pi / 12 - math.pi / 2;
       final text = _romanNumerals[i];
-      final textX = _centerX + (_radius + _fontSize / 1.5) * math.cos(angle);
-      final textY = _centerY + (_radius + _fontSize / 1.5) * math.sin(angle);
+      final textX = _centerX + (numbersRadius + _fontSize) * math.cos(angle);
+      final textY = _centerY + (numbersRadius + _fontSize) * math.sin(angle);
       context.ctx2D.fillText(text, textX, textY);
     }
 
