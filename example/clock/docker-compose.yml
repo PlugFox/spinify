@@ -10,9 +10,9 @@ services:
     restart: unless-stopped
     command:
     ports:
-      - 3080:80
+      - 3080:8080
     healthcheck:
-      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:80/health"]
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:8080/health"]
       interval: 3s
       timeout: 3s
       retries: 3
@@ -23,9 +23,9 @@ services:
     restart: unless-stopped
     command:
     ports:
-      - 3081:80
+      - 3081:8080
     healthcheck:
-      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:80/health"]
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:8080"]
       interval: 3s
       timeout: 3s
       retries: 3
