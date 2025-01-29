@@ -650,6 +650,67 @@ void main() {
       );
 
       test(
+        'Emulate_long_lifespan',
+        () => fakeAsync(
+          (async) {
+            var serverPingCount = 0;
+            var serverPongCount = 0;
+            final client = createFakeClient(transport: (_) async {
+              final ws = WebSocket$Fake();
+              ws.onAdd = (bytes, sink) {
+                final command = ProtobufCodec.decode(pb.Command(), bytes);
+                if (command.hasConnect()) {
+                  final reply = pb.Reply(
+                    id: command.id,
+                    connect: pb.ConnectResult(
+                      client: 'fake',
+                      version: '0.0.1',
+                      expires: false,
+                      ttl: null,
+                      data: null,
+                      subs: <String, pb.SubscribeResult>{},
+                      ping: 600,
+                      pong: true,
+                      session: 'fake',
+                      node: 'fake',
+                    ),
+                  );
+                  scheduleMicrotask(() {
+                    sink.add(ProtobufCodec.encode(reply));
+                    Timer.periodic(
+                      Duration(milliseconds: reply.connect.ping),
+                      (timer) {
+                        if (ws.isClosed) {
+                          timer.cancel();
+                          return;
+                        }
+                        serverPingCount++;
+                        sink.add(ProtobufCodec.encode(pb.Reply()));
+                      },
+                    );
+                  });
+                } else if (command.hasPing()) {
+                  serverPongCount++;
+                }
+              };
+              return ws;
+            });
+            unawaited(client.connect(url));
+            async.elapse(client.config.timeout);
+            expect(client.state, isA<SpinifyState$Connected>());
+            for (var day = 0; day < 5; day++) {
+              async.elapse(const Duration(days: 1));
+              expect(client.state, isA<SpinifyState$Connected>());
+            }
+            expect(client.state, isA<SpinifyState$Connected>());
+            expect(serverPingCount, greaterThanOrEqualTo(720000));
+            expect(serverPongCount, equals(serverPingCount));
+            client.close();
+          },
+        ),
+      );
+
+      test(
         'ready',
         () => fakeAsync((async) {
           final client = createFakeClient();

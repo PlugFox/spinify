@@ -1,0 +1,64 @@
+# ==============================================================================
+# PROJECT METADATA
+# ==============================================================================
+
+name: spinify_clock_backend
+
+description: "Spinify Clock: Backend"
+
+publish_to: 'none'
+
+version: 0.0.1+1
+
+homepage: https://github.com/plugfox/spinify
+
+repository: https://github.com/plugfox/spinify
+
+issue_tracker: https://github.com/plugfox/spinify/issues
+
+#funding:
+#  -
+
+#topics:
+#  -
+
+platforms:
+  linux:
+  macos:
+  windows:
+
+#screenshots:
+#  - description: 'Screenshot 1'
+#    path: screenshot_1.png
+
+
+# ==============================================================================
+# PROJECT STRUCTURE
+# ==============================================================================
+
+# https://dart.dev/tools/pub/workspaces
+#workspace:
+#  - ../shared
+
+#executables:
+#  -
+
+
+# ==============================================================================
+# DEPENDENCIES
+# ==============================================================================
+
+environment:
+  sdk: '>=3.6.1 <4.0.0'
+
+dependencies:
+  # Annotation
+  l: ^5.0.0
+  meta: any
+
+  # Centrifugo
+  spinify: any
+
+dev_dependencies:
+  # Linting
+  lints: ^5.1.1

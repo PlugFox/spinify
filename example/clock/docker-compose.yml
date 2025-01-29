@@ -1,0 +1,77 @@
+# Docker Compose configuration file for running Centrifugo powered clock application.
+# docker compose build
+# docker compose up --build
+# docker compose up -d
+# docker compose down
+# docker compose logs -f
+
+services:
+  # Backend service
+  backend:
+    container_name: backend
+    image: clock_backend:latest
+    restart: unless-stopped
+    command: /usr/local/bin/server
+    depends_on:
+      - centrifugo
+    ports:
+      - 3080:8080
+    networks:
+      - clock_network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:8080/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    environment:
+      - "TZ=UTC" # set timezone to UTC for backend
+    build:
+      context: backend
+      dockerfile: Dockerfile
+
+  # Frontend service
+  # http://localhost:3081
+  frontend:
+    container_name: frontend
+    image: clock_frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - centrifugo
+    ports:
+      - 3081:80
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:80"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+
+  # Centrifugo service
+  # docker compose up centrifugo
+  centrifugo:
+    container_name: centrifugo
+    image: centrifugo/centrifugo:latest
+    restart: unless-stopped
+    command: centrifugo --client.insecure --health.enabled
+    tty: true
+    ports:
+      - 3082:8000
+    networks:
+      - clock_network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -nv -O - http://localhost:8000/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      - "CENTRIFUGO_CLIENT_ALLOWED_ORIGINS=*"
+
+networks:
+  clock_network:
+    driver: bridge
