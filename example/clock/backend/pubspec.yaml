@@ -56,6 +56,9 @@ dependencies:
   l: ^5.0.0
   meta: any
 
+  # Centrifugo
+  spinify: any
+
 dev_dependencies:
   # Linting
   lints: ^5.1.1

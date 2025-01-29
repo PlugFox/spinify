@@ -237,7 +237,7 @@
           "--name=centrifugo",
           "centrifugo/centrifugo:latest",
           "centrifugo",
-          "--client_insecure",
+          "--client.insecure",
           "--admin",
           "--admin_insecure",
           "--log_level=debug"
@@ -255,7 +255,7 @@
           "--name=centrifugo",
           "centrifugo/centrifugo:latest",
           "centrifugo",
-          //"--client_insecure",
+          //"--client.insecure",
           "--admin",
           "--admin_insecure",
           "--log_level=debug"
@@ -273,7 +273,7 @@
           "--name=centrifugo",
           "centrifugo/centrifugo:latest",
           "centrifugo",
-          "--client_insecure",
+          "--client.insecure",
           "--admin",
           "--admin_insecure",
           "--log_level=debug"

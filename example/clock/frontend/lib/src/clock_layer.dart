@@ -17,11 +17,14 @@ class ClockLayer implements ResizableLayer {
   int _fontSize = 32;
 
   /// Set the time to display on the clock.
-  void setTime(DateTime time) {
-    if (time.second == _time.second &&
-        time.minute == _time.minute &&
-        time.hour == _time.hour) return;
-    _time = time;
+  void setTime({
+    required int hour,
+    required int minute,
+    required int second,
+  }) {
+    if (second == _time.second && minute == _time.minute && hour == _time.hour)
+      return;
+    _time = DateTime(0, 1, 1, hour, minute, second);
     if (_initialized) _updateTimeVertices();
     _dirty = true;
   }
@@ -235,10 +238,9 @@ class ClockLayer implements ResizableLayer {
       _secondVertices = td.Float32List(4);
 
   void _updateTimeVertices() {
-    final now = DateTime.now();
-    final hours = now.hour % 12;
-    final minutes = now.minute;
-    final seconds = now.second;
+    final hours = _time.hour % 12;
+    final minutes = _time.minute;
+    final seconds = _time.second;
 
     final hourAngle = (hours + minutes / 60) * 2 * math.pi / 12 - math.pi / 2;
     final minuteAngle = minutes * 2 * math.pi / 60 - math.pi / 2;

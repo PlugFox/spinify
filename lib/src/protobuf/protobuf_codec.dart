@@ -205,7 +205,7 @@ final class SpinifyProtobufReplyDecoder
             timestamp: DateTime.now(),
             code: error.code,
             message: error.message,
-            temporary: error.temporary,
+            temporary: !error.hasTemporary() || error.temporary,
           );
           // coverage:ignore-end
         } else {
@@ -599,7 +599,7 @@ final class SpinifyProtobufReplyDecoder
         timestamp: now,
         code: error.code,
         message: error.message,
-        temporary: error.temporary,
+        temporary: !error.hasTemporary() || error.temporary,
       );
     } else {
       // coverage:ignore-start
