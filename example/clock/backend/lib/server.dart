@@ -9,8 +9,9 @@ import 'package:spinify/spinify.dart';
 void runServer() => l.capture(
       () => runZonedGuarded<void>(
         () async {
+          const url = 'ws://centrifugo:8000/connection/websocket';
           final spinify = Spinify.connect(
-            'ws://centrifugo:8000/connection/websocket',
+            url,
             config: SpinifyConfig(
               client: (name: 'Server', version: '1.0.0'),
               logger: (level, event, message, context) => l.log(
@@ -36,11 +37,20 @@ void runServer() => l.capture(
               spinify.newSubscription('clock', subscribe: true);
           final encoder = const JsonEncoder().fuse(const Utf8Encoder());
           Timer.periodic(const Duration(seconds: 1), (timer) {
+            // If not connected - try to reconnect
+            if (spinify.state.isDisconnected) {
+              spinify.connect(url);
+              return;
+            }
+
+            // If the subscription is not active, do nothing
             if (!subscription.state.isSubscribed) return;
+
+            // Publish the current time
             final now = DateTime.now();
             subscription.publish(
               encoder.convert(
-                {
+                <String, Object?>{
                   'hour': now.hour,
                   'minute': now.minute,
                   'second': now.second,
