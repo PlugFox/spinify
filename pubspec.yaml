@@ -46,7 +46,7 @@ dependencies:
   meta: ^1.9.1
 
   # Protocol Buffers
-  protobuf: ^3.1.0
+  protobuf: ">=3.1.0 <5.0.0"
 
   # Web related libraries
   web: ^1.0.0
