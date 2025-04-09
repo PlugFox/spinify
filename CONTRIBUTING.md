@@ -11,7 +11,7 @@ $ dart pub get
 $ protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 $ dart pub global activate pubspec_generator
 $ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
-$ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
+$ dart format -l 80 lib/ test/
 ```
 
 Linux:
@@ -25,7 +25,7 @@ $ dart pub get
 $ protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 $ dart pub global activate pubspec_generator
 $ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
-$ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
+$ dart format -l 80 lib/ test/
 ```
 
 macOS:
@@ -39,5 +39,5 @@ $ dart pub get
 $ protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 $ dart pub global activate pubspec_generator
 $ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
-$ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
+$ dart format -l 80 lib/ test/
 ```

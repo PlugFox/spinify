@@ -166,7 +166,8 @@ sealed class Pubspec {
   /// Think of the description as the sales pitch for your package.
   /// Users see it when they [browse for packages](https://pub.dev/packages).
   /// The description is plain text: no markdown or HTML.
-  static const String description = r'Dart client to communicate with Centrifuge and Centrifugo from Dart and Flutter over WebSockets with Protobuf support.';
+  static const String description =
+      r'Dart client to communicate with Centrifuge and Centrifugo from Dart and Flutter over WebSockets with Protobuf support.';
 
   /// Homepage
   ///
@@ -206,7 +207,8 @@ sealed class Pubspec {
   /// If issue_tracker is missing but repository is present and points to GitHub,
   /// then the pub.dev site uses the default issue tracker
   /// https://github.com/user/repository/issues
-  static const String issueTracker = r'https://github.com/PlugFox/spinify/issues';
+  static const String issueTracker =
+      r'https://github.com/PlugFox/spinify/issues';
 
   /// Documentation
   ///
@@ -496,5 +498,4 @@ sealed class Pubspec {
     'dev_dependencies': devDependencies,
     'dependency_overrides': dependencyOverrides,
   };
-
 }
