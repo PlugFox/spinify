@@ -6,7 +6,7 @@ name: spinify_clock_frontend
 
 description: "Spinify Clock: Frontend"
 
-publish_to: 'none'
+publish_to: "none"
 
 version: 0.0.1+1
 
@@ -29,7 +29,6 @@ platforms:
 #  - description: 'Screenshot 1'
 #    path: screenshot_1.png
 
-
 # ==============================================================================
 # PROJECT STRUCTURE
 # ==============================================================================
@@ -41,13 +40,12 @@ platforms:
 #executables:
 #  -
 
-
 # ==============================================================================
 # DEPENDENCIES
 # ==============================================================================
 
 environment:
-  sdk: '>=3.6.1 <4.0.0'
+  sdk: ">=3.6.1 <4.0.0"
 
 dependencies:
   # Localization

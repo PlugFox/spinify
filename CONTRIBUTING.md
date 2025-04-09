@@ -9,7 +9,8 @@ $ choco install protoc
 $ dart pub global activate protoc_plugin
 $ dart pub get
 $ protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
-$ dart run build_runner build --delete-conflicting-outputs
+$ dart pub global activate pubspec_generator
+$ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
 $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
 ```
 
@@ -22,7 +23,8 @@ $ export PATH="$PATH":"$HOME/.pub-cache/bin"
 $ dart pub global activate protoc_plugin
 $ dart pub get
 $ protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
-$ dart run build_runner build --delete-conflicting-outputs
+$ dart pub global activate pubspec_generator
+$ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
 $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
 ```
 
@@ -35,6 +37,7 @@ $ export PATH="$PATH":"$HOME/.pub-cache/bin"
 $ dart pub global activate protoc_plugin
 $ dart pub get
 $ protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
-$ dart run build_runner build --delete-conflicting-outputs
+$ dart pub global activate pubspec_generator
+$ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
 $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
 ```

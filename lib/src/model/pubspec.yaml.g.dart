@@ -2,9 +2,10 @@
 // ignore_for_file: use_raw_strings, avoid_classes_with_only_static_members
 // ignore_for_file: avoid_escaping_inner_quotes, prefer_single_quotes
 
-/// GENERATED CODE - DO NOT MODIFY BY HAND
-
-library pubspec;
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
+// dart format off
+// coverage:ignore-file
 
 // *****************************************************************************
 // *                             pubspec_generator                             *
@@ -93,13 +94,13 @@ sealed class Pubspec {
   static const PubspecVersion version = (
     /// Non-canonical string representation of the version as provided
     /// in the pubspec.yaml file.
-    representation: r'0.2.0',
+    representation: r'0.3.0',
 
     /// Returns a 'canonicalized' representation
     /// of the application version.
     /// This represents the version string in accordance with
     /// Semantic Versioning (SemVer) standards.
-    canonical: r'0.2.0',
+    canonical: r'0.3.0',
 
     /// MAJOR version when you make incompatible API changes.
     /// The major version number: 1 in "1.2.3".
@@ -108,7 +109,7 @@ sealed class Pubspec {
     /// MINOR version when you add functionality
     /// in a backward compatible manner.
     /// The minor version number: 2 in "1.2.3".
-    minor: 2,
+    minor: 3,
 
     /// PATCH version when you make backward compatible bug fixes.
     /// The patch version number: 3 in "1.2.3".
@@ -124,13 +125,13 @@ sealed class Pubspec {
   /// Build date and time (UTC)
   static final DateTime timestamp = DateTime.utc(
     2025,
-    1,
-    26,
-    21,
-    22,
-    43,
-    852,
-    940,
+    4,
+    9,
+    16,
+    50,
+    36,
+    651,
+    857,
   );
 
   /// Name
@@ -165,8 +166,7 @@ sealed class Pubspec {
   /// Think of the description as the sales pitch for your package.
   /// Users see it when they [browse for packages](https://pub.dev/packages).
   /// The description is plain text: no markdown or HTML.
-  static const String description =
-      r'Dart client to communicate with Centrifuge and Centrifugo from Dart and Flutter over WebSockets with Protobuf support.';
+  static const String description = r'Dart client to communicate with Centrifuge and Centrifugo from Dart and Flutter over WebSockets with Protobuf support.';
 
   /// Homepage
   ///
@@ -187,7 +187,7 @@ sealed class Pubspec {
   /// Repository
   /// The optional repository field should contain the URL for your package’s
   /// source code repository—for example,
-  /// https://github.com/<user>/<repository>.
+  /// https://github.com/user/repository
   /// If you publish your package to the pub.dev site,
   /// then your package’s page displays the repository URL.
   /// While providing a repository is optional,
@@ -205,9 +205,8 @@ sealed class Pubspec {
   /// to each package’s issue tracker, using the value of this field.
   /// If issue_tracker is missing but repository is present and points to GitHub,
   /// then the pub.dev site uses the default issue tracker
-  /// (https://github.com/<user>/<repository>/issues).
-  static const String issueTracker =
-      r'https://github.com/PlugFox/spinify/issues';
+  /// https://github.com/user/repository/issues
+  static const String issueTracker = r'https://github.com/PlugFox/spinify/issues';
 
   /// Documentation
   ///
@@ -428,7 +427,7 @@ sealed class Pubspec {
   /// see [Package dependencies](https://dart.dev/tools/pub/dependencies).
   static const Map<String, Object> dependencies = <String, Object>{
     'meta': r'^1.9.1',
-    'protobuf': r'^3.1.0',
+    'protobuf': r'^4.0.0',
     'web': r'^1.0.0',
     'crypto': r'^3.0.3',
     'fixnum': r'^1.1.0',
@@ -437,10 +436,8 @@ sealed class Pubspec {
 
   /// Developer dependencies
   static const Map<String, Object> devDependencies = <String, Object>{
-    'build_runner': r'^2.4.10',
-    'pubspec_generator': r'^4.1.0-pre.1',
     'benchmark_harness': r'^2.2.2',
-    'lints': r'>=4.0.0 <6.0.0',
+    'lints': r'^5.0.0',
     'test': r'^1.25.8',
     'fake_async': r'^1.3.2',
     'mockito': r'^5.0.0',
@@ -499,4 +496,5 @@ sealed class Pubspec {
     'dev_dependencies': devDependencies,
     'dependency_overrides': dependencyOverrides,
   };
+
 }
