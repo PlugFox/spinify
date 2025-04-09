@@ -1,3 +1,7 @@
+## 0.3.0
+
+- **CHANGED**: Update protobuf to 4.0.0
+
 ## 0.2.0
 
 - Headers emulation
