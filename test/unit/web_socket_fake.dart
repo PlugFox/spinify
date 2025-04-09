@@ -47,7 +47,6 @@ class WebSocket$Fake implements WebSocket {
                 expires: false,
                 ttl: null,
                 data: null,
-                subs: <String, pb.SubscribeResult>{},
                 ping: 600,
                 pong: false,
                 session: 'fake',

@@ -8,7 +8,7 @@ Windows:
 $ choco install protoc
 $ dart pub global activate protoc_plugin
 $ dart pub get
-$ protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
+$ protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 $ dart pub global activate pubspec_generator
 $ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
 $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
@@ -22,7 +22,7 @@ $ sudo apt install -y protobuf-compiler dart
 $ export PATH="$PATH":"$HOME/.pub-cache/bin"
 $ dart pub global activate protoc_plugin
 $ dart pub get
-$ protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
+$ protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 $ dart pub global activate pubspec_generator
 $ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
 $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/
@@ -36,7 +36,7 @@ $ brew install protobuf dart
 $ export PATH="$PATH":"$HOME/.pub-cache/bin"
 $ dart pub global activate protoc_plugin
 $ dart pub get
-$ protoc --proto_path=lib/src/transport/protobuf --dart_out=lib/src/transport/protobuf lib/src/transport/protobuf/client.proto
+$ protoc --proto_path=lib/src/protobuf --dart_out=lib/src/protobuf lib/src/protobuf/client.proto
 $ dart pub global activate pubspec_generator
 $ dart pub global run pubspec_generator:generate -o lib/src/model/pubspec.yaml.g.dart
 $ dart format -l 80 lib/src/model/pubspec.yaml.g.dart lib/src/transport/protobuf/

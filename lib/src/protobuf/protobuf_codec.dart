@@ -68,32 +68,40 @@ final class SpinifyProtobufCommandEncoder
       case SpinifyPingRequest _:
         cmd.ping = pb.PingRequest();
       case SpinifyConnectRequest connect:
-        cmd.connect = pb.ConnectRequest(
+        // Create a ConnectRequest object
+        final request = pb.ConnectRequest(
           token: connect.token,
           data: connect.data,
-          subs: switch (connect.subs) {
-            Map<String, SpinifySubscribeRequest> map when map.isNotEmpty =>
-              <String, pb.SubscribeRequest>{
-                for (final sub in map.values)
-                  sub.channel: pb.SubscribeRequest(
-                    channel: sub.channel,
-                    token: sub.token,
-                    recover: sub.recover,
-                    epoch: sub.epoch,
-                    offset: sub.offset,
-                    data: sub.data,
-                    positioned: sub.positioned,
-                    recoverable: sub.recoverable,
-                    joinLeave: sub.joinLeave,
-                  ),
-              },
-            _ => null,
-          },
           name: connect.name,
           version: connect.version,
-          // Headers emulation at the web platform.
-          headers: connect.headers,
         );
+
+        // Add connection headers to the request
+        // if they are not null and not empty
+        final subs = connect.subs;
+        if (subs != null && subs.isNotEmpty)
+          request.subs.addAll({
+            for (final value in subs.values)
+              value.channel: pb.SubscribeRequest(
+                channel: value.channel,
+                token: value.token,
+                recover: value.recover,
+                epoch: value.epoch,
+                offset: value.offset,
+                data: value.data,
+                positioned: value.positioned,
+                recoverable: value.recoverable,
+                joinLeave: value.joinLeave,
+              )
+          });
+
+        // Add headers to the request
+        // if they are not null and not empty
+        final headers = connect.headers;
+        if (headers != null && headers.isNotEmpty)
+          request.headers.addAll(headers);
+
+        cmd.connect = request;
       case SpinifySubscribeRequest subscribe:
         cmd.subscribe = pb.SubscribeRequest(
           channel: subscribe.channel,

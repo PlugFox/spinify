@@ -187,7 +187,11 @@ void main() {
                           expires: false,
                           ttl: null,
                           data: null,
-                          subs: <String, pb.SubscribeResult>{
+                          ping: 600,
+                          pong: false,
+                          session: 'fake',
+                          node: 'fake',
+                        )..subs.addAll(<String, pb.SubscribeResult>{
                             'notifications:index': pb.SubscribeResult(
                                 expires: false,
                                 ttl: null,
@@ -205,12 +209,7 @@ void main() {
                                     data: [1, 2, 3],
                                   )
                                 ]),
-                          },
-                          ping: 600,
-                          pong: false,
-                          session: 'fake',
-                          node: 'fake',
-                        ),
+                          }),
                       );
                       final bytes = ProtobufCodec.encode(reply);
                       sink.add(bytes);
@@ -305,7 +304,11 @@ void main() {
                           expires: false,
                           ttl: null,
                           data: null,
-                          subs: <String, pb.SubscribeResult>{
+                          ping: 600,
+                          pong: false,
+                          session: 'fake',
+                          node: 'fake',
+                        )..subs.addAll(<String, pb.SubscribeResult>{
                             'public:chat': pb.SubscribeResult(
                               expires: false,
                               ttl: null,
@@ -316,12 +319,7 @@ void main() {
                               ttl: null,
                               data: [],
                             ),
-                          },
-                          ping: 600,
-                          pong: false,
-                          session: 'fake',
-                          node: 'fake',
-                        ),
+                          }),
                       ),
                     ),
                   );
@@ -479,7 +477,6 @@ void main() {
                       expires: false,
                       ttl: null,
                       data: null,
-                      subs: <String, pb.SubscribeResult>{},
                       ping: 600,
                       pong: true,
                       session: 'fake',
@@ -535,7 +532,6 @@ void main() {
                       expires: false,
                       ttl: null,
                       data: null,
-                      subs: <String, pb.SubscribeResult>{},
                       ping: 600,
                       pong: false,
                       session: 'fake',
@@ -592,7 +588,6 @@ void main() {
                         expires: false,
                         ttl: null,
                         data: null,
-                        subs: <String, pb.SubscribeResult>{},
                         ping: 600,
                         pong: true,
                         session: 'fake',
@@ -668,7 +663,6 @@ void main() {
                       expires: false,
                       ttl: null,
                       data: null,
-                      subs: <String, pb.SubscribeResult>{},
                       ping: 600,
                       pong: true,
                       session: 'fake',
@@ -795,7 +789,6 @@ void main() {
                       expires: true,
                       ttl: 600,
                       data: null,
-                      subs: <String, pb.SubscribeResult>{},
                       ping: 120,
                       pong: true,
                       session: 'fake',
@@ -1062,7 +1055,11 @@ void main() {
                       expires: false,
                       ttl: null,
                       data: null,
-                      subs: <String, pb.SubscribeResult>{
+                      ping: 600,
+                      pong: false,
+                      session: 'fake',
+                      node: 'fake',
+                    )..subs.addAll(<String, pb.SubscribeResult>{
                         'channel': pb.SubscribeResult(
                           expires: false,
                           ttl: null,
@@ -1071,12 +1068,7 @@ void main() {
                           expires: false,
                           ttl: null,
                         ),
-                      },
-                      ping: 600,
-                      pong: false,
-                      session: 'fake',
-                      node: 'fake',
-                    ),
+                      }),
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
@@ -1148,7 +1140,9 @@ void main() {
                       data: null,
                       ping: 600,
                       pong: false,
-                      subs: <String, pb.SubscribeResult>{
+                      session: 'fake',
+                      node: 'fake',
+                    )..subs.addAll(<String, pb.SubscribeResult>{
                         'channel': pb.SubscribeResult(
                           expires: false,
                           ttl: null,
@@ -1157,10 +1151,7 @@ void main() {
                           expires: false,
                           ttl: null,
                         ),
-                      },
-                      session: 'fake',
-                      node: 'fake',
-                    ),
+                      }),
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
@@ -1168,16 +1159,17 @@ void main() {
                     command.presence.channel == 'channel') {
                   final reply = pb.Reply(
                     id: command.id,
-                    presence: pb.PresenceResult(
-                      presence: {
-                        'channel': pb.ClientInfo(
-                          chanInfo: [1, 2, 3],
-                          connInfo: [1, 2, 3],
-                          client: 'fake',
-                          user: 'fake',
-                        ),
-                      },
-                    ),
+                    presence: pb.PresenceResult()
+                      ..presence.addAll(
+                        {
+                          'channel': pb.ClientInfo(
+                            chanInfo: [1, 2, 3],
+                            connInfo: [1, 2, 3],
+                            client: 'fake',
+                            user: 'fake',
+                          ),
+                        },
+                      ),
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
@@ -1244,7 +1236,9 @@ void main() {
                       data: null,
                       ping: 600,
                       pong: false,
-                      subs: <String, pb.SubscribeResult>{
+                      session: 'fake',
+                      node: 'fake',
+                    )..subs.addAll(<String, pb.SubscribeResult>{
                         'channel': pb.SubscribeResult(
                           expires: false,
                           ttl: null,
@@ -1253,10 +1247,7 @@ void main() {
                           expires: false,
                           ttl: null,
                         ),
-                      },
-                      session: 'fake',
-                      node: 'fake',
-                    ),
+                      }),
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
@@ -1348,7 +1339,9 @@ void main() {
                       data: null,
                       ping: 600,
                       pong: false,
-                      subs: <String, pb.SubscribeResult>{
+                      session: 'fake',
+                      node: 'fake',
+                    )..subs.addAll(<String, pb.SubscribeResult>{
                         'channel': pb.SubscribeResult(
                           expires: false,
                           ttl: null,
@@ -1357,10 +1350,7 @@ void main() {
                           expires: false,
                           ttl: null,
                         ),
-                      },
-                      session: 'fake',
-                      node: 'fake',
-                    ),
+                      }),
                   );
                   final bytes = ProtobufCodec.encode(reply);
                   sink.add(bytes);
@@ -1491,7 +1481,6 @@ void main() {
                       data: null,
                       ping: 600,
                       pong: false,
-                      subs: <String, pb.SubscribeResult>{},
                       session: 'fake',
                       node: 'fake',
                     ),
@@ -1584,7 +1573,6 @@ void main() {
                         data: null,
                         ping: 600,
                         pong: false,
-                        subs: <String, pb.SubscribeResult>{},
                         session: 'fake',
                         node: 'fake',
                       ),
@@ -1711,7 +1699,6 @@ void main() {
                               expires: true,
                               ttl: 600,
                               data: null,
-                              subs: <String, pb.SubscribeResult>{},
                               ping: 120,
                               pong: false,
                               session: 'fake',

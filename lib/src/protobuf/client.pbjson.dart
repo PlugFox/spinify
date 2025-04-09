@@ -2,7 +2,7 @@
 //  Generated code. Do not modify.
 //  source: client.proto
 //
-// @dart = 2.12
+// @dart = 3.3
 
 // ignore_for_file: annotate_overrides, camel_case_types, comment_references
 // ignore_for_file: constant_identifier_names, library_prefixes
@@ -48,102 +48,18 @@ const Command$json = {
   '1': 'Command',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 13, '10': 'id'},
-    {
-      '1': 'connect',
-      '3': 4,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ConnectRequest',
-      '10': 'connect'
-    },
-    {
-      '1': 'subscribe',
-      '3': 5,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubscribeRequest',
-      '10': 'subscribe'
-    },
-    {
-      '1': 'unsubscribe',
-      '3': 6,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.UnsubscribeRequest',
-      '10': 'unsubscribe'
-    },
-    {
-      '1': 'publish',
-      '3': 7,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PublishRequest',
-      '10': 'publish'
-    },
-    {
-      '1': 'presence',
-      '3': 8,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PresenceRequest',
-      '10': 'presence'
-    },
-    {
-      '1': 'presence_stats',
-      '3': 9,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PresenceStatsRequest',
-      '10': 'presenceStats'
-    },
-    {
-      '1': 'history',
-      '3': 10,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.HistoryRequest',
-      '10': 'history'
-    },
-    {
-      '1': 'ping',
-      '3': 11,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PingRequest',
-      '10': 'ping'
-    },
-    {
-      '1': 'send',
-      '3': 12,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SendRequest',
-      '10': 'send'
-    },
-    {
-      '1': 'rpc',
-      '3': 13,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.RPCRequest',
-      '10': 'rpc'
-    },
-    {
-      '1': 'refresh',
-      '3': 14,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.RefreshRequest',
-      '10': 'refresh'
-    },
-    {
-      '1': 'sub_refresh',
-      '3': 15,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubRefreshRequest',
-      '10': 'subRefresh'
-    },
+    {'1': 'connect', '3': 4, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.ConnectRequest', '10': 'connect'},
+    {'1': 'subscribe', '3': 5, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubscribeRequest', '10': 'subscribe'},
+    {'1': 'unsubscribe', '3': 6, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.UnsubscribeRequest', '10': 'unsubscribe'},
+    {'1': 'publish', '3': 7, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PublishRequest', '10': 'publish'},
+    {'1': 'presence', '3': 8, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PresenceRequest', '10': 'presence'},
+    {'1': 'presence_stats', '3': 9, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PresenceStatsRequest', '10': 'presenceStats'},
+    {'1': 'history', '3': 10, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.HistoryRequest', '10': 'history'},
+    {'1': 'ping', '3': 11, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PingRequest', '10': 'ping'},
+    {'1': 'send', '3': 12, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SendRequest', '10': 'send'},
+    {'1': 'rpc', '3': 13, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.RPCRequest', '10': 'rpc'},
+    {'1': 'refresh', '3': 14, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.RefreshRequest', '10': 'refresh'},
+    {'1': 'sub_refresh', '3': 15, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubRefreshRequest', '10': 'subRefresh'},
   ],
   '9': [
     {'1': 2, '2': 3},
@@ -177,110 +93,19 @@ const Reply$json = {
   '1': 'Reply',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 13, '10': 'id'},
-    {
-      '1': 'error',
-      '3': 2,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Error',
-      '10': 'error'
-    },
-    {
-      '1': 'push',
-      '3': 4,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Push',
-      '10': 'push'
-    },
-    {
-      '1': 'connect',
-      '3': 5,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ConnectResult',
-      '10': 'connect'
-    },
-    {
-      '1': 'subscribe',
-      '3': 6,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubscribeResult',
-      '10': 'subscribe'
-    },
-    {
-      '1': 'unsubscribe',
-      '3': 7,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.UnsubscribeResult',
-      '10': 'unsubscribe'
-    },
-    {
-      '1': 'publish',
-      '3': 8,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PublishResult',
-      '10': 'publish'
-    },
-    {
-      '1': 'presence',
-      '3': 9,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PresenceResult',
-      '10': 'presence'
-    },
-    {
-      '1': 'presence_stats',
-      '3': 10,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PresenceStatsResult',
-      '10': 'presenceStats'
-    },
-    {
-      '1': 'history',
-      '3': 11,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.HistoryResult',
-      '10': 'history'
-    },
-    {
-      '1': 'ping',
-      '3': 12,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PingResult',
-      '10': 'ping'
-    },
-    {
-      '1': 'rpc',
-      '3': 13,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.RPCResult',
-      '10': 'rpc'
-    },
-    {
-      '1': 'refresh',
-      '3': 14,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.RefreshResult',
-      '10': 'refresh'
-    },
-    {
-      '1': 'sub_refresh',
-      '3': 15,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubRefreshResult',
-      '10': 'subRefresh'
-    },
+    {'1': 'error', '3': 2, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Error', '10': 'error'},
+    {'1': 'push', '3': 4, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Push', '10': 'push'},
+    {'1': 'connect', '3': 5, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.ConnectResult', '10': 'connect'},
+    {'1': 'subscribe', '3': 6, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubscribeResult', '10': 'subscribe'},
+    {'1': 'unsubscribe', '3': 7, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.UnsubscribeResult', '10': 'unsubscribe'},
+    {'1': 'publish', '3': 8, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PublishResult', '10': 'publish'},
+    {'1': 'presence', '3': 9, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PresenceResult', '10': 'presence'},
+    {'1': 'presence_stats', '3': 10, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PresenceStatsResult', '10': 'presenceStats'},
+    {'1': 'history', '3': 11, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.HistoryResult', '10': 'history'},
+    {'1': 'ping', '3': 12, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.PingResult', '10': 'ping'},
+    {'1': 'rpc', '3': 13, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.RPCResult', '10': 'rpc'},
+    {'1': 'refresh', '3': 14, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.RefreshResult', '10': 'refresh'},
+    {'1': 'sub_refresh', '3': 15, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubRefreshResult', '10': 'subRefresh'},
   ],
   '9': [
     {'1': 3, '2': 4},
@@ -313,78 +138,15 @@ const Push$json = {
   '1': 'Push',
   '2': [
     {'1': 'channel', '3': 2, '4': 1, '5': 9, '10': 'channel'},
-    {
-      '1': 'pub',
-      '3': 4,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Publication',
-      '10': 'pub'
-    },
-    {
-      '1': 'join',
-      '3': 5,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Join',
-      '10': 'join'
-    },
-    {
-      '1': 'leave',
-      '3': 6,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Leave',
-      '10': 'leave'
-    },
-    {
-      '1': 'unsubscribe',
-      '3': 7,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Unsubscribe',
-      '10': 'unsubscribe'
-    },
-    {
-      '1': 'message',
-      '3': 8,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Message',
-      '10': 'message'
-    },
-    {
-      '1': 'subscribe',
-      '3': 9,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Subscribe',
-      '10': 'subscribe'
-    },
-    {
-      '1': 'connect',
-      '3': 10,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Connect',
-      '10': 'connect'
-    },
-    {
-      '1': 'disconnect',
-      '3': 11,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Disconnect',
-      '10': 'disconnect'
-    },
-    {
-      '1': 'refresh',
-      '3': 12,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Refresh',
-      '10': 'refresh'
-    },
+    {'1': 'pub', '3': 4, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Publication', '10': 'pub'},
+    {'1': 'join', '3': 5, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Join', '10': 'join'},
+    {'1': 'leave', '3': 6, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Leave', '10': 'leave'},
+    {'1': 'unsubscribe', '3': 7, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Unsubscribe', '10': 'unsubscribe'},
+    {'1': 'message', '3': 8, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Message', '10': 'message'},
+    {'1': 'subscribe', '3': 9, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Subscribe', '10': 'subscribe'},
+    {'1': 'connect', '3': 10, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Connect', '10': 'connect'},
+    {'1': 'disconnect', '3': 11, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Disconnect', '10': 'disconnect'},
+    {'1': 'refresh', '3': 12, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.Refresh', '10': 'refresh'},
   ],
   '9': [
     {'1': 1, '2': 2},
@@ -429,23 +191,9 @@ const Publication$json = {
   '1': 'Publication',
   '2': [
     {'1': 'data', '3': 4, '4': 1, '5': 12, '10': 'data'},
-    {
-      '1': 'info',
-      '3': 5,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ClientInfo',
-      '10': 'info'
-    },
+    {'1': 'info', '3': 5, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.ClientInfo', '10': 'info'},
     {'1': 'offset', '3': 6, '4': 1, '5': 4, '10': 'offset'},
-    {
-      '1': 'tags',
-      '3': 7,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Publication.TagsEntry',
-      '10': 'tags'
-    },
+    {'1': 'tags', '3': 7, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.Publication.TagsEntry', '10': 'tags'},
     {'1': 'delta', '3': 8, '4': 1, '5': 8, '10': 'delta'},
     {'1': 'time', '3': 9, '4': 1, '5': 3, '10': 'time'},
     {'1': 'channel', '3': 10, '4': 1, '5': 9, '10': 'channel'},
@@ -482,14 +230,7 @@ final $typed_data.Uint8List publicationDescriptor = $convert.base64Decode(
 const Join$json = {
   '1': 'Join',
   '2': [
-    {
-      '1': 'info',
-      '3': 1,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ClientInfo',
-      '10': 'info'
-    },
+    {'1': 'info', '3': 1, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.ClientInfo', '10': 'info'},
   ],
 };
 
@@ -502,14 +243,7 @@ final $typed_data.Uint8List joinDescriptor = $convert.base64Decode(
 const Leave$json = {
   '1': 'Leave',
   '2': [
-    {
-      '1': 'info',
-      '3': 1,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ClientInfo',
-      '10': 'info'
-    },
+    {'1': 'info', '3': 1, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.ClientInfo', '10': 'info'},
   ],
 };
 
@@ -566,8 +300,8 @@ const Message$json = {
 };
 
 /// Descriptor for `Message`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List messageDescriptor =
-    $convert.base64Decode('CgdNZXNzYWdlEhIKBGRhdGEYASABKAxSBGRhdGE=');
+final $typed_data.Uint8List messageDescriptor = $convert.base64Decode(
+    'CgdNZXNzYWdlEhIKBGRhdGEYASABKAxSBGRhdGE=');
 
 @$core.Deprecated('Use connectDescriptor instead')
 const Connect$json = {
@@ -576,14 +310,7 @@ const Connect$json = {
     {'1': 'client', '3': 1, '4': 1, '5': 9, '10': 'client'},
     {'1': 'version', '3': 2, '4': 1, '5': 9, '10': 'version'},
     {'1': 'data', '3': 3, '4': 1, '5': 12, '10': 'data'},
-    {
-      '1': 'subs',
-      '3': 4,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Connect.SubsEntry',
-      '10': 'subs'
-    },
+    {'1': 'subs', '3': 4, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.Connect.SubsEntry', '10': 'subs'},
     {'1': 'expires', '3': 5, '4': 1, '5': 8, '10': 'expires'},
     {'1': 'ttl', '3': 6, '4': 1, '5': 13, '10': 'ttl'},
     {'1': 'ping', '3': 7, '4': 1, '5': 13, '10': 'ping'},
@@ -600,14 +327,7 @@ const Connect_SubsEntry$json = {
   '1': 'SubsEntry',
   '2': [
     {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
-    {
-      '1': 'value',
-      '3': 2,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubscribeResult',
-      '10': 'value'
-    },
+    {'1': 'value', '3': 2, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubscribeResult', '10': 'value'},
   ],
   '7': {'7': true},
 };
@@ -657,24 +377,10 @@ const ConnectRequest$json = {
   '2': [
     {'1': 'token', '3': 1, '4': 1, '5': 9, '10': 'token'},
     {'1': 'data', '3': 2, '4': 1, '5': 12, '10': 'data'},
-    {
-      '1': 'subs',
-      '3': 3,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ConnectRequest.SubsEntry',
-      '10': 'subs'
-    },
+    {'1': 'subs', '3': 3, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.ConnectRequest.SubsEntry', '10': 'subs'},
     {'1': 'name', '3': 4, '4': 1, '5': 9, '10': 'name'},
     {'1': 'version', '3': 5, '4': 1, '5': 9, '10': 'version'},
-    {
-      '1': 'headers',
-      '3': 6,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ConnectRequest.HeadersEntry',
-      '10': 'headers'
-    },
+    {'1': 'headers', '3': 6, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.ConnectRequest.HeadersEntry', '10': 'headers'},
   ],
   '3': [ConnectRequest_SubsEntry$json, ConnectRequest_HeadersEntry$json],
 };
@@ -684,14 +390,7 @@ const ConnectRequest_SubsEntry$json = {
   '1': 'SubsEntry',
   '2': [
     {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
-    {
-      '1': 'value',
-      '3': 2,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubscribeRequest',
-      '10': 'value'
-    },
+    {'1': 'value', '3': 2, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubscribeRequest', '10': 'value'},
   ],
   '7': {'7': true},
 };
@@ -726,14 +425,7 @@ const ConnectResult$json = {
     {'1': 'expires', '3': 3, '4': 1, '5': 8, '10': 'expires'},
     {'1': 'ttl', '3': 4, '4': 1, '5': 13, '10': 'ttl'},
     {'1': 'data', '3': 5, '4': 1, '5': 12, '10': 'data'},
-    {
-      '1': 'subs',
-      '3': 6,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ConnectResult.SubsEntry',
-      '10': 'subs'
-    },
+    {'1': 'subs', '3': 6, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.ConnectResult.SubsEntry', '10': 'subs'},
     {'1': 'ping', '3': 7, '4': 1, '5': 13, '10': 'ping'},
     {'1': 'pong', '3': 8, '4': 1, '5': 8, '10': 'pong'},
     {'1': 'session', '3': 9, '4': 1, '5': 9, '10': 'session'},
@@ -748,14 +440,7 @@ const ConnectResult_SubsEntry$json = {
   '1': 'SubsEntry',
   '2': [
     {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
-    {
-      '1': 'value',
-      '3': 2,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.SubscribeResult',
-      '10': 'value'
-    },
+    {'1': 'value', '3': 2, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.SubscribeResult', '10': 'value'},
   ],
   '7': {'7': true},
 };
@@ -780,8 +465,8 @@ const RefreshRequest$json = {
 };
 
 /// Descriptor for `RefreshRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List refreshRequestDescriptor = $convert
-    .base64Decode('Cg5SZWZyZXNoUmVxdWVzdBIUCgV0b2tlbhgBIAEoCVIFdG9rZW4=');
+final $typed_data.Uint8List refreshRequestDescriptor = $convert.base64Decode(
+    'Cg5SZWZyZXNoUmVxdWVzdBIUCgV0b2tlbhgBIAEoCVIFdG9rZW4=');
 
 @$core.Deprecated('Use refreshResultDescriptor instead')
 const RefreshResult$json = {
@@ -837,14 +522,7 @@ const SubscribeResult$json = {
     {'1': 'ttl', '3': 2, '4': 1, '5': 13, '10': 'ttl'},
     {'1': 'recoverable', '3': 3, '4': 1, '5': 8, '10': 'recoverable'},
     {'1': 'epoch', '3': 6, '4': 1, '5': 9, '10': 'epoch'},
-    {
-      '1': 'publications',
-      '3': 7,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Publication',
-      '10': 'publications'
-    },
+    {'1': 'publications', '3': 7, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.Publication', '10': 'publications'},
     {'1': 'recovered', '3': 8, '4': 1, '5': 8, '10': 'recovered'},
     {'1': 'offset', '3': 9, '4': 1, '5': 4, '10': 'offset'},
     {'1': 'positioned', '3': 10, '4': 1, '5': 8, '10': 'positioned'},
@@ -905,9 +583,8 @@ const UnsubscribeRequest$json = {
 };
 
 /// Descriptor for `UnsubscribeRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List unsubscribeRequestDescriptor =
-    $convert.base64Decode(
-        'ChJVbnN1YnNjcmliZVJlcXVlc3QSGAoHY2hhbm5lbBgBIAEoCVIHY2hhbm5lbA==');
+final $typed_data.Uint8List unsubscribeRequestDescriptor = $convert.base64Decode(
+    'ChJVbnN1YnNjcmliZVJlcXVlc3QSGAoHY2hhbm5lbBgBIAEoCVIHY2hhbm5lbA==');
 
 @$core.Deprecated('Use unsubscribeResultDescriptor instead')
 const UnsubscribeResult$json = {
@@ -915,8 +592,8 @@ const UnsubscribeResult$json = {
 };
 
 /// Descriptor for `UnsubscribeResult`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List unsubscribeResultDescriptor =
-    $convert.base64Decode('ChFVbnN1YnNjcmliZVJlc3VsdA==');
+final $typed_data.Uint8List unsubscribeResultDescriptor = $convert.base64Decode(
+    'ChFVbnN1YnNjcmliZVJlc3VsdA==');
 
 @$core.Deprecated('Use publishRequestDescriptor instead')
 const PublishRequest$json = {
@@ -938,8 +615,8 @@ const PublishResult$json = {
 };
 
 /// Descriptor for `PublishResult`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List publishResultDescriptor =
-    $convert.base64Decode('Cg1QdWJsaXNoUmVzdWx0');
+final $typed_data.Uint8List publishResultDescriptor = $convert.base64Decode(
+    'Cg1QdWJsaXNoUmVzdWx0');
 
 @$core.Deprecated('Use presenceRequestDescriptor instead')
 const PresenceRequest$json = {
@@ -957,14 +634,7 @@ final $typed_data.Uint8List presenceRequestDescriptor = $convert.base64Decode(
 const PresenceResult$json = {
   '1': 'PresenceResult',
   '2': [
-    {
-      '1': 'presence',
-      '3': 1,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.PresenceResult.PresenceEntry',
-      '10': 'presence'
-    },
+    {'1': 'presence', '3': 1, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.PresenceResult.PresenceEntry', '10': 'presence'},
   ],
   '3': [PresenceResult_PresenceEntry$json],
 };
@@ -974,14 +644,7 @@ const PresenceResult_PresenceEntry$json = {
   '1': 'PresenceEntry',
   '2': [
     {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
-    {
-      '1': 'value',
-      '3': 2,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.ClientInfo',
-      '10': 'value'
-    },
+    {'1': 'value', '3': 2, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.ClientInfo', '10': 'value'},
   ],
   '7': {'7': true},
 };
@@ -1002,9 +665,8 @@ const PresenceStatsRequest$json = {
 };
 
 /// Descriptor for `PresenceStatsRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List presenceStatsRequestDescriptor =
-    $convert.base64Decode(
-        'ChRQcmVzZW5jZVN0YXRzUmVxdWVzdBIYCgdjaGFubmVsGAEgASgJUgdjaGFubmVs');
+final $typed_data.Uint8List presenceStatsRequestDescriptor = $convert.base64Decode(
+    'ChRQcmVzZW5jZVN0YXRzUmVxdWVzdBIYCgdjaGFubmVsGAEgASgJUgdjaGFubmVs');
 
 @$core.Deprecated('Use presenceStatsResultDescriptor instead')
 const PresenceStatsResult$json = {
@@ -1040,14 +702,7 @@ const HistoryRequest$json = {
   '2': [
     {'1': 'channel', '3': 1, '4': 1, '5': 9, '10': 'channel'},
     {'1': 'limit', '3': 7, '4': 1, '5': 5, '10': 'limit'},
-    {
-      '1': 'since',
-      '3': 8,
-      '4': 1,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.StreamPosition',
-      '10': 'since'
-    },
+    {'1': 'since', '3': 8, '4': 1, '5': 11, '6': '.centrifugal.centrifuge.protocol.StreamPosition', '10': 'since'},
     {'1': 'reverse', '3': 9, '4': 1, '5': 8, '10': 'reverse'},
   ],
   '9': [
@@ -1070,14 +725,7 @@ final $typed_data.Uint8List historyRequestDescriptor = $convert.base64Decode(
 const HistoryResult$json = {
   '1': 'HistoryResult',
   '2': [
-    {
-      '1': 'publications',
-      '3': 1,
-      '4': 3,
-      '5': 11,
-      '6': '.centrifugal.centrifuge.protocol.Publication',
-      '10': 'publications'
-    },
+    {'1': 'publications', '3': 1, '4': 3, '5': 11, '6': '.centrifugal.centrifuge.protocol.Publication', '10': 'publications'},
     {'1': 'epoch', '3': 2, '4': 1, '5': 9, '10': 'epoch'},
     {'1': 'offset', '3': 3, '4': 1, '5': 4, '10': 'offset'},
   ],
@@ -1095,8 +743,8 @@ const PingRequest$json = {
 };
 
 /// Descriptor for `PingRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List pingRequestDescriptor =
-    $convert.base64Decode('CgtQaW5nUmVxdWVzdA==');
+final $typed_data.Uint8List pingRequestDescriptor = $convert.base64Decode(
+    'CgtQaW5nUmVxdWVzdA==');
 
 @$core.Deprecated('Use pingResultDescriptor instead')
 const PingResult$json = {
@@ -1104,8 +752,8 @@ const PingResult$json = {
 };
 
 /// Descriptor for `PingResult`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List pingResultDescriptor =
-    $convert.base64Decode('CgpQaW5nUmVzdWx0');
+final $typed_data.Uint8List pingResultDescriptor = $convert.base64Decode(
+    'CgpQaW5nUmVzdWx0');
 
 @$core.Deprecated('Use rPCRequestDescriptor instead')
 const RPCRequest$json = {
@@ -1130,8 +778,8 @@ const RPCResult$json = {
 };
 
 /// Descriptor for `RPCResult`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List rPCResultDescriptor =
-    $convert.base64Decode('CglSUENSZXN1bHQSEgoEZGF0YRgBIAEoDFIEZGF0YQ==');
+final $typed_data.Uint8List rPCResultDescriptor = $convert.base64Decode(
+    'CglSUENSZXN1bHQSEgoEZGF0YRgBIAEoDFIEZGF0YQ==');
 
 @$core.Deprecated('Use sendRequestDescriptor instead')
 const SendRequest$json = {
@@ -1142,5 +790,6 @@ const SendRequest$json = {
 };
 
 /// Descriptor for `SendRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List sendRequestDescriptor =
-    $convert.base64Decode('CgtTZW5kUmVxdWVzdBISCgRkYXRhGAEgASgMUgRkYXRh');
+final $typed_data.Uint8List sendRequestDescriptor = $convert.base64Decode(
+    'CgtTZW5kUmVxdWVzdBISCgRkYXRhGAEgASgMUgRkYXRh');
+

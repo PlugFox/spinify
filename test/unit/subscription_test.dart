@@ -51,36 +51,36 @@ void main() {
                             expires: false,
                             ttl: null,
                             data: null,
-                            subs: <String, pb.SubscribeResult>{
-                              'notification:index': pb.SubscribeResult(
-                                data: const <int>[],
-                                epoch: '...',
-                                offset: Int64.ZERO,
-                                expires: false,
-                                ttl: null,
-                                positioned: false,
-                                publications: <pb.Publication>[
-                                  pb.Publication(
-                                    data: const <int>[],
-                                    info: pb.ClientInfo(
-                                      client: 'fake',
-                                      user: 'fake',
-                                    ),
-                                    tags: const <String, String>{
-                                      'type': 'notification',
-                                    },
-                                  ),
-                                ],
-                                recoverable: false,
-                                recovered: false,
-                                wasRecovering: false,
-                              ),
-                            },
                             ping: 600,
                             pong: false,
                             session: 'fake',
                             node: 'fake',
-                          ),
+                          )..subs.addAll(
+                              <String, pb.SubscribeResult>{
+                                'notification:index': pb.SubscribeResult(
+                                  data: const <int>[],
+                                  epoch: '...',
+                                  offset: Int64.ZERO,
+                                  expires: false,
+                                  ttl: null,
+                                  positioned: false,
+                                  publications: <pb.Publication>[
+                                    pb.Publication(
+                                      data: const <int>[],
+                                      info: pb.ClientInfo(
+                                        client: 'fake',
+                                        user: 'fake',
+                                      ),
+                                    )..tags.addAll(const <String, String>{
+                                        'type': 'notification',
+                                      }),
+                                  ],
+                                  recoverable: false,
+                                  recovered: false,
+                                  wasRecovering: false,
+                                ),
+                              },
+                            ),
                         ),
                       ),
                     );
@@ -147,49 +147,49 @@ void main() {
                               expires: true,
                               ttl: 600,
                               data: null,
-                              subs: <String, pb.SubscribeResult>{
-                                'notification:index': pb.SubscribeResult(
-                                  data: utf8.encode('notification:index'),
-                                  epoch: '...',
-                                  offset: offset,
-                                  expires: false,
-                                  ttl: null,
-                                  positioned: false,
-                                  publications: [],
-                                  recoverable: false,
-                                  recovered: false,
-                                  wasRecovering: false,
-                                ),
-                                'echo:index': pb.SubscribeResult(
-                                  data: utf8.encode('echo:index'),
-                                  epoch: '...',
-                                  offset: offset,
-                                  expires: false,
-                                  ttl: null,
-                                  positioned: false,
-                                  publications: <pb.Publication>[
-                                    pb.Publication(
-                                      offset: offset,
-                                      data: const <int>[1, 2, 3],
-                                      info: pb.ClientInfo(
-                                        client: 'fake',
-                                        user: 'fake',
-                                      ),
-                                      tags: const <String, String>{
-                                        'type': 'echo',
-                                      },
-                                    ),
-                                  ],
-                                  recoverable: false,
-                                  recovered: false,
-                                  wasRecovering: false,
-                                ),
-                              },
                               ping: 600,
                               pong: true,
                               session: 'fake',
                               node: 'fake',
-                            ),
+                            )..subs.addAll(
+                                <String, pb.SubscribeResult>{
+                                  'notification:index': pb.SubscribeResult(
+                                    data: utf8.encode('notification:index'),
+                                    epoch: '...',
+                                    offset: offset,
+                                    expires: false,
+                                    ttl: null,
+                                    positioned: false,
+                                    publications: [],
+                                    recoverable: false,
+                                    recovered: false,
+                                    wasRecovering: false,
+                                  ),
+                                  'echo:index': pb.SubscribeResult(
+                                    data: utf8.encode('echo:index'),
+                                    epoch: '...',
+                                    offset: offset,
+                                    expires: false,
+                                    ttl: null,
+                                    positioned: false,
+                                    publications: <pb.Publication>[
+                                      pb.Publication(
+                                        offset: offset,
+                                        data: const <int>[1, 2, 3],
+                                        info: pb.ClientInfo(
+                                          client: 'fake',
+                                          user: 'fake',
+                                        ),
+                                      )..tags.addAll(const <String, String>{
+                                          'type': 'echo',
+                                        }),
+                                    ],
+                                    recoverable: false,
+                                    recovered: false,
+                                    wasRecovering: false,
+                                  ),
+                                },
+                              ),
                           );
                           sink.add(ProtobufCodec.encode(reply));
                           pingTimer = Timer.periodic(
@@ -249,7 +249,6 @@ void main() {
                                     channel: 'echo:index',
                                     pub: pb.Publication(
                                       offset: offset,
-                                      tags: const <String, String>{},
                                       data: command.publish.data,
                                       info: pb.ClientInfo(
                                         client: 'fake',
@@ -351,7 +350,6 @@ void main() {
                             expires: false,
                             ttl: null,
                             data: null,
-                            subs: <String, pb.SubscribeResult>{},
                             ping: 600,
                             pong: false,
                             session: 'fake',
@@ -377,10 +375,9 @@ void main() {
                               client: 'fake',
                               user: 'fake',
                             ),
-                            tags: const <String, String>{
+                          )..tags.addAll(const <String, String>{
                               'type': 'notification',
-                            },
-                          ),
+                            }),
                         ],
                         recoverable: false,
                         recovered: false,
@@ -499,7 +496,6 @@ void main() {
                           expires: true,
                           ttl: 600,
                           data: null,
-                          subs: <String, pb.SubscribeResult>{},
                           ping: 600,
                           pong: true,
                           session: 'fake',
@@ -546,7 +542,6 @@ void main() {
                                 channel: 'echo:index',
                                 pub: pb.Publication(
                                   offset: offset,
-                                  tags: const <String, String>{},
                                   data: command.publish.data,
                                   info: pb.ClientInfo(
                                     client: 'fake',
@@ -624,10 +619,9 @@ void main() {
                                 client: 'fake',
                                 user: 'fake',
                               ),
-                              tags: const <String, String>{
+                            )..tags.addAll(const <String, String>{
                                 'type': 'echo',
-                              },
-                            ),
+                              }),
                           ],
                           recoverable: false,
                           recovered: false,
@@ -761,7 +755,6 @@ void main() {
                         expires: false,
                         ttl: null,
                         data: null,
-                        subs: <String, pb.SubscribeResult>{},
                         ping: 600,
                         pong: false,
                         session: 'fake',
@@ -815,10 +808,9 @@ void main() {
                                 client: 'fake',
                                 user: 'fake',
                               ),
-                              tags: const <String, String>{
+                            )..tags.addAll(const <String, String>{
                                 'type': 'notification',
-                              },
-                            ),
+                              }),
                         ],
                       ),
                     );
